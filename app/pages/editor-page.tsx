@@ -19,10 +19,10 @@ import { useRouter } from 'next/navigation';
 
 export default function EditorPage() {
   const [slides, setSlides] = useState([
-    { id: uuidv4(), type: "qr" },
     { id: uuidv4(), type: "transit-destination" },
-    { id: uuidv4(), type: "fixed-route" },
     { id: uuidv4(), type: "transit-routes" },
+    { id: uuidv4(), type: "fixed-route" },
+    { id: uuidv4(), type: "qr" },
   ]);
   const [activeSlideId, setActiveSlideId] = useState(slides[0]?.id);
 

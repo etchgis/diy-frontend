@@ -92,6 +92,11 @@ export default function FixedRouteSlide() {
 
             <FixedRoutePreview />
 
+            {/* Footer Buttons */}
+            <div className="flex gap-3">
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
+            </div>
             
           </div>
         </div>
