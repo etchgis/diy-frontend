@@ -1,107 +1,108 @@
 'use client'
-
-import Image from "next/image"
-import { HelpCircle, FileText } from "lucide-react"
-import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent } from "@/components/ui/card"
+import { HelpCircle, FileText } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function LandingPage() {
   const router = useRouter()
   return (
-    <main className="grid min-h-screen grid-cols-[300px_1fr] bg-gray-50">
-      {/* ─────────────── Left column (sidebar) ─────────────── */}
-      <aside className="flex flex-row items-start gap-4 px-6 py-6 border-r border-gray-200 bg-white">
-        <Image
-           src="/images/nysdot-logo.png"
-          alt="New York State Logo"
-          width={220}
-          height={40}
-          className="object-contain"
-        />
+    <div className="min-h-screen bg-[#e5eaef] flex">
+      {/* Left Column - Logo */}
+      <div className="w-[196px] bg-white border-r border-[#e2e8f0] flex flex-col items-center pt-6">
+        <img src="/images/nysdot-logo.png" alt="New York State Department of Transportation" className="w-36 mb-6" />
+      </div>
 
-      </aside>
-
-      {/* ─────────────── Right column ─────────────── */}
-      <div className="flex flex-col">
+      {/* Right Column - Main Content */}
+      <div className="flex-1 bg-white">
         {/* Header */}
-        <header className="flex justify-end items-center px-6 py-4 bg-white border-b border-gray-200">
-          <Button variant="ghost" size="sm" aria-label="Help">
-            <HelpCircle className="h-5 w-5" />
+        <header className="bg-white border-b border-[#e2e8f0] px-6 py-4 flex justify-end">
+          <Button variant="ghost" size="icon" className="text-[#606061]">
+            <HelpCircle className="w-5 h-5" />
           </Button>
         </header>
 
-        {/* Main content */}
-        <section className="flex flex-col p-6 flex-1">
-          {/* Welcome text */}
-          <div className="mx-auto mb-8 max-w-3xl text-center">
-            <h1 className="mb-4 text-2xl font-semibold text-gray-900">
-              Welcome to the NYSDOT Transportation Screen Builder!
+        {/* Main Content */}
+        <main className="px-8 py-12">
+          {/* Welcome Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-3xl font-semibold text-[#4a5568] mb-6">
+              Welcome to the NYSDOT Mobility Screens Builder.
             </h1>
-            <p className="text-gray-600">
-              Through this tool, you will be able to create your own transportation slide show, publish the slide show
-              and display it through a public URL that you publish.
+            <p className="text-[#606061] text-lg max-w-4xl mx-auto leading-relaxed">
+              This tool will help you create the various screens that display real-time, local traffic and transit
+              information. Through this tool, you will be able to create your own transportation information screens,
+              publish the information on-site/on your own monitors, and display the information to your desired audience
+              through a public URL.
             </p>
           </div>
 
-          {/* Create section */}
-          <div
-            className="mx-auto mb-8 w-full max-w-3xl rounded-lg p-8 text-white"
-            style={{ backgroundColor: "#0B5583" }}
-          >
-            <h2 className="mb-6 text-center text-3xl font-bold">Create a Transportation Slide Show</h2>
+          {/* Action Cards */}
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Create New Set Card */}
+            <Card className="bg-[#0b5583] border-0">
+              <CardContent className="p-8">
+                <h2 className="text-white text-2xl font-semibold mb-8">Create a new set of mobility screens</h2>
 
-            <div className="mb-6 space-y-1 text-center text-white/90">
-              <p>1. Set an initial central location for the screens</p>
-              <p>2. Select a template from the drop-down list to get started with your first screen.</p>
-            </div>
-
-            {/* Location input + Set button */}
-            <div className="flex flex-col items-end justify-center gap-4 sm:flex-row">
-              <Input placeholder="Enter location…" className="h-10 max-w-md flex-1 border-0 bg-white text-gray-900" />
-              <Button className="h-10 px-6 font-semibold text-black" style={{ backgroundColor: "#FACE00" }} onClick={() => router.push('/editor')}>
-                Set
-              </Button>
-            </div>
-
-            {/* Template select */}
-            <div className="mt-4 flex justify-center">
-              <Select>
-                <SelectTrigger className="h-10 w-full max-w-md border-0 bg-white text-gray-900">
-                  <div className="flex items-center">
-                    <FileText className="mr-2 h-4 w-4 text-gray-500" />
-                    <SelectValue placeholder="Select a Template" />
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-white mb-4">1. Set an initial central location for the screens</p>
+                    <div className="flex gap-3">
+                      <Input placeholder="i.e Albany Airport" className="bg-white text-[#1a202c] flex-1" />
+                      <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Set</Button>
+                    </div>
                   </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="template1">Basic Transportation Template</SelectItem>
-                  <SelectItem value="template2">Highway Information Template</SelectItem>
-                  <SelectItem value="template3">Traffic Alert Template</SelectItem>
-                  <SelectItem value="template4">Construction Update Template</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          {/* Edit section */}
-          <div className="mx-auto w-full max-w-3xl rounded-lg p-8" style={{ backgroundColor: "#6E9AB5" }}>
-            <h2 className="mb-4 text-center text-3xl font-bold text-white">Edit an Transportation Slide Show</h2>
-            <p className="mb-6 text-center text-white/90">Input a published Transportation Slide Show URL to edit</p>
+                  <div>
+                    <p className="text-white mb-4">
+                      2. Select a template from the drop down list to get started with your first screen.
+                    </p>
+                    <div className="flex gap-3">
+                      <Select>
+                        <SelectTrigger className="bg-white text-[#1a202c] flex-1">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            <SelectValue placeholder="Select a Screen Template" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="template1">Template 1</SelectItem>
+                          <SelectItem value="template2">Template 2</SelectItem>
+                          <SelectItem value="template3">Template 3</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={() => {router.push('/editor')}} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="flex flex-col items-end justify-center gap-4 sm:flex-row">
-              <Input
-                placeholder="Enter published URL…"
-                className="h-10 max-w-md flex-1 border-gray-300 bg-white text-gray-900"
-              />
-              <Button className="h-10 px-6 font-semibold text-black" style={{ backgroundColor: "#FACE00" }}>
-                Edit
-              </Button>
-            </div>
+            {/* Edit Existing Set Card */}
+            <Card className="bg-[#6e9ab5] border-0">
+              <CardContent className="p-8">
+                <h2 className="text-[#1a202c] text-2xl font-semibold mb-8">
+                  Edit an existing set of mobility screens or add a new screen
+                </h2>
+
+                <div className="space-y-6">
+                  <p className="text-[#2d3748] text-sm">
+                    Insert a published Mobility Screen URL to edit an existing mobility screen
+                  </p>
+
+                  <div className="flex gap-3">
+                    <Input className="bg-white text-[#1a202c] flex-1" />
+                    <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Edit</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </section>
+        </main>
       </div>
-    </main>
+    </div>
   )
 }
+
