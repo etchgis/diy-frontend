@@ -3,8 +3,11 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
 import FixedRoutePreview from "../slide-previews/fixed-route-preview"
+import { useState } from "react"
 
 export default function FixedRouteSlide() {
+  const [stopName, setStopName] = useState("Wolf Rd and Newbury");
+
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",
@@ -80,9 +83,10 @@ export default function FixedRouteSlide() {
               <label className="block text-[#4a5568] font-medium mb-2">Fixed Route Stop</label>
               <div className="flex gap-3">
                 <Input
-                  placeholder="Wolf Rd and Newbury"
+                  placeholder="Enter stop name"
                   className="flex-1 bg-white border-[#cbd5e0]"
-                  defaultValue="Wolf Rd and Newbury"
+                  value={stopName}
+                  onChange={(e) => setStopName(e.target.value)}
                 />
                 <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent">
                   <Plus className="w-4 h-4" />
@@ -90,7 +94,7 @@ export default function FixedRouteSlide() {
               </div>
             </div>
 
-            <FixedRoutePreview />
+            <FixedRoutePreview stopName={stopName}/>
 
             {/* Footer Buttons */}
             <div className="flex gap-3">

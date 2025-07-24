@@ -54,7 +54,7 @@ export default function EditorPage() {
       case "transit-destinations":
         return <TransitDestinationPreview />;
       case "fixed-routes":
-        return <FixedRoutePreview />;
+        return <FixedRoutePreview stopName={''} />;
       case "transit-routes":
         return <TransitRoutesPreview />
       case "template-1":
