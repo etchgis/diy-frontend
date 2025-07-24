@@ -14,6 +14,8 @@ import FixedRoutePreview from "@/components/slide-previews/fixed-route-preview"
 import TransitRoutesPreview from "@/components/slide-previews/transit-routes-preview"
 import TransitRoutesSlide from "@/components/slides/transit-routes"
 import { useRouter } from 'next/navigation';
+import Template1Slide from "@/components/slides/template-1"
+import Template1Preview from "@/components/slide-previews/template-1-preview"
 
 
 
@@ -38,6 +40,8 @@ export default function EditorPage() {
         return <FixedRouteSlide />;
       case "transit-routes":
         return <TransitRoutesSlide />;
+      case "template-1":
+        return <Template1Slide />;
       default:
         return null;
     }
@@ -53,6 +57,8 @@ export default function EditorPage() {
         return <FixedRoutePreview />;
       case "transit-routes":
         return <TransitRoutesPreview />
+      case "template-1":
+        return <Template1Preview />;
     }
   }
 
@@ -65,7 +71,7 @@ export default function EditorPage() {
       <div className="w-[196px] bg-white border-r border-[#e2e8f0] flex flex-col">
         <div
           className="p-4 border-b border-[#e2e8f0]"
-          onClick={() => router.push('/landing')}
+          onClick={() => router.push('/')}
           style={{ cursor: 'pointer' }}
         >
           <img
@@ -97,7 +103,7 @@ export default function EditorPage() {
             variant="outline"
             className="w-full text-[#4a5568] border-[#cbd5e0] bg-transparent"
             onClick={() => {
-              const newSlide = { id: uuidv4(), type: "qr" };
+              const newSlide = { id: uuidv4(), type: "template-1" };
               setSlides(prev => [...prev, newSlide]);
               setActiveSlideId(newSlide.id);
             }}
@@ -133,7 +139,7 @@ export default function EditorPage() {
 
 
         {activeSlide && renderSlideComponent(activeSlide.type)}
-        
+
 
       </div>
     </div>
