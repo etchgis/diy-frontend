@@ -15,26 +15,13 @@ export default function LandingPage() {
       {/* ─────────────── Left column (sidebar) ─────────────── */}
       <aside className="flex flex-row items-start gap-4 px-6 py-6 border-r border-gray-200 bg-white">
         <Image
-          src="/images/ny-state-logo.png"
+           src="/images/nysdot-logo.png"
           alt="New York State Logo"
-          width={100}
+          width={220}
           height={40}
-          className="h-10 w-auto object-contain"
+          className="object-contain"
         />
-        {/* Department copy */}
-        <div
-          className="text-left text-sm font-semibold leading-snug text-gray-800"
-          style={{ fontFamily: "D Sari, sans-serif" }}
-        >
-          |
-        </div>
-        <div
-          className="text-left text-sm font-semibold leading-snug text-gray-800"
-          style={{ fontFamily: "D Sari, sans-serif" }}
-        >
-          Department of
-          <br /> Transportation
-        </div>
+
       </aside>
 
       {/* ─────────────── Right column ─────────────── */}
