@@ -21,9 +21,9 @@ import Template1Preview from "@/components/slide-previews/template-1-preview"
 
 export default function EditorPage() {
   const [slides, setSlides] = useState([
-    { id: uuidv4(), type: "transit-destination" },
+    { id: uuidv4(), type: "transit-destinations" },
     { id: uuidv4(), type: "transit-routes" },
-    { id: uuidv4(), type: "fixed-route" },
+    { id: uuidv4(), type: "fixed-routes" },
     { id: uuidv4(), type: "qr" },
   ]);
   const [activeSlideId, setActiveSlideId] = useState(slides[0]?.id);
@@ -34,9 +34,9 @@ export default function EditorPage() {
     switch (type) {
       case "qr":
         return <QRSlide />;
-      case "transit-destination":
+      case "transit-destinations":
         return <TransitDestinationSlide />;
-      case "fixed-route":
+      case "fixed-routes":
         return <FixedRouteSlide />;
       case "transit-routes":
         return <TransitRoutesSlide />;
@@ -51,9 +51,9 @@ export default function EditorPage() {
     switch (type) {
       case "qr":
         return <QRSlidePreview />;
-      case "transit-destination":
+      case "transit-destinations":
         return <TransitDestinationPreview />;
-      case "fixed-route":
+      case "fixed-routes":
         return <FixedRoutePreview />;
       case "transit-routes":
         return <TransitRoutesPreview />
