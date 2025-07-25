@@ -8,18 +8,18 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 export default function TransitRoutesPreview() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    if (!mapContainerRef.current) return
+  // useEffect(() => {
+  //   if (!mapContainerRef.current) return
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [-73.7562, 42.6526], 
-      zoom: 10,
-    })
+  //   const map = new mapboxgl.Map({
+  //     container: mapContainerRef.current,
+  //     style: 'mapbox://styles/mapbox/light-v11',
+  //     center: [-73.7562, 42.6526], 
+  //     zoom: 10,
+  //   })
 
-    return () => map.remove()
-  }, [])
+  //   return () => map.remove()
+  // }, [])
 
   return (
     <div
@@ -27,10 +27,15 @@ export default function TransitRoutesPreview() {
       style={{ height: '500px' }}
     >
       {/* Map container */}
-      <div
+      {/* <div
         ref={mapContainerRef}
         className="w-full h-full rounded"
         style={{ overflow: 'hidden' }}
+      /> */}
+      <img
+        src="/images/main-map.png"
+        alt="Albany area transit map"
+        className="w-full h-full object-cover rounded"
       />
 
       {/* Map Footer Overlay */}
