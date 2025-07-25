@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useFixedRouteStore } from "@/stores/fixedRoute";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
 
-export default function FixedRoutePreview({ stopName }: { stopName: string }) {
+
+export default function FixedRoutePreview({ slideId }: { slideId: string }) {
+
+  const stopName = useFixedRouteStore((state) => state.getStopName(slideId));
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",

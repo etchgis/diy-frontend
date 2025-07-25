@@ -30,14 +30,14 @@ export default function EditorPage() {
 
   const router = useRouter();
 
-  const renderSlideComponent = (type: string) => {
+  const renderSlideComponent = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlide />;
+        return <QRSlide slideId={slideId}/>;
       case "transit-destinations":
         return <TransitDestinationSlide />;
       case "fixed-routes":
-        return <FixedRouteSlide />;
+        return <FixedRouteSlide slideId={slideId} />;
       case "transit-routes":
         return <TransitRoutesSlide />;
       case "template-1":
@@ -47,14 +47,14 @@ export default function EditorPage() {
     }
   };
 
-  const renderSlidePreview = (type: string) => {
+  const renderSlidePreview = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlidePreview />;
+        return <QRSlidePreview slideId={slideId}/>;
       case "transit-destinations":
         return <TransitDestinationPreview />;
       case "fixed-routes":
-        return <FixedRoutePreview stopName={''} />;
+        return <FixedRoutePreview slideId={slideId}/>;
       case "transit-routes":
         return <TransitRoutesPreview />
       case "template-1":
@@ -93,7 +93,7 @@ export default function EditorPage() {
               >
                 <div className="w-full h-20 overflow-hidden relative bg-gray-100 rounded">
                   <div className="absolute top-0 left-0 origin-top-left scale-[0.15] w-[650%]">
-                    {renderSlidePreview(slide.type)}
+                    {renderSlidePreview(slide.type, slide.id)}
                   </div>
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function EditorPage() {
         </header>
 
 
-        {activeSlide && renderSlideComponent(activeSlide.type)}
+        {activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)}
 
 
       </div>
