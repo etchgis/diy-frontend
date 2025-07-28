@@ -1,5 +1,11 @@
+import { useTransitDestinationsStore } from "@/stores/transitDestinations";
+import { useEffect } from "react";
 
-export default function TransitDestinationPreview() {
+export default function TransitDestinationPreview({ slideId }: { slideId: string }) {
+
+  const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '');
+  const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '');
 
   const destinations = [
     {
@@ -62,48 +68,51 @@ export default function TransitDestinationPreview() {
 
   return (
     <>
-        {/* Transit Table */}
-        <div className="mb-6">
-          <div className="bg-[#192f51] text-white">
-            {/* Table Header */}
-            <div className="grid grid-cols-5 gap-4 p-4 font-medium">
-              <div>Destination</div>
-              <div>Route</div>
-              <div>Departure Time</div>
-              <div>Arrival Time</div>
-              <div>Travel Time</div>
-            </div>
+      {/* Transit Table */}
+      <div className="mb-6">
+        <div className="text-white" style={{ backgroundColor }} >
+          {/* Table Header */}
+          <div className="grid grid-cols-5 gap-4 p-4 font-medium">
+            <div>Destination</div>
+            <div>Route</div>
+            <div>Departure Time</div>
+            <div>Arrival Time</div>
+            <div>Travel Time</div>
+          </div>
 
-            {/* Table Rows */}
-            {destinations.map((dest, index) => (
-              <div
-                key={index}
-                className={`grid grid-cols-5 gap-4 p-4 ${dest.dark ? "bg-[#192f51]" : "bg-[#6e9ab5]"}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span>{dest.name}</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-2xl">🚶</div>
-                  <div className="text-xs">{dest.route}</div>
-                </div>
-                <div>{dest.departure}</div>
-                <div>{dest.arrival}</div>
-                <div>{dest.travel}</div>
+          {/* Table Rows */}
+          {destinations.map((dest, index) => (
+            <div
+              key={index}
+              className="grid grid-cols-5 gap-4 p-4"
+              style={{
+                backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor, 
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span>{dest.name}</span>
               </div>
-            ))}
-          </div>
-
-          {/* Table Footer */}
-          <div className="bg-[#F4F4F4] p-3 flex items-center justify-between">
-            <img
-              src="/images/statewide-mobility-services.png"
-              alt="Statewide Mobility Services"
-              className="h-[25px] w-[246px]"
-            />
-            <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
-          </div>
+              <div className="flex flex-col items-center">
+                <div className="text-2xl">🚶</div>
+                <div className="text-xs">{dest.route}</div>
+              </div>
+              <div>{dest.departure}</div>
+              <div>{dest.arrival}</div>
+              <div>{dest.travel}</div>
+            </div>
+          ))}
         </div>
+
+        {/* Table Footer */}
+        <div className="bg-[#F4F4F4] p-3 flex items-center justify-between">
+          <img
+            src="/images/statewide-mobility-services.png"
+            alt="Statewide Mobility Services"
+            className="h-[25px] w-[246px]"
+          />
+          <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
+        </div>
+      </div>
 
     </>
   );

@@ -4,11 +4,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import QRSlidePreview from "../slide-previews/qr-slide-preview"
 import { useQRStore } from "@/stores/qr"
+import { useEffect } from "react"
 
 
 export default function QRSlide({ slideId }: { slideId: string }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const setText = useQRStore((state) => state.setText);
+
+  useEffect (() => {
+    // Initialize default text if not set
+    if (!text) {
+      setText(slideId, 'See this on your phone!');
+    }
+  }, [])
   return (
     <>
       <div className="flex flex-1">

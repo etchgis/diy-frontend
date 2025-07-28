@@ -35,7 +35,7 @@ export default function EditorPage() {
       case "qr":
         return <QRSlide slideId={slideId}/>;
       case "transit-destinations":
-        return <TransitDestinationSlide />;
+        return <TransitDestinationSlide slideId={slideId}/>;
       case "fixed-routes":
         return <FixedRouteSlide slideId={slideId} />;
       case "transit-routes":
@@ -52,7 +52,7 @@ export default function EditorPage() {
       case "qr":
         return <QRSlidePreview slideId={slideId}/>;
       case "transit-destinations":
-        return <TransitDestinationPreview />;
+        return <TransitDestinationPreview slideId={slideId}/>;
       case "fixed-routes":
         return <FixedRoutePreview slideId={slideId}/>;
       case "transit-routes":
