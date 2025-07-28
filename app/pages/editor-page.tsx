@@ -18,6 +18,20 @@ import Template1Slide from "@/components/slides/template-1"
 import Template1Preview from "@/components/slide-previews/template-1-preview"
 import { useGeneralStore } from "@/stores/general"
 import { set } from "react-hook-form"
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableSlide } from "@/components/sortable-slide"
+
 
 
 
@@ -36,7 +50,13 @@ export default function EditorPage() {
   const slides: any = useGeneralStore((state) => state.slides || []);
   const setSlides = useGeneralStore((state) => state.setSlides);
 
-
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, 
+      },
+    })
+  );
   const router = useRouter();
 
   useEffect(() => {
@@ -64,24 +84,36 @@ export default function EditorPage() {
     }
   }, [slides, activeSlideId]);
 
+  useEffect(() => {
+    console.log(`Active Slide ID: ${activeSlideId}`);
+  }, [activeSlideId]);
+
   const setAllData = () => {
 
+  }
+
+  const handleDelete = (slideId: string) => {
+    const confirmed = confirm("Are you sure you want to delete this screen? This action cannot be undone.");
+    if (confirmed) {
+      const filteredSlides: any = slides?.filter((slide: any) => slide.id !== slideId);
+      setSlides(filteredSlides);
+    }
   }
 
   const renderSlideComponent = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlide slideId={slideId} />;
+        return <QRSlide slideId={slideId} handleDelete={handleDelete}/>;
       case "transit-destinations":
-        return <TransitDestinationSlide slideId={slideId} />;
+        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete}/>;
       case "fixed-routes":
-        return <FixedRouteSlide slideId={slideId} />;
+        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete}/>;
       case "transit-routes":
-        return <TransitRoutesSlide />;
+        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete}/>;
       case "template-1":
-        return <Template1Slide />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete}/>;
       default:
-        return <Template1Slide />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete}/>;
     }
   };
 
@@ -120,20 +152,34 @@ export default function EditorPage() {
         <div className="p-4">
           <h3 className="text-[#4a5568] font-medium mb-3 text-sm">Screen Order Preview</h3>
           <div className="space-y-2 mb-4">
-            {slides.map((slide: any) => (
-              <div
-                key={slide.id}
-                onClick={() => setActiveSlideId(slide.id)}
-                className={`cursor-pointer rounded border bg-white p-1 ${slide.id === activeSlideId ? "ring-2 ring-blue-500" : ""
-                  }`}
-              >
-                <div className="w-full h-20 overflow-hidden relative bg-gray-100 rounded">
-                  <div className="absolute top-0 left-0 origin-top-left scale-[0.15] w-[650%]">
-                    {renderSlidePreview(slide.type, slide.id)}
-                  </div>
+
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => {
+                const { active, over } = event;
+                if (active.id !== over?.id) {
+                  const oldIndex = slides.findIndex((s: any) => s.id === active.id);
+                  const newIndex = slides.findIndex((s: any) => s.id === over?.id);
+                  const reordered: any = arrayMove(slides, oldIndex, newIndex);
+                  setSlides(reordered);
+                }
+              }}
+            >
+              <SortableContext items={slides.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2 mb-4">
+                  {slides.map((slide: any) => (
+                    <SortableSlide
+                      key={slide.id}
+                      slide={slide}
+                      activeSlideId={activeSlideId}
+                      setActiveSlideId={setActiveSlideId}
+                      renderSlidePreview={renderSlidePreview}
+                    />
+                  ))}
                 </div>
-              </div>
-            ))}
+              </SortableContext>
+            </DndContext>
           </div>
           <Button
             variant="outline"

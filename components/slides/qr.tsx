@@ -7,7 +7,7 @@ import { useQRStore } from "@/stores/qr"
 import { useEffect } from "react"
 
 
-export default function QRSlide({ slideId }: { slideId: string }) {
+export default function QRSlide({ slideId, handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const setText = useQRStore((state) => state.setText);
 
@@ -70,60 +70,6 @@ export default function QRSlide({ slideId }: { slideId: string }) {
 
         {/* Right Sidebar */}
         <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
-          <div className="mb-4">
-            <Select>
-              <SelectTrigger className="w-full text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-[#cbd5e0] rounded"></div>
-                  <SelectValue placeholder="Select a Template" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="transit-route">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Transit Route Map Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="transit-destination">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Transit Destination Table Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="fixed-route">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Fixed Route Table Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="image-only">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Image Only Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="left-content-right-image">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Left Content/Right Image Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="right-content-left-image">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Right Content/Left Image Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="qr-code">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#4a5568]"></div>
-                    QR Code Page
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Customization Options */}
           <div className="space-y-3 mb-4">
@@ -175,6 +121,9 @@ export default function QRSlide({ slideId }: { slideId: string }) {
           <div className="mt-auto">
             <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
               Save Screen
+            </Button>
+            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => {handleDelete(slideId)}}>
+              Delete Screen
             </Button>
           </div>
         </div>

@@ -7,7 +7,7 @@ import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect } from "react"
 import { useGeneralStore } from "@/stores/general"
 
-export default function TransitDestinationSlide({ slideId }: { slideId: string }) {
+export default function TransitDestinationSlide({ slideId, handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
 
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
@@ -34,16 +34,6 @@ export default function TransitDestinationSlide({ slideId }: { slideId: string }
     }
 
   }, [])
-
-
-  const handleDelete = () => {
-    const confirmed = confirm("Are you sure you want to delete this screen? This action cannot be undone.");
-    if (confirmed) {
-      const filteredSlides: any = slides?.filter((slide: any) => slide.id !== slideId);
-
-      setSlides(filteredSlides);
-    }
-  }
 
 
   const destinations = [
@@ -149,30 +139,6 @@ export default function TransitDestinationSlide({ slideId }: { slideId: string }
 
         {/* Right Sidebar */}
         <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
-          <div className="mb-4">
-            <Select>
-              <SelectTrigger className="w-full text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-[#cbd5e0] rounded"></div>
-                  <SelectValue placeholder="Select a Template" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="transit-route">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Transit Route Map Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="transit-destination">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#4a5568]"></div>
-                    Transit Destination Table Page
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Color Customization */}
           <div className="space-y-3 mb-4">
@@ -273,7 +239,7 @@ export default function TransitDestinationSlide({ slideId }: { slideId: string }
             <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
               Save Screen
             </Button>
-            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => {handleDelete()}}>
+            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => {handleDelete(slideId)}}>
               Delete Screen
             </Button>
           </div>
