@@ -16,6 +16,10 @@ import TransitRoutesSlide from "@/components/slides/transit-routes"
 import { useRouter } from 'next/navigation';
 import Template1Slide from "@/components/slides/template-1"
 import Template1Preview from "@/components/slide-previews/template-1-preview"
+import Template2Slide from "@/components/slides/template-2"
+import Template2Preview from "@/components/slide-previews/template-2-preview"
+import Template3Slide from "@/components/slides/template-3"
+import Template3Preview from "@/components/slide-previews/template-3-preview"
 import { useGeneralStore } from "@/stores/general"
 import { set } from "react-hook-form"
 import {
@@ -53,14 +57,13 @@ export default function EditorPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, 
+        distance: 5,
       },
     })
   );
   const router = useRouter();
 
   useEffect(() => {
-    console.log(slides);
     if (slides.length === 0) {
       setSlides([
         { id: uuidv4(), type: "transit-destinations" },
@@ -85,7 +88,6 @@ export default function EditorPage() {
   }, [slides, activeSlideId]);
 
   useEffect(() => {
-    console.log(`Active Slide ID: ${activeSlideId}`);
   }, [activeSlideId]);
 
   const setAllData = () => {
@@ -103,17 +105,21 @@ export default function EditorPage() {
   const renderSlideComponent = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlide slideId={slideId} handleDelete={handleDelete}/>;
+        return <QRSlide slideId={slideId} handleDelete={handleDelete} />;
       case "transit-destinations":
-        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete}/>;
+        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} />;
       case "fixed-routes":
-        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete}/>;
+        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} />;
       case "transit-routes":
-        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete}/>;
+        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} />;
       case "template-1":
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete}/>;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} />;
+      case "template-2":
+        return <Template2Slide slideId={slideId} handleDelete={handleDelete} />;
+      case "template-3":
+        return <Template3Slide slideId={slideId} handleDelete={handleDelete} />;
       default:
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete}/>;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} />;
     }
   };
 
@@ -128,7 +134,11 @@ export default function EditorPage() {
       case "transit-routes":
         return <TransitRoutesPreview />
       case "template-1":
-        return <Template1Preview />;
+        return <Template1Preview slideId={slideId}/>;
+      case "template-2":
+        return <Template2Preview slideId={slideId}/>;
+      case "template-3":
+        return <Template3Preview slideId={slideId}/>;
     }
   }
 
@@ -226,7 +236,7 @@ export default function EditorPage() {
                     QR Code Page
                   </div>
                 </SelectItem>
-                <SelectItem value="image-only">
+                <SelectItem value="template-3">
                   <div className="flex items-center gap-2 text-xs">
                     <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
                     Image Only Page
@@ -238,7 +248,7 @@ export default function EditorPage() {
                     Left Content/Right Image Page
                   </div>
                 </SelectItem>
-                <SelectItem value="right-content-left-image">
+                <SelectItem value="template-2">
                   <div className="flex items-center gap-2 text-xs">
                     <div className="w-2 h-2 rounded-full border-2 border-[#4a5568]"></div>
                     Right Content/Left Image Page

@@ -1,4 +1,5 @@
-export default function Template1Preview({slideId}: {slideId: string}) {
+
+export default function Template2Preview({slideId}: {slideId: string}) {
   return (
     <div className="mb-6">
       <div
@@ -14,15 +15,8 @@ export default function Template1Preview({slideId}: {slideId: string}) {
 
         {/* Content Area */}
         <div className="flex-1 p-6 flex gap-4">
-          {/* Left Content Box (60%) */}
+          {/* Left Image Box (60%) */}
           <div className="w-[60%]">
-            <div className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 p-6 flex items-start">
-              <div className="text-2xl font-light">Type text here</div>
-            </div>
-          </div>
-
-          {/* Right Image Box (40%) */}
-          <div className="w-[40%]">
             <div className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 flex flex-col items-center justify-center p-6">
               <div className="text-center">
                 <div className="text-lg mb-4">Drag and Drop Image Here</div>
@@ -31,9 +25,16 @@ export default function Template1Preview({slideId}: {slideId: string}) {
                 <img
                   src="/images/placeholder-image.png"
                   alt="Placeholder image"
-                  className="max-w-32 max-h-24 object-contain mx-auto"
+                  className="max-w-48 max-h-32 object-contain mx-auto"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Right Content Box (40%) */}
+          <div className="w-[40%]">
+            <div className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 p-6 flex items-start">
+              <div className="text-2xl font-light">Type text here</div>
             </div>
           </div>
         </div>

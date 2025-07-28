@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
 import TransitRoutesPreview from "../slide-previews/transit-routes-preview"
 
-export default function TransitRoutesSlide({handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
+export default function TransitRoutesSlide({ slideId, handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
   return (
     <>
       <div className="flex flex-1">
@@ -58,6 +58,9 @@ export default function TransitRoutesSlide({handleDelete }: { slideId: string, h
           <div className="mt-auto">
             <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
               Save Screen
+            </Button>
+            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
+              Delete Screen
             </Button>
           </div>
         </div>

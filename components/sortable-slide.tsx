@@ -24,7 +24,6 @@ export const SortableSlide = ({
 
   const handleClick = () => {
     setActiveSlideId(slide.id);
-    console.log(`Slide clicked: ${slide.id}`);
   };
 
   return (
