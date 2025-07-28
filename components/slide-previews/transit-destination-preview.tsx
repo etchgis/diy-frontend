@@ -69,7 +69,7 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
   return (
     <>
       {/* Transit Table */}
-      <div className="mb-6">
+      <div className="w-full h-[550px] flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">
         <div className="text-white" style={{ backgroundColor }} >
           {/* Table Header */}
           <div className="grid grid-cols-5 gap-4 p-4 font-medium">
@@ -84,9 +84,9 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
           {destinations.map((dest, index) => (
             <div
               key={index}
-              className="grid grid-cols-5 gap-4 p-4"
+              className="grid grid-cols-5 gap-4 p-[12.5px]"
               style={{
-                backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor, 
+                backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
               }}
             >
               <div className="flex items-center gap-2">

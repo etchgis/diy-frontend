@@ -47,6 +47,8 @@ interface Slide {
 export default function EditorPage() {
   const [activeSlideId, setActiveSlideId] = useState('');
   const [activeSlide, setActiveSlide]: any = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [modalSlideIndex, setModalSlideIndex] = useState(0);
 
   const template = useGeneralStore((state) => state.template || '');
   const setTemplate = useGeneralStore((state) => state.setTemplate);
@@ -102,12 +104,26 @@ export default function EditorPage() {
     }
   }
 
+  const handlePreview = () => {
+    console.log('handling');
+    setModalSlideIndex(0);
+    setShowModal(true);
+  }
+
+  const handleSave = () => {
+
+  }
+
+  const handlePublish = () => {
+
+  }
+
   const renderSlideComponent = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
         return <QRSlide slideId={slideId} handleDelete={handleDelete} />;
       case "transit-destinations":
-        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} />;
+        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview}/>;
       case "fixed-routes":
         return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} />;
       case "transit-routes":
@@ -134,11 +150,11 @@ export default function EditorPage() {
       case "transit-routes":
         return <TransitRoutesPreview />
       case "template-1":
-        return <Template1Preview slideId={slideId}/>;
+        return <Template1Preview slideId={slideId} />;
       case "template-2":
-        return <Template2Preview slideId={slideId}/>;
+        return <Template2Preview slideId={slideId} />;
       case "template-3":
-        return <Template3Preview slideId={slideId}/>;
+        return <Template3Preview slideId={slideId} />;
     }
   }
 
@@ -206,51 +222,43 @@ export default function EditorPage() {
           <div className="mb-4 mt-4">
             <Select value={template} onValueChange={(value) => setTemplate(value)}>
               <SelectTrigger className="w-full text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-[#cbd5e0] rounded"></div>
+                <div className="flex items-left gap-2">
                   <SelectValue placeholder="Select a Template" />
                 </div>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="transit-routes">
                   <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
                     Transit Route Map Page
                   </div>
                 </SelectItem>
                 <SelectItem value="transit-destinations">
                   <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
                     Transit Destination Table Page
                   </div>
                 </SelectItem>
                 <SelectItem value="fixed-routes">
                   <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
                     Fixed Route Table Page
                   </div>
                 </SelectItem>
                 <SelectItem value="qr">
                   <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
                     QR Code Page
                   </div>
                 </SelectItem>
                 <SelectItem value="template-3">
                   <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
                     Image Only Page
                   </div>
                 </SelectItem>
                 <SelectItem value="template-1">
                   <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
                     Left Content/Right Image Page
                   </div>
                 </SelectItem>
                 <SelectItem value="template-2">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#4a5568]"></div>
+                  <div className="flex items-center gap- text-xs">
                     Right Content/Left Image Page
                   </div>
                 </SelectItem>
@@ -288,6 +296,44 @@ export default function EditorPage() {
 
 
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+          <div className="relative w-full max-w-6xl h-[90vh] bg-white rounded shadow-lg overflow-hidden flex flex-col">
+            {/* Close button */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl"
+            >
+              ×
+            </button>
+
+            {/* Slide Preview */}
+            <div className="flex-1 flex items-center justify-center overflow-auto">
+              {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id)}
+            </div>
+
+            {/* Controls */}
+            <div className="flex justify-between items-center p-4 border-t bg-gray-50">
+              <Button
+                onClick={() => setModalSlideIndex((prev) => Math.max(0, prev - 1))}
+                disabled={modalSlideIndex === 0}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-gray-600">
+                Slide {modalSlideIndex + 1} of {slides.length}
+              </span>
+              <Button
+                onClick={() => setModalSlideIndex((prev) => Math.min(slides.length - 1, prev + 1))}
+                disabled={modalSlideIndex === slides.length - 1}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
 
   )

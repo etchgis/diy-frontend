@@ -7,7 +7,7 @@ import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect } from "react"
 import { useGeneralStore } from "@/stores/general"
 
-export default function TransitDestinationSlide({ slideId, handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
+export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void  }) {
 
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
@@ -131,7 +131,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete }: { sli
 
             {/* Footer Buttons */}
             <div className="flex gap-3">
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>
           </div>
