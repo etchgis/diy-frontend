@@ -3,8 +3,20 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import QRSlidePreview from "../slide-previews/qr-slide-preview"
+import { useQRStore } from "@/stores/qr"
+import { useEffect } from "react"
 
-export default function QRSlide() {
+
+export default function QRSlide({ slideId }: { slideId: string }) {
+  const text = useQRStore((state) => state.slides[slideId]?.text || '');
+  const setText = useQRStore((state) => state.setText);
+
+  useEffect (() => {
+    // Initialize default text if not set
+    if (!text) {
+      setText(slideId, 'See this on your phone!');
+    }
+  }, [])
   return (
     <>
       <div className="flex flex-1">
@@ -37,15 +49,16 @@ export default function QRSlide() {
               <div>
                 <label className="block text-[#4a5568] font-medium mb-2">Text to display under QR Code</label>
                 <Input
-                  placeholder="See this on your phone!"
+                  placeholder="Enter text here..."
                   className="bg-white border-[#cbd5e0]"
-                  defaultValue="See this on your phone!"
+                  onChange={(e) => setText(slideId, e.target.value)}
+                  value={text}
                 />
               </div>
             </div>
 
             {/* QR Code Preview */}
-            <QRSlidePreview />
+            <QRSlidePreview slideId={slideId} />
 
             {/* Footer Buttons */}
             <div className="flex gap-3">

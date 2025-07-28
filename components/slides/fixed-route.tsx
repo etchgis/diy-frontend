@@ -3,8 +3,14 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
 import FixedRoutePreview from "../slide-previews/fixed-route-preview"
+import { useState } from "react"
+import { useFixedRouteStore } from "../../stores/fixedRoute";
 
-export default function FixedRouteSlide() {
+
+export default function FixedRouteSlide({ slideId }: { slideId: string }) {
+
+  const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
+  const setStopName = useFixedRouteStore((state) => state.setStopName);
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",
@@ -80,9 +86,10 @@ export default function FixedRouteSlide() {
               <label className="block text-[#4a5568] font-medium mb-2">Fixed Route Stop</label>
               <div className="flex gap-3">
                 <Input
-                  placeholder="Wolf Rd and Newbury"
+                  placeholder="Enter stop name"
                   className="flex-1 bg-white border-[#cbd5e0]"
-                  defaultValue="Wolf Rd and Newbury"
+                  value={stopName}
+                  onChange={(e) => setStopName(slideId, e.target.value)}
                 />
                 <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent">
                   <Plus className="w-4 h-4" />
@@ -90,14 +97,14 @@ export default function FixedRouteSlide() {
               </div>
             </div>
 
-            <FixedRoutePreview />
+            <FixedRoutePreview slideId={slideId}/>
 
             {/* Footer Buttons */}
             <div className="flex gap-3">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>
-            
+
           </div>
         </div>
 

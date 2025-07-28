@@ -3,8 +3,34 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpCircle, ChevronRight, Plus, X } from "lucide-react"
 import TransitDestinationPreview from "../slide-previews/transit-destination-preview"
+import { useTransitDestinationsStore } from "@/stores/transitDestinations"
+import { useEffect } from "react"
 
-export default function TransitDestinationSlide() {
+export default function TransitDestinationSlide({ slideId }: { slideId: string }) {
+  const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const setBackgroundColor = useTransitDestinationsStore((state) => state.setBackgroundColor);
+
+  const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '');
+  const setRowColor = useTransitDestinationsStore((state) => state.setRowColor);
+
+  const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '');
+  const setAlternateRowColor = useTransitDestinationsStore((state) => state.setAlternateRowColor);
+
+  useEffect(() => {
+    // Initialize default colors if not set
+    if (!backgroundColor) {
+      setBackgroundColor(slideId, '#192f51');
+    }
+    if (!rowColor) {
+      setRowColor(slideId, '#192f51');
+    }
+    if (!alternateRowColor) {
+      setAlternateRowColor(slideId, '#78B1DD');
+    }
+
+  }, [])
+
+
 
   const destinations = [
     {
@@ -97,7 +123,7 @@ export default function TransitDestinationSlide() {
               </div>
             </div>
 
-            <TransitDestinationPreview />
+            <TransitDestinationPreview slideId={slideId} />
 
             {/* Footer Buttons */}
             <div className="flex gap-3">
@@ -137,18 +163,10 @@ export default function TransitDestinationSlide() {
           {/* Color Customization */}
           <div className="space-y-3 mb-4">
             <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-[#192f51] rounded border"></div>
-                <Input defaultValue="#192F51" readOnly className="flex-1 text-xs" />
-              </div>
-            </div>
-
-            <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Header Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-white rounded border"></div>
-                <Input defaultValue="#FFFFFF" readOnly className="flex-1 text-xs" />
+                <div className="w-4 h-4 bg-[#192f51] rounded border"></div>
+                <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => { setBackgroundColor(slideId, e.target.value) }} />
               </div>
             </div>
 
@@ -156,7 +174,7 @@ export default function TransitDestinationSlide() {
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Row Color</label>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-[#192f51] rounded border"></div>
-                <Input defaultValue="#192F51" readOnly className="flex-1 text-xs" />
+                <Input value={rowColor} className="flex-1 text-xs"  onChange={(e) => { setRowColor(slideId, e.target.value) }}/>
               </div>
             </div>
 
@@ -164,7 +182,7 @@ export default function TransitDestinationSlide() {
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Alternating Row Color</label>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-[#78b1dd] rounded border"></div>
-                <Input defaultValue="#78B1DD" readOnly className="flex-1 text-xs" />
+                <Input value={alternateRowColor} className="flex-1 text-xs" onChange={(e) => { setAlternateRowColor(slideId, e.target.value) }} />
               </div>
             </div>
 

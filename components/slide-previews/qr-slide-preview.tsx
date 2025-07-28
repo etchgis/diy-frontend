@@ -1,4 +1,7 @@
-export default function QRSlidePreview() {
+import { useQRStore } from "@/stores/qr";
+
+export default function QRSlidePreview({slideId}: {slideId: string}) {
+  const text = useQRStore((state) => state.slides[slideId]?.text || '');
   return (
     <>
     
@@ -16,7 +19,7 @@ export default function QRSlidePreview() {
           </div>
 
           {/* Text below QR Code */}
-          <div className="text-2xl font-medium">See this on your phone!</div>
+          <div className="text-2xl font-medium">{text}</div>
         </div>
 
         {/* Footer */}
