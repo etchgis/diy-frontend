@@ -5,8 +5,12 @@ import { HelpCircle, ChevronRight, Plus, X } from "lucide-react"
 import TransitDestinationPreview from "../slide-previews/transit-destination-preview"
 import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect } from "react"
+import { useGeneralStore } from "@/stores/general"
 
 export default function TransitDestinationSlide({ slideId }: { slideId: string }) {
+
+  const slides = useGeneralStore((state) => state.slides);
+  const setSlides = useGeneralStore((state) => state.setSlides);
 
   const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '');
   const setBackgroundColor = useTransitDestinationsStore((state) => state.setBackgroundColor);
@@ -31,6 +35,15 @@ export default function TransitDestinationSlide({ slideId }: { slideId: string }
 
   }, [])
 
+
+  const handleDelete = () => {
+    const confirmed = confirm("Are you sure you want to delete this screen? This action cannot be undone.");
+    if (confirmed) {
+      const filteredSlides: any = slides?.filter((slide: any) => slide.id !== slideId);
+
+      setSlides(filteredSlides);
+    }
+  }
 
 
   const destinations = [
@@ -259,6 +272,9 @@ export default function TransitDestinationSlide({ slideId }: { slideId: string }
           <div className="mt-auto">
             <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
               Save Screen
+            </Button>
+            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => {handleDelete()}}>
+              Delete Screen
             </Button>
           </div>
         </div>

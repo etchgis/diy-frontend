@@ -28,7 +28,7 @@ interface Slide {
 
 export default function EditorPage() {
   const [activeSlideId, setActiveSlideId] = useState('');
-  const [activeSlide, setActiveSlide] = useState('');
+  const [activeSlide, setActiveSlide]: any = useState('');
 
   const template = useGeneralStore((state) => state.template || '');
   const setTemplate = useGeneralStore((state) => state.setTemplate);
