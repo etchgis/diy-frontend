@@ -3,11 +3,14 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFixedRouteStore } from "@/stores/fixedRoute";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
+import { useEffect } from "react";
 
 
 export default function FixedRoutePreview({ slideId }: { slideId: string }) {
 
-  const stopName = useFixedRouteStore((state) => state.getStopName(slideId));
+  const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
+  const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
+
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",
@@ -51,13 +54,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
       time: "10:57 PM",
       duration: "1 hr 35 min",
     },
-    {
-      destination: "Airport directly to Rte 7 & Donald",
-      route: "117",
-      routeColor: "bg-green-600",
-      time: "11:19 PM",
-      duration: "1 hr 57 min",
-    },
+
   ]
 
   return (
@@ -70,7 +67,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
           <div className="p-6">
             <div className="text-lg mb-2">Stop #10506 arrival times</div>
             <h2 className="text-3xl font-bold mb-2">{stopName?.toString().toUpperCase() || "UNKNOWN STOP"}</h2>
-            <p className="text-[#a0aec0]">Cross Wolf Road, then walk left toward Panera</p>
+            <p className="text-[#a0aec0]">{description}</p>
           </div>
 
           {/* Schedule Table */}

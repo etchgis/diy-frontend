@@ -2,12 +2,13 @@ import { create } from 'zustand';
 
 interface FixedRouteSlideData {
   stopName: string;
+  description: string;
 }
 
 interface SlideStore {
   slides: Record<string, FixedRouteSlideData>;
   setStopName: (slideId: string, name: string) => void;
-  getStopName: (slideId: string) => string;
+  setDescription?: (slideId: string, description: string) => void;
 }
 
 export const useFixedRouteStore = create<SlideStore>((set, get) => ({
@@ -24,5 +25,11 @@ export const useFixedRouteStore = create<SlideStore>((set, get) => ({
       },
     })),
 
-  getStopName: (slideId) => get().slides[slideId]?.stopName || '',
+  setDescription: (slideId, description) =>
+    set((state) => ({
+      slides: {
+        ...state.slides,
+        [slideId]: { ...(state.slides[slideId] || {}), description },
+      },
+    }))
 }));

@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import QRSlide from "@/components/slides/qr"
 import TransitDestinationSlide from "@/components/slides/transit-destination"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { v4 as uuidv4 } from "uuid";
 import QRSlidePreview from "@/components/slide-previews/qr-slide-preview"
 import TransitDestinationPreview from "@/components/slide-previews/transit-destination-preview"
@@ -16,26 +16,64 @@ import TransitRoutesSlide from "@/components/slides/transit-routes"
 import { useRouter } from 'next/navigation';
 import Template1Slide from "@/components/slides/template-1"
 import Template1Preview from "@/components/slide-previews/template-1-preview"
+import { useGeneralStore } from "@/stores/general"
+import { set } from "react-hook-form"
 
 
+
+interface Slide {
+  id: string;
+  type: string;
+}
 
 export default function EditorPage() {
-  const [slides, setSlides] = useState([
-    { id: uuidv4(), type: "transit-destinations" },
-    { id: uuidv4(), type: "transit-routes" },
-    { id: uuidv4(), type: "fixed-routes" },
-    { id: uuidv4(), type: "qr" },
-  ]);
-  const [activeSlideId, setActiveSlideId] = useState(slides[0]?.id);
+  const [activeSlideId, setActiveSlideId] = useState('');
+  const [activeSlide, setActiveSlide] = useState('');
+
+  const template = useGeneralStore((state) => state.template || '');
+  const setTemplate = useGeneralStore((state) => state.setTemplate);
+
+  const slides: any = useGeneralStore((state) => state.slides || []);
+  const setSlides = useGeneralStore((state) => state.setSlides);
+
 
   const router = useRouter();
+
+  useEffect(() => {
+    console.log(slides);
+    if (slides.length === 0) {
+      setSlides([
+        { id: uuidv4(), type: "transit-destinations" },
+        { id: uuidv4(), type: "transit-routes" },
+        { id: uuidv4(), type: "fixed-routes" },
+        { id: uuidv4(), type: "qr" }
+      ]);
+    }
+  }, [])
+
+  useEffect(() => {
+    if (slides && slides.length > 0 && !activeSlideId) {
+      setActiveSlideId(slides[0].id);
+    }
+  }, [slides]);
+
+  useEffect(() => {
+    if (slides && activeSlideId) {
+      const slide = slides.find((s: any) => s.id === activeSlideId);
+      setActiveSlide(slide);
+    }
+  }, [slides, activeSlideId]);
+
+  const setAllData = () => {
+
+  }
 
   const renderSlideComponent = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlide slideId={slideId}/>;
+        return <QRSlide slideId={slideId} />;
       case "transit-destinations":
-        return <TransitDestinationSlide slideId={slideId}/>;
+        return <TransitDestinationSlide slideId={slideId} />;
       case "fixed-routes":
         return <FixedRouteSlide slideId={slideId} />;
       case "transit-routes":
@@ -43,26 +81,24 @@ export default function EditorPage() {
       case "template-1":
         return <Template1Slide />;
       default:
-        return null;
+        return <Template1Slide />;
     }
   };
 
   const renderSlidePreview = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlidePreview slideId={slideId}/>;
+        return <QRSlidePreview slideId={slideId} />;
       case "transit-destinations":
-        return <TransitDestinationPreview slideId={slideId}/>;
+        return <TransitDestinationPreview slideId={slideId} />;
       case "fixed-routes":
-        return <FixedRoutePreview slideId={slideId}/>;
+        return <FixedRoutePreview slideId={slideId} />;
       case "transit-routes":
         return <TransitRoutesPreview />
       case "template-1":
         return <Template1Preview />;
     }
   }
-
-  const activeSlide = slides.find(s => s.id === activeSlideId);
 
 
   return (
@@ -84,7 +120,7 @@ export default function EditorPage() {
         <div className="p-4">
           <h3 className="text-[#4a5568] font-medium mb-3 text-sm">Screen Order Preview</h3>
           <div className="space-y-2 mb-4">
-            {slides.map((slide) => (
+            {slides.map((slide: any) => (
               <div
                 key={slide.id}
                 onClick={() => setActiveSlideId(slide.id)}
@@ -103,14 +139,68 @@ export default function EditorPage() {
             variant="outline"
             className="w-full text-[#4a5568] border-[#cbd5e0] bg-transparent"
             onClick={() => {
-              const newSlide = { id: uuidv4(), type: "template-1" };
-              setSlides(prev => [...prev, newSlide]);
+              const newSlide: Slide = { id: uuidv4(), type: template };
+              setSlides([...slides, newSlide]);
               setActiveSlideId(newSlide.id);
             }}
           >
             <Upload className="w-4 h-4 mr-2" />
-            Add a Slide
+            Add Slide
           </Button>
+          <div className="mb-4 mt-4">
+            <Select value={template} onValueChange={(value) => setTemplate(value)}>
+              <SelectTrigger className="w-full text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-[#cbd5e0] rounded"></div>
+                  <SelectValue placeholder="Select a Template" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="transit-routes">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
+                    Transit Route Map Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="transit-destinations">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
+                    Transit Destination Table Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="fixed-routes">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
+                    Fixed Route Table Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="qr">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
+                    QR Code Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="image-only">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
+                    Image Only Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="template-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
+                    Left Content/Right Image Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="right-content-left-image">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 rounded-full border-2 border-[#4a5568]"></div>
+                    Right Content/Left Image Page
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

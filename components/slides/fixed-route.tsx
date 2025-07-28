@@ -11,6 +11,10 @@ export default function FixedRouteSlide({ slideId }: { slideId: string }) {
 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const setStopName = useFixedRouteStore((state) => state.setStopName);
+
+  const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
+  const setDescription = useFixedRouteStore((state) => state.setDescription);
+
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",
@@ -82,22 +86,37 @@ export default function FixedRouteSlide({ slideId }: { slideId: string }) {
             </p>
 
             {/* Fixed Route Stop Input */}
-            <div className="mb-6">
-              <label className="block text-[#4a5568] font-medium mb-2">Fixed Route Stop</label>
-              <div className="flex gap-3">
+
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-[#4a5568] font-medium mb-2">Fixed Route Stop</label>
+                <div className="flex gap-3">
+                  <Input
+                    className="flex-1 bg-white border-[#cbd5e0]"
+                    value={stopName}
+                    onChange={(e) => setStopName(slideId, e.target.value)}
+                  />
+                  <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#4a5568] font-medium mb-2">Sub Description</label>
                 <Input
-                  placeholder="Enter stop name"
-                  className="flex-1 bg-white border-[#cbd5e0]"
-                  value={stopName}
-                  onChange={(e) => setStopName(slideId, e.target.value)}
+                  placeholder="Enter text here..."
+                  className="bg-white border-[#cbd5e0]"
+                  value={description}
+                  onChange={(e) => setDescription?.(slideId, e.target.value)}
                 />
-                <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent">
-                  <Plus className="w-4 h-4" />
-                </Button>
               </div>
             </div>
 
-            <FixedRoutePreview slideId={slideId}/>
+
+
+            <FixedRoutePreview slideId={slideId} />
 
             {/* Footer Buttons */}
             <div className="flex gap-3">

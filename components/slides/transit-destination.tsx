@@ -7,6 +7,7 @@ import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect } from "react"
 
 export default function TransitDestinationSlide({ slideId }: { slideId: string }) {
+
   const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '');
   const setBackgroundColor = useTransitDestinationsStore((state) => state.setBackgroundColor);
 
@@ -165,7 +166,14 @@ export default function TransitDestinationSlide({ slideId }: { slideId: string }
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Header Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-[#192f51] rounded border"></div>
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
                 <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => { setBackgroundColor(slideId, e.target.value) }} />
               </div>
             </div>
@@ -173,15 +181,29 @@ export default function TransitDestinationSlide({ slideId }: { slideId: string }
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Row Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-[#192f51] rounded border"></div>
-                <Input value={rowColor} className="flex-1 text-xs"  onChange={(e) => { setRowColor(slideId, e.target.value) }}/>
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={rowColor}
+                    onChange={(e) => setRowColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={rowColor} className="flex-1 text-xs" onChange={(e) => { setRowColor(slideId, e.target.value) }} />
               </div>
             </div>
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Alternating Row Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-[#78b1dd] rounded border"></div>
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={alternateRowColor}
+                    onChange={(e) => setAlternateRowColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
                 <Input value={alternateRowColor} className="flex-1 text-xs" onChange={(e) => { setAlternateRowColor(slideId, e.target.value) }} />
               </div>
             </div>
