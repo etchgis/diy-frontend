@@ -30,15 +30,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
   useEffect(() => {
     // Initialize default colors if not set
-    if (!backgroundColor) {
-      setBackgroundColor(slideId, '#192f51');
-    }
-    if (!rowColor) {
-      setRowColor(slideId, '#192f51');
-    }
-    if (!alternateRowColor) {
-      setAlternateRowColor(slideId, '#78B1DD');
-    }
+    
 
   }, [])
 

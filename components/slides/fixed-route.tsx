@@ -15,6 +15,18 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }
   const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
   const setDescription = useFixedRouteStore((state) => state.setDescription);
 
+  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const setBackgroundColor = useFixedRouteStore((state) => state.setBackgroundColor);
+
+  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '');
+  const setTitleColor = useFixedRouteStore((state) => state.setTitleColor);
+
+  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '');
+  const setTableColor = useFixedRouteStore((state) => state.setTableColor);
+
+  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '');
+  const setTableTextColor = useFixedRouteStore((state) => state.setTableTextColor);
+
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",
@@ -129,40 +141,73 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }
 
         {/* Right Sidebar */}
         <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
-          
+
           {/* Color Customization */}
           <div className="space-y-3 mb-4">
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-[#192f51] rounded border"></div>
-                <Input defaultValue="#0192F51" readOnly className="flex-1 text-xs" />
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => { setBackgroundColor(slideId, e.target.value) }} />
               </div>
             </div>
+
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Slide Title Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-white rounded border"></div>
-                <Input defaultValue="#FFFFFF" readOnly className="flex-1 text-xs" />
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={titleColor}
+                    onChange={(e) => setTitleColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+
+                <Input value={titleColor} className="flex-1 text-xs" onChange={(e) => setTitleColor(slideId, e.target.value)} />
               </div>
             </div>
+
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-white rounded border"></div>
-                <Input defaultValue="#FFFFFF" readOnly className="flex-1 text-xs" />
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={tableColor}
+                    onChange={(e) => setTableColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={tableColor} className="flex-1 text-xs" onChange={(e) => setTableColor(slideId, e.target.value)} />
               </div>
             </div>
+
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Text Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-black rounded border"></div>
-                <Input defaultValue="#000000" readOnly className="flex-1 text-xs" />
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={tableTextColor}
+                    onChange={(e) => setTableTextColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={tableTextColor} className="flex-1 text-xs" onChange={(e) => setTableTextColor(slideId, e.target.value)} />
               </div>
             </div>
+
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
@@ -180,18 +225,21 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-auto">
-            <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
-              Save Screen
-            </Button>
-            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => {handleDelete(slideId)}}>
-              Delete Screen
-            </Button>
+
+            <div className="mt-auto">
+              <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
+                Save Screen
+              </Button>
+              <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
+                Delete Screen
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+
 
     </>
   )

@@ -10,6 +10,10 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
+  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '');
+  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '');
+  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '');
 
   const scheduleData = [
     {
@@ -61,40 +65,41 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     <>
 
       {/* Transit Schedule Display */}
-      <div className="w-full h-[550px] flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">        <div className="bg-[#192f51] text-white rounded-lg overflow-hidden">
-        {/* Schedule Header */}
-        <div className="p-6">
-          <div className="text-lg mb-2">Stop #10506 arrival times</div>
-          <h2 className="text-3xl font-bold mb-2">{stopName?.toString().toUpperCase() || "UNKNOWN STOP"}</h2>
-          <p className="text-[#a0aec0]">{description}</p>
-        </div>
+      <div className="w-full h-[550px] flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6">
+        <div className="bg-[#192f51] rounded-lg overflow-hidden"  style={{color: titleColor || '#FFFFFF', backgroundColor: backgroundColor || '#192f51'}}>
+          {/* Schedule Header */}
+          <div className="p-6">
+            <div className="text-lg mb-2">Stop #10506 arrival times</div>
+            <h2 className="text-3xl font-bold mb-2">{stopName?.toString().toUpperCase() || "UNKNOWN STOP"}</h2>
+            <p className="text-[#a0aec0]">{description}</p>
+          </div>
 
-        {/* Schedule Table */}
-        <div className="bg-white text-black">
-          {scheduleData.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 border-b border-[#e2e8f0] last:border-b-0"
-            >
-              <div className="flex-1">
-                <span className="font-medium">{item.destination}</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <div
-                  className={`${item.routeColor} text-white px-3 py-1 rounded font-bold text-sm min-w-[50px] text-center`}
-                >
-                  {item.route}
+          {/* Schedule Table */}
+          <div className="bg-white text-black">
+            {scheduleData.map((item, index) => (
+              <div
+                key={index}
+                className={`flex items-center justify-between ${description ? 'p-[10px]' : 'p-[12px]'}  border-b border-[#e2e8f0] last:border-b-0`}
+                style={{backgroundColor: tableColor, color: tableTextColor}}>
+                <div className="flex-1">
+                  <span className="font-medium">{item.destination}</span>
                 </div>
-                <div className="font-medium min-w-[80px] text-center">{item.time}</div>
-                <div className="text-[#606061] min-w-[80px] text-center">{item.duration}</div>
-                <Button variant="outline" size="sm" className="min-w-[90px] bg-transparent">
-                  Scheduled
-                </Button>
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`${item.routeColor} text-white px-3 py-1 rounded font-bold text-sm min-w-[50px] text-center`}
+                  >
+                    {item.route}
+                  </div>
+                  <div className="font-medium min-w-[80px] text-center">{item.time}</div>
+                  <div className="text-[#606061] min-w-[80px] text-center">{item.duration}</div>
+                  <Button variant="outline" size="sm" className="min-w-[90px] bg-transparent">
+                    Scheduled
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
 
         {/* Footer */}
         <div className="bg-[#F4F4F4] p-3 flex items-center justify-between rounded-b-lg">

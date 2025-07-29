@@ -21,7 +21,7 @@ import Template2Preview from "@/components/slide-previews/template-2-preview"
 import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
 import { useGeneralStore } from "@/stores/general"
-import { set } from "react-hook-form"
+import setup from '../../setup.json'
 import {
   DndContext,
   closestCenter,
@@ -76,15 +76,12 @@ export default function EditorPage() {
   }
 
   useEffect(() => {
-    if (slides.length === 0) {
-      setSlides([
-        { id: uuidv4(), type: "transit-destinations" },
-        { id: uuidv4(), type: "transit-routes" },
-        { id: uuidv4(), type: "fixed-routes" },
-        { id: uuidv4(), type: "qr" }
-      ]);
-    }
-  }, [])
+    const newSlides = setup.screens.map((slide: any) => ({
+      id: slide.id,
+      type: slide.type,
+    }));
+    setSlides(newSlides);
+  }, []);
 
   useEffect(() => {
     if (slides && slides.length > 0 && !activeSlideId) {
