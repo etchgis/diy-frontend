@@ -1,14 +1,42 @@
-export default function Template1Preview({slideId}: {slideId: string}) {
+import { useState } from 'react';
+
+export default function Template1Preview({ slideId }: { slideId: string }) {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
   return (
-    <div className="w-full h-[550px] flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">       
+    <div className="w-full h-[550px] flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">
       <div
         className="bg-gradient-to-br from-[#1e3a8a] to-[#1e40af] text-white rounded-lg overflow-hidden relative"
-        style={{ height: "500px" }}
+        style={{ height: '500px' }}
       >
         {/* Title Area */}
         <div className="p-6 border-b border-white/20">
           <div className="w-full border-2 border-[#11d1f7] rounded px-4 py-2">
-            <div className="text-4xl font-light">Type Title Here</div>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Type title here"
+              className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
+            />
           </div>
         </div>
 
@@ -17,23 +45,41 @@ export default function Template1Preview({slideId}: {slideId: string}) {
           {/* Left Content Box (60%) */}
           <div className="w-[60%]">
             <div className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 p-6 flex items-start">
-              <div className="text-2xl font-light">Type text here</div>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Type text here"
+                className="w-full h-full bg-transparent outline-none resize-none text-2xl font-light placeholder-white/50"
+              />
             </div>
           </div>
 
           {/* Right Image Box (40%) */}
           <div className="w-[40%]">
-            <div className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 flex flex-col items-center justify-center p-6">
-              <div className="text-center">
-                <div className="text-lg mb-4">Drag and Drop Image Here</div>
-                <div className="text-sm text-white/80 mb-6">accepted files: .png, .jpg, .gif</div>
-
+            <div
+              className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 flex items-center justify-center p-6"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              {image ? (
                 <img
-                  src="/images/placeholder-image.png"
-                  alt="Placeholder image"
-                  className="max-w-32 max-h-24 object-contain mx-auto"
+                  src={image}
+                  alt="Uploaded"
+                  className="max-w-full max-h-full object-contain"
                 />
-              </div>
+              ) : (
+                <div className="text-center">
+                  <div className="text-lg mb-4">Drag and Drop Image Here</div>
+                  <div className="text-sm text-white/80 mb-6">
+                    accepted files: .png, .jpg, .gif
+                  </div>
+                  <img
+                    src="/images/placeholder-image.png"
+                    alt="Placeholder"
+                    className="max-w-32 max-h-24 object-contain mx-auto"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -49,5 +95,5 @@ export default function Template1Preview({slideId}: {slideId: string}) {
         <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
       </div>
     </div>
-  )
+  );
 }

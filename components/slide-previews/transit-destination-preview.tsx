@@ -6,6 +6,8 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
   const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '');
   const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '');
   const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '');
+  const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '');
+  const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '');
 
   const destinations = [
     {
@@ -70,7 +72,7 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
     <>
       {/* Transit Table */}
       <div className="w-full h-[550px] flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">
-        <div className="text-white" style={{ backgroundColor }} >
+        <div className="text-white" style={{ backgroundColor, color: tableHeaderTextColor }} >
           {/* Table Header */}
           <div className="grid grid-cols-5 gap-4 p-4 font-medium">
             <div>Destination</div>
@@ -87,6 +89,7 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
               className="grid grid-cols-5 gap-4 p-[12.5px]"
               style={{
                 backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
+                color: tableTextColor,
               }}
             >
               <div className="flex items-center gap-2">

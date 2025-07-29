@@ -7,7 +7,7 @@ import { useState } from "react"
 import { useFixedRouteStore } from "../../stores/fixedRoute";
 
 
-export default function FixedRouteSlide({ slideId, handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
+export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const setStopName = useFixedRouteStore((state) => state.setStopName);
@@ -120,7 +120,7 @@ export default function FixedRouteSlide({ slideId, handleDelete }: { slideId: st
 
             {/* Footer Buttons */}
             <div className="flex gap-3">
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>
 

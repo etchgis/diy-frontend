@@ -4,19 +4,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import QRSlidePreview from "../slide-previews/qr-slide-preview"
 import { useQRStore } from "@/stores/qr"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import QRCode from 'react-qr-code';
 
 
-export default function QRSlide({ slideId, handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
+export default function QRSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
+
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const setText = useQRStore((state) => state.setText);
 
-  useEffect (() => {
+  const url = useQRStore((state) => state.slides[slideId]?.url || '');
+  const setUrl = useQRStore((state) => state.setUrl);
+
+  const [tempQR, setTempQR] = useState(url);
+
+  useEffect(() => {
     // Initialize default text if not set
     if (!text) {
       setText(slideId, 'See this on your phone!');
     }
   }, [])
+
+  const handleGenerateQR = () => {
+    if (!tempQR.trim()) return;
+    setUrl(slideId, tempQR);
+  };
+
   return (
     <>
       <div className="flex flex-1">
@@ -40,9 +53,10 @@ export default function QRSlide({ slideId, handleDelete }: { slideId: string, ha
                   <Input
                     placeholder="http://www.nysdot.gov"
                     className="flex-1 bg-white border-[#cbd5e0]"
-                    defaultValue="http://www.nysdot.gov"
+                    value={tempQR}
+                    onChange={(e) => setTempQR(e.target.value)}
                   />
-                  <Button className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white font-medium px-6">Generate</Button>
+                  <Button className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white font-medium px-6" onClick={handleGenerateQR}>Generate</Button>
                 </div>
               </div>
 
@@ -58,11 +72,11 @@ export default function QRSlide({ slideId, handleDelete }: { slideId: string, ha
             </div>
 
             {/* QR Code Preview */}
-            <QRSlidePreview slideId={slideId} />
+            <QRSlidePreview slideId={slideId}/>
 
             {/* Footer Buttons */}
             <div className="flex gap-3">
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>
           </div>
@@ -122,7 +136,7 @@ export default function QRSlide({ slideId, handleDelete }: { slideId: string, ha
             <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
               Save Screen
             </Button>
-            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => {handleDelete(slideId)}}>
+            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
               Delete Screen
             </Button>
           </div>

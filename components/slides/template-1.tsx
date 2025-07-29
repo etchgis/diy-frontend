@@ -5,7 +5,7 @@ import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import Template1Preview from "../slide-previews/template-1-preview"
 
 // left content and right image page template
-export default function Template1Slide({ slideId, handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
+export default function Template1Slide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
   return (
 
     < div className="flex flex-1" >
@@ -29,7 +29,7 @@ export default function Template1Slide({ slideId, handleDelete }: { slideId: str
 
           {/* Footer Buttons */}
           <div className="flex gap-3">
-            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
+            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
           </div>
         </div>

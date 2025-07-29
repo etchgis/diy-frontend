@@ -65,6 +65,16 @@ export default function EditorPage() {
   );
   const router = useRouter();
 
+  const handleAddSlide = () => {
+    if( !template) {
+      alert("Please select a template before adding a slide.");
+      return;
+    }
+    const newSlide: Slide = { id: uuidv4(), type: template };
+    setSlides([...slides, newSlide]);
+    setActiveSlideId(newSlide.id);
+  }
+
   useEffect(() => {
     if (slides.length === 0) {
       setSlides([
@@ -121,21 +131,21 @@ export default function EditorPage() {
   const renderSlideComponent = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlide slideId={slideId} handleDelete={handleDelete} />;
+        return <QRSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
       case "transit-destinations":
-        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview}/>;
+        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
       case "fixed-routes":
-        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} />;
+        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
       case "transit-routes":
-        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} />;
+        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
       case "template-1":
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
       case "template-2":
-        return <Template2Slide slideId={slideId} handleDelete={handleDelete} />;
+        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
       case "template-3":
-        return <Template3Slide slideId={slideId} handleDelete={handleDelete} />;
+        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
       default:
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
     }
   };
 
@@ -211,9 +221,7 @@ export default function EditorPage() {
             variant="outline"
             className="w-full text-[#4a5568] border-[#cbd5e0] bg-transparent"
             onClick={() => {
-              const newSlide: Slide = { id: uuidv4(), type: template };
-              setSlides([...slides, newSlide]);
-              setActiveSlideId(newSlide.id);
+              handleAddSlide();
             }}
           >
             <Upload className="w-4 h-4 mr-2" />

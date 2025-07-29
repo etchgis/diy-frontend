@@ -7,7 +7,7 @@ import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect } from "react"
 import { useGeneralStore } from "@/stores/general"
 
-export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void  }) {
+export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
 
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
@@ -20,6 +20,13 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
   const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '');
   const setAlternateRowColor = useTransitDestinationsStore((state) => state.setAlternateRowColor);
+
+  const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '');
+  const setTableHeaderTextColor = useTransitDestinationsStore((state) => state.setTableHeaderTextColor);
+
+  const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '');
+  const setTableTextColor = useTransitDestinationsStore((state) => state.setTableTextColor);
+
 
   useEffect(() => {
     // Initialize default colors if not set
@@ -190,16 +197,30 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Header Text Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-black rounded border"></div>
-                <Input defaultValue="#000000" readOnly className="flex-1 text-xs" />
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={tableHeaderTextColor}
+                    onChange={(e) => setTableHeaderTextColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={tableHeaderTextColor} className="flex-1 text-xs"  onChange={(e) => { setTableHeaderTextColor(slideId, e.target.value) }} />
               </div>
             </div>
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Text Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-white rounded border"></div>
-                <Input defaultValue="#FFFFFF" readOnly className="flex-1 text-xs" />
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={tableTextColor}
+                    onChange={(e) => setTableTextColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={tableTextColor} className="flex-1 text-xs"  onChange={(e) => { setTableTextColor(slideId, e.target.value) }} />
               </div>
             </div>
 
@@ -239,7 +260,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
             <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
               Save Screen
             </Button>
-            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => {handleDelete(slideId)}}>
+            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
               Delete Screen
             </Button>
           </div>

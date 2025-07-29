@@ -3,8 +3,12 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
 import TransitRoutesPreview from "../slide-previews/transit-routes-preview"
+import { useTransitRouteStore } from "@/stores/transitRoutes"
 
-export default function TransitRoutesSlide({ slideId, handleDelete }: { slideId: string, handleDelete: (id: string) => void }) {
+export default function TransitRoutesSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
+  const destination = useTransitRouteStore((state) => state.slides[slideId]?.destination || '');
+  const setDestination = useTransitRouteStore((state) => state.setDestination);
+
   return (
     <>
       <div className="flex flex-1">
@@ -42,7 +46,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete }: { slideId:
 
             {/* Footer Buttons */}
             <div className="flex gap-3">
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>
           </div>

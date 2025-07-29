@@ -1,19 +1,21 @@
 import { useQRStore } from "@/stores/qr";
+import QRCode from "react-qr-code";
 
 export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
+  const url = useQRStore((state) => state.slides[slideId]?.url || '');
 
   return (
     <div className="w-full h-[550px] flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6 relative">
       {/* QR Code and Text */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-6">
         <div className="bg-white p-4 rounded-lg mb-4">
-          <div className="w-36 h-36 flex items-center justify-center">
-            <img
-              src="/placeholder.svg?height=192&width=192"
-              alt="QR Code"
-              className="w-full h-full object-contain"
-            />
+          <div className="w-40 h-40 flex items-center justify-center">
+            {url ? (
+              <QRCode value={url} size={160} />
+            ) : (
+              <div className="text-gray-400 text-sm">No QR Code Data</div>
+            )}
           </div>
         </div>
         <div className="text-lg font-medium text-center">{text}</div>
