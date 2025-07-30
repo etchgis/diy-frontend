@@ -66,7 +66,7 @@ export default function EditorPage() {
   const router = useRouter();
 
   const handleAddSlide = () => {
-    if( !template) {
+    if (!template) {
       alert("Please select a template before adding a slide.");
       return;
     }
@@ -146,24 +146,34 @@ export default function EditorPage() {
     }
   };
 
-  const renderSlidePreview = (type: string, slideId: string) => {
-    switch (type) {
-      case "qr":
-        return <QRSlidePreview slideId={slideId} />;
-      case "transit-destinations":
-        return <TransitDestinationPreview slideId={slideId} />;
-      case "fixed-routes":
-        return <FixedRoutePreview slideId={slideId} />;
-      case "transit-routes":
-        return <TransitRoutesPreview />
-      case "template-1":
-        return <Template1Preview slideId={slideId} />;
-      case "template-2":
-        return <Template2Preview slideId={slideId} />;
-      case "template-3":
-        return <Template3Preview slideId={slideId} />;
+  const renderSlidePreview = (type: string, slideId: string, noSizingDiv?: boolean) => {
+    const content = (() => {
+      switch (type) {
+        case "qr":
+          return <QRSlidePreview slideId={slideId} />;
+        case "transit-destinations":
+          return <TransitDestinationPreview slideId={slideId} />;
+        case "fixed-routes":
+          return <FixedRoutePreview slideId={slideId} />;
+        case "transit-routes":
+          return <TransitRoutesPreview />;
+        case "template-1":
+          return <Template1Preview slideId={slideId} />;
+        case "template-2":
+          return <Template2Preview slideId={slideId} />;
+        case "template-3":
+          return <Template3Preview slideId={slideId} />;
+        default:
+          return null;
+      }
+    })();
+
+    if (noSizingDiv) {
+      return content;
     }
-  }
+
+    return <div className="h-[550px]">{content}</div>;
+  };
 
 
   return (
@@ -304,18 +314,18 @@ export default function EditorPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-          <div className="relative w-full max-w-6xl h-[90vh] bg-white rounded shadow-lg overflow-hidden flex flex-col">
+          <div className="relative w-full max-w-6xl h-[630px] bg-white rounded shadow-lg overflow-hidden flex flex-col">
             {/* Close button */}
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl"
+              className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl z-50"
             >
               ×
             </button>
 
             {/* Slide Preview */}
-            <div className="flex-1 flex items-center justify-center overflow-auto">
-              {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id)}
+            <div className="h-[550px] z-10">
+              {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true)}
             </div>
 
             {/* Controls */}

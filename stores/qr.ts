@@ -3,13 +3,14 @@ import { create } from 'zustand';
 interface QRSlideData {
   text: string;
   url: string;
+  backgroundColor?: string;
 }
 
 interface SlideStore {
   slides: Record<string, QRSlideData>;
   setText: (slideId: string, name: string) => void;
   setUrl: (slideId: string, name: string) => void;
-  getText: (slideId: string) => string;
+  setBackgroundColor: (slideId: string, name: string) => void;
 }
 
 export const useQRStore = create<SlideStore>((set, get) => ({
@@ -26,8 +27,6 @@ export const useQRStore = create<SlideStore>((set, get) => ({
       },
     })),
 
-  getText: (slideId) => get().slides[slideId]?.text || '',
-
   setUrl: (slideId, url) =>
     set((state) => ({
       slides: {
@@ -35,6 +34,17 @@ export const useQRStore = create<SlideStore>((set, get) => ({
         [slideId]: {
           ...(state.slides[slideId] || {}),
           url: url,
+        },
+      },
+    })),
+
+  setBackgroundColor: (slideId, backgroundColor) =>
+    set((state) => ({
+      slides: {
+        ...state.slides,
+        [slideId]: {
+          ...(state.slides[slideId] || {}),
+          backgroundColor: backgroundColor,
         },
       },
     })),

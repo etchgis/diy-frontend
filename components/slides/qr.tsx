@@ -16,6 +16,9 @@ export default function QRSlide({ slideId, handleDelete, handlePreview }: { slid
   const url = useQRStore((state) => state.slides[slideId]?.url || '');
   const setUrl = useQRStore((state) => state.setUrl);
 
+  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const setBackgroundColor = useQRStore((state) => state.setBackgroundColor);
+
   const [tempQR, setTempQR] = useState(url);
 
   useEffect(() => {
@@ -72,10 +75,13 @@ export default function QRSlide({ slideId, handleDelete, handlePreview }: { slid
             </div>
 
             {/* QR Code Preview */}
-            <QRSlidePreview slideId={slideId}/>
+            <div className="h-[550px]">
+              <QRSlidePreview slideId={slideId} />
+            </div>
+
 
             {/* Footer Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>
@@ -90,8 +96,15 @@ export default function QRSlide({ slideId, handleDelete, handlePreview }: { slid
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-[#192f51] rounded border"></div>
-                <Input defaultValue="#192F51" readOnly className="flex-1 text-xs" />
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => setBackgroundColor(slideId, e.target.value)} />
               </div>
             </div>
 

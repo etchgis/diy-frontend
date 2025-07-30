@@ -22,7 +22,7 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
   };
 
   return (
-    <div className="w-full h-[550px] flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">
+    <div className="w-full h-full flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">
       <div
         className="bg-gradient-to-br from-[#1e3a8a] to-[#1e40af] text-white rounded-lg overflow-hidden relative"
         style={{ height: '500px' }}

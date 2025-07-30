@@ -127,11 +127,12 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }
             </div>
 
 
-
-            <FixedRoutePreview slideId={slideId} />
+            <div className="h-[550px]">
+              <FixedRoutePreview slideId={slideId} />
+            </div>
 
             {/* Footer Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>

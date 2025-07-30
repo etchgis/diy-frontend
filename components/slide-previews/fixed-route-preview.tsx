@@ -65,7 +65,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     <>
 
       {/* Transit Schedule Display */}
-      <div className="w-full h-[550px] flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6">
+      <div className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6">
         <div className="bg-[#192f51] rounded-lg overflow-hidden"  style={{color: titleColor || '#FFFFFF', backgroundColor: backgroundColor || '#192f51'}}>
           {/* Schedule Header */}
           <div className="p-6">

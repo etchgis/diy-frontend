@@ -42,10 +42,12 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
             </div>
 
             {/* Map Preview */}
-            <TransitRoutesPreview />
+            <div className="h-[550px]">
+              <TransitRoutesPreview />
+            </div>
 
             {/* Footer Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>

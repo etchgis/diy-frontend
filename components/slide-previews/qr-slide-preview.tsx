@@ -4,9 +4,11 @@ import QRCode from "react-qr-code";
 export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const url = useQRStore((state) => state.slides[slideId]?.url || '');
+  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
 
   return (
-    <div className="w-full h-[550px] flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6 relative">
+    <div className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6 relative"
+    style={{backgroundColor: backgroundColor || '#192f51'}}>
       {/* QR Code and Text */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-6">
         <div className="bg-white p-4 rounded-lg mb-4">

@@ -5,11 +5,60 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { HelpCircle, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export default function LandingPage() {
   const router = useRouter()
   const [template, setTemplate] = useState("");
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [selected, setSelected] = useState("");
+  const [locationError, setLocationError] = useState(false);
+  const [templateError, setTemplateError] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    if (query.length < 3) return;
+
+    const fetchSuggestions = async () => {
+      if(selected) return;
+      const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        const data = await res.json();
+        const nyOnly = data.features.filter((feat: any) =>
+          feat.place_name.includes("New York")
+        );
+        setSuggestions(nyOnly.map((feat: any) => feat.place_name));
+      } catch (err: any) {
+        if (err.name !== "AbortError") console.error(err);
+      }
+    };
+
+    fetchSuggestions();
+    return () => controller.abort();
+  }, [query]);
+
+  const handleSelect = (address: string) => {
+    setSelected(address);
+    setQuery(address);
+    setSuggestions([]);
+  };
+
+  const handleCreate = () => {
+    const hasLocation = !!selected;
+    const hasTemplate = !!template;
+
+    setLocationError(!hasLocation);
+    setTemplateError(!hasTemplate);
+
+    if (hasLocation && hasTemplate) {
+      router.push('/editor');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#e5eaef] flex">
       {/* Left Column - Logo */}
@@ -52,8 +101,31 @@ export default function LandingPage() {
                   <div>
                     <p className="text-white mb-4">1. Set an initial central location for the screens</p>
                     <div className="flex gap-3">
-                      <Input placeholder="i.e Albany Airport" className="bg-white text-[#1a202c] flex-1" />
-                      <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Set</Button>
+                      <div className="flex-1 relative">
+                        <Input
+                          placeholder="i.e Albany Airport"
+                          value={query}
+                          onChange={(e) => {
+                            setQuery(e.target.value);
+                            setSelected("");
+                            setLocationError(false);
+                          }}
+                          className={`bg-white text-[#1a202c] w-full ${locationError ? "border border-red-500" : ""}`}
+                        />
+                        {suggestions.length > 0 && (
+                          <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                            {suggestions.map((address, idx) => (
+                              <li
+                                key={idx}
+                                onClick={() => handleSelect(address)}
+                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                              >
+                                {address}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -62,8 +134,11 @@ export default function LandingPage() {
                       2. Select a template from the drop down list to get started with your first screen.
                     </p>
                     <div className="flex gap-3">
-                      <Select value={template} onValueChange={(value) => setTemplate(value)}>
-                        <SelectTrigger className="w-full text-xs">
+                      <Select value={template} onValueChange={(value) => {
+                        setTemplate(value);
+                        setTemplateError(false); 
+                      }}>
+                        <SelectTrigger className={`w-full text-xs ${templateError ? "border border-red-500" : ""}`}>
                           <div className="flex items-left gap-2">
                             <SelectValue placeholder="Select a Template" />
                           </div>
@@ -106,7 +181,7 @@ export default function LandingPage() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button onClick={() => { router.push('/editor') }} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
+                      <Button onClick={() => { handleCreate() }} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
                     </div>
                   </div>
                 </div>

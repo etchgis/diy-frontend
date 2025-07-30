@@ -45,6 +45,22 @@ export function SetupSlides() {
       if (slide.type === 'transit-routes') {
         // TODO: Add logic for transit-routes if needed
       }
+
+      if (slide.type === 'qr') {
+
+      }
+
+      if (slide.type === 'template-1') {
+
+      }
+
+      if (slide.type === 'template-2') {
+
+      }
+
+      if (slide.type === 'template-3') {
+        
+      }
     });
   }, []);
 

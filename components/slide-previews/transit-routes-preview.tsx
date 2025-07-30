@@ -23,7 +23,7 @@ export default function TransitRoutesPreview() {
 
   return (
     <div
-      className="w-full h-[550px] bg-[#f7fafc] border border-[#e2e8f0] rounded-lg mb-6 relative"
+      className="w-full h-full bg-[#f7fafc] border border-[#e2e8f0] rounded-lg mb-6 relative"
     >
       {/* Map container */}
       {/* <div

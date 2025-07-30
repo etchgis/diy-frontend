@@ -30,7 +30,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
   useEffect(() => {
     // Initialize default colors if not set
-    
+
 
   }, [])
 
@@ -126,10 +126,12 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               </div>
             </div>
 
-            <TransitDestinationPreview slideId={slideId} />
+            <div className="h-[550px]">
+              <TransitDestinationPreview slideId={slideId} />
+            </div>
 
             {/* Footer Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>
@@ -197,7 +199,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                     className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
                   />
                 </div>
-                <Input value={tableHeaderTextColor} className="flex-1 text-xs"  onChange={(e) => { setTableHeaderTextColor(slideId, e.target.value) }} />
+                <Input value={tableHeaderTextColor} className="flex-1 text-xs" onChange={(e) => { setTableHeaderTextColor(slideId, e.target.value) }} />
               </div>
             </div>
 
@@ -212,7 +214,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                     className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
                   />
                 </div>
-                <Input value={tableTextColor} className="flex-1 text-xs"  onChange={(e) => { setTableTextColor(slideId, e.target.value) }} />
+                <Input value={tableTextColor} className="flex-1 text-xs" onChange={(e) => { setTableTextColor(slideId, e.target.value) }} />
               </div>
             </div>
 
