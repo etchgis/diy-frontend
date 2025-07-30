@@ -4,19 +4,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import QRSlidePreview from "../slide-previews/qr-slide-preview"
 import { useQRStore } from "@/stores/qr"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import QRCode from 'react-qr-code';
 
 
-export default function QRSlide({ slideId }: { slideId: string }) {
+export default function QRSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
+
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const setText = useQRStore((state) => state.setText);
 
-  useEffect (() => {
+  const url = useQRStore((state) => state.slides[slideId]?.url || '');
+  const setUrl = useQRStore((state) => state.setUrl);
+
+  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const setBackgroundColor = useQRStore((state) => state.setBackgroundColor);
+
+  const [tempQR, setTempQR] = useState(url);
+
+  useEffect(() => {
     // Initialize default text if not set
     if (!text) {
       setText(slideId, 'See this on your phone!');
     }
   }, [])
+
+  const handleGenerateQR = () => {
+    if (!tempQR.trim()) return;
+    setUrl(slideId, tempQR);
+  };
+
   return (
     <>
       <div className="flex flex-1">
@@ -40,9 +56,10 @@ export default function QRSlide({ slideId }: { slideId: string }) {
                   <Input
                     placeholder="http://www.nysdot.gov"
                     className="flex-1 bg-white border-[#cbd5e0]"
-                    defaultValue="http://www.nysdot.gov"
+                    value={tempQR}
+                    onChange={(e) => setTempQR(e.target.value)}
                   />
-                  <Button className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white font-medium px-6">Generate</Button>
+                  <Button className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white font-medium px-6" onClick={handleGenerateQR}>Generate</Button>
                 </div>
               </div>
 
@@ -58,11 +75,14 @@ export default function QRSlide({ slideId }: { slideId: string }) {
             </div>
 
             {/* QR Code Preview */}
-            <QRSlidePreview slideId={slideId} />
+            <div className="h-[550px]">
+              <QRSlidePreview slideId={slideId} />
+            </div>
+
 
             {/* Footer Buttons */}
-            <div className="flex gap-3">
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
+            <div className="flex gap-3 mt-4">
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
             </div>
           </div>
@@ -70,68 +90,21 @@ export default function QRSlide({ slideId }: { slideId: string }) {
 
         {/* Right Sidebar */}
         <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
-          <div className="mb-4">
-            <Select>
-              <SelectTrigger className="w-full text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-[#cbd5e0] rounded"></div>
-                  <SelectValue placeholder="Select a Template" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="transit-route">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Transit Route Map Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="transit-destination">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Transit Destination Table Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="fixed-route">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Fixed Route Table Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="image-only">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Image Only Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="left-content-right-image">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Left Content/Right Image Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="right-content-left-image">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                    Right Content/Left Image Page
-                  </div>
-                </SelectItem>
-                <SelectItem value="qr-code">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full border-2 border-[#4a5568]"></div>
-                    QR Code Page
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Customization Options */}
           <div className="space-y-3 mb-4">
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-[#192f51] rounded border"></div>
-                <Input defaultValue="#192F51" readOnly className="flex-1 text-xs" />
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => setBackgroundColor(slideId, e.target.value)} />
               </div>
             </div>
 
@@ -175,6 +148,9 @@ export default function QRSlide({ slideId }: { slideId: string }) {
           <div className="mt-auto">
             <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
               Save Screen
+            </Button>
+            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
+              Delete Screen
             </Button>
           </div>
         </div>

@@ -153,7 +153,7 @@ export default function Component() {
               </div>
 
               {/* Footer Buttons */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 mt-4">
                 <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Preview Screens</Button>
                 <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
               </div>
@@ -162,55 +162,6 @@ export default function Component() {
 
           {/* Right Sidebar */}
           <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
-            <div className="mb-4">
-              <Select>
-                <SelectTrigger className="w-full text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-[#cbd5e0] rounded"></div>
-                    <SelectValue placeholder="Select a Template" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="transit-route">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                      Transit Route Map Page
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="transit-destination">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                      Transit Destination Table Page
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fixed-route">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                      Fixed Route Table Page
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="image-only">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                      Image Only Page
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="left-content-right-image">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 rounded-full border-2 border-[#a0aec0]"></div>
-                      Left Content/Right Image Page
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="right-content-left-image">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 rounded-full border-2 border-[#4a5568]"></div>
-                      Right Content/Left Image Page
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Color Customization */}
             <div className="space-y-3 mb-4">
               <div>

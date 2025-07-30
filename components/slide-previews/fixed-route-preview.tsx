@@ -3,11 +3,18 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFixedRouteStore } from "@/stores/fixedRoute";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
+import { useEffect } from "react";
 
 
 export default function FixedRoutePreview({ slideId }: { slideId: string }) {
 
-  const stopName = useFixedRouteStore((state) => state.getStopName(slideId));
+  const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
+  const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
+  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '');
+  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '');
+  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '');
+
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",
@@ -51,26 +58,20 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
       time: "10:57 PM",
       duration: "1 hr 35 min",
     },
-    {
-      destination: "Airport directly to Rte 7 & Donald",
-      route: "117",
-      routeColor: "bg-green-600",
-      time: "11:19 PM",
-      duration: "1 hr 57 min",
-    },
+
   ]
 
   return (
     <>
-      
+
       {/* Transit Schedule Display */}
-      <div className="mb-6">
-        <div className="bg-[#192f51] text-white rounded-lg overflow-hidden">
+      <div className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6">
+        <div className="bg-[#192f51] rounded-lg overflow-hidden"  style={{color: titleColor || '#FFFFFF', backgroundColor: backgroundColor || '#192f51'}}>
           {/* Schedule Header */}
           <div className="p-6">
             <div className="text-lg mb-2">Stop #10506 arrival times</div>
             <h2 className="text-3xl font-bold mb-2">{stopName?.toString().toUpperCase() || "UNKNOWN STOP"}</h2>
-            <p className="text-[#a0aec0]">Cross Wolf Road, then walk left toward Panera</p>
+            <p className="text-[#a0aec0]">{description}</p>
           </div>
 
           {/* Schedule Table */}
@@ -78,8 +79,8 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
             {scheduleData.map((item, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 border-b border-[#e2e8f0] last:border-b-0"
-              >
+                className={`flex items-center justify-between ${description ? 'p-[10px]' : 'p-[12px]'}  border-b border-[#e2e8f0] last:border-b-0`}
+                style={{backgroundColor: tableColor, color: tableTextColor}}>
                 <div className="flex-1">
                   <span className="font-medium">{item.destination}</span>
                 </div>

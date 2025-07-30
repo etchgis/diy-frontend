@@ -6,6 +6,8 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
   const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '');
   const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '');
   const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '');
+  const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '');
+  const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '');
 
   const destinations = [
     {
@@ -68,10 +70,9 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
 
   return (
     <>
-      {/* Transit Table */}
-      <div className="mb-6">
-        <div className="text-white" style={{ backgroundColor }} >
-          {/* Table Header */}
+      <div className="w-full h-full flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">
+        {/* Header */}
+        <div className="text-white" style={{ backgroundColor, color: tableHeaderTextColor }}>
           <div className="grid grid-cols-5 gap-4 p-4 font-medium">
             <div>Destination</div>
             <div>Route</div>
@@ -79,14 +80,17 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
             <div>Arrival Time</div>
             <div>Travel Time</div>
           </div>
+        </div>
 
-          {/* Table Rows */}
+        {/* Row Container — this must grow */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {destinations.map((dest, index) => (
             <div
               key={index}
-              className="grid grid-cols-5 gap-4 p-4"
+              className="grid grid-cols-5 gap-4 p-[12.5px] items-center"
               style={{
-                backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor, 
+                backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
+                color: tableTextColor,
               }}
             >
               <div className="flex items-center gap-2">
@@ -103,13 +107,9 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
           ))}
         </div>
 
-        {/* Table Footer */}
+        {/* Footer */}
         <div className="bg-[#F4F4F4] p-3 flex items-center justify-between">
-          <img
-            src="/images/statewide-mobility-services.png"
-            alt="Statewide Mobility Services"
-            className="h-[25px] w-[246px]"
-          />
+          <img src="/images/statewide-mobility-services.png" alt="Statewide Mobility Services" className="h-[25px] w-[246px]" />
           <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
         </div>
       </div>

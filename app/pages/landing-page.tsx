@@ -5,9 +5,75 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { HelpCircle, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useGeneralStore } from "@/stores/general"
+import { SetupSlides } from '@/services/setup'
 
 export default function LandingPage() {
   const router = useRouter()
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [selectedFeature, setSelectedFeature] = useState<any | null>(null);
+  const [locationError, setLocationError] = useState(false);
+  const [templateError, setTemplateError] = useState(false);
+
+  const template = useGeneralStore((state) => state.template || '');
+  const setTemplate = useGeneralStore((state) => state.setTemplate);
+
+  const setLocation = useGeneralStore((state) => state.setLocation);
+  const setAddress = useGeneralStore((state) => state.setAddress);
+
+  const setCoordinates = useGeneralStore((state) => state.setCoordinates);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    if (query.length < 3) return;
+
+    const fetchSuggestions = async () => {
+      if (selectedFeature) return;
+      const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        const data = await res.json();
+        console.log(data.features);
+        const nyOnly = data.features.filter((feat: any) =>
+          feat.place_name.includes("New York")
+        );
+        setSuggestions(nyOnly.map((feat: any) => feat));
+      } catch (err: any) {
+        if (err.name !== "AbortError") console.error(err);
+      }
+    };
+
+    fetchSuggestions();
+    return () => controller.abort();
+  }, [query]);
+
+  const handleSelect = (feature: any) => {
+    setSelectedFeature(feature);
+    setQuery(feature.place_name);
+    setSuggestions([]);
+  };
+
+  const handleCreate = () => {
+    const hasLocation = !!selectedFeature;
+    const hasTemplate = !!template;
+
+    setLocationError(!hasLocation);
+    setTemplateError(!hasTemplate);
+
+    if (hasLocation && hasTemplate) {
+      setAddress(selectedFeature.place_name);
+
+      const [lng, lat] = selectedFeature.center;
+      setCoordinates({ lat, lng });
+      SetupSlides();
+      router.push('/editor');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#e5eaef] flex">
       {/* Left Column - Logo */}
@@ -50,8 +116,31 @@ export default function LandingPage() {
                   <div>
                     <p className="text-white mb-4">1. Set an initial central location for the screens</p>
                     <div className="flex gap-3">
-                      <Input placeholder="i.e Albany Airport" className="bg-white text-[#1a202c] flex-1" />
-                      <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Set</Button>
+                      <div className="flex-1 relative">
+                        <Input
+                          placeholder="i.e Albany Airport"
+                          value={query}
+                          onChange={(e) => {
+                            setQuery(e.target.value);
+                            setSelectedFeature("");
+                            setLocationError(false);
+                          }}
+                          className={`bg-white text-[#1a202c] w-full ${locationError ? "border border-red-500" : ""}`}
+                        />
+                        {suggestions.length > 0 && (
+                          <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                            {suggestions.map((feature: any, idx) => (
+                              <li
+                                key={idx}
+                                onClick={() => handleSelect(feature)}
+                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                              >
+                                {feature.place_name}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -60,20 +149,54 @@ export default function LandingPage() {
                       2. Select a template from the drop down list to get started with your first screen.
                     </p>
                     <div className="flex gap-3">
-                      <Select>
-                        <SelectTrigger className="bg-white text-[#1a202c] flex-1">
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4" />
-                            <SelectValue placeholder="Select a Screen Template" />
+                      <Select value={template} onValueChange={(value) => {
+                        setTemplate(value);
+                        setTemplateError(false);
+                      }}>
+                        <SelectTrigger className={`w-full text-xs ${templateError ? "border border-red-500" : ""}`}>
+                          <div className="flex items-left gap-2">
+                            <SelectValue placeholder="Select a Template" />
                           </div>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="template1">Template 1</SelectItem>
-                          <SelectItem value="template2">Template 2</SelectItem>
-                          <SelectItem value="template3">Template 3</SelectItem>
+                          <SelectItem value="transit-routes">
+                            <div className="flex items-center gap-2 text-xs">
+                              Transit Route Map Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="transit-destinations">
+                            <div className="flex items-center gap-2 text-xs">
+                              Transit Destination Table Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="fixed-routes">
+                            <div className="flex items-center gap-2 text-xs">
+                              Fixed Route Table Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="qr">
+                            <div className="flex items-center gap-2 text-xs">
+                              QR Code Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="template-3">
+                            <div className="flex items-center gap-2 text-xs">
+                              Image Only Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="template-1">
+                            <div className="flex items-center gap-2 text-xs">
+                              Left Content/Right Image Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="template-2">
+                            <div className="flex items-center gap- text-xs">
+                              Right Content/Left Image Page
+                            </div>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button onClick={() => {router.push('/editor')}} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
+                      <Button onClick={() => { handleCreate() }} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
                     </div>
                   </div>
                 </div>
