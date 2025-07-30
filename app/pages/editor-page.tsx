@@ -35,6 +35,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableSlide } from "@/components/sortable-slide"
+import { SetupSlides } from "@/services/setup"
 
 
 
@@ -81,6 +82,7 @@ export default function EditorPage() {
       type: slide.type,
     }));
     setSlides(newSlides);
+    SetupSlides();
   }, []);
 
   useEffect(() => {
@@ -224,16 +226,6 @@ export default function EditorPage() {
               </SortableContext>
             </DndContext>
           </div>
-          <Button
-            variant="outline"
-            className="w-full text-[#4a5568] border-[#cbd5e0] bg-transparent"
-            onClick={() => {
-              handleAddSlide();
-            }}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Add Slide
-          </Button>
           <div className="mb-4 mt-4">
             <Select value={template} onValueChange={(value) => setTemplate(value)}>
               <SelectTrigger className="w-full text-xs">
@@ -280,6 +272,16 @@ export default function EditorPage() {
               </SelectContent>
             </Select>
           </div>
+          <Button
+            variant="outline"
+            className="w-full text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90"
+            onClick={() => {
+              handleAddSlide();
+            }}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Add Slide
+          </Button>
         </div>
       </div>
 

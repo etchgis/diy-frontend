@@ -1,8 +1,18 @@
 import setup from '../setup.json';
 import { useTransitDestinationsStore } from "@/stores/transitDestinations";
 import { useFixedRouteStore } from "@/stores/fixedRoute";
+import { useQRStore } from '@/stores/qr';
+import { useGeneralStore } from '@/stores/general';
 
 export function SetupSlides() {
+
+  const {
+    setCoordinates,
+    setAddress
+  } = useGeneralStore.getState();
+
+  setCoordinates({ lat: setup.coordinates[0], lng: setup.coordinates[1] });
+  setAddress(setup.address || 'Albany, NY');
 
   setup.screens.forEach((slide) => {
     if (slide.type === 'transit-destinations') {
@@ -40,10 +50,15 @@ export function SetupSlides() {
     }
 
     if (slide.type === 'transit-routes') {
-      // TODO: Add logic for transit-routes if needed
+      const {
+        setText,
+        setUrl,
+        setBackgroundColor
+      } = useQRStore.getState();
     }
 
     if (slide.type === 'qr') {
+
 
     }
 

@@ -6,6 +6,7 @@ import Template1Preview from "../slide-previews/template-1-preview"
 
 // left content and right image page template
 export default function Template1Slide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
+
   return (
 
     < div className="flex flex-1" >
