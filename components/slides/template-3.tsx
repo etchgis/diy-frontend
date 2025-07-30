@@ -6,7 +6,7 @@ import Template2Preview from "../slide-previews/template-2-preview"
 import Template3Preview from "../slide-previews/template-3-preview"
 
 
-export default function Template3Slide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
+export default function Template3Slide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   return (
 
 
@@ -33,7 +33,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview }:
           {/* Footer Buttons */}
           <div className="flex gap-3 mt-4">
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
-            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
+            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
           </div>
         </div>
       </div>

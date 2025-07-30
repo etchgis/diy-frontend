@@ -26,7 +26,7 @@ export function SetupSlides() {
 
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#000000');
       setRowColor(slide.id, slide.data.backgroundColor || '#000000');
-      setAlternateRowColor(slide.id, '#78B1DD');
+      setAlternateRowColor(slide.id, slide.data.alternatingRowColor || '#78B1DD');
       setTableHeaderTextColor(slide.id, '#ffffff');
       setTableTextColor(slide.id, '#ffffff');
     }
@@ -50,14 +50,21 @@ export function SetupSlides() {
     }
 
     if (slide.type === 'transit-routes') {
+ 
+      
+
+    }
+
+    if (slide.type === 'qr') {
       const {
         setText,
         setUrl,
         setBackgroundColor
       } = useQRStore.getState();
-    }
 
-    if (slide.type === 'qr') {
+      setText(slide.id, slide.data.text || '');
+      setUrl(slide.id, slide.data.url || '');
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#ffffff');
 
 
     }

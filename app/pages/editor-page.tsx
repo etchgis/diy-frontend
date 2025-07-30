@@ -36,6 +36,7 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableSlide } from "@/components/sortable-slide"
 import { SetupSlides } from "@/services/setup"
+import { publish } from "@/services/publish"
 
 
 
@@ -50,6 +51,11 @@ export default function EditorPage() {
   const [activeSlide, setActiveSlide]: any = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalSlideIndex, setModalSlideIndex] = useState(0);
+
+  const [publishing, setPublishing] = useState(false);
+  const [publishStatus, setPublishStatus] = useState<'success' | 'error' | null>(null);
+  const [publishMessage, setPublishMessage] = useState('');
+  const [publishUrl, setPublishUrl] = useState('');
 
   const template = useGeneralStore((state) => state.template || '');
   const setTemplate = useGeneralStore((state) => state.setTemplate);
@@ -123,28 +129,43 @@ export default function EditorPage() {
 
   }
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    setPublishing(true);
+    setPublishStatus(null);
+    setPublishMessage('');
+    setPublishUrl('');
 
-  }
+    try {
+      const response = await publish();
+      setPublishStatus('success');
+      setPublishMessage('Mobility Screen published successfully!');
+      setPublishUrl(response.url); // assuming backend returns { url: "..." }
+    } catch (err: any) {
+      setPublishStatus('error');
+      setPublishMessage(err.message || 'Failed to publish. Please try again.');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   const renderSlideComponent = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
+        return <QRSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
       case "transit-destinations":
-        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
+        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
       case "fixed-routes":
-        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
+        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
       case "transit-routes":
-        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
+        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
       case "template-1":
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
       case "template-2":
-        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
+        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
       case "template-3":
-        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
+        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
       default:
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
     }
   };
 
@@ -351,6 +372,45 @@ export default function EditorPage() {
           </div>
         </div>
       )}
+
+      {publishing || publishStatus ? (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative">
+            <button
+              onClick={() => {
+                setPublishStatus(null);
+                setPublishMessage('');
+                setShowModal(false);
+              }}
+              className="absolute top-2 right-3 text-gray-400 hover:text-black text-2xl"
+            >
+              ×
+            </button>
+
+            {publishing && (
+              <div className="flex flex-col items-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid" />
+                <p className="text-gray-700">Publishing...</p>
+              </div>
+            )}
+
+            {publishStatus === 'success' && (
+              <div className="text-center space-y-4">
+                <h2 className="text-xl font-semibold text-green-600">✅ Published!</h2>
+                <p>{publishMessage}</p>
+                <a href={publishUrl} target="_blank" className="text-blue-600 underline break-words">{publishUrl}</a>
+              </div>
+            )}
+
+            {publishStatus === 'error' && (
+              <div className="text-center space-y-4">
+                <h2 className="text-xl font-semibold text-red-600">❌ Error</h2>
+                <p>{publishMessage}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
 
   )
