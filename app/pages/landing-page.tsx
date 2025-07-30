@@ -6,32 +6,42 @@ import { Card, CardContent } from "@/components/ui/card"
 import { HelpCircle, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useGeneralStore } from "@/stores/general"
+import { SetupSlides } from '@/services/setup'
 
 export default function LandingPage() {
   const router = useRouter()
-  const [template, setTemplate] = useState("");
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [selected, setSelected] = useState("");
+  const [selectedFeature, setSelectedFeature] = useState<any | null>(null);
   const [locationError, setLocationError] = useState(false);
   const [templateError, setTemplateError] = useState(false);
+
+  const template = useGeneralStore((state) => state.template || '');
+  const setTemplate = useGeneralStore((state) => state.setTemplate);
+
+  const setLocation = useGeneralStore((state) => state.setLocation);
+  const setAddress = useGeneralStore((state) => state.setAddress);
+
+  const setCoordinates = useGeneralStore((state) => state.setCoordinates);
 
   useEffect(() => {
     const controller = new AbortController();
     if (query.length < 3) return;
 
     const fetchSuggestions = async () => {
-      if(selected) return;
+      if (selectedFeature) return;
       const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
 
       try {
         const res = await fetch(url, { signal: controller.signal });
         const data = await res.json();
+        console.log(data.features);
         const nyOnly = data.features.filter((feat: any) =>
           feat.place_name.includes("New York")
         );
-        setSuggestions(nyOnly.map((feat: any) => feat.place_name));
+        setSuggestions(nyOnly.map((feat: any) => feat));
       } catch (err: any) {
         if (err.name !== "AbortError") console.error(err);
       }
@@ -41,20 +51,25 @@ export default function LandingPage() {
     return () => controller.abort();
   }, [query]);
 
-  const handleSelect = (address: string) => {
-    setSelected(address);
-    setQuery(address);
+  const handleSelect = (feature: any) => {
+    setSelectedFeature(feature);
+    setQuery(feature.place_name);
     setSuggestions([]);
   };
 
   const handleCreate = () => {
-    const hasLocation = !!selected;
+    const hasLocation = !!selectedFeature;
     const hasTemplate = !!template;
 
     setLocationError(!hasLocation);
     setTemplateError(!hasTemplate);
 
     if (hasLocation && hasTemplate) {
+      setAddress(selectedFeature.place_name);
+
+      const [lng, lat] = selectedFeature.center;
+      setCoordinates({ lat, lng });
+      SetupSlides();
       router.push('/editor');
     }
   }
@@ -107,20 +122,20 @@ export default function LandingPage() {
                           value={query}
                           onChange={(e) => {
                             setQuery(e.target.value);
-                            setSelected("");
+                            setSelectedFeature("");
                             setLocationError(false);
                           }}
                           className={`bg-white text-[#1a202c] w-full ${locationError ? "border border-red-500" : ""}`}
                         />
                         {suggestions.length > 0 && (
                           <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
-                            {suggestions.map((address, idx) => (
+                            {suggestions.map((feature: any, idx) => (
                               <li
                                 key={idx}
-                                onClick={() => handleSelect(address)}
+                                onClick={() => handleSelect(feature)}
                                 className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
                               >
-                                {address}
+                                {feature.place_name}
                               </li>
                             ))}
                           </ul>
@@ -136,7 +151,7 @@ export default function LandingPage() {
                     <div className="flex gap-3">
                       <Select value={template} onValueChange={(value) => {
                         setTemplate(value);
-                        setTemplateError(false); 
+                        setTemplateError(false);
                       }}>
                         <SelectTrigger className={`w-full text-xs ${templateError ? "border border-red-500" : ""}`}>
                           <div className="flex items-left gap-2">

@@ -4,10 +4,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
 import TransitRoutesPreview from "../slide-previews/transit-routes-preview"
 import { useTransitRouteStore } from "@/stores/transitRoutes"
+import { useGeneralStore } from "@/stores/general"
+import { useEffect, useState } from "react"
 
 export default function TransitRoutesSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+
   const destination = useTransitRouteStore((state) => state.slides[slideId]?.destination || '');
   const setDestination = useTransitRouteStore((state) => state.setDestination);
+
+  const setAddress = useGeneralStore((state) => state.setAddress);
+  const address = useGeneralStore((state) => state.address);
+
 
   return (
     <>
@@ -36,7 +45,8 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
                 <Input
                   placeholder="Albany Airport"
                   className="pl-10 bg-white border-[#cbd5e0]"
-                  defaultValue="Albany Airport"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
                 />
               </div>
             </div>
