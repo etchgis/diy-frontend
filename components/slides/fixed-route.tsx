@@ -3,11 +3,15 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpCircle, ChevronRight, Plus } from "lucide-react"
 import FixedRoutePreview from "../slide-previews/fixed-route-preview"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useFixedRouteStore } from "../../stores/fixedRoute";
+import { set } from "react-hook-form"
 
 
-export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
+export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const renderCount = useRef(0);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const setStopName = useFixedRouteStore((state) => state.setStopName);
@@ -15,17 +19,37 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }
   const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
   const setDescription = useFixedRouteStore((state) => state.setDescription);
 
-  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const setBackgroundColor = useFixedRouteStore((state) => state.setBackgroundColor);
 
-  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '');
+  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '#FFFFFF');
   const setTitleColor = useFixedRouteStore((state) => state.setTitleColor);
 
-  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '');
+  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '#FFFFFF');
   const setTableColor = useFixedRouteStore((state) => state.setTableColor);
 
-  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '');
+  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '#000000');
   const setTableTextColor = useFixedRouteStore((state) => state.setTableTextColor);
+
+  useEffect(() => {
+    renderCount.current += 1;
+    const isDev = process.env.NODE_ENV === 'development';
+    const shouldSkip =
+      (isDev && renderCount.current <= 2) || (!isDev && renderCount.current === 1);
+
+    if (shouldSkip){
+      setSaveStatus('saved');
+      return;
+    } 
+
+    setSaveStatus('saving');
+
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+    saveTimeoutRef.current = setTimeout(() => {
+      setSaveStatus('saved');
+    }, 600);
+  }, [stopName, description, backgroundColor, titleColor, tableColor, tableTextColor]);
 
   const scheduleData = [
     {
@@ -108,6 +132,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }
                     className="flex-1 bg-white border-[#cbd5e0]"
                     value={stopName}
                     onChange={(e) => setStopName(slideId, e.target.value)}
+                    placeholder="Enter text here... "
                   />
                   <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent">
                     <Plus className="w-4 h-4" />
@@ -134,7 +159,22 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }
             {/* Footer Buttons */}
             <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
+              {saveStatus !== 'idle' && (
+                <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+                  {saveStatus === 'saving' ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                      Saved Locally
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
           </div>
@@ -229,9 +269,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview }
 
 
             <div className="mt-auto">
-              <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
-                Save Screen
-              </Button>
+           
               <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
                 Delete Screen
               </Button>

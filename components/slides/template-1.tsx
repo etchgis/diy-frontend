@@ -3,9 +3,43 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import Template1Preview from "../slide-previews/template-1-preview"
+import { useEffect, useRef, useState } from "react"
+import { useTemplate1Store } from "@/stores/template1"
 
 // left content and right image page template
-export default function Template1Slide({ slideId, handleDelete, handlePreview }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void }) {
+export default function Template1Slide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const renderCount = useRef(0);
+
+  const title = useTemplate1Store((state) => state.slides[slideId]?.title || '');
+  const text = useTemplate1Store((state) => state.slides[slideId]?.text || '');
+  const image = useTemplate1Store((state) => state.slides[slideId]?.image || null);
+
+  useEffect(() => {
+    renderCount.current += 1;
+    const isDev = process.env.NODE_ENV === 'development';
+
+    if (isDev && renderCount.current <= 2) {
+      setSaveStatus('saved');
+      return;
+    }
+    if (!isDev && renderCount.current === 1) {
+      setSaveStatus('saved');
+      return;
+    }
+
+    setSaveStatus('saving');
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      setSaveStatus('saved');
+    }, 600);
+  }, [title, text, image]);
+
   return (
 
     < div className="flex flex-1" >
@@ -32,7 +66,22 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview }:
           {/* Footer Buttons */}
           <div className="flex gap-3 mt-4">
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
-            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium">Publish Screens</Button>
+            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
+            {saveStatus !== 'idle' && (
+              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+                {saveStatus === 'saving' ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                    Saved Locally
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div >
@@ -95,9 +144,6 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview }:
         </div>
 
         <div className="mt-auto">
-          <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
-            Save Screen
-          </Button>
           <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
             Delete Screen
           </Button>

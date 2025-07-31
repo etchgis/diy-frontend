@@ -1,37 +1,23 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-interface QRSlideData {
+interface Template1SlideData {
   text: string;
-  url: string;
-  qrSize: number;
-  backgroundColor?: string;
+  title: string;
+  image: string | null;
 }
 
 interface SlideStore {
-  slides: Record<string, QRSlideData>;
+  slides: Record<string, Template1SlideData>;
   setText: (slideId: string, name: string) => void;
-  setUrl: (slideId: string, name: string) => void;
-  setQRSize: (slideId: string, size: number) => void;
-  setBackgroundColor: (slideId: string, name: string) => void;
+  setTitle: (slideId: string, name: string) => void;
+  setImage: (slideId: string, name: string) => void;
 }
 
-export const useQRStore = create<SlideStore>()(
+export const useTemplate1Store = create<SlideStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       slides: {},
-
-      setQRSize: (slideId, size) =>
-        set((state) => ({
-          slides: {
-            ...state.slides,
-            [slideId]: {
-              ...(state.slides[slideId] || {}),
-              qrSize: size,
-            },
-          },
-        })),
-
       setText: (slideId, name) =>
         set((state) => ({
           slides: {
@@ -42,31 +28,29 @@ export const useQRStore = create<SlideStore>()(
             },
           },
         })),
-
-      setUrl: (slideId, url) =>
+      setTitle: (slideId, title) =>
         set((state) => ({
           slides: {
             ...state.slides,
             [slideId]: {
               ...(state.slides[slideId] || {}),
-              url,
+              title,
             },
           },
         })),
-
-      setBackgroundColor: (slideId, backgroundColor) =>
+      setImage: (slideId, name) =>
         set((state) => ({
           slides: {
             ...state.slides,
             [slideId]: {
               ...(state.slides[slideId] || {}),
-              backgroundColor,
+              image: name,
             },
           },
         })),
     }),
     {
-      name: 'qr-slides-storage', 
+      name: 'template1-store',
     }
   )
 );

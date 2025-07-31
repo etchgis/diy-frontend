@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface TransitionDestinationsSlideData {
   backgroundColor: string;
@@ -17,64 +18,68 @@ interface SlideStore {
   setTableTextColor: (slideId: string, color: string) => void;
 }
 
-export const useTransitDestinationsStore = create<SlideStore>((set, get) => ({
-  slides: {},
+export const useTransitDestinationsStore = create<SlideStore>()(
+  persist(
+    (set, get) => ({
+      slides: {},
 
-  setBackgroundColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          backgroundColor: color,
-        },
-      },
-    })),
+      setBackgroundColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              backgroundColor: color,
+            },
+          },
+        })),
 
-  setRowColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          rowColor: color,
-        },
-      },
-    })),
+      setRowColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              rowColor: color,
+            },
+          },
+        })),
 
+      setAlternateRowColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              alternateRowColor: color,
+            },
+          },
+        })),
 
-  setAlternateRowColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          alternateRowColor: color,
-        },
-      },
-    })),
+      setTableHeaderTextColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              tableHeaderTextColor: color,
+            },
+          },
+        })),
 
-  setTableHeaderTextColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          tableHeaderTextColor: color,
-        },
-      },
-    })),
-
-  setTableTextColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          tableTextColor: color,
-        },
-      },
-    })),
-
-}));
-
+      setTableTextColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              tableTextColor: color,
+            },
+          },
+        })),
+    }),
+    {
+      name: 'transit-destinations-storage',
+    }
+  )
+);

@@ -3,11 +3,11 @@ import { useEffect } from "react";
 
 export default function TransitDestinationPreview({ slideId }: { slideId: string }) {
 
-  const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '');
-  const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '');
-  const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '');
-  const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '');
-  const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '');
+  const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
+  const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '#192F51');
+  const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '#78B1DD');
+  const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '#ffffff');
+  const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '#ffffff');
 
   const destinations = [
     {

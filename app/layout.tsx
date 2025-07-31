@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import './globals.css'
-import { SetupSlides } from './setup'
+import { SetupSlides } from '@/services/setup'
+import { useEffect } from 'react'
 
 
 export const metadata: Metadata = {
@@ -28,7 +29,6 @@ html {
         `}</style>
       </head>
       <body>
-        <SetupSlides />
         {children}
       </body>
     </html>

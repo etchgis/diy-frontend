@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface Slide {
   id: string;
@@ -7,8 +8,9 @@ interface Slide {
 
 interface Store {
   template?: string;
-  slides?: Slide[];
+  slides: Slide[];
   address?: string;
+  url?: string;
   location?: string;
   coordinates?: {
     lat: number;
@@ -18,29 +20,42 @@ interface Store {
   setSlides: (slides: Slide[]) => void; 
   setAddress: (address: string) => void;
   setLocation: (location: string) => void;
+  setUrl: (url: string) => void;
   setCoordinates: (coordinates: { lat: number; lng: number }) => void;
 }
 
-export const useGeneralStore = create<Store>((set, get) => ({
-  slides: [], 
+export const useGeneralStore = create<Store>()(
+  persist(
+    (set, get) => ({
+      slides: [],
 
-  setSlides: (slides: Slide[]) => set(() => ({
-    slides, 
-  })),
+      setSlides: (slides: Slide[]) => set(() => ({
+        slides, 
+      })),
 
-  setTemplate: (name) => set(() => ({
-    template: name,
-  })),
+      setTemplate: (name) => set(() => ({
+        template: name,
+      })),
 
-  setAddress: (address) => set(() => ({
-    address,
-  })),
+      setAddress: (address) => set(() => ({
+        address,
+      })),
 
-  setLocation: (location) => set(() => ({
-    location,
-  })),
+      setLocation: (location) => set(() => ({
+        location,
+      })),
 
-  setCoordinates: (coordinates) => set(() => ({
-    coordinates,
-  })),
-}));
+      setCoordinates: (coordinates) => set(() => ({
+        coordinates,
+      })),
+
+      setUrl: (url) => set(() => ({
+        url,
+      })),
+    }),
+    {
+      name: 'general-store' ,
+      storage: createJSONStorage(() => localStorage)
+    }
+  )
+);

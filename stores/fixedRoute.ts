@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { StateStorage, PersistOptions } from 'zustand/middleware';
 
 interface FixedRouteSlideData {
   stopName: string;
@@ -19,59 +21,64 @@ interface SlideStore {
   setTableTextColor: (slideId: string, color: string) => void;
 }
 
-export const useFixedRouteStore = create<SlideStore>((set, get) => ({
-  slides: {},
+export const useFixedRouteStore = create<SlideStore>()(
+  persist<SlideStore>(
+    (set, get) => ({
+      slides: {},
 
-  setStopName: (slideId, name) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          stopName: name,
-        },
-      },
-    })),
+      setStopName: (slideId, name) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              stopName: name,
+            },
+          },
+        })),
 
-  setDescription: (slideId, description) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: { ...(state.slides[slideId] || {}), description },
-      },
-    })),
+      setDescription: (slideId, description) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), description },
+          },
+        })),
 
-  setBackgroundColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: { ...(state.slides[slideId] || {}), backgroundColor: color },
-      },
-    })),
+      setBackgroundColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), backgroundColor: color },
+          },
+        })),
 
-  setTitleColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: { ...(state.slides[slideId] || {}), titleColor: color },
-      },
-    })),
+      setTitleColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), titleColor: color },
+          },
+        })),
 
-  setTableColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: { ...(state.slides[slideId] || {}), tableColor: color },
-      },
-    })),
+      setTableColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), tableColor: color },
+          },
+        })),
 
-  setTableTextColor: (slideId, color) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: { ...(state.slides[slideId] || {}), tableTextColor: color },
-      },
-    })),
-
-
-}));
+      setTableTextColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), tableTextColor: color },
+          },
+        })),
+    }),
+    {
+      name: 'fixed-route-storage'
+    }
+  )
+);

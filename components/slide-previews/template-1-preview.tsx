@@ -1,9 +1,16 @@
+import { useTemplate1Store } from '@/stores/template1';
 import { useState } from 'react';
 
 export default function Template1Preview({ slideId }: { slideId: string }) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [image, setImage] = useState<string | null>(null);
+
+  const content = useTemplate1Store((state) => state.slides[slideId]?.text || '');
+  const setContent = useTemplate1Store((state) => state.setText);
+
+  const title = useTemplate1Store((state) => state.slides[slideId]?.title || '');
+  const setTitle = useTemplate1Store((state) => state.setTitle);
+
+  const image = useTemplate1Store((state) => state.slides[slideId]?.image || null);
+  const setImage = useTemplate1Store((state) => state.setImage);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -11,7 +18,7 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = () => {
-        setImage(reader.result as string);
+        setImage(slideId, reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -33,7 +40,7 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => setTitle(slideId, e.target.value)}
               placeholder="Type title here"
               className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
             />
@@ -47,7 +54,7 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
             <div className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 p-6 flex items-start">
               <textarea
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => setContent(slideId, e.target.value)}
                 placeholder="Type text here"
                 className="w-full h-full bg-transparent outline-none resize-none text-2xl font-light placeholder-white/50"
               />
@@ -57,7 +64,7 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
           {/* Right Image Box (40%) */}
           <div className="w-[40%]">
             <div
-              className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 flex items-center justify-center p-6"
+              className="h-[300px] border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 flex items-center justify-center p-6"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
