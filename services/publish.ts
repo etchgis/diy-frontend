@@ -1,11 +1,14 @@
 import { useFixedRouteStore } from '@/stores/fixedRoute';
 import { useTransitDestinationsStore } from '@/stores/transitDestinations';
-import setup from '../setup.json';
 import { useGeneralStore } from '@/stores/general';
 import { useQRStore } from '@/stores/qr';
+import { useTransitRouteStore } from '@/stores/transitRoutes';
+import { useTemplate1Store } from '@/stores/template1';
+import { useTemplate2Store } from '@/stores/template2';
+import { useTemplate3Store } from '@/stores/template3';
 
 export async function publish() {
-  const { address, location, coordinates } = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url } = useGeneralStore.getState();
 
   const json = {
     location: location,
@@ -14,7 +17,7 @@ export async function publish() {
     screens: [] as any[],
   }
 
-  setup.screens.forEach((slide) => {
+  slides.forEach((slide) => {
     const screenObj: any = {};
     if (slide.type === 'transit-destinations') {
       screenObj.type = 'transit-destinations';
@@ -77,7 +80,22 @@ export async function publish() {
     }
 
     if (slide.type === 'transit-routes') {
-      // TODO: Add logic for transit-routes if needed
+      screenObj.type = 'transit-routes';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useTransitRouteStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        console.log('Transit Route Slide Data:', slideData);
+        const { destination, location } = slideData;
+
+        screenObj.data.destination = destination;
+        screenObj.data.location = location;
+      } else {
+        console.error(`Transit route slide with ID ${slide.id} not found in the store.`);
+      }
     }
 
     if (slide.type === 'qr') {
@@ -105,15 +123,62 @@ export async function publish() {
     }
 
     if (slide.type === 'template-1') {
+      screenObj.type = 'template-1';
+      screenObj.id = slide.id;
+      screenObj.data = {};
 
+      const { slides } = useTemplate1Store.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        console.log('Template 1 Slide Data:', slideData);
+        const { text, title, image } = slideData;
+
+        screenObj.data.text = text;
+        screenObj.data.title = title;
+        screenObj.data.image = image;
+      } else {
+        console.error(`Template 1 slide with ID ${slide.id} not found in the store.`);
+      }
     }
 
     if (slide.type === 'template-2') {
+      screenObj.type = 'template-2';
+      screenObj.id = slide.id;
+      screenObj.data = {};
 
+      const { slides } = useTemplate2Store.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        console.log('Template 2 Slide Data:', slideData);
+        const { text, title, image } = slideData;
+
+        screenObj.data.text = text;
+        screenObj.data.title = title;
+        screenObj.data.image = image;
+      } else {
+        console.error(`Template 2 slide with ID ${slide.id} not found in the store.`);
+      }
     }
 
     if (slide.type === 'template-3') {
+      screenObj.type = 'template-3';
+      screenObj.id = slide.id;
+      screenObj.data = {};
 
+      const { slides } = useTemplate3Store.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        console.log('Template 3 Slide Data:', slideData);
+        const { title, image } = slideData;
+
+        screenObj.data.title = title;
+        screenObj.data.image = image;
+      } else {
+        console.error(`Template 3 slide with ID ${slide.id} not found in the store.`);
+      }
     }
 
     json.screens.push(screenObj);
@@ -127,7 +192,10 @@ export async function publish() {
   }
 
   try {
-    const response = await fetch(`${backendUrl}/upload`, {
+    const shortcode = url?.split('/').pop()
+    const endpoint = url ? `/upload/${shortcode}` : '/upload';
+    console.log(endpoint);
+    const response = await fetch(`${backendUrl}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -141,10 +209,10 @@ export async function publish() {
 
     const data = await response.json();
     console.log('Publish successful:', data);
-    return data; 
+    return data;
   } catch (error) {
     console.error('Error publishing JSON:', error);
-    throw error; 
+    throw error;
   }
 
 }

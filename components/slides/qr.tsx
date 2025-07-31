@@ -19,6 +19,9 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
   const url = useQRStore((state) => state.slides[slideId]?.url || '');
   const setUrl = useQRStore((state) => state.setUrl);
 
+  const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
+  const setQrSize = useQRStore((state) => state.setQRSize);
+
   const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
   const setBackgroundColor = useQRStore((state) => state.setBackgroundColor);
 
@@ -35,14 +38,14 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
     renderCount.current += 1;
     const isDev = process.env.NODE_ENV === 'development';
 
-    if (isDev && renderCount.current <= 2){
+    if (isDev && renderCount.current <= 2) {
       setSaveStatus('saved');
       return;
-    } 
-    if (!isDev && renderCount.current === 1){
+    }
+    if (!isDev && renderCount.current === 1) {
       setSaveStatus('saved');
       return;
-    } 
+    }
 
     setSaveStatus('saving');
 
@@ -182,8 +185,15 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
             </div>
 
             <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">QR Code Size</label>
-              <Input defaultValue="100%" readOnly className="text-xs" />
+              <label className="block text-[#4a5568] font-medium mb-1 text-sm">QR Code Size</label>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={qrSize !== undefined && qrSize !== null ? qrSize : 5}
+                onChange={(e) => setQrSize(slideId, Number(e.target.value))}
+                className="text-xs border border-gray-300 rounded px-2.5 py-2.5 w-28"
+              />
             </div>
           </div>
 

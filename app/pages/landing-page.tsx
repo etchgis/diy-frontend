@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
 import { SetupSlides } from '@/services/setup'
+import { v4 as uuidv4 } from "uuid";
+
 
 export default function LandingPage() {
   const router = useRouter()
@@ -24,6 +26,10 @@ export default function LandingPage() {
   const setAddress = useGeneralStore((state) => state.setAddress);
 
   const setCoordinates = useGeneralStore((state) => state.setCoordinates);
+
+  const url = useGeneralStore((state) => state.url || '');
+  const setUrl = useGeneralStore((state) => state.setUrl);
+
 
   useEffect(() => {
     const controller = new AbortController();
@@ -64,15 +70,36 @@ export default function LandingPage() {
     setLocationError(!hasLocation);
     setTemplateError(!hasTemplate);
 
+    localStorage.clear();
+    localStorage.removeItem('general-store');
+    useGeneralStore.setState({ slides: [{ id: uuidv4(), type: template }] });
+
+
     if (hasLocation && hasTemplate) {
       setAddress(selectedFeature.place_name);
 
       const [lng, lat] = selectedFeature.center;
       setCoordinates({ lat, lng });
-      SetupSlides();
       router.push('/editor');
     }
   }
+
+  const handleEdit = () => {
+
+    const shortcode = url.split('/').pop();
+
+    localStorage.clear();
+    localStorage.removeItem('general-store');
+
+    if (shortcode) {
+      SetupSlides(shortcode).then((data) => {
+        console.log('Setup Slides Data:', data);
+        router.push(`/editor`);
+      })
+    } else {
+      console.error('Shortcode not found in URL');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#e5eaef] flex">
@@ -216,8 +243,8 @@ export default function LandingPage() {
                   </p>
 
                   <div className="flex gap-3">
-                    <Input className="bg-white text-[#1a202c] flex-1" />
-                    <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Edit</Button>
+                    <Input className="bg-white text-[#1a202c] flex-1" value={url} onChange={(e) => setUrl(e.target.value)} />
+                    <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6" onClick={() => handleEdit()}>Edit</Button>
                   </div>
                 </div>
               </CardContent>

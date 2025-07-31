@@ -19,16 +19,16 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
   const setDescription = useFixedRouteStore((state) => state.setDescription);
 
-  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const setBackgroundColor = useFixedRouteStore((state) => state.setBackgroundColor);
 
-  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '');
+  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '#FFFFFF');
   const setTitleColor = useFixedRouteStore((state) => state.setTitleColor);
 
-  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '');
+  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '#FFFFFF');
   const setTableColor = useFixedRouteStore((state) => state.setTableColor);
 
-  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '');
+  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '#000000');
   const setTableTextColor = useFixedRouteStore((state) => state.setTableTextColor);
 
   useEffect(() => {
@@ -132,6 +132,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
                     className="flex-1 bg-white border-[#cbd5e0]"
                     value={stopName}
                     onChange={(e) => setStopName(slideId, e.target.value)}
+                    placeholder="Enter text here... "
                   />
                   <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent">
                     <Plus className="w-4 h-4" />
@@ -268,9 +269,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
 
             <div className="mt-auto">
-              <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
-                Save Screen
-              </Button>
+           
               <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
                 Delete Screen
               </Button>

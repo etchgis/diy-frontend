@@ -1,20 +1,56 @@
-import setup from '../setup.json';
 import { useTransitDestinationsStore } from "@/stores/transitDestinations";
 import { useFixedRouteStore } from "@/stores/fixedRoute";
 import { useQRStore } from '@/stores/qr';
 import { useGeneralStore } from '@/stores/general';
+import { useTransitRouteStore } from "@/stores/transitRoutes";
 
-export function SetupSlides() {
+export async function SetupSlides(shortcode: string) {
 
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  if (!backendUrl) {
+    console.error('Backend URL is not defined in environment variables.');
+    return Promise.reject(new Error('Missing backend URL'));
+  }
+
+  console.log('Publishing JSON to backend:', `${backendUrl}/config/${shortcode}`);
+
+  try {
+    const response = await fetch(`${backendUrl}/config/${shortcode}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to publish: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Fetch successful:', data);
+    await importData(data);
+    return data;
+  } catch (error) {
+    console.error('Error publishing JSON:', error);
+    throw error;
+  }
+}
+
+async function importData(setup: any) {
+  console.log('Importing data:', setup);
   const {
     setCoordinates,
-    setAddress
+    setAddress,
+    setSlides
   } = useGeneralStore.getState();
 
-  setCoordinates({ lat: setup.coordinates[0], lng: setup.coordinates[1] });
+  setCoordinates({ lat: setup.coordinates.lat, lng: setup.coordinates.lng });
   setAddress(setup.address || 'Albany, NY');
+  const slides: any = [];
 
-  setup.screens.forEach((slide) => {
+  setup.screens.forEach((slide: any) => {
+    slides.push({id: slide.id, type: slide.type});
     if (slide.type === 'transit-destinations') {
       const {
         setBackgroundColor,
@@ -24,8 +60,10 @@ export function SetupSlides() {
         setTableTextColor,
       } = useTransitDestinationsStore.getState();
 
+      console.log(slide.data.rowColor);
+
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#000000');
-      setRowColor(slide.id, slide.data.backgroundColor || '#000000');
+      setRowColor(slide.id, slide.data.rowColor || '#000000');
       setAlternateRowColor(slide.id, slide.data.alternatingRowColor || '#78B1DD');
       setTableHeaderTextColor(slide.id, '#ffffff');
       setTableTextColor(slide.id, '#ffffff');
@@ -50,8 +88,13 @@ export function SetupSlides() {
     }
 
     if (slide.type === 'transit-routes') {
- 
-      
+      const {
+        setDestination,
+        setLocation
+      } = useTransitRouteStore.getState();
+
+      setDestination(slide.id, slide.data.destination || '');
+      setLocation(slide.id, slide.data.location || '');
 
     }
 
@@ -59,13 +102,14 @@ export function SetupSlides() {
       const {
         setText,
         setUrl,
-        setBackgroundColor
+        setBackgroundColor,
+        setQRSize
       } = useQRStore.getState();
 
       setText(slide.id, slide.data.text || '');
       setUrl(slide.id, slide.data.url || '');
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#ffffff');
-
+      setQRSize(slide.id, slide.data.qrSize || 5);
 
     }
 
@@ -82,5 +126,5 @@ export function SetupSlides() {
     }
   });
 
-
+  setSlides(slides);
 }

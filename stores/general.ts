@@ -8,8 +8,9 @@ interface Slide {
 
 interface Store {
   template?: string;
-  slides?: Slide[];
+  slides: Slide[];
   address?: string;
+  url?: string;
   location?: string;
   coordinates?: {
     lat: number;
@@ -19,6 +20,7 @@ interface Store {
   setSlides: (slides: Slide[]) => void; 
   setAddress: (address: string) => void;
   setLocation: (location: string) => void;
+  setUrl: (url: string) => void;
   setCoordinates: (coordinates: { lat: number; lng: number }) => void;
 }
 
@@ -46,9 +48,14 @@ export const useGeneralStore = create<Store>()(
       setCoordinates: (coordinates) => set(() => ({
         coordinates,
       })),
+
+      setUrl: (url) => set(() => ({
+        url,
+      })),
     }),
     {
-      name: 'general-store' 
+      name: 'general-store' ,
+      storage: createJSONStorage(() => localStorage)
     }
   )
 );

@@ -16,19 +16,19 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
 
-  const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const setBackgroundColor = useTransitDestinationsStore((state) => state.setBackgroundColor);
 
-  const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '');
+  const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '#192F51');
   const setRowColor = useTransitDestinationsStore((state) => state.setRowColor);
 
-  const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '');
+  const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '#78B1DD');
   const setAlternateRowColor = useTransitDestinationsStore((state) => state.setAlternateRowColor);
 
-  const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '');
+  const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '#ffffff');
   const setTableHeaderTextColor = useTransitDestinationsStore((state) => state.setTableHeaderTextColor);
 
-  const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '');
+  const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '#ffffff');
   const setTableTextColor = useTransitDestinationsStore((state) => state.setTableTextColor);
 
 

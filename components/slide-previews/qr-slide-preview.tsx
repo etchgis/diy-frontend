@@ -5,16 +5,25 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const url = useQRStore((state) => state.slides[slideId]?.url || '');
   const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
+
+
+  const containerSizeRem = 2 * qrSize;
+  const qrPixelSize = 32 * qrSize;
+
 
   return (
     <div className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6 relative"
-    style={{backgroundColor: backgroundColor || '#192f51'}}>
+      style={{ backgroundColor: backgroundColor || '#192f51' }}>
       {/* QR Code and Text */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-6">
         <div className="bg-white p-4 rounded-lg mb-4">
-          <div className="w-40 h-40 flex items-center justify-center">
+          <div
+            className="flex items-center justify-center"
+            style={{ width: `${containerSizeRem}rem`, height: `${containerSizeRem}rem` }}
+          >
             {url ? (
-              <QRCode value={url} size={160} />
+              <QRCode value={url} size={qrPixelSize} />
             ) : (
               <div className="text-gray-400 text-sm">No QR Code Data</div>
             )}

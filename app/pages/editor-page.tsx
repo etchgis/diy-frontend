@@ -21,7 +21,7 @@ import Template2Preview from "@/components/slide-previews/template-2-preview"
 import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
 import { useGeneralStore } from "@/stores/general"
-import setup from '../../setup.json'
+
 import {
   DndContext,
   closestCenter,
@@ -79,16 +79,15 @@ export default function EditorPage() {
     }
     const newSlide: Slide = { id: uuidv4(), type: template };
     setSlides([...slides, newSlide]);
+    console.log(slides);
     setActiveSlideId(newSlide.id);
   }
 
   useEffect(() => {
-    const newSlides = setup.screens.map((slide: any) => ({
-      id: slide.id,
-      type: slide.type,
-    }));
-    setSlides(newSlides);
-    SetupSlides();
+    const hasGeneralStore = localStorage.getItem('general-store');
+    if (!hasGeneralStore) {
+      router.push('/');
+    }
   }, []);
 
   useEffect(() => {
@@ -155,17 +154,17 @@ export default function EditorPage() {
       case "transit-destinations":
         return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
       case "fixed-routes":
-        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
+        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
       case "transit-routes":
-        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
+        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
       case "template-1":
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
       case "template-2":
-        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
+        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
       case "template-3":
-        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
+        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
       default:
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish}/>;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
     }
   };
 
