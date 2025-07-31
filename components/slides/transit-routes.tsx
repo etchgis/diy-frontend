@@ -5,17 +5,44 @@ import { HelpCircle, ChevronRight, Plus } from "lucide-react"
 import TransitRoutesPreview from "../slide-previews/transit-routes-preview"
 import { useTransitRouteStore } from "@/stores/transitRoutes"
 import { useGeneralStore } from "@/stores/general"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 export default function TransitRoutesSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const renderCount = useRef(0);
 
   const destination = useTransitRouteStore((state) => state.slides[slideId]?.destination || '');
   const setDestination = useTransitRouteStore((state) => state.setDestination);
 
   const setAddress = useGeneralStore((state) => state.setAddress);
   const address = useGeneralStore((state) => state.address);
+
+  useEffect(() => {
+    renderCount.current += 1;
+    const isDev = process.env.NODE_ENV === 'development';
+
+    if (isDev && renderCount.current <= 2) {
+      setSaveStatus('saved');
+      return;
+    }
+    if (!isDev && renderCount.current === 1) {
+      setSaveStatus('saved');
+      return;
+    }
+
+    setSaveStatus('saving');
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      setSaveStatus('saved');
+    }, 600);
+  }, [address, destination]);
 
 
   return (
@@ -60,6 +87,21 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
             <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
+              {saveStatus !== 'idle' && (
+                <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+                  {saveStatus === 'saving' ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                      Saved Locally
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -72,9 +114,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
           </div>
 
           <div className="mt-auto">
-            <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
-              Save Screen
-            </Button>
+
             <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
               Delete Screen
             </Button>

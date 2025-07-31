@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface QRSlideData {
   text: string;
@@ -13,39 +14,46 @@ interface SlideStore {
   setBackgroundColor: (slideId: string, name: string) => void;
 }
 
-export const useQRStore = create<SlideStore>((set, get) => ({
-  slides: {},
+export const useQRStore = create<SlideStore>()(
+  persist(
+    (set, get) => ({
+      slides: {},
 
-  setText: (slideId, name) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          text: name,
-        },
-      },
-    })),
+      setText: (slideId, name) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              text: name,
+            },
+          },
+        })),
 
-  setUrl: (slideId, url) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          url: url,
-        },
-      },
-    })),
+      setUrl: (slideId, url) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              url,
+            },
+          },
+        })),
 
-  setBackgroundColor: (slideId, backgroundColor) =>
-    set((state) => ({
-      slides: {
-        ...state.slides,
-        [slideId]: {
-          ...(state.slides[slideId] || {}),
-          backgroundColor: backgroundColor,
-        },
-      },
-    })),
-}));
+      setBackgroundColor: (slideId, backgroundColor) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              backgroundColor,
+            },
+          },
+        })),
+    }),
+    {
+      name: 'qr-slides-storage', 
+    }
+  )
+);

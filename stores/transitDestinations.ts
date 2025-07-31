@@ -80,7 +80,6 @@ export const useTransitDestinationsStore = create<SlideStore>()(
     }),
     {
       name: 'transit-destinations-storage',
-      storage: createJSONStorage(() => localStorage)
     }
   )
 );

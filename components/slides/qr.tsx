@@ -4,11 +4,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import QRSlidePreview from "../slide-previews/qr-slide-preview"
 import { useQRStore } from "@/stores/qr"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import QRCode from 'react-qr-code';
 
 
 export default function QRSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const renderCount = useRef(0);
 
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const setText = useQRStore((state) => state.setText);
@@ -27,6 +30,30 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
       setText(slideId, 'See this on your phone!');
     }
   }, [])
+
+  useEffect(() => {
+    renderCount.current += 1;
+    const isDev = process.env.NODE_ENV === 'development';
+
+    if (isDev && renderCount.current <= 2){
+      setSaveStatus('saved');
+      return;
+    } 
+    if (!isDev && renderCount.current === 1){
+      setSaveStatus('saved');
+      return;
+    } 
+
+    setSaveStatus('saving');
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      setSaveStatus('saved');
+    }, 600);
+  }, [backgroundColor, text, url]);
 
   const handleGenerateQR = () => {
     if (!tempQR.trim()) return;
@@ -84,6 +111,21 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
             <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
+              {saveStatus !== 'idle' && (
+                <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+                  {saveStatus === 'saving' ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                      Saved Locally
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -146,9 +188,6 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
           </div>
 
           <div className="mt-auto">
-            <Button className="w-full bg-[#face00] hover:bg-[#face00]/90 text-black font-medium text-xs">
-              Save Screen
-            </Button>
             <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
               Delete Screen
             </Button>
