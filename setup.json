@@ -1,7 +1,10 @@
 {
   "location": "Albany, NY",
   "address": "50 Wolf Rd, Albany, NY 12232",
-  "coordinates": [42.713636, -73.815438],
+  "coordinates": {
+    "lat": 42.649866,
+    "lng": -73.752739
+  },
   "screens": [
     {
       "id": "j7b1f0c2-4d6a-4f5c-8b7c-9d1e2f3a4b5c",
@@ -16,31 +19,45 @@
         "backgroundImage": null,
         "destinations": [
           {
-            "position": [42.713636, -73.815438],
+            "position": [
+              42.713636,
+              -73.815438
+            ],
             "label": "NYSDOT Headquarters",
             "address": "50 Wolf Rd, Albany, NY 12232"
           },
           {
-            "position": [42.745515, -73.810085],
+            "position": [
+              42.745515,
+              -73.810085
+            ],
             "label": "Albany International Airport",
             "address": "737 Albany Shaker Rd, Albany, NY 12211"
           },
           {
-            "position": [42.812499, -73.945697],
+            "position": [
+              42.812499,
+              -73.945697
+            ],
             "label": "Albany Medical Center",
             "address": "43 New Scotland Ave, Albany, NY 12208"
           },
           {
-            "position": [42.653439510477966, -73.77590193322224],
+            "position": [
+              42.653439510477966,
+              -73.77590193322224
+            ],
             "label": "Colonie Center Mall",
             "address": "131 Colonie Center, Albany, NY 12205"
           },
           {
-            "position": [43.083153813479015, -73.78448787354169],
+            "position": [
+              43.083153813479015,
+              -73.78448787354169
+            ],
             "label": "Crossgates Mall",
             "address": "1 Crossgates Mall Rd, Albany, NY 12203"
           }
-
         ]
       }
     },
@@ -48,11 +65,17 @@
       "id": "e3b1f0c2-4d6a-4f5c-8b7c-9d1e2f3a4b5c",
       "type": "transit-routes",
       "data": {
-        "center": [42.713636, -73.815438],
+        "center": [
+          42.713636,
+          -73.815438
+        ],
         "zoom": 12,
         "destinations": [
           {
-            "position": [42.713636, -73.815438],
+            "position": [
+              42.713636,
+              -73.815438
+            ],
             "label": "NYSDOT Headquarters"
           }
         ]
@@ -60,7 +83,7 @@
     },
     {
       "id": "m1b1f0c2-4d6a-4f5c-8b7c-9d1e2f3a4b5c",
-      "type": "fixed-routes", 
+      "type": "fixed-routes",
       "data": {
         "backgroundColor": "#192F51",
         "slideTitleColor": "#ffffff",
@@ -68,14 +91,16 @@
         "tableTextColor": "#000000",
         "backgroundImage": null,
         "stop": {
-          "position": [42.713636, -73.815438],
+          "position": [
+            42.713636,
+            -73.815438
+          ],
           "label": "NYSDOT Headquarters",
           "address": "50 Wolf Rd, Albany, NY 12232",
           "stopNumber": "10506",
           "description": "Main office of the New York State Department of Transportation"
         }
       }
-      
     },
     {
       "id": "89077673-10a0-41bc-97d3-e0da80acc948",
@@ -87,6 +112,29 @@
         "url": "https://nysdot-mobility-builder.vercel.app",
         "text": "Scan to open the NYSDOT Local Mobility app",
         "backgroundImage": null
+      }
+    },
+    {
+      "type": "template-3",
+      "id": "39d7dec1-bd8b-4695-b27a-d882b8911a08",
+      "data": {
+        "title": "Title here"
+      }
+    },
+    {
+      "type": "template-1",
+      "id": "5e666247-a35b-4536-b7d0-8392bd3d8ecf",
+      "data": {
+        "text": "some text here",
+        "title": "Title here"
+      }
+    },
+    {
+      "type": "template-2",
+      "id": "eef6ff31-733b-4d1b-967c-7de2d453c221",
+      "data": {
+        "text": "some text here",
+        "title": "Title here"
       }
     }
   ]

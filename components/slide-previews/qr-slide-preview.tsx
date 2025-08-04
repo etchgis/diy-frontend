@@ -6,6 +6,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const url = useQRStore((state) => state.slides[slideId]?.url || '');
   const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
   const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
+  const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || '');
 
 
   const containerSizeRem = 2 * qrSize;
@@ -13,8 +14,15 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
 
 
   return (
-    <div className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6 relative"
-      style={{ backgroundColor: backgroundColor || '#192f51' }}>
+    <div
+      className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6 relative"
+      style={{
+        backgroundColor: !bgImage ? backgroundColor : undefined,
+        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       {/* QR Code and Text */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-6">
         <div className="bg-white p-4 rounded-lg mb-4">

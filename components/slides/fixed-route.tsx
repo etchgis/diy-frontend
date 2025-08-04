@@ -12,6 +12,8 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const renderCount = useRef(0);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const setStopName = useFixedRouteStore((state) => state.setStopName);
@@ -31,16 +33,19 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '#000000');
   const setTableTextColor = useFixedRouteStore((state) => state.setTableTextColor);
 
+  const bgImage = useFixedRouteStore((state) => state.slides[slideId]?.bgImage || '');
+  const setBgImage = useFixedRouteStore((state) => state.setBgImage);
+
   useEffect(() => {
     renderCount.current += 1;
     const isDev = process.env.NODE_ENV === 'development';
     const shouldSkip =
       (isDev && renderCount.current <= 2) || (!isDev && renderCount.current === 1);
 
-    if (shouldSkip){
+    if (shouldSkip) {
       setSaveStatus('saved');
       return;
-    } 
+    }
 
     setSaveStatus('saving');
 
@@ -50,6 +55,20 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
       setSaveStatus('saved');
     }, 600);
   }, [stopName, description, backgroundColor, titleColor, tableColor, tableTextColor]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(e.target.files?.[0]);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBgImage(slideId, reader.result as string);
+      e.target.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsDataURL(file);
+  };
 
   const scheduleData = [
     {
@@ -253,23 +272,47 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center">
-                  <div className="w-4 h-4 bg-[#cbd5e0] rounded"></div>
+                <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
+                  {bgImage ? (
+                    <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
+                  )}
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1">
+                  {/* Hidden input */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs bg-transparent px-2 py-1"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     Change
                   </Button>
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1">
-                    Remove
-                  </Button>
+                  {bgImage && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs bg-transparent px-2 py-1"
+                      onClick={() => setBgImage(slideId, '')}
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
 
 
             <div className="mt-auto">
-           
+
               <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
                 Delete Screen
               </Button>

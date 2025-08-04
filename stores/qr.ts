@@ -5,6 +5,7 @@ interface QRSlideData {
   text: string;
   url: string;
   qrSize: number;
+  bgImage?: string;
   backgroundColor?: string;
 }
 
@@ -14,6 +15,7 @@ interface SlideStore {
   setUrl: (slideId: string, name: string) => void;
   setQRSize: (slideId: string, size: number) => void;
   setBackgroundColor: (slideId: string, name: string) => void;
+  setBgImage: (slideId: string, bgImage: string) => void;
 }
 
 export const useQRStore = create<SlideStore>()(
@@ -64,9 +66,20 @@ export const useQRStore = create<SlideStore>()(
             },
           },
         })),
+
+      setBgImage: (slideId, bgImage) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              bgImage,
+            },
+          },
+        })),
     }),
     {
-      name: 'qr-slides-storage', 
+      name: 'qr-slides-storage',
     }
   )
 );

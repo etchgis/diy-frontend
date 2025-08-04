@@ -29,7 +29,6 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        console.log('Slide Data:', slideData);
         const {
           backgroundColor,
           rowColor,
@@ -123,6 +122,7 @@ export async function publish() {
     }
 
     if (slide.type === 'template-1') {
+      console.log(slide);
       screenObj.type = 'template-1';
       screenObj.id = slide.id;
       screenObj.data = {};
@@ -132,17 +132,22 @@ export async function publish() {
 
       if (slideData) {
         console.log('Template 1 Slide Data:', slideData);
-        const { text, title, image } = slideData;
+        const { text, title, image, backgroundColor, leftContentSize, rightContentSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
         screenObj.data.image = image;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.leftContentSize = leftContentSize;
+        screenObj.data.rightContentSize = rightContentSize;
+
       } else {
         console.error(`Template 1 slide with ID ${slide.id} not found in the store.`);
       }
     }
 
     if (slide.type === 'template-2') {
+      console.log(slide);
       screenObj.type = 'template-2';
       screenObj.id = slide.id;
       screenObj.data = {};
@@ -152,11 +157,14 @@ export async function publish() {
 
       if (slideData) {
         console.log('Template 2 Slide Data:', slideData);
-        const { text, title, image } = slideData;
+        const { text, title, image, backgroundColor, leftContentSize, rightContentSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
         screenObj.data.image = image;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.leftContentSize = leftContentSize;
+        screenObj.data.rightContentSize = rightContentSize;
       } else {
         console.error(`Template 2 slide with ID ${slide.id} not found in the store.`);
       }
@@ -172,10 +180,11 @@ export async function publish() {
 
       if (slideData) {
         console.log('Template 3 Slide Data:', slideData);
-        const { title, image } = slideData;
+        const { title, image, backgroundColor } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.image = image;
+        screenObj.data.backgroundColor = backgroundColor;
       } else {
         console.error(`Template 3 slide with ID ${slide.id} not found in the store.`);
       }

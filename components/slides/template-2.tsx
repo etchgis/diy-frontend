@@ -10,11 +10,22 @@ import { useState, useRef, useEffect } from "react"
 export default function Template2Slide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const renderCount = useRef(0);
 
   const title = useTemplate2Store((state) => state.slides[slideId]?.title || '');
   const text = useTemplate2Store((state) => state.slides[slideId]?.text || '');
   const image = useTemplate2Store((state) => state.slides[slideId]?.image || null);
+  const bgImage = useTemplate2Store((state) => state.slides[slideId]?.bgImage || '');
+  const backgroundColor = useTemplate2Store((state) => state.slides[slideId]?.backgroundColor || '#305fff');
+
+  const setBgImage = useTemplate2Store((state) => state.setBgImage);
+  const setBackgroundColor = useTemplate2Store((state) => state.setBackgroundColor);
+
+  const leftContentSize = useTemplate2Store((state) => state.slides[slideId]?.leftContentSize || '60%');
+  const setLeftContentSize = useTemplate2Store((state) => state.setLeftContentSize);
+  const rightContentSize = useTemplate2Store((state) => state.slides[slideId]?.rightContentSize || '40%');
+  const setRightContentSize = useTemplate2Store((state) => state.setRightContentSize);
 
   useEffect(() => {
     renderCount.current += 1;
@@ -39,6 +50,19 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
       setSaveStatus('saved');
     }, 600);
   }, [title, text, image]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBgImage(slideId, reader.result as string);
+      e.target.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
 
@@ -95,12 +119,19 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-black rounded border"></div>
-              <Input defaultValue="#000000" readOnly className="flex-1 text-xs" />
+              <div className="colorContainer">
+                <input
+                  type="color"
+                  value={backgroundColor}
+                  onChange={(e) => setBackgroundColor(slideId, e.target.value)}
+                  className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                />
+              </div>
+              <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => setBackgroundColor(slideId, e.target.value)} />
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Image Background Color</label>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-[#FFC62A] rounded border"></div>
@@ -114,33 +145,57 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
               <div className="w-4 h-4 bg-[#f4f4f4] rounded border"></div>
               <Input defaultValue="No Color Selected" readOnly className="flex-1 text-xs text-[#a0aec0]" />
             </div>
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-[#1e3a8a] to-[#1e40af] rounded border flex items-center justify-center">
-                <div className="w-4 h-4 bg-white/20 rounded"></div>
+              <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
+                {bgImage ? (
+                  <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
+                )}
               </div>
               <div className="flex gap-1">
-                <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1">
+                {/* Hidden input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs bg-transparent px-2 py-1"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   Change
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1">
-                  Remove
-                </Button>
+                {bgImage && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs bg-transparent px-2 py-1"
+                    onClick={() => setBgImage(slideId, '')}
+                  >
+                    Remove
+                  </Button>
+                )}
               </div>
             </div>
           </div>
 
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Left Image Box Size</label>
-            <Input defaultValue="60%" readOnly className="text-xs" />
+            <Input placeholder="60%" value={leftContentSize} className="text-xs" onChange={(e) => { setLeftContentSize(slideId, e.target.value) }} />
           </div>
 
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Right Content Box Size</label>
-            <Input defaultValue="40%" readOnly className="text-xs" />
+            <Input placeholder="40%" value={rightContentSize} className="text-xs" onChange={(e) => { setRightContentSize(slideId, e.target.value) }} />
           </div>
         </div>
 
