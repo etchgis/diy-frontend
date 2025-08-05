@@ -10,10 +10,16 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
-  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '');
-  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '');
-  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '');
-  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '');
+  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
+  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '#FFFFFF');
+  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '#FFFFFF');
+  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '#000000');
+  const bgImage = useFixedRouteStore((state) => state.slides[slideId]?.bgImage || '');
+
+  useEffect(() => {
+    console.log(bgImage);
+  }), [bgImage]
+  
 
   const scheduleData = [
     {
@@ -66,7 +72,16 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
 
       {/* Transit Schedule Display */}
       <div className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6">
-        <div className="bg-[#192f51] rounded-lg overflow-hidden"  style={{color: titleColor || '#FFFFFF', backgroundColor: backgroundColor || '#192f51'}}>
+        <div
+          className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden relative"
+          style={{
+            backgroundColor: !bgImage ? backgroundColor : undefined,
+            backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            color: titleColor || '#ffffff',
+          }}
+        >
           {/* Schedule Header */}
           <div className="p-6">
             <div className="text-lg mb-2">Stop #10506 arrival times</div>
@@ -75,12 +90,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
           </div>
 
           {/* Schedule Table */}
-          <div className="bg-white text-black">
+          <div className="text-black">
             {scheduleData.map((item, index) => (
               <div
                 key={index}
                 className={`flex items-center justify-between ${description ? 'p-[10px]' : 'p-[12px]'}  border-b border-[#e2e8f0] last:border-b-0`}
-                style={{backgroundColor: tableColor, color: tableTextColor}}>
+                style={{  backgroundColor: !bgImage ? tableColor : 'transparent', color: tableTextColor,}}>
                 <div className="flex-1">
                   <span className="font-medium">{item.destination}</span>
                 </div>

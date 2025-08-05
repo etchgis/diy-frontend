@@ -1,3 +1,6 @@
+import { deleteImage } from '@/services/deleteImage';
+import { uploadImage } from '@/services/uploadImage';
+import { useGeneralStore } from '@/stores/general';
 import { useTemplate1Store } from '@/stores/template1';
 import { useState } from 'react';
 
@@ -12,16 +15,33 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
   const image = useTemplate1Store((state) => state.slides[slideId]?.image || null);
   const setImage = useTemplate1Store((state) => state.setImage);
 
+  const bgImage = useTemplate1Store((state) => state.slides[slideId]?.bgImage || '');
+  const backgroundColor = useTemplate1Store((state) => state.slides[slideId]?.backgroundColor || '#305fff');
+
+  const leftContentSize = useTemplate1Store((state) => state.slides[slideId]?.leftContentSize || '60%');
+  const rightContentSize = useTemplate1Store((state) => state.slides[slideId]?.rightContentSize || '40%');
+
+  const shortcode = useGeneralStore((state) => state.shortcode || '');
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImage(slideId, reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    uploadImage(shortcode, file).then((data) => {
+      if (image) {
+        deleteImage(image).then(() => {
+          console.log('Previous image deleted');
+        }).catch((err) => {
+          console.error('Failed to delete previous image:', err);
+        });
+      }
+      setImage(slideId, data.url);
     }
+    ).catch((err) => {
+      console.error('Image upload failed:', err);
+    });
+
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -29,9 +49,17 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">
+    <div
+      className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6 relative"
+      style={{
+        backgroundColor: !bgImage ? backgroundColor : undefined,
+        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <div
-        className="bg-gradient-to-br from-[#1e3a8a] to-[#1e40af] text-white rounded-lg overflow-hidden relative"
+        className="bg-gradient-to-br text-white rounded-lg overflow-hidden relative"
         style={{ height: '500px' }}
       >
         {/* Title Area */}
@@ -50,7 +78,7 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
         {/* Content Area */}
         <div className="flex-1 p-6 flex gap-4">
           {/* Left Content Box (60%) */}
-          <div className="w-[60%]">
+          <div style={{ width: leftContentSize }}>
             <div className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 p-6 flex items-start">
               <textarea
                 value={content}
@@ -62,7 +90,7 @@ export default function Template1Preview({ slideId }: { slideId: string }) {
           </div>
 
           {/* Right Image Box (40%) */}
-          <div className="w-[40%]">
+          <div style={{ width: rightContentSize }}>
             <div
               className="h-[300px] border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 flex items-center justify-center p-6"
               onDrop={handleDrop}

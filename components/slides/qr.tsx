@@ -6,11 +6,15 @@ import QRSlidePreview from "../slide-previews/qr-slide-preview"
 import { useQRStore } from "@/stores/qr"
 import { useEffect, useRef, useState } from "react"
 import QRCode from 'react-qr-code';
+import { useGeneralStore } from "@/stores/general"
+import { uploadImage } from "@/services/uploadImage"
+import { deleteImage } from "@/services/deleteImage"
 
 
 export default function QRSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const renderCount = useRef(0);
 
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
@@ -22,8 +26,13 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
   const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
   const setQrSize = useQRStore((state) => state.setQRSize);
 
-  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const setBackgroundColor = useQRStore((state) => state.setBackgroundColor);
+
+  const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || '');
+  const setBgImage = useQRStore((state) => state.setBgImage);
+
+  const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   const [tempQR, setTempQR] = useState(url);
 
@@ -61,6 +70,37 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
   const handleGenerateQR = () => {
     if (!tempQR.trim()) return;
     setUrl(slideId, tempQR);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    uploadImage(shortcode, file).then((data) => {
+      if(bgImage){
+        deleteImage(bgImage).then(() => {
+          console.log('Previous image deleted');
+        }).catch((err) => {
+          console.error('Failed to delete previous image:', err);
+        });
+      }
+      setBgImage(slideId, data.url);
+    }
+    ).catch((err) => {
+      console.error('Image upload failed:', err);
+    });
+    
+  };
+
+  const handleRemoveImage = () => {
+    if (bgImage) {
+      deleteImage(bgImage).then(() => {
+        console.log('Image deleted successfully');
+        setBgImage(slideId, '');
+      }).catch((err) => {
+        console.error('Failed to delete image:', err);
+      });
+    }
   };
 
   return (
@@ -156,21 +196,46 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center">
-                  <div className="w-4 h-4 bg-[#cbd5e0] rounded"></div>
+                <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
+                  {bgImage ? (
+                    <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
+                  )}
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1">
+                  {/* Hidden input */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs bg-transparent px-2 py-1"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     Change
                   </Button>
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1">
-                    Remove
-                  </Button>
+                  {bgImage && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs bg-transparent px-2 py-1"
+                      onClick={handleRemoveImage}
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </div>
               </div>
+
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Alignment of Text on Page</label>
               <Select>
                 <SelectTrigger className="w-full text-xs">
@@ -182,7 +247,7 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
                   <SelectItem value="right">Right</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-sm">QR Code Size</label>

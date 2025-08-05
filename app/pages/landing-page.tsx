@@ -9,6 +9,8 @@ import { useEffect, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
 import { SetupSlides } from '@/services/setup'
 import { v4 as uuidv4 } from "uuid";
+import { generateShortcode } from "@/utils/generateShortcode"
+import { existsingCheck } from "@/services/existingCheck"
 
 
 export default function LandingPage() {
@@ -18,6 +20,7 @@ export default function LandingPage() {
   const [selectedFeature, setSelectedFeature] = useState<any | null>(null);
   const [locationError, setLocationError] = useState(false);
   const [templateError, setTemplateError] = useState(false);
+  const [existingEdit, setExistingEdit] = useState(false);
 
   const template = useGeneralStore((state) => state.template || '');
   const setTemplate = useGeneralStore((state) => state.setTemplate);
@@ -29,6 +32,15 @@ export default function LandingPage() {
 
   const url = useGeneralStore((state) => state.url || '');
   const setUrl = useGeneralStore((state) => state.setUrl);
+
+  const setShortcode = useGeneralStore((state) => state.setShortcode);
+
+  useEffect(() => {
+    const current = JSON.parse(localStorage.getItem('general-store') || '{}');
+    if (current && current.state?.slides && current.state.slides.length > 0) {
+      setExistingEdit(true);
+    }
+  }, []);
 
 
   useEffect(() => {
@@ -72,17 +84,30 @@ export default function LandingPage() {
 
     localStorage.clear();
     localStorage.removeItem('general-store');
-    useGeneralStore.setState({ slides: [{ id: uuidv4(), type: template }] });
+    const shortcode = generateShortcode()
+    existsingCheck(shortcode).then((data) => {
+      if (data.exists) {
+        const newShortcode = generateShortcode();
+        setShortcode(newShortcode);
+      } else {
+        setShortcode(shortcode);
+      }
 
+      useGeneralStore.setState({ slides: [{ id: uuidv4(), type: template }] });
 
-    if (hasLocation && hasTemplate) {
-      setAddress(selectedFeature.place_name);
+      if (hasLocation && hasTemplate) {
+        setAddress(selectedFeature.place_name);
+        const [lng, lat] = selectedFeature.center;
+        setCoordinates({ lat, lng });
+        router.push('/editor');
+      }
+    })
 
-      const [lng, lat] = selectedFeature.center;
-      setCoordinates({ lat, lng });
-      router.push('/editor');
-    }
   }
+
+  const handleContinue = () => {
+    router.push('/editor');
+  };
 
   const handleEdit = () => {
 
@@ -251,6 +276,26 @@ export default function LandingPage() {
             </Card>
           </div>
         </main>
+
+        {existingEdit && (
+          <div className="mt-6 w-[800px] align-middle mx-auto">
+            <Card className="bg-[#0b5583] border-0 p-2 pt-6">
+              <CardContent>
+                <div className="flex items-center justify-between pt-2">
+                  <p className="font-medium text-[#ffffff]">
+                    You have an existing edit saved, you can continue editing where you left off or start a new set of screens.
+                  </p>
+                  <Button
+                    className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6 ml-4"
+                    onClick={handleContinue}
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   )

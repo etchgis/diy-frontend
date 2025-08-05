@@ -3,6 +3,10 @@ import { useFixedRouteStore } from "@/stores/fixedRoute";
 import { useQRStore } from '@/stores/qr';
 import { useGeneralStore } from '@/stores/general';
 import { useTransitRouteStore } from "@/stores/transitRoutes";
+import { useTemplate1Store } from "@/stores/template1";
+import { useTemplate2Store } from "@/stores/template2";
+import { useTemplate3Store } from "@/stores/template3";
+import { set } from "react-hook-form";
 
 export async function SetupSlides(shortcode: string) {
 
@@ -50,7 +54,7 @@ async function importData(setup: any) {
   const slides: any = [];
 
   setup.screens.forEach((slide: any) => {
-    slides.push({id: slide.id, type: slide.type});
+    slides.push({ id: slide.id, type: slide.type });
     if (slide.type === 'transit-destinations') {
       const {
         setBackgroundColor,
@@ -58,6 +62,7 @@ async function importData(setup: any) {
         setAlternateRowColor,
         setTableHeaderTextColor,
         setTableTextColor,
+        setDestinations
       } = useTransitDestinationsStore.getState();
 
       console.log(slide.data.rowColor);
@@ -67,6 +72,7 @@ async function importData(setup: any) {
       setAlternateRowColor(slide.id, slide.data.alternatingRowColor || '#78B1DD');
       setTableHeaderTextColor(slide.id, '#ffffff');
       setTableTextColor(slide.id, '#ffffff');
+      setDestinations(slide.id, slide.data.destinations || []);
     }
 
     if (slide.type === 'fixed-routes') {
@@ -110,19 +116,60 @@ async function importData(setup: any) {
       setUrl(slide.id, slide.data.url || '');
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#ffffff');
       setQRSize(slide.id, slide.data.qrSize || 5);
-
     }
 
     if (slide.type === 'template-1') {
+      const {
+        setText,
+        setTitle,
+        setImage,
+        setBgImage,
+        setBackgroundColor,
+        setLeftContentSize,
+        setRightContentSize
+      } = useTemplate1Store.getState();
 
+      setText(slide.id, slide.data.text || '');
+      setTitle(slide.id, slide.data.title || '');
+      setImage(slide.id, slide.data.image || null);
+      setBgImage(slide.id, slide.data.bgImage || null);
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#305fff');
+      setLeftContentSize(slide.id, slide.data.leftContentSize || '60%');
+      setRightContentSize(slide.id, slide.data.rightContentSize || '40%');
     }
 
     if (slide.type === 'template-2') {
+      const {
+        setText,
+        setTitle,
+        setImage,
+        setBgImage,
+        setBackgroundColor,
+        setLeftContentSize,
+        setRightContentSize
+      } = useTemplate2Store.getState();
+    
+      setText(slide.id, slide.data.text || '');
+      setTitle(slide.id, slide.data.title || '');
+      setImage(slide.id, slide.data.image || null);
+      setBgImage(slide.id, slide.data.bgImage || null);
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#305fff');
+      setLeftContentSize(slide.id, slide.data.leftContentSize || '60%');
+      setRightContentSize(slide.id, slide.data.rightContentSize || '40%');
 
     }
 
     if (slide.type === 'template-3') {
-
+      const {
+        setTitle,
+        setImage,
+        setBgImage,
+        setBackgroundColor,
+      } = useTemplate3Store.getState();
+      setTitle(slide.id, slide.data.title || '');
+      setImage(slide.id, slide.data.image || null);
+      setBgImage(slide.id, slide.data.bgImage || null);
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#305fff');
     }
   });
 
