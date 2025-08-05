@@ -25,9 +25,9 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
   const setBgImage = useTemplate1Store((state) => state.setBgImage);
   const setBackgroundColor = useTemplate1Store((state) => state.setBackgroundColor);
 
-  const leftContentSize = useTemplate1Store((state) => state.slides[slideId]?.leftContentSize || '60%');
+  const leftContentSize = useTemplate1Store((state) => state.slides[slideId]?.leftContentSize || '');
   const setLeftContentSize = useTemplate1Store((state) => state.setLeftContentSize);
-  const rightContentSize = useTemplate1Store((state) => state.slides[slideId]?.rightContentSize || '40%');
+  const rightContentSize = useTemplate1Store((state) => state.slides[slideId]?.rightContentSize || '');
   const setRightContentSize = useTemplate1Store((state) => state.setRightContentSize);
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
@@ -54,11 +54,15 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, text, image]);
+  }, [title, text, image, backgroundColor, leftContentSize, rightContentSize, bgImage]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
     uploadImage(shortcode, file).then((data) => {
       if (bgImage) {
@@ -81,6 +85,9 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
       deleteImage(bgImage).then(() => {
         console.log('Image deleted successfully');
         setBgImage(slideId, '');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }).catch((err) => {
         console.error('Failed to delete image:', err);
       });
@@ -201,7 +208,7 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
                     variant="outline"
                     size="sm"
                     className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => {handleRemoveImage}}
+                    onClick={handleRemoveImage}
                   >
                     Remove
                   </Button>
