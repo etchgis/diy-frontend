@@ -65,6 +65,10 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
     uploadImage(shortcode, file).then((data) => {
       if (bgImage) {
         deleteImage(bgImage).then(() => {
@@ -86,6 +90,9 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
       deleteImage(bgImage).then(() => {
         console.log('Image deleted successfully');
         setBgImage(slideId, '');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }).catch((err) => {
         console.error('Failed to delete image:', err);
       });
@@ -323,7 +330,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
                       variant="outline"
                       size="sm"
                       className="text-xs bg-transparent px-2 py-1"
-                      onClick={() => {handleRemoveImage}}
+                      onClick={handleRemoveImage}
                     >
                       Remove
                     </Button>

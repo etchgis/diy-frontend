@@ -50,11 +50,15 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, image]);
+  }, [title, image, backgroundColor, bgImage]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
     uploadImage(shortcode, file).then((data) => {
       if (bgImage) {
@@ -77,6 +81,9 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
       deleteImage(bgImage).then(() => {
         console.log('Image deleted successfully');
         setBgImage(slideId, '');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }).catch((err) => {
         console.error('Failed to delete image:', err);
       });
@@ -180,7 +187,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
                     variant="outline"
                     size="sm"
                     className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => {handleRemoveImage}}
+                    onClick={handleRemoveImage}
                   >
                     Remove
                   </Button>
