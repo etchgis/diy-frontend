@@ -15,10 +15,6 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '#FFFFFF');
   const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '#000000');
   const bgImage = useFixedRouteStore((state) => state.slides[slideId]?.bgImage || '');
-
-  useEffect(() => {
-    console.log(bgImage);
-  }), [bgImage]
   
 
   const scheduleData = [
