@@ -6,6 +6,9 @@ import QRSlidePreview from "../slide-previews/qr-slide-preview"
 import { useQRStore } from "@/stores/qr"
 import { useEffect, useRef, useState } from "react"
 import QRCode from 'react-qr-code';
+import { useGeneralStore } from "@/stores/general"
+import { uploadImage } from "@/services/uploadImage"
+import { deleteImage } from "@/services/deleteImage"
 
 
 export default function QRSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
@@ -23,11 +26,13 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
   const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
   const setQrSize = useQRStore((state) => state.setQRSize);
 
-  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const setBackgroundColor = useQRStore((state) => state.setBackgroundColor);
 
   const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || '');
   const setBgImage = useQRStore((state) => state.setBgImage);
+
+  const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   const [tempQR, setTempQR] = useState(url);
 
@@ -67,18 +72,35 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
     setUrl(slideId, tempQR);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setBgImage(slideId, reader.result as string);
-      e.target.value = '';
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsDataURL(file);
+    uploadImage(shortcode, file).then((data) => {
+      if(bgImage){
+        deleteImage(bgImage).then(() => {
+          console.log('Previous image deleted');
+        }).catch((err) => {
+          console.error('Failed to delete previous image:', err);
+        });
+      }
+      setBgImage(slideId, data.url);
+    }
+    ).catch((err) => {
+      console.error('Image upload failed:', err);
+    });
     
+  };
+
+  const handleRemoveImage = () => {
+    if (bgImage) {
+      deleteImage(bgImage).then(() => {
+        console.log('Image deleted successfully');
+        setBgImage(slideId, '');
+      }).catch((err) => {
+        console.error('Failed to delete image:', err);
+      });
+    }
   };
 
   return (
@@ -203,7 +225,7 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
                       variant="outline"
                       size="sm"
                       className="text-xs bg-transparent px-2 py-1"
-                      onClick={() => setBgImage(slideId, '')}
+                      onClick={handleRemoveImage}
                     >
                       Remove
                     </Button>

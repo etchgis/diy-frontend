@@ -12,6 +12,7 @@ interface Store {
   address?: string;
   url?: string;
   location?: string;
+  shortcode?: string;
   coordinates?: {
     lat: number;
     lng: number;
@@ -22,6 +23,7 @@ interface Store {
   setLocation: (location: string) => void;
   setUrl: (url: string) => void;
   setCoordinates: (coordinates: { lat: number; lng: number }) => void;
+  setShortcode: (shortCode: string) => void;
 }
 
 export const useGeneralStore = create<Store>()(
@@ -52,6 +54,10 @@ export const useGeneralStore = create<Store>()(
       setUrl: (url) => set(() => ({
         url,
       })),
+
+      setShortcode: (shortcode) => set(() => ({
+        shortcode,
+      }))
     }),
     {
       name: 'general-store' ,

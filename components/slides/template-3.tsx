@@ -6,6 +6,9 @@ import Template2Preview from "../slide-previews/template-2-preview"
 import Template3Preview from "../slide-previews/template-3-preview"
 import { useEffect, useRef, useState } from "react"
 import { useTemplate3Store } from "@/stores/template3"
+import { deleteImage } from "@/services/deleteImage"
+import { uploadImage } from "@/services/uploadImage"
+import { useGeneralStore } from "@/stores/general"
 
 
 export default function Template3Slide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
@@ -22,6 +25,8 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
 
   const backgroundColor = useTemplate3Store((state) => state.slides[slideId]?.backgroundColor || '#305fff');
   const setBackgroundColor = useTemplate3Store((state) => state.setBackgroundColor);
+
+  const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   useEffect(() => {
     renderCount.current += 1;
@@ -47,17 +52,35 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
     }, 600);
   }, [title, image]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setBgImage(slideId, reader.result as string);
-      e.target.value = '';
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsDataURL(file);
+    uploadImage(shortcode, file).then((data) => {
+      if (bgImage) {
+        deleteImage(bgImage).then(() => {
+          console.log('Previous image deleted');
+        }).catch((err) => {
+          console.error('Failed to delete previous image:', err);
+        });
+      }
+      setBgImage(slideId, data.url);
+    }
+    ).catch((err) => {
+      console.error('Image upload failed:', err);
+    });
+
+  };
+
+  const handleRemoveImage = () => {
+    if (bgImage) {
+      deleteImage(bgImage).then(() => {
+        console.log('Image deleted successfully');
+        setBgImage(slideId, '');
+      }).catch((err) => {
+        console.error('Failed to delete image:', err);
+      });
+    }
   };
 
 
@@ -157,7 +180,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
                     variant="outline"
                     size="sm"
                     className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => setBgImage(slideId, '')}
+                    onClick={() => {handleRemoveImage}}
                   >
                     Remove
                   </Button>

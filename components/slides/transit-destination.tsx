@@ -9,6 +9,7 @@ import { useGeneralStore } from "@/stores/general"
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const renderCount = useRef(0);
 
@@ -31,20 +32,32 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '#ffffff');
   const setTableTextColor = useTransitDestinationsStore((state) => state.setTableTextColor);
 
+  const selectedFeature = useTransitDestinationsStore((state) => state.slides[slideId]?.selectedFeature || '');
+  const setSelectedFeature = useTransitDestinationsStore((state) => state.setSelectedFeature);
+
+  const locationError = useTransitDestinationsStore((state) => state.slides[slideId]?.locationError || false);
+  const setLocationError = useTransitDestinationsStore((state) => state.setLocationError);
+
+  const displayName = useTransitDestinationsStore((state) => state.slides[slideId]?.displayName || '');
+  const setDisplayName = useTransitDestinationsStore((state) => state.setDisplayName);
+
+  const query = useTransitDestinationsStore((state) => state.slides[slideId]?.query || '');
+  const setQuery = useTransitDestinationsStore((state) => state.setQuery);
+
 
 
   useEffect(() => {
     renderCount.current += 1;
     const isDev = process.env.NODE_ENV === 'development';
 
-    if (isDev && renderCount.current <= 2){
+    if (isDev && renderCount.current <= 2) {
       setSaveStatus('saved');
       return;
-    } 
-    if (!isDev && renderCount.current === 1){
+    }
+    if (!isDev && renderCount.current === 1) {
       setSaveStatus('saved');
       return;
-    } 
+    }
 
     setSaveStatus('saving');
 
@@ -58,7 +71,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   }, [backgroundColor, rowColor, alternateRowColor, tableHeaderTextColor, tableTextColor]);
 
 
-  const destinations = [
+  const mockDestinations = [
     {
       name: "Albany International Airport",
       route: "1 hr 9 min",
@@ -109,13 +122,75 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
     },
   ]
 
-  const destinationTags = [
-    "Albany International Airport",
-    "Downtown Schenectady",
-    "Albany Medical Center",
-    "Downtown Saratoga Springs",
-    "Albany-Rensselaer Train Station",
-  ]
+  const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
+  const setDestinations = useTransitDestinationsStore((state) => state.setDestinations);
+
+
+
+
+  const handleDeleteDestination = (name: string) => {
+    const updatedDestinations = destinations.filter((dest: any) => dest.name !== name);
+    setDestinations(slideId, updatedDestinations);
+  };
+
+
+  useEffect(() => {
+    const controller = new AbortController();
+    if (query.length < 3){
+      setSuggestions([]);
+      return;
+    } 
+
+    const fetchSuggestions = async () => {
+      if (selectedFeature) return;
+      const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        const data = await res.json();
+        console.log(data.features);
+        const nyOnly = data.features.filter((feat: any) =>
+          feat.place_name.includes("New York")
+        );
+        setSuggestions(nyOnly.map((feat: any) => feat));
+      } catch (err: any) {
+        if (err.name !== "AbortError") console.error(err);
+      }
+    };
+
+    fetchSuggestions();
+    return () => controller.abort();
+  }, [query]);
+
+  const handleSelect = (feature: any) => {
+    setSelectedFeature(slideId, feature);
+    setQuery(slideId, feature.place_name);
+    setSuggestions([]);
+  };
+
+  const handleCreate = () => {
+    if (!query) {
+      setLocationError(slideId, true);
+      return;
+    }
+
+    const newDestination = {
+      name: displayName || query,
+      route: "N/A",
+      departure: "N/A",
+      arrival: "N/A",
+      travel: "N/A",
+      dark: destinations.length % 2 === 0,
+    };
+
+    const updatedDestinations = [...destinations, newDestination];
+    setDestinations(slideId, updatedDestinations);
+    setQuery(slideId, "");
+    setDisplayName(slideId, "");
+    setSelectedFeature(slideId, "");
+    setLocationError(slideId, false);
+  }
 
   return (
     <>
@@ -136,14 +211,45 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
             {/* Destination Input */}
             <div className="mb-6">
-              <label className="block text-[#4a5568] font-medium mb-2">Destination</label>
+              <label className="block text-[#4a5568] font-medium mb-2">Add Destination</label>
               <div className="flex gap-3">
+                {/* Destination Input */}
                 <Input
-                  placeholder="Downtown Troy"
-                  className="flex-1 bg-white border-[#cbd5e0]"
-                  defaultValue="Downtown Troy"
+                  placeholder="Destination"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(slideId, e.target.value);
+                    setSelectedFeature(slideId, "");
+                    setLocationError(slideId, false);
+                  }}
+                  className={`bg-white text-[#1a202c] w-[48%] ${locationError ? "border border-red-500" : ""}`}
                 />
-                <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent">
+
+                {/* Display Name Input */}
+                <Input
+                  placeholder="Display Name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(slideId, e.target.value)}
+                  className="bg-white text-[#1a202c] w-[48%]"
+                />
+
+                {/* Suggestions Dropdown */}
+                {suggestions.length > 0 && (
+                  <ul className="absolute z-10 bg-white border rounded mt-10 w-[35%] max-h-48 overflow-y-auto shadow-md">
+                    {suggestions.map((feature: any, idx) => (
+                      <li
+                        key={idx}
+                        onClick={() => handleSelect(feature)}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                      >
+                        {feature.place_name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Add Button */}
+                <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent" onClick={handleCreate}>
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
@@ -256,31 +362,16 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               </div>
             </div>
 
-            <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center">
-                  <div className="w-4 h-4 bg-[#cbd5e0] rounded"></div>
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1">
-                    Change
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1">
-                    Remove
-                  </Button>
-                </div>
-              </div>
-            </div>
+
           </div>
 
           <div className="mb-4">
             <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Destinations</h3>
             <div className="space-y-2">
-              {destinationTags.map((dest, index) => (
+              {destinations.map((dest: any, index: number) => (
                 <div key={index} className="flex items-center justify-between bg-[#f4f4f4] p-2 rounded">
-                  <span className="text-xs text-[#4a5568] truncate pr-2">{dest}</span>
-                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0">
+                  <span className="text-xs text-[#4a5568] truncate pr-2">{dest.name}</span>
+                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => handleDeleteDestination(dest.name)}>
                     <X className="w-2 h-2" />
                   </Button>
                 </div>

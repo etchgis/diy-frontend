@@ -106,9 +106,6 @@ export default function EditorPage() {
   useEffect(() => {
   }, [activeSlideId]);
 
-  const setAllData = () => {
-
-  }
 
   const handleDelete = (slideId: string) => {
     const confirmed = confirm("Are you sure you want to delete this screen? This action cannot be undone.");

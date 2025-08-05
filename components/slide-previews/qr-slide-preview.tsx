@@ -4,7 +4,7 @@ import QRCode from "react-qr-code";
 export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const url = useQRStore((state) => state.slides[slideId]?.url || '');
-  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '');
+  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
   const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || '');
 

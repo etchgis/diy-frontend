@@ -9,7 +9,7 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
   const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '#ffffff');
   const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '#ffffff');
 
-  const destinations = [
+  const mockDestinations = [
     {
       name: "Albany International Airport",
       route: "1 hr 9 min",
@@ -60,6 +60,8 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
     },
   ]
 
+  const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
+
   const destinationTags = [
     "Albany International Airport",
     "Downtown Schenectady",
@@ -103,6 +105,28 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
               <div>{dest.departure}</div>
               <div>{dest.arrival}</div>
               <div>{dest.travel}</div>
+            </div>
+          ))}
+
+          {/* Add empty rows if there are fewer than 6 destinations */}
+          {Array.from({ length: Math.max(0, 6 - destinations.length) }).map((_, index) => (
+            <div
+              key={`empty-${index}`}
+              className="grid grid-cols-5 gap-4 p-[21px] items-center"
+              style={{
+                backgroundColor: (destinations.length + index) % 2 === 0 ? rowColor : alternateRowColor,
+                color: tableTextColor,
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[#cbd5e0]">-</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="text-2xl text-[#cbd5e0]">-</div>
+              </div>
+              <div className="text-[#cbd5e0]">-</div>
+              <div className="text-[#cbd5e0]">-</div>
+              <div className="text-[#cbd5e0]">-</div>
             </div>
           ))}
         </div>

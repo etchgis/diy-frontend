@@ -1,3 +1,6 @@
+import { deleteImage } from "@/services/deleteImage";
+import { uploadImage } from "@/services/uploadImage";
+import { useGeneralStore } from "@/stores/general";
 import { useTemplate2Store } from "@/stores/template2";
 
 export default function Template2Preview({ slideId }: { slideId: string }) {
@@ -16,16 +19,27 @@ export default function Template2Preview({ slideId }: { slideId: string }) {
   const leftContentSize = useTemplate2Store((state) => state.slides[slideId]?.leftContentSize || '60%');
   const rightContentSize = useTemplate2Store((state) => state.slides[slideId]?.rightContentSize || '40%');
 
+  const shortcode = useGeneralStore((state) => state.shortcode || '');
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImage(slideId, reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    uploadImage(shortcode, file).then((data) => {
+      if (image) {
+        deleteImage(image).then(() => {
+          console.log('Previous image deleted');
+        }).catch((err) => {
+          console.error('Failed to delete previous image:', err);
+        });
+      }
+      setImage(slideId, data.url);
     }
+    ).catch((err) => {
+      console.error('Image upload failed:', err);
+    });
+
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {

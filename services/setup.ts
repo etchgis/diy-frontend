@@ -62,6 +62,7 @@ async function importData(setup: any) {
         setAlternateRowColor,
         setTableHeaderTextColor,
         setTableTextColor,
+        setDestinations
       } = useTransitDestinationsStore.getState();
 
       console.log(slide.data.rowColor);
@@ -71,6 +72,7 @@ async function importData(setup: any) {
       setAlternateRowColor(slide.id, slide.data.alternatingRowColor || '#78B1DD');
       setTableHeaderTextColor(slide.id, '#ffffff');
       setTableTextColor(slide.id, '#ffffff');
+      setDestinations(slide.id, slide.data.destinations || []);
     }
 
     if (slide.type === 'fixed-routes') {

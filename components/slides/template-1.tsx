@@ -5,6 +5,9 @@ import { HelpCircle, ChevronRight, Upload } from "lucide-react"
 import Template1Preview from "../slide-previews/template-1-preview"
 import { useEffect, useRef, useState } from "react"
 import { useTemplate1Store } from "@/stores/template1"
+import { uploadImage } from "@/services/uploadImage"
+import { deleteImage } from "@/services/deleteImage"
+import { useGeneralStore } from "@/stores/general"
 
 // left content and right image page template
 export default function Template1Slide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
@@ -26,6 +29,8 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
   const setLeftContentSize = useTemplate1Store((state) => state.setLeftContentSize);
   const rightContentSize = useTemplate1Store((state) => state.slides[slideId]?.rightContentSize || '40%');
   const setRightContentSize = useTemplate1Store((state) => state.setRightContentSize);
+
+  const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   useEffect(() => {
     renderCount.current += 1;
@@ -51,17 +56,35 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
     }, 600);
   }, [title, text, image]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setBgImage(slideId, reader.result as string);
-      e.target.value = '';
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsDataURL(file);
+    uploadImage(shortcode, file).then((data) => {
+      if (bgImage) {
+        deleteImage(bgImage).then(() => {
+          console.log('Previous image deleted');
+        }).catch((err) => {
+          console.error('Failed to delete previous image:', err);
+        });
+      }
+      setBgImage(slideId, data.url);
+    }
+    ).catch((err) => {
+      console.error('Image upload failed:', err);
+    });
+
+  };
+
+  const handleRemoveImage = () => {
+    if (bgImage) {
+      deleteImage(bgImage).then(() => {
+        console.log('Image deleted successfully');
+        setBgImage(slideId, '');
+      }).catch((err) => {
+        console.error('Failed to delete image:', err);
+      });
+    }
   };
 
   return (
@@ -178,7 +201,7 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
                     variant="outline"
                     size="sm"
                     className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => setBgImage(slideId, '')}
+                    onClick={() => {handleRemoveImage}}
                   >
                     Remove
                   </Button>
@@ -189,12 +212,12 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
 
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Left Content Box Size</label>
-            <Input  placeholder="60%" value={leftContentSize}  className="text-xs" onChange={(e) => {setLeftContentSize(slideId, e.target.value)}}/>
+            <Input placeholder="60%" value={leftContentSize} className="text-xs" onChange={(e) => { setLeftContentSize(slideId, e.target.value) }} />
           </div>
 
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Right Image Box Size</label>
-            <Input  placeholder="40%" value={rightContentSize}  className="text-xs" onChange={(e) => {setRightContentSize(slideId, e.target.value)}}/>
+            <Input placeholder="40%" value={rightContentSize} className="text-xs" onChange={(e) => { setRightContentSize(slideId, e.target.value) }} />
           </div>
         </div>
 
@@ -208,3 +231,4 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
     </div >
   )
 }
+

@@ -9,6 +9,8 @@ import { useEffect, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
 import { SetupSlides } from '@/services/setup'
 import { v4 as uuidv4 } from "uuid";
+import { generateShortcode } from "@/utils/generateShortcode"
+import { existsingCheck } from "@/services/existingCheck"
 
 
 export default function LandingPage() {
@@ -30,6 +32,8 @@ export default function LandingPage() {
 
   const url = useGeneralStore((state) => state.url || '');
   const setUrl = useGeneralStore((state) => state.setUrl);
+
+  const setShortcode = useGeneralStore((state) => state.setShortcode);
 
   useEffect(() => {
     const current = JSON.parse(localStorage.getItem('general-store') || '{}');
@@ -80,16 +84,25 @@ export default function LandingPage() {
 
     localStorage.clear();
     localStorage.removeItem('general-store');
-    useGeneralStore.setState({ slides: [{ id: uuidv4(), type: template }] });
+    const shortcode = generateShortcode()
+    existsingCheck(shortcode).then((data) => {
+      if (data.exists) {
+        const newShortcode = generateShortcode();
+        setShortcode(newShortcode);
+      } else {
+        setShortcode(shortcode);
+      }
 
+      useGeneralStore.setState({ slides: [{ id: uuidv4(), type: template }] });
 
-    if (hasLocation && hasTemplate) {
-      setAddress(selectedFeature.place_name);
+      if (hasLocation && hasTemplate) {
+        setAddress(selectedFeature.place_name);
+        const [lng, lat] = selectedFeature.center;
+        setCoordinates({ lat, lng });
+        router.push('/editor');
+      }
+    })
 
-      const [lng, lat] = selectedFeature.center;
-      setCoordinates({ lat, lng });
-      router.push('/editor');
-    }
   }
 
   const handleContinue = () => {

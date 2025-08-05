@@ -10,10 +10,10 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
-  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '');
-  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '');
-  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '');
-  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '');
+  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
+  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '#FFFFFF');
+  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '#FFFFFF');
+  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '#000000');
   const bgImage = useFixedRouteStore((state) => state.slides[slideId]?.bgImage || '');
 
   useEffect(() => {

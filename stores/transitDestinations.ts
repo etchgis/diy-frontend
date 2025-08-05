@@ -7,6 +7,12 @@ interface TransitionDestinationsSlideData {
   alternateRowColor: string;
   tableHeaderTextColor: string;
   tableTextColor: string;
+  destinations: any[];
+  suggestions?: any[];
+  selectedFeature: any | null;
+  locationError: boolean;
+  displayName: string;
+  query: string;
 }
 
 interface SlideStore {
@@ -16,6 +22,12 @@ interface SlideStore {
   setAlternateRowColor: (slideId: string, color: string) => void;
   setTableHeaderTextColor: (slideId: string, color: string) => void;
   setTableTextColor: (slideId: string, color: string) => void;
+  setDestinations: (slideId: string, destinations: any[]) => void;
+  setSuggestions: (slideId: string, suggestions: any[]) => void;
+  setSelectedFeature: (slideId: string, feature: any) => void;
+  setLocationError: (slideId: string, error: boolean) => void;
+  setDisplayName: (slideId: string, name: string) => void;
+  setQuery: (slideId: string, query: string) => void;
 }
 
 export const useTransitDestinationsStore = create<SlideStore>()(
@@ -77,6 +89,72 @@ export const useTransitDestinationsStore = create<SlideStore>()(
             },
           },
         })),
+
+      setDestinations: (slideId, destinations) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              destinations: destinations,
+            },
+          },
+        })),
+
+      setSuggestions: (slideId, suggestions) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              suggestions: suggestions,
+            },
+          },
+        })),
+
+      setSelectedFeature: (slideId, feature) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              selectedFeature: feature,
+            },
+          },
+        })),
+      setLocationError: (slideId, error) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              locationError: error,
+            },
+          },
+        })),
+      setDisplayName: (slideId, name) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              displayName: name,
+            },
+          },
+        })),
+
+      setQuery: (slideId, query) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              query: query,
+            },
+          },
+        })),
+
+
     }),
     {
       name: 'transit-destinations-storage',

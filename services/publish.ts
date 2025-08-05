@@ -35,6 +35,7 @@ export async function publish() {
           alternateRowColor,
           tableHeaderTextColor,
           tableTextColor,
+          destinations
         } = slideData;
 
         // Use the slide data as needed
@@ -43,6 +44,13 @@ export async function publish() {
         screenObj.data.alternatingRowColor = alternateRowColor;
         screenObj.data.tableHeaderTextColor = tableHeaderTextColor;
         screenObj.data.tableTextColor = tableTextColor;
+        screenObj.data.destinations = destinations.map((destination: any) => ({
+          name: destination.name,
+          route: destination.route,
+          departure: destination.departure,
+          arrival: destination.arrival,
+          travel: destination.travel,
+        }));
       } else {
         console.error(`Slide with ID ${slide.id} not found in the store.`);
       }
@@ -132,11 +140,12 @@ export async function publish() {
 
       if (slideData) {
         console.log('Template 1 Slide Data:', slideData);
-        const { text, title, image, backgroundColor, leftContentSize, rightContentSize } = slideData;
+        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
         screenObj.data.image = image;
+        screenObj.data.bgImage = bgImage;
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.leftContentSize = leftContentSize;
         screenObj.data.rightContentSize = rightContentSize;
