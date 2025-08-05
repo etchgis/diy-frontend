@@ -73,6 +73,7 @@ export async function publish() {
           titleColor,
           tableColor,
           tableTextColor,
+          bgImage
         } = slideData;
 
         screenObj.data.stopName = stopName;
@@ -81,6 +82,7 @@ export async function publish() {
         screenObj.data.slideTitleColor = titleColor;
         screenObj.data.tableColor = tableColor;
         screenObj.data.tableTextColor = tableTextColor;
+        screenObj.data.bgImage = bgImage;
       } else {
         console.error(`Fixed route slide with ID ${slide.id} not found in the store.`);
       }
@@ -118,11 +120,13 @@ export async function publish() {
           text,
           url,
           backgroundColor,
+          bgImage
         } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.url = url;
         screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
       } else {
         console.error(`QR slide with ID ${slide.id} not found in the store.`);
       }
@@ -166,7 +170,7 @@ export async function publish() {
 
       if (slideData) {
         console.log('Template 2 Slide Data:', slideData);
-        const { text, title, image, backgroundColor, leftContentSize, rightContentSize } = slideData;
+        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -174,6 +178,7 @@ export async function publish() {
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.leftContentSize = leftContentSize;
         screenObj.data.rightContentSize = rightContentSize;
+        screenObj.data.bgImage = bgImage;
       } else {
         console.error(`Template 2 slide with ID ${slide.id} not found in the store.`);
       }
@@ -189,11 +194,12 @@ export async function publish() {
 
       if (slideData) {
         console.log('Template 3 Slide Data:', slideData);
-        const { title, image, backgroundColor } = slideData;
+        const { title, image, backgroundColor, bgImage } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.image = image;
         screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
       } else {
         console.error(`Template 3 slide with ID ${slide.id} not found in the store.`);
       }

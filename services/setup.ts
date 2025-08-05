@@ -83,6 +83,7 @@ async function importData(setup: any) {
         setTitleColor,
         setTableColor,
         setTableTextColor,
+        setBgImage
       } = useFixedRouteStore.getState();
 
       setStopName(slide.id, slide.data.stop?.label || '');
@@ -91,6 +92,7 @@ async function importData(setup: any) {
       setTitleColor(slide.id, slide.data.slideTitleColor || '#ffffff');
       setTableColor(slide.id, slide.data.tableColor || '#ffffff');
       setTableTextColor(slide.id, slide.data.tableTextColor || '#000000');
+      setBgImage(slide.id, slide.data.bgImage || '');
     }
 
     if (slide.type === 'transit-routes') {
@@ -109,13 +111,15 @@ async function importData(setup: any) {
         setText,
         setUrl,
         setBackgroundColor,
-        setQRSize
+        setQRSize,
+        setBgImage
       } = useQRStore.getState();
 
       setText(slide.id, slide.data.text || '');
       setUrl(slide.id, slide.data.url || '');
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#ffffff');
       setQRSize(slide.id, slide.data.qrSize || 5);
+      setBgImage(slide.id, slide.data.bgImage || '');
     }
 
     if (slide.type === 'template-1') {
