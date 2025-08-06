@@ -21,6 +21,8 @@ import Template2Preview from "@/components/slide-previews/template-2-preview"
 import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
 import { useGeneralStore } from "@/stores/general"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheckCircle, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 
 import {
   DndContext,
@@ -62,6 +64,9 @@ export default function EditorPage() {
 
   const slides: any = useGeneralStore((state) => state.slides || []);
   const setSlides = useGeneralStore((state) => state.setSlides);
+
+  const url = useGeneralStore((state) => state.url || '');
+  const setUrl = useGeneralStore((state) => state.setUrl);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -121,9 +126,22 @@ export default function EditorPage() {
     setShowModal(true);
   }
 
-  const handleSave = () => {
+  const handleEdit = () => {
 
-  }
+    const shortcode = url.split('/').pop();
+
+    localStorage.clear();
+    localStorage.removeItem('general-store');
+
+    if (shortcode) {
+      SetupSlides(shortcode).then((data) => {
+        console.log('Setup Slides Data:', data);
+        router.push(`/editor`);
+      })
+    } else {
+      console.error('Shortcode not found in URL');
+    }
+  };
 
   const handlePublish = async () => {
     setPublishing(true);
@@ -135,7 +153,7 @@ export default function EditorPage() {
       const response = await publish();
       setPublishStatus('success');
       setPublishMessage('Mobility Screen published successfully!');
-      setPublishUrl(response.url); // assuming backend returns { url: "..." }
+      setPublishUrl(response.url);
     } catch (err: any) {
       setPublishStatus('error');
       setPublishMessage(err.message || 'Failed to publish. Please try again.');
@@ -175,7 +193,7 @@ export default function EditorPage() {
         case "fixed-routes":
           return <FixedRoutePreview slideId={slideId} />;
         case "transit-routes":
-          return <TransitRoutesPreview />;
+          return <TransitRoutesPreview slideId={slideId}/>;
         case "template-1":
           return <Template1Preview slideId={slideId} />;
         case "template-2":
@@ -191,7 +209,7 @@ export default function EditorPage() {
       return content;
     }
 
-    return <div className="h-[550px]">{content}</div>;
+    return <div className="h-[550px] rounded-lg">{content}</div>;
   };
 
 
@@ -229,7 +247,7 @@ export default function EditorPage() {
               }}
             >
               <SortableContext items={slides.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2 mb-4">
+                <div className="h-[70vh] overflow-y-auto space-y-2 mb-4 pr-1 pl-1 pt-2">
                   {slides.map((slide: any) => (
                     <SortableSlide
                       key={slide.id}
@@ -316,9 +334,11 @@ export default function EditorPage() {
               <Input
                 placeholder="Insert a published Mobility Screen URL to edit an existing mobility screen"
                 className="pl-10 bg-white text-[#1a202c]"
+                onChange={(e) => setUrl(e.target.value)}
+                value={url || ''}
               />
             </div>
-            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Edit</Button>
+            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6" onClick={handleEdit}>Edit</Button>
             <Button variant="ghost" size="icon" className="text-[#2d3748]">
               <HelpCircle className="w-5 h-5" />
             </Button>
@@ -392,15 +412,24 @@ export default function EditorPage() {
 
             {publishStatus === 'success' && (
               <div className="text-center space-y-4">
-                <h2 className="text-xl font-semibold text-green-600">✅ Published!</h2>
+                <h2 className="text-xl font-semibold text-green-600 flex items-center gap-2 justify-center">
+                  <FontAwesomeIcon style={{ width: '25px', height: '25px' }} icon={faCheckCircle} />
+                  Published!
+                </h2>
                 <p>{publishMessage}</p>
-                <a href={publishUrl} target="_blank" className="text-blue-600 underline break-words">{publishUrl}</a>
+                <a
+                  href={publishUrl}
+                  target="_blank"
+                  className="text-blue-600 underline break-words"
+                >
+                  {publishUrl}
+                </a>
               </div>
             )}
 
             {publishStatus === 'error' && (
               <div className="text-center space-y-4">
-                <h2 className="text-xl font-semibold text-red-600">❌ Error</h2>
+                <h2 className="text-xl font-semibold text-red-600"><FontAwesomeIcon icon={faTimesCircle} className="text-2xl" /> Error</h2>
                 <p>{publishMessage}</p>
               </div>
             )}

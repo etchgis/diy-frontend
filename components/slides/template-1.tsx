@@ -113,7 +113,7 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
           </p>
 
           {/* Content Display Area */}
-          <div className="h-[550px]">
+          <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
             <Template1Preview slideId={slideId} />
           </div>
 

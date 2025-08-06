@@ -200,7 +200,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
             </div>
 
 
-            <div className="h-[550px]">
+            <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
               <FixedRoutePreview slideId={slideId} />
             </div>
 

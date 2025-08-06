@@ -65,8 +65,6 @@ async function importData(setup: any) {
         setDestinations
       } = useTransitDestinationsStore.getState();
 
-      console.log(slide.data.rowColor);
-
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#000000');
       setRowColor(slide.id, slide.data.rowColor || '#000000');
       setAlternateRowColor(slide.id, slide.data.alternatingRowColor || '#78B1DD');

@@ -108,7 +108,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
           </p>
 
           {/* Image Display Area */}
-          <div className="h-[550px]">
+          <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
             <Template3Preview slideId={slideId} />
           </div>
 

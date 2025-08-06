@@ -84,6 +84,7 @@ export default function LandingPage() {
 
     localStorage.clear();
     localStorage.removeItem('general-store');
+    setUrl('');
     const shortcode = generateShortcode()
     existsingCheck(shortcode).then((data) => {
       if (data.exists) {
