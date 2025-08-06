@@ -195,11 +195,11 @@ export default function EditorPage() {
         case "transit-routes":
           return <TransitRoutesPreview slideId={slideId}/>;
         case "template-1":
-          return <Template1Preview slideId={slideId} />;
+          return <Template1Preview slideId={slideId} previewMode={showModal}/>;
         case "template-2":
-          return <Template2Preview slideId={slideId} />;
+          return <Template2Preview slideId={slideId} previewMode={showModal}/>;
         case "template-3":
-          return <Template3Preview slideId={slideId} />;
+          return <Template3Preview slideId={slideId} previewMode={showModal}/>;
         default:
           return null;
       }

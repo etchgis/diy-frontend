@@ -2,8 +2,12 @@ import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { useTemplate2Store } from "@/stores/template2";
+import { usePathname } from 'next/navigation';
 
-export default function Template2Preview({ slideId }: { slideId: string }) {
+export default function Template2Preview({ slideId, previewMode }: { slideId: string, previewMode?: boolean }) {
+  const pathname = usePathname();
+  const isEditor = pathname.includes('/editor') && !previewMode;
+
   const content = useTemplate2Store((state) => state.slides[slideId]?.text || '');
   const setContent = useTemplate2Store((state) => state.setText);
 
@@ -22,6 +26,8 @@ export default function Template2Preview({ slideId }: { slideId: string }) {
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isEditor) return;
+
     e.preventDefault();
 
     const file = e.dataTransfer.files[0];
@@ -39,14 +45,12 @@ export default function Template2Preview({ slideId }: { slideId: string }) {
     ).catch((err) => {
       console.error('Image upload failed:', err);
     });
-
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isEditor) return;
     e.preventDefault();
   };
-
-
 
   return (
     <div
@@ -58,13 +62,10 @@ export default function Template2Preview({ slideId }: { slideId: string }) {
         backgroundPosition: 'center',
       }}
     >
-      <div
-        className="bg-gradient-to-br text-white rounded-lg overflow-hidden relative"
-        style={{ height: "500px" }}
-      >
-        {/* Title Area */}
-        <div className="p-6 border-b border-white/20">
-          <div className="w-full border-2 border-[#11d1f7] rounded px-4 py-2">
+      {/* Title Area */}
+      <div className="p-6 border-b border-white/20 flex-shrink-0">
+        <div className={`w-full rounded px-4 py-2 ${isEditor ? 'border-2 border-[#11d1f7]' : ''}`}>
+          {isEditor ? (
             <input
               type="text"
               value={title}
@@ -72,56 +73,72 @@ export default function Template2Preview({ slideId }: { slideId: string }) {
               placeholder="Type title here"
               className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
             />
+          ) : (
+            <div className="w-full bg-transparent text-4xl font-light">
+              {title || ''}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="flex-1 p-6 flex gap-4 min-h-0">
+        {/* Left Image Box */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <div
+            className={`flex-1 rounded-lg flex items-center justify-center p-6 overflow-hidden ${isEditor ? 'border-2 border-[#11d1f7] bg-[#11d1f7]/10' : ''
+              }`}
+            onDrop={isEditor ? handleDrop : undefined}
+            onDragOver={isEditor ? handleDragOver : undefined}
+          >
+            {image ? (
+              <img
+                src={image}
+                alt="Uploaded"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="text-center">
+                {isEditor && (
+                  <>
+                    <div className="text-lg mb-4">Drag and Drop Image Here</div>
+                    <div className="text-sm text-white/80 mb-6">
+                      accepted files: .png, .jpg, .gif
+                    </div>
+                  </>
+                )}
+                <img
+                  src="/images/placeholder-image.png"
+                  alt="Placeholder"
+                  className="w-full max-w-xs max-h-40 object-contain mx-auto"
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 p-6 flex gap-4">
-          {/* Left Image Box (60%) */}
-          <div style={{ width: leftContentSize }}>
-            <div
-              className="h-[300px] border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 flex items-center justify-center p-6 overflow-hidden"
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-            >
-              {image ? (
-                <img
-                  src={image}
-                  alt="Uploaded"
-                  className="max-w-full max-h-full object-contain"
-                />
-              ) : (
-                <div className="text-center">
-                  <div className="text-lg mb-4">Drag and Drop Image Here</div>
-                  <div className="text-sm text-white/80 mb-6">
-                    accepted files: .png, .jpg, .gif
-                  </div>
-                  <img
-                    src="/images/placeholder-image.png"
-                    alt="Placeholder"
-                    className="max-w-32 max-h-24 object-contain mx-auto"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Content Box (40%) */}
-          <div style={{ width: rightContentSize }}>
-            <div className="h-full border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 p-6 flex items-start">
+        {/* Right Text Box */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <div className={`flex-1 rounded-lg p-6 flex items-start ${isEditor ? 'border-2 border-[#11d1f7] bg-[#11d1f7]/10' : ''
+            }`}>
+            {isEditor ? (
               <textarea
                 value={content}
                 onChange={(e) => setContent(slideId, e.target.value)}
                 placeholder="Type text here"
                 className="w-full h-full bg-transparent outline-none resize-none text-2xl font-light placeholder-white/50"
               />
-            </div>
+            ) : (
+              <div className="w-full h-full bg-transparent text-2xl font-light whitespace-pre-wrap">
+                {content || ''}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="bg-[#F4F4F4] p-3 flex items-center justify-between rounded-b-lg">
+      <div className="bg-[#F4F4F4] p-3 flex items-center justify-between rounded-b-lg flex-shrink-0">
         <img
           src="/images/statewide-mobility-services.png"
           alt="Statewide Mobility Services"
@@ -130,5 +147,5 @@ export default function Template2Preview({ slideId }: { slideId: string }) {
         <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
       </div>
     </div>
-  )
+  );
 }

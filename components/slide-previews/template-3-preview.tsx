@@ -2,8 +2,11 @@ import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { useTemplate3Store } from "@/stores/template3";
+import { usePathname } from 'next/navigation';
 
-export default function Template3Preview({ slideId }: { slideId: string }) {
+export default function Template3Preview({ slideId, previewMode }: { slideId: string, previewMode?: boolean }) {
+  const pathname = usePathname();
+  const isEditor = pathname.includes('/editor') && !previewMode;
 
   const title = useTemplate3Store((state) => state.slides[slideId]?.title || '');
   const setTitle = useTemplate3Store((state) => state.setTitle);
@@ -17,6 +20,8 @@ export default function Template3Preview({ slideId }: { slideId: string }) {
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isEditor) return;
+
     e.preventDefault();
 
     const file = e.dataTransfer.files[0];
@@ -34,16 +39,16 @@ export default function Template3Preview({ slideId }: { slideId: string }) {
     ).catch((err) => {
       console.error('Image upload failed:', err);
     });
-
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isEditor) return;
     e.preventDefault();
   };
 
   return (
     <div
-      className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6 relative"
+      className="w-full h-full flex flex-col justify-between text-white overflow-hidden mb-6 relative"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
         backgroundImage: bgImage ? `url(${bgImage})` : undefined,
@@ -51,46 +56,58 @@ export default function Template3Preview({ slideId }: { slideId: string }) {
         backgroundPosition: 'center',
       }}
     >
-      <div
-        className="bg-gradient-to-br text-white rounded-lg overflow-hidden relative"
-        style={{ height: "500px" }}
-      >
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Title Area */}
-        <div className="p-6 border-b border-white/20">
-          <div className="w-full border-2 border-[#11d1f7] rounded px-4 py-2">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(slideId, e.target.value)}
-              placeholder="Type title here"
-              className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
-            />
+        <div className="p-6 border-b border-white/20 flex-shrink-0">
+          <div
+            className={`w-full rounded px-4 py-2 ${isEditor ? 'border-2 border-[#11d1f7]' : ''
+              }`}
+          >
+            {isEditor ? (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(slideId, e.target.value)}
+                placeholder="Type title here"
+                className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
+              />
+            ) : (
+              <div className="w-full bg-transparent text-4xl font-light">
+                {title || ''}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Image Drop Area */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 min-h-0">
           <div
-            className="h-[300px] border-2 border-[#11d1f7] rounded-lg bg-[#11d1f7]/10 flex items-center justify-center p-6 overflow-hidden"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
+            className={`w-full h-full rounded-lg flex items-center justify-center p-6 overflow-hidden ${isEditor ? 'border-2 border-[#11d1f7] bg-[#11d1f7]/10' : ''
+              }`}
+            onDrop={isEditor ? handleDrop : undefined}
+            onDragOver={isEditor ? handleDragOver : undefined}
           >
             {image ? (
               <img
                 src={image}
                 alt="Uploaded"
-                className="max-w-full max-h-full object-contain"
+                className="w-full h-full object-contain"
               />
             ) : (
               <div className="text-center">
-                <div className="text-lg mb-4">Drag and Drop Image Here</div>
-                <div className="text-sm text-white/80 mb-6">
-                  accepted files: .png, .jpg, .gif
-                </div>
+                {isEditor && (
+                  <>
+                    <div className="text-lg mb-4">Drag and Drop Image Here</div>
+                    <div className="text-sm text-white/80 mb-6">
+                      accepted files: .png, .jpg, .gif
+                    </div>
+                  </>
+                )}
                 <img
                   src="/images/placeholder-image.png"
                   alt="Placeholder"
-                  className="max-w-32 max-h-24 object-contain mx-auto"
+                  className="w-full max-w-xs max-h-40 object-contain mx-auto"
                 />
               </div>
             )}
@@ -99,7 +116,7 @@ export default function Template3Preview({ slideId }: { slideId: string }) {
       </div>
 
       {/* Footer */}
-      <div className="bg-[#F4F4F4] p-3 flex items-center justify-between rounded-b-lg">
+      <div className="bg-[#F4F4F4] p-3 flex items-center justify-between rounded-b-lg flex-shrink-0">
         <img
           src="/images/statewide-mobility-services.png"
           alt="Statewide Mobility Services"
@@ -108,5 +125,5 @@ export default function Template3Preview({ slideId }: { slideId: string }) {
         <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
       </div>
     </div>
-  )
+  );
 }

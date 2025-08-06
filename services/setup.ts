@@ -46,11 +46,13 @@ async function importData(setup: any) {
   const {
     setCoordinates,
     setAddress,
-    setSlides
+    setSlides,
+    setShortcode
   } = useGeneralStore.getState();
 
   setCoordinates({ lat: setup.coordinates.lat, lng: setup.coordinates.lng });
   setAddress(setup.address || 'Albany, NY');
+  setShortcode(setup.shortcode || '');
   const slides: any = [];
 
   setup.screens.forEach((slide: any) => {
@@ -115,7 +117,7 @@ async function importData(setup: any) {
 
       setText(slide.id, slide.data.text || '');
       setUrl(slide.id, slide.data.url || '');
-      setBackgroundColor(slide.id, slide.data.backgroundColor || '#ffffff');
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
       setQRSize(slide.id, slide.data.qrSize || 5);
       setBgImage(slide.id, slide.data.bgImage || '');
     }

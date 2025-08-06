@@ -26,7 +26,7 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
     <>
       <div className="w-full h-full flex flex-col bg-[#192f51] text-white overflow-hidden mb-6">
         {/* Header - Fixed height */}
-        <div className="text-white flex-shrink-0" style={{ backgroundColor, color: tableHeaderTextColor }}>
+        <div className="text-white flex-shrink-0" style={{ backgroundColor, color: tableHeaderTextColor, fontSize: '18px' }}>
           <div className="grid grid-cols-5 gap-4 p-4 font-medium">
             <div>Destination</div>
             <div>Route</div>

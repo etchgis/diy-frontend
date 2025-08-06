@@ -8,12 +8,13 @@ import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
 
 export async function publish() {
-  const { address, location, coordinates, slides, url } = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url, shortcode } = useGeneralStore.getState();
 
   const json = {
     location: location,
     address: address,
     coordinates: coordinates,
+    shortcode: shortcode,
     screens: [] as any[],
   }
 
@@ -216,8 +217,7 @@ export async function publish() {
   }
 
   try {
-    const shortcode = url?.split('/').pop()
-    const endpoint = url ? `/upload/${shortcode}` : '/upload';
+    const endpoint = `/upload/${shortcode}`;
     console.log(endpoint);
     const response = await fetch(`${backendUrl}${endpoint}`, {
       method: 'POST',
