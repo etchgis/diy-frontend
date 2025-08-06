@@ -27,7 +27,7 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
     console.log(data);
     const allData: any = [];
     if (!data || !data.plan ) {
-      throw new Error("Invalid data format received from the transit API.");
+      throw new Error("Destination out of range or no data available");
     }
     data.plan.itineraries.forEach((result: any) => {
       allData.push(result);
@@ -36,7 +36,6 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
     console.log("Formatted transit data:", formattedData);
     return formattedData;
   } catch (error: any) {
-    console.error("Error fetching transit data:", error.message || error);
     throw error;
   }
 }

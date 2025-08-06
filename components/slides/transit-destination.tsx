@@ -40,6 +40,11 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const locationError = useTransitDestinationsStore((state) => state.slides[slideId]?.locationError || false);
   const setLocationError = useTransitDestinationsStore((state) => state.setLocationError);
 
+  const errorMessage = useTransitDestinationsStore((state) => state.slides[slideId]?.errorMessage || '');
+  const setErrorMessage = useTransitDestinationsStore((state) => state.setErrorMessage);
+
+
+
   const displayName = useTransitDestinationsStore((state) => state.slides[slideId]?.displayName || '');
   const setDisplayName = useTransitDestinationsStore((state) => state.setDisplayName);
 
@@ -126,34 +131,43 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const handleCreate = async () => {
     if (!query || !coordinates) {
       setLocationError(slideId, true);
+      setTimeout(() => setLocationError(slideId, false), 3000);
       return;
     }
 
-    console.log(selectedFeature);
+    try {
 
-    console.log(`${selectedFeature.center[1]}, ${selectedFeature.center[0]}`);
-    const data = await fetchTransitData(`${coordinates.lat},${coordinates.lng}`, `${selectedFeature.center[1]},${selectedFeature.center[0]}`);
+      console.log(selectedFeature);
 
-    const departure = formatTime(data.startTime);
-    const arrival = formatTime(data.endTime);
-    const travel = formatDuration(data.duration);
+      console.log(`${selectedFeature.center[1]}, ${selectedFeature.center[0]}`);
+      const data = await fetchTransitData(`${coordinates.lat},${coordinates.lng}`, `${selectedFeature.center[1]},${selectedFeature.center[0]}`);
 
-    const newDestination = {
-      name: displayName || query,
-      route: "N/A",
-      departure,
-      arrival,
-      travel,
-      legs: data.legs, 
-      dark: destinations.length % 2 === 0,
-    };
+      const departure = formatTime(data.startTime);
+      const arrival = formatTime(data.endTime);
+      const travel = formatDuration(data.duration);
 
-    const updatedDestinations = [...destinations, newDestination];
-    setDestinations(slideId, updatedDestinations);
-    setQuery(slideId, "");
-    setDisplayName(slideId, "");
-    setSelectedFeature(slideId, "");
-    setLocationError(slideId, false);
+      const newDestination = {
+        name: displayName || query,
+        route: "N/A",
+        departure,
+        arrival,
+        travel,
+        legs: data.legs,
+        dark: destinations.length % 2 === 0,
+      };
+
+      const updatedDestinations = [...destinations, newDestination];
+      setDestinations(slideId, updatedDestinations);
+      setQuery(slideId, "");
+      setDisplayName(slideId, "");
+      setSelectedFeature(slideId, "");
+      setLocationError(slideId, false);
+    } catch (error: any) {
+      const tempErrorMessage = error.message || "Destination out of range or no data available.";
+      setErrorMessage(slideId, tempErrorMessage);
+      setTimeout(() => setErrorMessage(slideId, ""), 5000);
+      setSuggestions([]);
+    }
   }
 
   return (
@@ -175,7 +189,14 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
             {/* Destination Input */}
             <div className="mb-6">
-              <label className="block text-[#4a5568] font-medium mb-2">Add Destination</label>
+              <div className="flex items-center mb-1">
+                <label className="block text-[#4a5568] font-medium mb-2">Add Destination</label>
+                {errorMessage && (
+                  <div className="mb-2 text-red-500 text-sm flex items-center ml-9">
+                    {errorMessage}
+                  </div>
+                )}
+              </div>
               <div className="flex gap-3">
                 {/* Destination Input */}
                 <Input

@@ -1,4 +1,5 @@
 import { useTransitDestinationsStore } from "@/stores/transitDestinations";
+import { formatDuration } from "@/utils/formats";
 
 export default function TransitDestinationPreview({ slideId }: { slideId: string }) {
   const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
@@ -51,9 +52,37 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
               <div className="flex items-center gap-2">
                 <span>{dest.name}</span>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="text-2xl">🚶</div>
-                <div className="text-xs">{dest.route}</div>
+              <div className="flex items-center gap-2">
+                {dest.legs.map((leg: any, index: number) => {
+                  if (leg.mode === 'WALK' && leg.duration <= 240) {
+                    return null; // Do not render anything if the condition is true
+                  }
+                  return (
+                    <div className="all-leg-content" key={index}>
+                      <div>
+                        <div>
+                          {leg.mode === 'WALK' ? (
+                            <img className="leg-icon" src='/images/walking-man.png' style={{width: '45px', height: '45px'}} alt="" />
+                          ) : (
+                            <div className="bus-leg">
+                              <img className="leg-icon" src='/images/bus-icon.png' alt="" />
+                              <div style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }} className="bus-info">
+                                <p>{leg.routeShortName}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <p className={`leg-duration ${leg.mode === 'WALK' ? 'walk-duration' : ''}`}>
+                          {formatDuration(leg.duration)}
+                        </p>
+
+                      </div>
+                      {index !== dest.legs.length - 1 &&
+                        <img className="arrow-icon" src='/images/right-arrow.png' alt="" />
+                      }
+                    </div>
+                  );
+                })}
               </div>
               <div>{dest.departure}</div>
               <div>{dest.arrival}</div>

@@ -12,6 +12,7 @@ interface TransitionDestinationsSlideData {
   selectedFeature: any | null;
   locationError: boolean;
   displayName: string;
+  errorMessage?: string;
   query: string;
 }
 
@@ -28,6 +29,7 @@ interface SlideStore {
   setLocationError: (slideId: string, error: boolean) => void;
   setDisplayName: (slideId: string, name: string) => void;
   setQuery: (slideId: string, query: string) => void;
+  setErrorMessage: (slideId: string, message: string) => void;
 }
 
 export const useTransitDestinationsStore = create<SlideStore>()(
@@ -150,6 +152,17 @@ export const useTransitDestinationsStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               query: query,
+            },
+          },
+        })),
+
+      setErrorMessage: (slideId, message) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              errorMessage: message,
             },
           },
         })),
