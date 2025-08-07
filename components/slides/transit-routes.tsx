@@ -79,8 +79,8 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
             </div>
 
             {/* Map Preview */}
-            <div className="h-[550px]">
-              <TransitRoutesPreview />
+            <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
+              <TransitRoutesPreview slideId={slideId}/>
             </div>
 
             {/* Footer Buttons */}

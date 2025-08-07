@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Upload } from "lucide-react"
+import { HelpCircle, ChevronRight, Upload, Settings } from "lucide-react"
 import QRSlide from "@/components/slides/qr"
 import TransitDestinationSlide from "@/components/slides/transit-destination"
 import { useEffect, useState } from "react"
@@ -21,6 +21,8 @@ import Template2Preview from "@/components/slide-previews/template-2-preview"
 import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
 import { useGeneralStore } from "@/stores/general"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheckCircle, faTimesCircle, faGear } from '@fortawesome/free-solid-svg-icons';
 
 import {
   DndContext,
@@ -39,8 +41,6 @@ import { SetupSlides } from "@/services/setup"
 import { publish } from "@/services/publish"
 
 
-
-
 interface Slide {
   id: string;
   type: string;
@@ -50,6 +50,7 @@ export default function EditorPage() {
   const [activeSlideId, setActiveSlideId] = useState('');
   const [activeSlide, setActiveSlide]: any = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [modalSlideIndex, setModalSlideIndex] = useState(0);
 
   const [publishing, setPublishing] = useState(false);
@@ -62,6 +63,14 @@ export default function EditorPage() {
 
   const slides: any = useGeneralStore((state) => state.slides || []);
   const setSlides = useGeneralStore((state) => state.setSlides);
+
+  const url = useGeneralStore((state) => state.url || '');
+  const setUrl = useGeneralStore((state) => state.setUrl);
+
+  const rotationInterval = useGeneralStore((state) => state.rotationInterval || 0);
+  const setRotationInterval = useGeneralStore((state) => state.setRotationInterval);
+
+  const [tempRotationInterval, setTempRotationInterval] = useState(rotationInterval);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -121,9 +130,22 @@ export default function EditorPage() {
     setShowModal(true);
   }
 
-  const handleSave = () => {
+  const handleEdit = () => {
 
-  }
+    const shortcode = url.split('/').pop();
+
+    localStorage.clear();
+    localStorage.removeItem('general-store');
+
+    if (shortcode) {
+      SetupSlides(shortcode).then((data) => {
+        console.log('Setup Slides Data:', data);
+        router.push(`/editor`);
+      })
+    } else {
+      console.error('Shortcode not found in URL');
+    }
+  };
 
   const handlePublish = async () => {
     setPublishing(true);
@@ -135,7 +157,7 @@ export default function EditorPage() {
       const response = await publish();
       setPublishStatus('success');
       setPublishMessage('Mobility Screen published successfully!');
-      setPublishUrl(response.url); // assuming backend returns { url: "..." }
+      setPublishUrl(response.url);
     } catch (err: any) {
       setPublishStatus('error');
       setPublishMessage(err.message || 'Failed to publish. Please try again.');
@@ -175,13 +197,13 @@ export default function EditorPage() {
         case "fixed-routes":
           return <FixedRoutePreview slideId={slideId} />;
         case "transit-routes":
-          return <TransitRoutesPreview />;
+          return <TransitRoutesPreview slideId={slideId} />;
         case "template-1":
-          return <Template1Preview slideId={slideId} />;
+          return <Template1Preview slideId={slideId} previewMode={showModal} />;
         case "template-2":
-          return <Template2Preview slideId={slideId} />;
+          return <Template2Preview slideId={slideId} previewMode={showModal} />;
         case "template-3":
-          return <Template3Preview slideId={slideId} />;
+          return <Template3Preview slideId={slideId} previewMode={showModal} />;
         default:
           return null;
       }
@@ -191,7 +213,7 @@ export default function EditorPage() {
       return content;
     }
 
-    return <div className="h-[550px]">{content}</div>;
+    return <div className="h-[550px] rounded-lg">{content}</div>;
   };
 
 
@@ -229,7 +251,7 @@ export default function EditorPage() {
               }}
             >
               <SortableContext items={slides.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2 mb-4">
+                <div className="h-[68vh] overflow-y-auto space-y-2 mb-4 pr-1 pl-1 pt-2">
                   {slides.map((slide: any) => (
                     <SortableSlide
                       key={slide.id}
@@ -243,7 +265,7 @@ export default function EditorPage() {
               </SortableContext>
             </DndContext>
           </div>
-          <div className="mb-4 mt-4">
+          <div className="mb-4">
             <Select value={template} onValueChange={(value) => setTemplate(value)}>
               <SelectTrigger className="w-full text-xs">
                 <div className="flex items-left gap-2">
@@ -299,7 +321,19 @@ export default function EditorPage() {
             <Upload className="w-4 h-4 mr-2" />
             Add Slide
           </Button>
+
+          <Button
+            variant="outline"
+            className="w-full text-[#000000] bg-transparent bg-[#D3D3D3] hover:bg-[#D3D3D3]/90 mt-2"
+            onClick={() => {
+              showSettings ? setShowSettings(false) : setShowSettings(true);
+            }}
+          >
+            <FontAwesomeIcon icon={faGear} className="w-4 h-4 mr-2" />
+            Screen Settings
+          </Button>
         </div>
+
       </div>
 
       {/* Right Content Area */}
@@ -316,9 +350,11 @@ export default function EditorPage() {
               <Input
                 placeholder="Insert a published Mobility Screen URL to edit an existing mobility screen"
                 className="pl-10 bg-white text-[#1a202c]"
+                onChange={(e) => setUrl(e.target.value)}
+                value={url || ''}
               />
             </div>
-            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Edit</Button>
+            <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6" onClick={handleEdit}>Edit</Button>
             <Button variant="ghost" size="icon" className="text-[#2d3748]">
               <HelpCircle className="w-5 h-5" />
             </Button>
@@ -369,6 +405,47 @@ export default function EditorPage() {
         </div>
       )}
 
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative">
+            <button
+              onClick={() => { setShowSettings(false); setTempRotationInterval(rotationInterval); }}
+              className="absolute top-2 right-3 text-gray-400 hover:text-black text-2xl"
+            >
+              ×
+            </button>
+            <h2 className="text-xl font-semibold mb-4">Screen Settings</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Screen Rotation Interval
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Enter interval in seconds"
+                  className="w-full"
+                  value={tempRotationInterval || ''}
+                  onChange={(e) => {
+                    setTempRotationInterval(Number(e.target.value));
+                  }}
+                />
+              </div>
+              <div className="pt-2 flex justify-end">
+                <Button
+                  onClick={() => {
+                    setRotationInterval(tempRotationInterval);
+                    setShowSettings(false);
+                  }}
+                  className="px-4 py-2 text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90"
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {publishing || publishStatus ? (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative">
@@ -392,15 +469,24 @@ export default function EditorPage() {
 
             {publishStatus === 'success' && (
               <div className="text-center space-y-4">
-                <h2 className="text-xl font-semibold text-green-600">✅ Published!</h2>
+                <h2 className="text-xl font-semibold text-green-600 flex items-center gap-2 justify-center">
+                  <FontAwesomeIcon style={{ width: '25px', height: '25px' }} icon={faCheckCircle} />
+                  Published!
+                </h2>
                 <p>{publishMessage}</p>
-                <a href={publishUrl} target="_blank" className="text-blue-600 underline break-words">{publishUrl}</a>
+                <a
+                  href={publishUrl}
+                  target="_blank"
+                  className="text-blue-600 underline break-words"
+                >
+                  {publishUrl}
+                </a>
               </div>
             )}
 
             {publishStatus === 'error' && (
               <div className="text-center space-y-4">
-                <h2 className="text-xl font-semibold text-red-600">❌ Error</h2>
+                <h2 className="text-xl font-semibold text-red-600"><FontAwesomeIcon icon={faTimesCircle} className="text-2xl" /> Error</h2>
                 <p>{publishMessage}</p>
               </div>
             )}

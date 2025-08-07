@@ -6,6 +6,9 @@ import TransitDestinationPreview from "../slide-previews/transit-destination-pre
 import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect, useRef, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
+import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
+import { formatTime, formatDuration } from "@/utils/formats"
+import { getDestinationData } from "@/services/data-gathering/getDestinationData"
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -38,11 +41,26 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const locationError = useTransitDestinationsStore((state) => state.slides[slideId]?.locationError || false);
   const setLocationError = useTransitDestinationsStore((state) => state.setLocationError);
 
+  const errorMessage = useTransitDestinationsStore((state) => state.slides[slideId]?.errorMessage || '');
+  const setErrorMessage = useTransitDestinationsStore((state) => state.setErrorMessage);
+
+  const loading = useTransitDestinationsStore((state) => state.slides[slideId]?.loading || false);
+  const setLoading = useTransitDestinationsStore((state) => state.setLoading);
+
+
+
   const displayName = useTransitDestinationsStore((state) => state.slides[slideId]?.displayName || '');
   const setDisplayName = useTransitDestinationsStore((state) => state.setDisplayName);
 
   const query = useTransitDestinationsStore((state) => state.slides[slideId]?.query || '');
   const setQuery = useTransitDestinationsStore((state) => state.setQuery);
+
+  const coordinates = useGeneralStore((state) => state.coordinates);
+
+  const mockDestinations: any = []
+
+  const destinationData = useTransitDestinationsStore((state) => state.slides[slideId]?.destinationData || mockDestinations);
+  const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
 
 
 
@@ -71,56 +89,6 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   }, [backgroundColor, rowColor, alternateRowColor, tableHeaderTextColor, tableTextColor]);
 
 
-  const mockDestinations = [
-    {
-      name: "Albany International Airport",
-      route: "1 hr 9 min",
-      departure: "8:31 PM",
-      arrival: "9:40 PM",
-      travel: "1 hr 9 min",
-      dark: true,
-    },
-    {
-      name: "Downtown Schenectady",
-      route: "3 hr 48 min",
-      departure: "8:31 PM",
-      arrival: "12:19 AM",
-      travel: "3 hr 48 min",
-      dark: false,
-    },
-    {
-      name: "Albany Medical Center",
-      route: "2 hr 2 min",
-      departure: "8:31 PM",
-      arrival: "10:33 PM",
-      travel: "2 hr 2 min",
-      dark: true,
-    },
-    {
-      name: "Downtown Saratoga Springs",
-      route: "2 hr 53 min",
-      departure: "8:31 PM",
-      arrival: "11:24 PM",
-      travel: "2 hr 53 min",
-      dark: false,
-    },
-    {
-      name: "Albany-Rensselaer Train Station",
-      route: "2 hr 11 min",
-      departure: "8:31 PM",
-      arrival: "10:42 PM",
-      travel: "2 hr 11 min",
-      dark: true,
-    },
-    {
-      name: "Downtown Troy",
-      route: "1 hr 3 min",
-      departure: "8:31 PM",
-      arrival: "9:34 PM",
-      travel: "1 hr 3 min",
-      dark: false,
-    },
-  ]
 
   const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
   const setDestinations = useTransitDestinationsStore((state) => state.setDestinations);
@@ -129,30 +97,35 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
 
   const handleDeleteDestination = (name: string) => {
+    console.log(destinations);
     const updatedDestinations = destinations.filter((dest: any) => dest.name !== name);
+    const updatedDestinationData = destinationData.filter((dest: any) => dest.name !== name);
     setDestinations(slideId, updatedDestinations);
+    setDestinationData(slideId, updatedDestinationData);
+    console.log(updatedDestinations);
   };
 
 
   useEffect(() => {
     const controller = new AbortController();
-    if (query.length < 3){
+    if (query.length < 3) {
       setSuggestions([]);
       return;
-    } 
+    }
 
     const fetchSuggestions = async () => {
+
       if (selectedFeature) return;
       const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place,poi&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
 
       try {
         const res = await fetch(url, { signal: controller.signal });
         const data = await res.json();
-        console.log(data.features);
         const nyOnly = data.features.filter((feat: any) =>
           feat.place_name.includes("New York")
         );
+        console.log(nyOnly);
         setSuggestions(nyOnly.map((feat: any) => feat));
       } catch (err: any) {
         if (err.name !== "AbortError") console.error(err);
@@ -169,28 +142,58 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
     setSuggestions([]);
   };
 
-  const handleCreate = () => {
-    if (!query) {
+  const handleCreate = async () => {
+    if (!query || !coordinates) {
       setLocationError(slideId, true);
+      setTimeout(() => setLocationError(slideId, false), 3000);
       return;
     }
+    try {
 
-    const newDestination = {
-      name: displayName || query,
-      route: "N/A",
-      departure: "N/A",
-      arrival: "N/A",
-      travel: "N/A",
-      dark: destinations.length % 2 === 0,
-    };
+      setLoading(slideId, true);
 
-    const updatedDestinations = [...destinations, newDestination];
-    setDestinations(slideId, updatedDestinations);
-    setQuery(slideId, "");
-    setDisplayName(slideId, "");
-    setSelectedFeature(slideId, "");
-    setLocationError(slideId, false);
-  }
+      const newDestination = {
+        name: displayName || query,
+        coordinates: {
+          lat: selectedFeature.center[1],
+          lng: selectedFeature.center[0],
+        },
+      };
+
+      const updatedDestinations = [...destinations, newDestination];
+      setQuery(slideId, "");
+      setDisplayName(slideId, "");
+      setSelectedFeature(slideId, "");
+      setLocationError(slideId, false);
+
+      const origin = `${coordinates.lat},${coordinates.lng}`;
+      const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+
+      const result = await fetchTransitData(origin, destination);
+      const enrichedDestination = {
+        name: newDestination.name,
+        route: result.route || "N/A",
+        departure: formatTime(result.startTime),
+        arrival: formatTime(result.endTime),
+        travel: formatDuration(result.duration),
+        legs: result.legs,
+        coordinates: newDestination.coordinates,
+        dark: updatedDestinations.length % 2 === 0,
+      };
+      const updatedDestinationData = [...destinationData, enrichedDestination];
+      setDestinations(slideId, updatedDestinations);
+      setDestinationData(slideId, updatedDestinationData);
+
+    } catch (error: any) {
+      console.log(error);
+      setErrorMessage(slideId, "Destination out of range or no data available");
+      setTimeout(() => setErrorMessage(slideId, ""), 5000);
+    }
+
+
+    setLoading(slideId, false);
+  };
+
 
   return (
     <>
@@ -211,7 +214,14 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
             {/* Destination Input */}
             <div className="mb-6">
-              <label className="block text-[#4a5568] font-medium mb-2">Add Destination</label>
+              <div className="flex items-center mb-1">
+                <label className="block text-[#4a5568] font-medium mb-2">Add Destination</label>
+                {errorMessage && (
+                  <div className="mb-2 text-red-500 text-sm flex items-center ml-9">
+                    {errorMessage}
+                  </div>
+                )}
+              </div>
               <div className="flex gap-3">
                 {/* Destination Input */}
                 <Input
@@ -249,13 +259,28 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                 )}
 
                 {/* Add Button */}
-                <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent" onClick={handleCreate}>
-                  <Plus className="w-4 h-4" />
-                </Button>
+                {loading ? (
+                  // Spinner (same size as button)
+                  <div className="w-10 h-10 flex items-center justify-center border border-[#cbd5e0] rounded-md">
+                    <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="border-[#cbd5e0] bg-transparent"
+                    onClick={handleCreate}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
 
-            <div className="h-[550px]">
+            <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
               <TransitDestinationPreview slideId={slideId} />
             </div>
 

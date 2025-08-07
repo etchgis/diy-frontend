@@ -15,7 +15,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
 
   return (
     <div
-      className="w-full h-full flex flex-col justify-between text-white rounded-lg overflow-hidden mb-6 relative"
+      className="w-full h-full flex flex-col justify-between text-white overflow-hidden mb-6 relative"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
         backgroundImage: bgImage ? `url(${bgImage})` : undefined,
@@ -25,7 +25,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
     >
       {/* QR Code and Text */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-6">
-        <div className="bg-white p-4 rounded-lg mb-4">
+        <div className="bg-white p-4 mb-4">
           <div
             className="flex items-center justify-center"
             style={{ width: `${containerSizeRem}rem`, height: `${containerSizeRem}rem` }}

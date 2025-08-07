@@ -10,6 +10,7 @@ interface FixedRouteSlideData {
   tableColor: string;
   tableTextColor: string;
   bgImage: string;
+  selectedStop?: any;
 }
 
 interface SlideStore {
@@ -21,6 +22,7 @@ interface SlideStore {
   setTableColor: (slideId: string, color: string) => void;
   setTableTextColor: (slideId: string, color: string) => void;
   setBgImage: (slideId: string, bgImage: string) => void;
+  setSelectedStop: (slideId: string, stop: any) => void;
 }
 
 export const useFixedRouteStore = create<SlideStore>()(
@@ -83,8 +85,18 @@ export const useFixedRouteStore = create<SlideStore>()(
         set((state) => ({
           slides: {
             ...state.slides,
-            [slideId]: { ...(state.slides[slideId] || {}), 
-            bgImage: image},
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              bgImage: image
+            },
+          },
+        })),
+        
+      setSelectedStop: (slideId, stop) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), selectedStop: stop },
           },
         })),
     }),

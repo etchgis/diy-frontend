@@ -6,7 +6,7 @@ import { useGeneralStore } from '@/stores/general';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
-export default function TransitRoutesPreview() {
+export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const address = useGeneralStore((state) => state.address || '');

@@ -9,6 +9,8 @@ import { set } from "react-hook-form"
 import { deleteImage } from "@/services/deleteImage"
 import { uploadImage } from "@/services/uploadImage"
 import { useGeneralStore } from "@/stores/general"
+import { fetchAllStops } from "@/services/data-gathering/fetchAllStops"
+import { fetchStopData } from "@/services/data-gathering/fetchStopData"
 
 
 export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
@@ -16,10 +18,18 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const renderCount = useRef(0);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [allStops, setAllStops] = useState<any[]>([]);
+  const [filteredStops, setFilteredStops] = useState<any[]>([]);
+
+
+
 
 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const setStopName = useFixedRouteStore((state) => state.setStopName);
+
+  const selectedStop = useFixedRouteStore((state) => state.slides[slideId]?.selectedStop || null);
+  const setSelectedStop = useFixedRouteStore((state) => state.setSelectedStop);
 
   const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
   const setDescription = useFixedRouteStore((state) => state.setDescription);
@@ -40,6 +50,56 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const setBgImage = useFixedRouteStore((state) => state.setBgImage);
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
+  const coordinates = useGeneralStore((state) => state.coordinates || { lat: 0, lng: 0 });
+
+  useEffect(() => {
+    fetchAllStops(coordinates).then((stops) => {
+      console.log(stops);
+      setAllStops(stops);
+    }
+    ).catch((err) => {
+      console.error('Failed to fetch stops:', err);
+    }
+    );
+  }, []);
+
+  const handleInputChange = (value: string) => {
+    setStopName(slideId, value);
+
+    // Filter stops based on the input value
+    const filtered = allStops.filter((stop) =>
+      stop.stop_name.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredStops(filtered);
+  };
+
+  const handleSelectStop = (stop: any) => {
+    setStopName(slideId, stop.stop_name);
+    setFilteredStops([]);
+    setSelectedStop(slideId, stop);
+  };
+
+  const handleAddStop = () => {
+    if (selectedStop) {
+      console.log("Selected Stop:", selectedStop);
+      // Perform any additional logic with the selected stop
+    }
+  };
+
+  async function fetchData(stopId: string) {
+    try {
+      const data = await fetchStopData(stopId, selectedStop.services[0].service_id, selectedStop.services[0].organization_id);
+      console.log('Stop Data:', data);
+    } catch (error) {
+      console.error('Error fetching stop data:', error);
+    }
+  }
+
+  useEffect(() => {
+    if(selectedStop && selectedStop.stop_id){
+      fetchData(selectedStop.stop_id);
+    }
+  }, [selectedStop]);
 
   useEffect(() => {
     renderCount.current += 1;
@@ -107,48 +167,6 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
       time: "9:49 PM",
       duration: "27 min",
     },
-    {
-      destination: "Colonie Center to Downtown Albany",
-      route: "1",
-      routeColor: "bg-blue-800",
-      time: "9:57 PM",
-      duration: "35 min",
-    },
-    {
-      destination: "Colonie Center to Downtown Albany",
-      route: "1",
-      routeColor: "bg-blue-800",
-      time: "10:17 PM",
-      duration: "55 min",
-    },
-    {
-      destination: "Airport directly to Rte 7 & Donald",
-      route: "117",
-      routeColor: "bg-green-600",
-      time: "10:19 PM",
-      duration: "57 min",
-    },
-    {
-      destination: "Airport directly to Rte 7 & Donald",
-      route: "117",
-      routeColor: "bg-green-600",
-      time: "10:49 PM",
-      duration: "1 hr 27 min",
-    },
-    {
-      destination: "Colonie Center to Downtown Albany",
-      route: "1",
-      routeColor: "bg-blue-800",
-      time: "10:57 PM",
-      duration: "1 hr 35 min",
-    },
-    {
-      destination: "Airport directly to Rte 7 & Donald",
-      route: "117",
-      routeColor: "bg-green-600",
-      time: "11:19 PM",
-      duration: "1 hr 57 min",
-    },
   ]
 
   return (
@@ -175,17 +193,28 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-[#4a5568] font-medium mb-2">Fixed Route Stop</label>
-                <div className="flex gap-3">
+                <div className="relative">
                   <Input
                     className="flex-1 bg-white border-[#cbd5e0]"
                     value={stopName}
-                    onChange={(e) => setStopName(slideId, e.target.value)}
+                    onChange={(e) => handleInputChange(e.target.value)}
                     placeholder="Enter text here... "
                   />
-                  <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent">
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  {filteredStops.length > 0 && (
+                    <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                      {filteredStops.map((stop, index) => (
+                        <li
+                          key={index}
+                          onClick={() => handleSelectStop(stop)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                        >
+                          {stop.stop_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
+
               </div>
 
               <div>
@@ -200,7 +229,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
             </div>
 
 
-            <div className="h-[550px]">
+            <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
               <FixedRoutePreview slideId={slideId} />
             </div>
 

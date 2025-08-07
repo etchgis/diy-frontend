@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 interface Slide {
   id: string;
   type: string;
+  data?: any;
 }
 
 interface Store {
@@ -13,6 +14,7 @@ interface Store {
   url?: string;
   location?: string;
   shortcode?: string;
+  rotationInterval?: number,
   coordinates?: {
     lat: number;
     lng: number;
@@ -24,6 +26,7 @@ interface Store {
   setUrl: (url: string) => void;
   setCoordinates: (coordinates: { lat: number; lng: number }) => void;
   setShortcode: (shortCode: string) => void;
+  setRotationInterval: (interval: number) => void;
 }
 
 export const useGeneralStore = create<Store>()(
@@ -57,7 +60,11 @@ export const useGeneralStore = create<Store>()(
 
       setShortcode: (shortcode) => set(() => ({
         shortcode,
-      }))
+      })),
+
+      setRotationInterval: (interval) => set(() => ({
+        rotationInterval: interval,
+      })),
     }),
     {
       name: 'general-store' ,

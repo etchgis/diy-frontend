@@ -1,66 +1,42 @@
+import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData";
+import { getDestinationData } from "@/services/data-gathering/getDestinationData";
+import { useGeneralStore } from "@/stores/general";
 import { useTransitDestinationsStore } from "@/stores/transitDestinations";
-import { useEffect } from "react";
+import { formatDuration, formatTime } from "@/utils/formats";
+import { usePathname } from "next/navigation";
+import { use, useEffect } from "react";
 
 export default function TransitDestinationPreview({ slideId }: { slideId: string }) {
-
+  const pathname = usePathname();
+  const isEditor = pathname.includes('/editor');
   const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '#192F51');
   const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '#78B1DD');
   const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '#ffffff');
   const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '#ffffff');
 
-  const mockDestinations = [
-    {
-      name: "Albany International Airport",
-      route: "1 hr 9 min",
-      departure: "8:31 PM",
-      arrival: "9:40 PM",
-      travel: "1 hr 9 min",
-      dark: true,
-    },
-    {
-      name: "Downtown Schenectady",
-      route: "3 hr 48 min",
-      departure: "8:31 PM",
-      arrival: "12:19 AM",
-      travel: "3 hr 48 min",
-      dark: false,
-    },
-    {
-      name: "Albany Medical Center",
-      route: "2 hr 2 min",
-      departure: "8:31 PM",
-      arrival: "10:33 PM",
-      travel: "2 hr 2 min",
-      dark: true,
-    },
-    {
-      name: "Downtown Saratoga Springs",
-      route: "2 hr 53 min",
-      departure: "8:31 PM",
-      arrival: "11:24 PM",
-      travel: "2 hr 53 min",
-      dark: false,
-    },
-    {
-      name: "Albany-Rensselaer Train Station",
-      route: "2 hr 11 min",
-      departure: "8:31 PM",
-      arrival: "10:42 PM",
-      travel: "2 hr 11 min",
-      dark: true,
-    },
-    {
-      name: "Downtown Troy",
-      route: "1 hr 3 min",
-      departure: "8:31 PM",
-      arrival: "9:34 PM",
-      travel: "1 hr 3 min",
-      dark: false,
-    },
-  ]
+  const mockDestinations: any = []
+  const destinationData = useTransitDestinationsStore((state) => state.slides[slideId]?.destinationData || mockDestinations);
+  const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
+
+  const coordinates = useGeneralStore((state) => state.coordinates || null);
 
   const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
+
+  // useEffect(() => {
+  //   console.log(destinations);
+  //   if (destinations.length > 0 && coordinates && !isEditor) {
+  //     getDestinationData(destinations, slideId, setDestinationData);
+  //     setInterval(() => {
+  //       getDestinationData(destinations, slideId, setDestinationData);
+  //     }
+  //       , 60000 * 5);
+  //   }
+  // }, []);
+
+
+  // Always show exactly 6 rows total
+  const totalRows = 6;
 
   const destinationTags = [
     "Albany International Airport",
@@ -72,10 +48,10 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
 
   return (
     <>
-      <div className="w-full h-full flex flex-col justify-between bg-[#192f51] text-white rounded-lg overflow-hidden mb-6">
-        {/* Header */}
-        <div className="text-white" style={{ backgroundColor, color: tableHeaderTextColor }}>
-          <div className="grid grid-cols-5 gap-4 p-4 font-medium">
+      <div className="w-full h-full flex flex-col bg-[#192f51] text-white overflow-hidden mb-6">
+        {/* Header - Fixed height */}
+        <div className="text-white flex-shrink-0" style={{ backgroundColor, color: tableHeaderTextColor, fontSize: '18px' }}>
+          <div className="grid grid-cols-[1fr_2fr_1fr_1fr_1fr] gap-4 p-4 font-medium">
             <div>Destination</div>
             <div>Route</div>
             <div>Departure Time</div>
@@ -84,12 +60,13 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
           </div>
         </div>
 
-        {/* Row Container — this must grow */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          {destinations.map((dest, index) => (
+        {/* Row Container - Flexible height that grows to fill space */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Render actual destinations */}
+          {destinationData && destinationData.map((dest: any, index: number) => (
             <div
               key={index}
-              className="grid grid-cols-5 gap-4 p-[12.5px] items-center"
+              className="flex-1 grid grid-cols-[1fr_2fr_1fr_1fr_1fr] w-full min-w-0 gap-4 px-4 items-center"
               style={{
                 backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
                 color: tableTextColor,
@@ -98,9 +75,57 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
               <div className="flex items-center gap-2">
                 <span>{dest.name}</span>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="text-2xl">🚶</div>
-                <div className="text-xs">{dest.route}</div>
+              <div className="flex items-center gap-2">
+                {dest.legs.map((leg: any, index: number) => {
+                  if (leg.mode === 'WALK' && leg.duration <= 240) {
+                    return null; // Do not render anything if the condition is true
+                  }
+                  return (
+                    <div className="all-leg-content" key={index}>
+                      <div className="flex items-center gap-2">
+                        {/* Leg icon */}
+                        {leg.mode === 'WALK' ? (
+                          <img
+                            className="leg-icon"
+                            src="/images/walking-man.png"
+                            style={{ width: '35px', height: '35px' }}
+                            alt=""
+                          />
+                        ) : (
+                          <div className="bus-leg flex items-center gap-1">
+                            <img
+                              className="leg-icon"
+                              src="/images/bus-icon.png"
+                              style={{ width: '35px', height: '35px' }}
+                              alt=""
+                            />
+                            <div
+                              className="bus-info px-2 py-1 rounded"
+                              style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }}
+                            >
+                              <p className="text-sm text-black" style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'white' }}>{leg.tripShortName}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Arrow icon if not last leg */}
+                        {index !== dest.legs.length - 1 && (
+                          <img
+                            src="/images/right-arrow.png"
+                            alt=""
+                            className="arrow-icon"
+                            style={{ width: '30px', height: '30px', marginLeft: '8px' }}
+                          />
+                        )}
+                      </div>
+
+                      {/* Duration below icons */}
+                      <p className={`leg-duration ${leg.mode === 'WALK' ? 'walk-duration' : ''}`}>
+                        {formatDuration(leg.duration)}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
               <div>{dest.departure}</div>
               <div>{dest.arrival}</div>
@@ -108,13 +133,13 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
             </div>
           ))}
 
-          {/* Add empty rows if there are fewer than 6 destinations */}
-          {Array.from({ length: Math.max(0, 6 - destinations.length) }).map((_, index) => (
+          {/* Add empty rows to fill remaining space */}
+          {Array.from({ length: Math.max(0, totalRows - destinationData.length) }).map((_, index) => (
             <div
               key={`empty-${index}`}
-              className="grid grid-cols-5 gap-4 p-[21px] items-center"
+              className="flex-1 grid grid-cols-[1fr_2fr_1fr_1fr_1fr] w-full min-w-0 gap-4 px-4 items-center"
               style={{
-                backgroundColor: (destinations.length + index) % 2 === 0 ? rowColor : alternateRowColor,
+                backgroundColor: (destinationData.length + index) % 2 === 0 ? rowColor : alternateRowColor,
                 color: tableTextColor,
               }}
             >
@@ -131,13 +156,12 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="bg-[#F4F4F4] p-3 flex items-center justify-between">
+        {/* Footer - Fixed height */}
+        <div className="bg-[#F4F4F4] p-3 flex items-center justify-between flex-shrink-0">
           <img src="/images/statewide-mobility-services.png" alt="Statewide Mobility Services" className="h-[25px] w-[246px]" />
           <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
         </div>
       </div>
-
     </>
   );
 }
