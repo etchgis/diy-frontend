@@ -140,7 +140,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                       {item.route}
                     </div>
                     <div className="font-medium min-w-[80px] text-center">{item.time}</div>
-                    <div className="text-[#606061] min-w-[80px] text-center">{item.duration}</div>
+                    <div className=" min-w-[80px] text-center">{item.duration}</div>
                     <Button variant="outline" size="sm" className="min-w-[90px] bg-transparent">
                       Scheduled
                     </Button>
