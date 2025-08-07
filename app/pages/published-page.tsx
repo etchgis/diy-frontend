@@ -6,8 +6,11 @@ import Template2Preview from '@/components/slide-previews/template-2-preview';
 import Template3Preview from '@/components/slide-previews/template-3-preview';
 import TransitDestinationPreview from '@/components/slide-previews/transit-destination-preview';
 import TransitRoutesPreview from '@/components/slide-previews/transit-routes-preview';
+import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
 import { useGeneralStore } from '@/stores/general';
+import { useTransitDestinationsStore } from '@/stores/transitDestinations';
+import { useInterval } from '@dnd-kit/utilities';
 import { useEffect, useState, useCallback, useRef } from 'react';
 
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
@@ -16,8 +19,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [screens, setScreens] = useState<any[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const currentSlide = slides?.[activeIndex] || null;
 
   const goToNextSlide = useCallback(() => {
@@ -41,7 +45,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     if (slides.length > 1 && rotationInterval > 0) {
       intervalRef.current = setInterval(() => {
         goToNextSlide();
-      }, rotationInterval * 1000); 
+      }, rotationInterval * 1000);
 
       return () => {
         if (intervalRef.current) {
@@ -56,11 +60,28 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       if (shortcode) {
         const result = await SetupSlides(shortcode);
         setSlides(result.screens);
+        setScreens(result);
         setIsLoading(false);
       }
     };
     loadSlides();
   }, [shortcode, setSlides]);
+
+  // useEffect(() => {
+  //   console.log(slides);
+
+  //   if (slides && slides[0]?.data) {
+  //     const transitSlides = slides.filter(slide => slide.type === 'transit-destinations');
+
+  //     transitSlides.forEach((slide: any) => {
+  //       console.log(slide);
+  //       const setDestinationData = (data: any) => {
+  //         useTransitDestinationsStore.getState().setDestinationData(slide.id, data);
+  //       };
+  //       getDestinationData(slide.data.destinations, slide.id, setDestinationData);
+  //     });
+  //   }
+  // }, [slides]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -86,17 +107,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   };
 
-  useEffect(() => {
-    console.log(slides);
-  }, []);
-
   return (
     <div className="w-screen h-screen overflow-hidden bg-white relative">
       {/* Persistent TransitRoutesPreview */}
       <div
-        className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
-          currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-        }`}
+        className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+          }`}
       >
         {currentSlide && currentSlide.id ? (
           <TransitRoutesPreview slideId={currentSlide.id} />

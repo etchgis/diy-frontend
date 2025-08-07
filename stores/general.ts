@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 interface Slide {
   id: string;
   type: string;
+  data?: any;
 }
 
 interface Store {

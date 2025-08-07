@@ -161,7 +161,6 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       };
 
       const updatedDestinations = [...destinations, newDestination];
-      setDestinations(slideId, updatedDestinations);
       setQuery(slideId, "");
       setDisplayName(slideId, "");
       setSelectedFeature(slideId, "");
@@ -182,6 +181,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
         dark: updatedDestinations.length % 2 === 0,
       };
       const updatedDestinationData = [...destinationData, enrichedDestination];
+      setDestinations(slideId, updatedDestinations);
       setDestinationData(slideId, updatedDestinationData);
 
     } catch (error: any) {

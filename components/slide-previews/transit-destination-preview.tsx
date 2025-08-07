@@ -137,7 +137,7 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
           {Array.from({ length: Math.max(0, totalRows - destinationData.length) }).map((_, index) => (
             <div
               key={`empty-${index}`}
-              className="flex-1 grid grid-cols-5 w-full min-w-0 gap-4 px-4 items-center"
+              className="flex-1 grid grid-cols-[1fr_2fr_1fr_1fr_1fr] w-full min-w-0 gap-4 px-4 items-center"
               style={{
                 backgroundColor: (destinationData.length + index) % 2 === 0 ? rowColor : alternateRowColor,
                 color: tableTextColor,
