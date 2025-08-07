@@ -105,6 +105,10 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
     console.log(updatedDestinations);
   };
 
+  useEffect(() => {
+    setErrorMessage(slideId, "");
+  }, []);
+
 
   useEffect(() => {
     const controller = new AbortController();

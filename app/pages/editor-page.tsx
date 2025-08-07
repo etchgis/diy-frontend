@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle, ChevronRight, Upload, Settings } from "lucide-react"
 import QRSlide from "@/components/slides/qr"
 import TransitDestinationSlide from "@/components/slides/transit-destination"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { v4 as uuidv4 } from "uuid";
 import QRSlidePreview from "@/components/slide-previews/qr-slide-preview"
 import TransitDestinationPreview from "@/components/slide-previews/transit-destination-preview"
@@ -39,6 +39,8 @@ import {
 import { SortableSlide } from "@/components/sortable-slide"
 import { SetupSlides } from "@/services/setup"
 import { publish } from "@/services/publish"
+import { useTransitDestinationsStore } from "@/stores/transitDestinations"
+import { getDestinationData } from "@/services/data-gathering/getDestinationData"
 
 
 interface Slide {
@@ -72,6 +74,10 @@ export default function EditorPage() {
 
   const [tempRotationInterval, setTempRotationInterval] = useState(rotationInterval);
 
+  const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
+  const allSlidesState = useTransitDestinationsStore((state) => state.slides);
+  const setLoading = useTransitDestinationsStore((state) => state.setLoading);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -97,7 +103,36 @@ export default function EditorPage() {
     if (!hasGeneralStore) {
       router.push('/');
     }
+
   }, []);
+
+  const hasFetchedDestinations = useRef(false);
+
+  const getTransitDestinationData = async () => {
+    const transitSlides = slides.filter((slide: any) => slide.type === 'transit-destinations');
+
+    if (!transitSlides.length) return;
+
+    hasFetchedDestinations.current = true;
+
+    for (const slide of transitSlides) {
+      const destinations = allSlidesState[slide.id]?.destinations || [];
+      setLoading(slide.id, true);
+
+      try {
+        await getDestinationData(destinations, slide.id, setDestinationData);
+      } finally {
+        setLoading(slide.id, false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    console.log('Slides changed:', slides, hasFetchedDestinations.current);
+    if (hasFetchedDestinations.current) return;
+
+    getTransitDestinationData();
+  }, [slides, allSlidesState]);
 
   useEffect(() => {
     if (slides && slides.length > 0 && !activeSlideId) {
@@ -131,7 +166,7 @@ export default function EditorPage() {
   }
 
   const handleEdit = () => {
-
+    hasFetchedDestinations.current = false;
     const shortcode = url.split('/').pop();
 
     localStorage.clear();
