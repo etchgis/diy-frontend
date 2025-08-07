@@ -6,8 +6,9 @@ import TransitDestinationPreview from "../slide-previews/transit-destination-pre
 import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect, useRef, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
-import { fetchTransitData } from "@/services/fetchTransitDestinationData"
+import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
+import { getDestinationData } from "@/services/data-gathering/getDestinationData"
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -43,6 +44,9 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const errorMessage = useTransitDestinationsStore((state) => state.slides[slideId]?.errorMessage || '');
   const setErrorMessage = useTransitDestinationsStore((state) => state.setErrorMessage);
 
+  const loading = useTransitDestinationsStore((state) => state.slides[slideId]?.loading || false);
+  const setLoading = useTransitDestinationsStore((state) => state.setLoading);
+
 
 
   const displayName = useTransitDestinationsStore((state) => state.slides[slideId]?.displayName || '');
@@ -52,6 +56,11 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const setQuery = useTransitDestinationsStore((state) => state.setQuery);
 
   const coordinates = useGeneralStore((state) => state.coordinates);
+
+  const mockDestinations: any = []
+
+  const destinationData = useTransitDestinationsStore((state) => state.slides[slideId]?.destinationData || mockDestinations);
+  const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
 
 
 
@@ -80,7 +89,6 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   }, [backgroundColor, rowColor, alternateRowColor, tableHeaderTextColor, tableTextColor]);
 
 
-  const mockDestinations: any = []
 
   const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
   const setDestinations = useTransitDestinationsStore((state) => state.setDestinations);
@@ -89,8 +97,12 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
 
   const handleDeleteDestination = (name: string) => {
+    console.log(destinations);
     const updatedDestinations = destinations.filter((dest: any) => dest.name !== name);
+    const updatedDestinationData = destinationData.filter((dest: any) => dest.name !== name);
     setDestinations(slideId, updatedDestinations);
+    setDestinationData(slideId, updatedDestinationData);
+    console.log(updatedDestinations);
   };
 
 
@@ -102,6 +114,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
     }
 
     const fetchSuggestions = async () => {
+
       if (selectedFeature) return;
       const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place,poi&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
@@ -112,6 +125,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
         const nyOnly = data.features.filter((feat: any) =>
           feat.place_name.includes("New York")
         );
+        console.log(nyOnly);
         setSuggestions(nyOnly.map((feat: any) => feat));
       } catch (err: any) {
         if (err.name !== "AbortError") console.error(err);
@@ -134,26 +148,16 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       setTimeout(() => setLocationError(slideId, false), 3000);
       return;
     }
-
     try {
 
-      console.log(selectedFeature);
-
-      console.log(`${selectedFeature.center[1]}, ${selectedFeature.center[0]}`);
-      const data = await fetchTransitData(`${coordinates.lat},${coordinates.lng}`, `${selectedFeature.center[1]},${selectedFeature.center[0]}`);
-
-      const departure = formatTime(data.startTime);
-      const arrival = formatTime(data.endTime);
-      const travel = formatDuration(data.duration);
+      setLoading(slideId, true);
 
       const newDestination = {
         name: displayName || query,
-        route: "N/A",
-        departure,
-        arrival,
-        travel,
-        legs: data.legs,
-        dark: destinations.length % 2 === 0,
+        coordinates: {
+          lat: selectedFeature.center[1],
+          lng: selectedFeature.center[0],
+        },
       };
 
       const updatedDestinations = [...destinations, newDestination];
@@ -162,13 +166,34 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       setDisplayName(slideId, "");
       setSelectedFeature(slideId, "");
       setLocationError(slideId, false);
+
+      const origin = `${coordinates.lat},${coordinates.lng}`;
+      const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+
+      const result = await fetchTransitData(origin, destination);
+      const enrichedDestination = {
+        name: newDestination.name,
+        route: result.route || "N/A",
+        departure: formatTime(result.startTime),
+        arrival: formatTime(result.endTime),
+        travel: formatDuration(result.duration),
+        legs: result.legs,
+        coordinates: newDestination.coordinates,
+        dark: updatedDestinations.length % 2 === 0,
+      };
+      const updatedDestinationData = [...destinationData, enrichedDestination];
+      setDestinationData(slideId, updatedDestinationData);
+
     } catch (error: any) {
-      const tempErrorMessage = error.message || "Destination out of range or no data available.";
-      setErrorMessage(slideId, tempErrorMessage);
+      console.log(error);
+      setErrorMessage(slideId, "Destination out of range or no data available");
       setTimeout(() => setErrorMessage(slideId, ""), 5000);
-      setSuggestions([]);
     }
-  }
+
+
+    setLoading(slideId, false);
+  };
+
 
   return (
     <>
@@ -234,9 +259,24 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                 )}
 
                 {/* Add Button */}
-                <Button variant="outline" size="icon" className="border-[#cbd5e0] bg-transparent" onClick={handleCreate}>
-                  <Plus className="w-4 h-4" />
-                </Button>
+                {loading ? (
+                  // Spinner (same size as button)
+                  <div className="w-10 h-10 flex items-center justify-center border border-[#cbd5e0] rounded-md">
+                    <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="border-[#cbd5e0] bg-transparent"
+                    onClick={handleCreate}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
 

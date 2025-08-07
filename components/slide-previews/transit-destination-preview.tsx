@@ -1,7 +1,14 @@
+import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData";
+import { getDestinationData } from "@/services/data-gathering/getDestinationData";
+import { useGeneralStore } from "@/stores/general";
 import { useTransitDestinationsStore } from "@/stores/transitDestinations";
-import { formatDuration } from "@/utils/formats";
+import { formatDuration, formatTime } from "@/utils/formats";
+import { usePathname } from "next/navigation";
+import { use, useEffect } from "react";
 
 export default function TransitDestinationPreview({ slideId }: { slideId: string }) {
+  const pathname = usePathname();
+  const isEditor = pathname.includes('/editor');
   const backgroundColor = useTransitDestinationsStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const rowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.rowColor || '#192F51');
   const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '#78B1DD');
@@ -9,7 +16,23 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
   const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '#ffffff');
 
   const mockDestinations: any = []
+  const destinationData = useTransitDestinationsStore((state) => state.slides[slideId]?.destinationData || mockDestinations);
+  const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
+
+  const coordinates = useGeneralStore((state) => state.coordinates || null);
+
   const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
+
+  // useEffect(() => {
+  //   console.log(destinations);
+  //   if (destinations.length > 0 && coordinates && !isEditor) {
+  //     getDestinationData(destinations, slideId, setDestinationData);
+  //     setInterval(() => {
+  //       getDestinationData(destinations, slideId, setDestinationData);
+  //     }
+  //       , 60000 * 5);
+  //   }
+  // }, []);
 
 
   // Always show exactly 6 rows total
@@ -28,7 +51,7 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
       <div className="w-full h-full flex flex-col bg-[#192f51] text-white overflow-hidden mb-6">
         {/* Header - Fixed height */}
         <div className="text-white flex-shrink-0" style={{ backgroundColor, color: tableHeaderTextColor, fontSize: '18px' }}>
-          <div className="grid grid-cols-5 gap-4 p-4 font-medium">
+          <div className="grid grid-cols-[1fr_2fr_1fr_1fr_1fr] gap-4 p-4 font-medium">
             <div>Destination</div>
             <div>Route</div>
             <div>Departure Time</div>
@@ -40,10 +63,10 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
         {/* Row Container - Flexible height that grows to fill space */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Render actual destinations */}
-          {destinations.map((dest, index) => (
+          {destinationData && destinationData.map((dest: any, index: number) => (
             <div
               key={index}
-              className="flex-1 grid grid-cols-5 w-full min-w-0 gap-4 px-4 items-center"
+              className="flex-1 grid grid-cols-[1fr_2fr_1fr_1fr_1fr] w-full min-w-0 gap-4 px-4 items-center"
               style={{
                 backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
                 color: tableTextColor,
@@ -59,27 +82,47 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
                   }
                   return (
                     <div className="all-leg-content" key={index}>
-                      <div>
-                        <div>
-                          {leg.mode === 'WALK' ? (
-                            <img className="leg-icon" src='/images/walking-man.png' style={{width: '45px', height: '45px'}} alt="" />
-                          ) : (
-                            <div className="bus-leg">
-                              <img className="leg-icon" src='/images/bus-icon.png' alt="" />
-                              <div style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }} className="bus-info">
-                                <p>{leg.routeShortName}</p>
-                              </div>
+                      <div className="flex items-center gap-2">
+                        {/* Leg icon */}
+                        {leg.mode === 'WALK' ? (
+                          <img
+                            className="leg-icon"
+                            src="/images/walking-man.png"
+                            style={{ width: '35px', height: '35px' }}
+                            alt=""
+                          />
+                        ) : (
+                          <div className="bus-leg flex items-center gap-1">
+                            <img
+                              className="leg-icon"
+                              src="/images/bus-icon.png"
+                              style={{ width: '35px', height: '35px' }}
+                              alt=""
+                            />
+                            <div
+                              className="bus-info px-2 py-1 rounded"
+                              style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }}
+                            >
+                              <p className="text-sm text-black" style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'white' }}>{leg.tripShortName}</p>
                             </div>
-                          )}
-                        </div>
-                        <p className={`leg-duration ${leg.mode === 'WALK' ? 'walk-duration' : ''}`}>
-                          {formatDuration(leg.duration)}
-                        </p>
+                          </div>
+                        )}
 
+                        {/* Arrow icon if not last leg */}
+                        {index !== dest.legs.length - 1 && (
+                          <img
+                            src="/images/right-arrow.png"
+                            alt=""
+                            className="arrow-icon"
+                            style={{ width: '30px', height: '30px', marginLeft: '8px' }}
+                          />
+                        )}
                       </div>
-                      {index !== dest.legs.length - 1 &&
-                        <img className="arrow-icon" src='/images/right-arrow.png' alt="" />
-                      }
+
+                      {/* Duration below icons */}
+                      <p className={`leg-duration ${leg.mode === 'WALK' ? 'walk-duration' : ''}`}>
+                        {formatDuration(leg.duration)}
+                      </p>
                     </div>
                   );
                 })}
@@ -91,12 +134,12 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
           ))}
 
           {/* Add empty rows to fill remaining space */}
-          {Array.from({ length: Math.max(0, totalRows - destinations.length) }).map((_, index) => (
+          {Array.from({ length: Math.max(0, totalRows - destinationData.length) }).map((_, index) => (
             <div
               key={`empty-${index}`}
               className="flex-1 grid grid-cols-5 w-full min-w-0 gap-4 px-4 items-center"
               style={{
-                backgroundColor: (destinations.length + index) % 2 === 0 ? rowColor : alternateRowColor,
+                backgroundColor: (destinationData.length + index) % 2 === 0 ? rowColor : alternateRowColor,
                 color: tableTextColor,
               }}
             >

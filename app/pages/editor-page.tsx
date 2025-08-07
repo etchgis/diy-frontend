@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Upload } from "lucide-react"
+import { HelpCircle, ChevronRight, Upload, Settings } from "lucide-react"
 import QRSlide from "@/components/slides/qr"
 import TransitDestinationSlide from "@/components/slides/transit-destination"
 import { useEffect, useState } from "react"
@@ -22,7 +22,7 @@ import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle, faTimesCircle, faGear } from '@fortawesome/free-solid-svg-icons';
 
 import {
   DndContext,
@@ -41,8 +41,6 @@ import { SetupSlides } from "@/services/setup"
 import { publish } from "@/services/publish"
 
 
-
-
 interface Slide {
   id: string;
   type: string;
@@ -52,6 +50,7 @@ export default function EditorPage() {
   const [activeSlideId, setActiveSlideId] = useState('');
   const [activeSlide, setActiveSlide]: any = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [modalSlideIndex, setModalSlideIndex] = useState(0);
 
   const [publishing, setPublishing] = useState(false);
@@ -67,6 +66,11 @@ export default function EditorPage() {
 
   const url = useGeneralStore((state) => state.url || '');
   const setUrl = useGeneralStore((state) => state.setUrl);
+
+  const rotationInterval = useGeneralStore((state) => state.rotationInterval || 0);
+  const setRotationInterval = useGeneralStore((state) => state.setRotationInterval);
+
+  const [tempRotationInterval, setTempRotationInterval] = useState(rotationInterval);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -193,13 +197,13 @@ export default function EditorPage() {
         case "fixed-routes":
           return <FixedRoutePreview slideId={slideId} />;
         case "transit-routes":
-          return <TransitRoutesPreview slideId={slideId}/>;
+          return <TransitRoutesPreview slideId={slideId} />;
         case "template-1":
-          return <Template1Preview slideId={slideId} previewMode={showModal}/>;
+          return <Template1Preview slideId={slideId} previewMode={showModal} />;
         case "template-2":
-          return <Template2Preview slideId={slideId} previewMode={showModal}/>;
+          return <Template2Preview slideId={slideId} previewMode={showModal} />;
         case "template-3":
-          return <Template3Preview slideId={slideId} previewMode={showModal}/>;
+          return <Template3Preview slideId={slideId} previewMode={showModal} />;
         default:
           return null;
       }
@@ -247,7 +251,7 @@ export default function EditorPage() {
               }}
             >
               <SortableContext items={slides.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
-                <div className="h-[70vh] overflow-y-auto space-y-2 mb-4 pr-1 pl-1 pt-2">
+                <div className="h-[68vh] overflow-y-auto space-y-2 mb-4 pr-1 pl-1 pt-2">
                   {slides.map((slide: any) => (
                     <SortableSlide
                       key={slide.id}
@@ -261,7 +265,7 @@ export default function EditorPage() {
               </SortableContext>
             </DndContext>
           </div>
-          <div className="mb-4 mt-4">
+          <div className="mb-4">
             <Select value={template} onValueChange={(value) => setTemplate(value)}>
               <SelectTrigger className="w-full text-xs">
                 <div className="flex items-left gap-2">
@@ -317,7 +321,19 @@ export default function EditorPage() {
             <Upload className="w-4 h-4 mr-2" />
             Add Slide
           </Button>
+
+          <Button
+            variant="outline"
+            className="w-full text-[#000000] bg-transparent bg-[#D3D3D3] hover:bg-[#D3D3D3]/90 mt-2"
+            onClick={() => {
+              showSettings ? setShowSettings(false) : setShowSettings(true);
+            }}
+          >
+            <FontAwesomeIcon icon={faGear} className="w-4 h-4 mr-2" />
+            Screen Settings
+          </Button>
         </div>
+
       </div>
 
       {/* Right Content Area */}
@@ -384,6 +400,47 @@ export default function EditorPage() {
               >
                 Next
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative">
+            <button
+              onClick={() => { setShowSettings(false); setTempRotationInterval(rotationInterval); }}
+              className="absolute top-2 right-3 text-gray-400 hover:text-black text-2xl"
+            >
+              ×
+            </button>
+            <h2 className="text-xl font-semibold mb-4">Screen Settings</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Screen Rotation Interval
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Enter interval in seconds"
+                  className="w-full"
+                  value={tempRotationInterval || ''}
+                  onChange={(e) => {
+                    setTempRotationInterval(Number(e.target.value));
+                  }}
+                />
+              </div>
+              <div className="pt-2 flex justify-end">
+                <Button
+                  onClick={() => {
+                    setRotationInterval(tempRotationInterval);
+                    setShowSettings(false);
+                  }}
+                  className="px-4 py-2 text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90"
+                >
+                  Save
+                </Button>
+              </div>
             </div>
           </div>
         </div>

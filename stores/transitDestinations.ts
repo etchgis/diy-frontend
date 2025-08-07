@@ -8,11 +8,13 @@ interface TransitionDestinationsSlideData {
   tableHeaderTextColor: string;
   tableTextColor: string;
   destinations: any[];
+  destinationData?: any[];
   suggestions?: any[];
   selectedFeature: any | null;
   locationError: boolean;
   displayName: string;
   errorMessage?: string;
+  loading: boolean;
   query: string;
 }
 
@@ -30,6 +32,8 @@ interface SlideStore {
   setDisplayName: (slideId: string, name: string) => void;
   setQuery: (slideId: string, query: string) => void;
   setErrorMessage: (slideId: string, message: string) => void;
+  setDestinationData: (slideId: string, data: any[]) => void;
+  setLoading: (slideId: string, loading: boolean) => void;  
 }
 
 export const useTransitDestinationsStore = create<SlideStore>()(
@@ -163,6 +167,28 @@ export const useTransitDestinationsStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               errorMessage: message,
+            },
+          },
+        })),
+
+      setDestinationData: (slideId, data) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              destinationData: data,
+            },
+          },
+        })),
+
+        setLoading: (slideId, loading) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              loading: loading,
             },
           },
         })),

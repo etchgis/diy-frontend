@@ -8,13 +8,15 @@ import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
 
 export async function publish() {
-  const { address, location, coordinates, slides, url, shortcode } = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url, shortcode, rotationInterval } = useGeneralStore.getState();
 
   const json = {
     location: location,
     address: address,
     coordinates: coordinates,
     shortcode: shortcode,
+    rotationInterval: rotationInterval,
+    url: url,
     screens: [] as any[],
   }
 
@@ -47,13 +49,10 @@ export async function publish() {
         screenObj.data.tableTextColor = tableTextColor;
         screenObj.data.destinations = destinations.map((destination: any) => ({
           name: destination.name,
-          route: destination.route,
-          departure: destination.departure,
-          arrival: destination.arrival,
-          travel: destination.travel,
+          coordinates: destination.coordinates,
         }));
+        console.log(screenObj.data.destinations);
       } else {
-        console.error(`Slide with ID ${slide.id} not found in the store.`);
       }
     }
 
@@ -85,7 +84,6 @@ export async function publish() {
         screenObj.data.tableTextColor = tableTextColor;
         screenObj.data.bgImage = bgImage;
       } else {
-        console.error(`Fixed route slide with ID ${slide.id} not found in the store.`);
       }
     }
 
@@ -104,7 +102,6 @@ export async function publish() {
         screenObj.data.destination = destination;
         screenObj.data.location = location;
       } else {
-        console.error(`Transit route slide with ID ${slide.id} not found in the store.`);
       }
     }
 
@@ -129,7 +126,6 @@ export async function publish() {
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.bgImage = bgImage;
       } else {
-        console.error(`QR slide with ID ${slide.id} not found in the store.`);
       }
 
     }
@@ -156,7 +152,6 @@ export async function publish() {
         screenObj.data.rightContentSize = rightContentSize;
 
       } else {
-        console.error(`Template 1 slide with ID ${slide.id} not found in the store.`);
       }
     }
 
@@ -181,7 +176,6 @@ export async function publish() {
         screenObj.data.rightContentSize = rightContentSize;
         screenObj.data.bgImage = bgImage;
       } else {
-        console.error(`Template 2 slide with ID ${slide.id} not found in the store.`);
       }
     }
 
@@ -202,7 +196,6 @@ export async function publish() {
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.bgImage = bgImage;
       } else {
-        console.error(`Template 3 slide with ID ${slide.id} not found in the store.`);
       }
     }
 
@@ -212,7 +205,6 @@ export async function publish() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   if (!backendUrl) {
-    console.error('Backend URL is not defined in environment variables.');
     return Promise.reject(new Error('Missing backend URL'));
   }
 
@@ -235,7 +227,6 @@ export async function publish() {
     console.log('Publish successful:', data);
     return data;
   } catch (error) {
-    console.error('Error publishing JSON:', error);
     throw error;
   }
 

@@ -47,12 +47,14 @@ async function importData(setup: any) {
     setCoordinates,
     setAddress,
     setSlides,
-    setShortcode
+    setShortcode,
+    setRotationInterval
   } = useGeneralStore.getState();
 
   setCoordinates({ lat: setup.coordinates.lat, lng: setup.coordinates.lng });
   setAddress(setup.address || 'Albany, NY');
   setShortcode(setup.shortcode || '');
+  setRotationInterval(setup.rotationInterval || 20);
   const slides: any = [];
 
   setup.screens.forEach((slide: any) => {
@@ -67,8 +69,8 @@ async function importData(setup: any) {
         setDestinations
       } = useTransitDestinationsStore.getState();
 
-      setBackgroundColor(slide.id, slide.data.backgroundColor || '#000000');
-      setRowColor(slide.id, slide.data.rowColor || '#000000');
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
+      setRowColor(slide.id, slide.data.rowColor || '#192F51');
       setAlternateRowColor(slide.id, slide.data.alternatingRowColor || '#78B1DD');
       setTableHeaderTextColor(slide.id, '#ffffff');
       setTableTextColor(slide.id, '#ffffff');

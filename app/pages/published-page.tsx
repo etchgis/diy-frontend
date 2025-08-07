@@ -1,5 +1,4 @@
 'use client';
-
 import FixedRoutePreview from '@/components/slide-previews/fixed-route-preview';
 import QRSlidePreview from '@/components/slide-previews/qr-slide-preview';
 import Template1Preview from '@/components/slide-previews/template-1-preview';
@@ -14,10 +13,16 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
+  const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const currentSlide = slides?.[activeIndex] || null;
+
+  const goToNextSlide = useCallback(() => {
+    setActiveIndex((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -30,6 +35,22 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     [slides.length]
   );
 
+  // Auto-rotation effect
+  useEffect(() => {
+    // Only start auto-rotation if we have slides and a valid rotation interval
+    if (slides.length > 1 && rotationInterval > 0) {
+      intervalRef.current = setInterval(() => {
+        goToNextSlide();
+      }, rotationInterval * 1000); 
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }
+  }, [slides.length, rotationInterval, goToNextSlide]);
+
   useEffect(() => {
     const loadSlides = async () => {
       if (shortcode) {
@@ -38,10 +59,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         setIsLoading(false);
       }
     };
-
     loadSlides();
   }, [shortcode, setSlides]);
-
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -67,12 +86,17 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   };
 
+  useEffect(() => {
+    console.log(slides);
+  }, []);
+
   return (
     <div className="w-screen h-screen overflow-hidden bg-white relative">
       {/* Persistent TransitRoutesPreview */}
       <div
-        className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-          }`}
+        className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
+          currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+        }`}
       >
         {currentSlide && currentSlide.id ? (
           <TransitRoutesPreview slideId={currentSlide.id} />
