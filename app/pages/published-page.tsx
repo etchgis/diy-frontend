@@ -80,7 +80,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         setSlides(result.screens);
         setScreens(result);
         setIsLoading(false);
-        
+
       }
     };
     loadSlides();
@@ -104,7 +104,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     if (!fixedRouteSlides.length) return;
     for (const slide of fixedRouteSlides) {
       const fixedRouteData = allFixedRouteSlidesState[slide.id]?.selectedStop || [];
-      const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_id, fixedRouteData.services[0].organization_id);
+      const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid);
       const arr: any = [];
       data?.trains.forEach((item: any) => {
         arr.push({

@@ -59,7 +59,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
   useEffect(() => {
     fetchAllStops(coordinates).then((stops) => {
-
+      console.log(stops.filter((stop:any) => stop.stop_name.toLowerCase().includes('world trade')));
       setAllStops(stops);
     }
     ).catch((err) => {
@@ -94,7 +94,8 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   async function fetchData(stopId: string) {
     try {
       setIsLoading(slideId, true);
-      const data = await fetchStopData(stopId, selectedStop.services[0].service_id, selectedStop.services[0].organization_id);
+      console.log(selectedStop);
+      const data = await fetchStopData(stopId, selectedStop.services[0].service_guid, selectedStop.services[0].organization_guid);
       const arr: any = [];
       data?.trains.forEach((item: any) => {
         arr.push({
