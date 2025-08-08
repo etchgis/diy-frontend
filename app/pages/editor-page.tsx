@@ -94,7 +94,7 @@ export default function EditorPage() {
     }
     const newSlide: Slide = { id: uuidv4(), type: template };
     setSlides([...slides, newSlide]);
-    console.log(slides);
+
     setActiveSlideId(newSlide.id);
   }
 
@@ -128,7 +128,7 @@ export default function EditorPage() {
   };
 
   useEffect(() => {
-    console.log('Slides changed:', slides, hasFetchedDestinations.current);
+
     if (hasFetchedDestinations.current) return;
 
     getTransitDestinationData();
@@ -160,7 +160,7 @@ export default function EditorPage() {
   }
 
   const handlePreview = () => {
-    console.log('handling');
+
     setModalSlideIndex(0);
     setShowModal(true);
   }
@@ -174,7 +174,7 @@ export default function EditorPage() {
 
     if (shortcode) {
       SetupSlides(shortcode).then((data) => {
-        console.log('Setup Slides Data:', data);
+
         router.push(`/editor`);
       })
     } else {

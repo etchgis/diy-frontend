@@ -12,7 +12,7 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
 
     const query = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&mode=TRANSIT,WALK`;
 
-    console.log("Fetching data with query:", query);
+
 
     const response = await fetch(query);
 
@@ -24,7 +24,7 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
     }
 
     const data = await response.json();
-    console.log(data);
+
     const allData: any = [];
     if (!data || !data.plan ) {
       throw new Error("Destination out of range or no data available");
@@ -33,7 +33,7 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
       allData.push(result);
     });
     const formattedData = formatTripData(allData);
-    console.log("Formatted transit data:", formattedData);
+
     return formattedData;
   } catch (error: any) {
     throw error;

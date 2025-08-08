@@ -97,12 +97,12 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
 
   const handleDeleteDestination = (name: string) => {
-    console.log(destinations);
+
     const updatedDestinations = destinations.filter((dest: any) => dest.name !== name);
     const updatedDestinationData = destinationData.filter((dest: any) => dest.name !== name);
     setDestinations(slideId, updatedDestinations);
     setDestinationData(slideId, updatedDestinationData);
-    console.log(updatedDestinations);
+
   };
 
   useEffect(() => {
@@ -129,7 +129,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
         const nyOnly = data.features.filter((feat: any) =>
           feat.place_name.includes("New York")
         );
-        console.log(nyOnly);
+
         setSuggestions(nyOnly.map((feat: any) => feat));
       } catch (err: any) {
         if (err.name !== "AbortError") console.error(err);
@@ -189,7 +189,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       setDestinationData(slideId, updatedDestinationData);
 
     } catch (error: any) {
-      console.log(error);
+
       setErrorMessage(slideId, "Destination out of range or no data available");
       setTimeout(() => {setErrorMessage(slideId, "")}, 5000);
     }

@@ -132,13 +132,13 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     if (hasFetchedDestinations.current || slides.length === 0) return;
     hasFetchedDestinations.current = true;
 
-    console.log('fetching');
+
     getTransitDestinationData();
     getFixedRouteData();
     getTransitRoutesData();
 
     setInterval(() => {
-      console.log('feching interval');
+
       getTransitDestinationData();
       getFixedRouteData();
       getTransitRoutesData();

@@ -6,7 +6,7 @@ export async function uploadImage(shortcode: string, file: File): Promise<any> {
   }
 
   const url = `${backendUrl}/upload-image/${shortcode}`;
-  console.log("Uploading image to:", url);
+
   const formData = new FormData();
   formData.append("image", file);
 

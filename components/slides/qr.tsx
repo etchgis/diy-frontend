@@ -83,7 +83,7 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
     uploadImage(shortcode, file).then((data) => {
       if(bgImage){
         deleteImage(bgImage).then(() => {
-          console.log('Previous image deleted');
+
         }).catch((err) => {
           console.error('Failed to delete previous image:', err);
         });
@@ -99,7 +99,7 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
   const handleRemoveImage = () => {
     if (bgImage) {
       deleteImage(bgImage).then(() => {
-        console.log('Image deleted successfully');
+
         setBgImage(slideId, '');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';

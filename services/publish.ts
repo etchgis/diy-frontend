@@ -51,7 +51,7 @@ export async function publish() {
           name: destination.name,
           coordinates: destination.coordinates,
         })) || [];
-        console.log(screenObj.data.destinations);
+
       } else {
       }
     }
@@ -65,7 +65,7 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        console.log('Fixed Route Slide Data:', slideData);
+
         const {
           stopName,
           description,
@@ -76,6 +76,7 @@ export async function publish() {
           bgImage,
           selectedStop
         } = slideData;
+
 
         screenObj.data.stopName = stopName;
         screenObj.data.description = description;
@@ -98,7 +99,7 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        console.log('Transit Route Slide Data:', slideData);
+
         const { destination, location, routes } = slideData;
 
         screenObj.data.destination = destination;
@@ -134,7 +135,7 @@ export async function publish() {
     }
 
     if (slide.type === 'template-1') {
-      console.log(slide);
+
       screenObj.type = 'template-1';
       screenObj.id = slide.id;
       screenObj.data = {};
@@ -143,7 +144,7 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        console.log('Template 1 Slide Data:', slideData);
+
         const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize } = slideData;
 
         screenObj.data.text = text;
@@ -159,7 +160,7 @@ export async function publish() {
     }
 
     if (slide.type === 'template-2') {
-      console.log(slide);
+
       screenObj.type = 'template-2';
       screenObj.id = slide.id;
       screenObj.data = {};
@@ -168,7 +169,7 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        console.log('Template 2 Slide Data:', slideData);
+
         const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage } = slideData;
 
         screenObj.data.text = text;
@@ -191,7 +192,7 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        console.log('Template 3 Slide Data:', slideData);
+
         const { title, image, backgroundColor, bgImage } = slideData;
 
         screenObj.data.title = title;
@@ -213,7 +214,7 @@ export async function publish() {
 
   try {
     const endpoint = `/upload/${shortcode}`;
-    console.log(endpoint);
+
     const response = await fetch(`${backendUrl}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -227,7 +228,7 @@ export async function publish() {
     }
 
     const data = await response.json();
-    console.log('Publish successful:', data);
+
     return data;
   } catch (error) {
     throw error;

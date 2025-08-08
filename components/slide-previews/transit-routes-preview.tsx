@@ -109,7 +109,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
     // Set map loaded flag
     mapRef.current.on('load', () => {
       isMapLoadedRef.current = true;
-      console.log('Map loaded successfully');
+
     });
 
     return () => {
@@ -135,7 +135,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
     if (!mapRef.current) return;
 
     // Clear markers
-    console.log('Clearing existing markers:', markersRef.current.length);
+
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
@@ -166,7 +166,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
   const addRoutesToMap = () => {
     if (!mapRef.current || !routes || routes.length === 0) return;
 
-    console.log('Adding routes to map:', routes.length);
+
 
     try {
       // Add origin marker first (always visible)
@@ -182,7 +182,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
         z-index: 1;
       `;
 
-      console.log('Adding origin marker at:', [coordinates.lng, coordinates.lat]);
+
 
       const originMarker = new mapboxgl.Marker({
         element: originMarkerEl,
@@ -192,10 +192,10 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
         .addTo(mapRef.current!);
 
       markersRef.current.push(originMarker);
-      console.log('Origin marker added successfully');
+
       
       routes.forEach((route: any, routeIndex: number) => {
-        console.log('Processing route:', routeIndex, route);
+
         const routeColor = routeColors[routeIndex % routeColors.length];
         
         // Process each leg of the route
@@ -243,17 +243,17 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
           const lastLeg = route.legs[route.legs.length - 1];
           const endPoint = lastLeg.to;
 
-          console.log('Route travel time:', route.travel);
-          console.log('End point:', endPoint);
+
+
 
           if (endPoint?.lon && endPoint?.lat && route.travel) {
-            console.log('Creating banner at coordinates:', [endPoint.lon, endPoint.lat]);
+
             
             // Validate coordinates
             const isValidLng = endPoint.lon >= -180 && endPoint.lon <= 180;
             const isValidLat = endPoint.lat >= -90 && endPoint.lat <= 90;
             
-            console.log('Coordinate validation:', { isValidLng, isValidLat });
+
             
             if (!isValidLng || !isValidLat) {
               console.error('Invalid coordinates for banner:', endPoint);
@@ -306,7 +306,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
               `;
             }
 
-            console.log('Banner element created with text:', route.travel);
+
 
             try {
               // Debug: Log coordinates being used
@@ -321,7 +321,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
               const markerLng = Number(endPoint.lon);
               const markerLat = Number(endPoint.lat);
               
-              console.log('Converted coordinates:', { markerLng, markerLat });
+
 
               // Double check coordinates are valid numbers
               if (isNaN(markerLng) || isNaN(markerLat)) {
@@ -337,7 +337,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
                 .setLngLat([markerLng, markerLat])
                 .addTo(mapRef.current!);
 
-              console.log('Marker added to map successfully at:', marker.getLngLat());
+
               markersRef.current.push(marker);
 
               // Debug: Check if marker is properly attached to map
@@ -393,7 +393,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
         }
       }
 
-      console.log('Total markers created:', markersRef.current.length);
+
       
     } catch (error) {
       console.error('Error in addRoutesToMap:', error);
@@ -402,16 +402,16 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
 
   // Update routes when they change
   useEffect(() => {
-    console.log('Routes effect triggered, routes:', routes);
+
     
     if (!mapRef.current) {
-      console.log('No map ref');
+
       return;
     }
 
     // Function to handle route updates
     const updateRoutes = () => {
-      console.log('Updating routes, map loaded:', isMapLoadedRef.current);
+
       
       // Clear existing routes first
       clearExistingRoutes();
@@ -424,13 +424,13 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
 
     // Check if map is loaded and update routes
     if (isMapLoadedRef.current) {
-      console.log('Map already loaded, updating routes immediately');
+
       updateRoutes();
     } else {
-      console.log('Map not loaded yet, waiting for load event');
+
       // If map isn't loaded yet, wait for it
       const handleLoad = () => {
-        console.log('Map load event fired, updating routes');
+
         updateRoutes();
         mapRef.current?.off('load', handleLoad);
       };

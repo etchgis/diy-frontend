@@ -63,7 +63,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
     uploadImage(shortcode, file).then((data) => {
       if (bgImage) {
         deleteImage(bgImage).then(() => {
-          console.log('Previous image deleted');
+
         }).catch((err) => {
           console.error('Failed to delete previous image:', err);
         });
@@ -79,7 +79,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
   const handleRemoveImage = () => {
     if (bgImage) {
       deleteImage(bgImage).then(() => {
-        console.log('Image deleted successfully');
+
         setBgImage(slideId, '');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';

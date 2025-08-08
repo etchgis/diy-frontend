@@ -10,7 +10,7 @@ interface FixedRouteSlideData {
   tableColor: string;
   tableTextColor: string;
   bgImage: string;
-  selectedStop?: any;
+  selectedStop: any;
   scheduleData?: any;
   isLoading: boolean;
 }

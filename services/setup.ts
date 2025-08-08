@@ -17,7 +17,7 @@ export async function SetupSlides(shortcode: string) {
     return Promise.reject(new Error('Missing backend URL'));
   }
 
-  console.log('Publishing JSON to backend:', `${backendUrl}/config/${shortcode}`);
+
 
   try {
     const response = await fetch(`${backendUrl}/config/${shortcode}`, {
@@ -32,7 +32,7 @@ export async function SetupSlides(shortcode: string) {
     }
 
     const data = await response.json();
-    console.log('Fetch successful:', data);
+
     await importData(data);
     return data;
   } catch (error) {
@@ -42,7 +42,7 @@ export async function SetupSlides(shortcode: string) {
 }
 
 async function importData(setup: any) {
-  console.log('Importing data:', setup);
+
   const {
     setCoordinates,
     setAddress,
@@ -91,12 +91,12 @@ async function importData(setup: any) {
 
       setStopName(slide.id, slide.data.stopName || '');
       setDescription(slide.id, slide.data.description || '');
-      setBackgroundColor(slide.id, slide.data.backgroundColor || '#000000');
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
       setTitleColor(slide.id, slide.data.slideTitleColor || '#ffffff');
       setTableColor(slide.id, slide.data.tableColor || '#ffffff');
       setTableTextColor(slide.id, slide.data.tableTextColor || '#000000');
       setBgImage(slide.id, slide.data.bgImage || '');
-      setSelectedStop(slide.id, slide.data.selectedStop || null);
+      setSelectedStop(slide.id, slide.data.selectedStop || undefined);
     }
 
     if (slide.type === 'transit-routes') {

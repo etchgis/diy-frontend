@@ -55,7 +55,7 @@ export default function LandingPage() {
       try {
         const res = await fetch(url, { signal: controller.signal });
         const data = await res.json();
-        console.log(data.features);
+
         const nyOnly = data.features.filter((feat: any) =>
           feat.place_name.includes("New York")
         );
@@ -119,7 +119,7 @@ export default function LandingPage() {
 
     if (shortcode) {
       SetupSlides(shortcode).then((data) => {
-        console.log('Setup Slides Data:', data);
+
         router.push(`/editor`);
       })
     } else {

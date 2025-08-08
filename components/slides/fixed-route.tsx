@@ -28,7 +28,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
   const setStopName = useFixedRouteStore((state) => state.setStopName);
 
-  const selectedStop = useFixedRouteStore((state) => state.slides[slideId]?.selectedStop || null);
+  const selectedStop = useFixedRouteStore((state) => state.slides[slideId]?.selectedStop || undefined);
   const setSelectedStop = useFixedRouteStore((state) => state.setSelectedStop);
 
   const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
@@ -59,7 +59,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
   useEffect(() => {
     fetchAllStops(coordinates).then((stops) => {
-      console.log(stops);
+
       setAllStops(stops);
     }
     ).catch((err) => {
@@ -86,7 +86,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
   const handleAddStop = () => {
     if (selectedStop) {
-      console.log("Selected Stop:", selectedStop);
+
       // Perform any additional logic with the selected stop
     }
   };
@@ -110,7 +110,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
       setScheduleData(slideId, arr);
       setIsLoading(slideId, false);
-      console.log('Stop Data:', data);
+
     } catch (error) {
       console.error('Error fetching stop data:', error);
     }
@@ -118,6 +118,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
 
   useEffect(() => {
+
     if (selectedStop && selectedStop.stop_id) {
       fetchData(selectedStop.stop_id);
     }
@@ -154,7 +155,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
     uploadImage(shortcode, file).then((data) => {
       if (bgImage) {
         deleteImage(bgImage).then(() => {
-          console.log('Previous image deleted');
+
         }).catch((err) => {
           console.error('Failed to delete previous image:', err);
         });
@@ -170,7 +171,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const handleRemoveImage = () => {
     if (bgImage) {
       deleteImage(bgImage).then(() => {
-        console.log('Image deleted successfully');
+
         setBgImage(slideId, '');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';

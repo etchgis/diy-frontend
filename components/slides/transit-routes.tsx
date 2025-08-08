@@ -82,7 +82,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
       try {
         const res = await fetch(url, { signal: controller.signal });
         const data = await res.json();
-        console.log(data.features);
+
         const nyOnly = data.features.filter((feat: any) =>
           feat.place_name.includes("New York")
         );
@@ -131,7 +131,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
       };
 
       setQuery('');
-      console.log(enrichedRoute);
+
       setRoutes(slideId, [...routes, enrichedRoute]);
       setIsLoading(slideId, false);
     } catch (error: any) {
@@ -144,7 +144,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
   };
 
   useEffect(() => {
-    console.log('here', errorMessage);
+
   }, [errorMessage]);
 
   const handleDeleteRoute = (routeName: string) => {

@@ -29,7 +29,7 @@ export default function Template3Preview({ slideId, previewMode }: { slideId: st
     uploadImage(shortcode, file).then((data) => {
       if (image) {
         deleteImage(image).then(() => {
-          console.log('Previous image deleted');
+
         }).catch((err) => {
           console.error('Failed to delete previous image:', err);
         });
