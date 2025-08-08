@@ -8,7 +8,7 @@ import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
 
 export async function publish() {
-  const { address, location, coordinates, slides, url, shortcode, rotationInterval } = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword} = useGeneralStore.getState();
 
   const json = {
     location: location,
@@ -17,6 +17,7 @@ export async function publish() {
     shortcode: shortcode,
     rotationInterval: rotationInterval,
     url: url,
+    publishPassword: publishPassword,
     screens: [] as any[],
   }
 

@@ -34,6 +34,7 @@ export default function LandingPage() {
   const setUrl = useGeneralStore((state) => state.setUrl);
 
   const setShortcode = useGeneralStore((state) => state.setShortcode);
+  const setPublishPassword = useGeneralStore((state) => state.setPublishPassword);
 
   useEffect(() => {
     const current = JSON.parse(localStorage.getItem('general-store') || '{}');
@@ -85,6 +86,7 @@ export default function LandingPage() {
     localStorage.clear();
     localStorage.removeItem('general-store');
     setUrl('');
+    setPublishPassword('');
     const shortcode = generateShortcode()
     existsingCheck(shortcode).then((data) => {
       if (data.exists) {

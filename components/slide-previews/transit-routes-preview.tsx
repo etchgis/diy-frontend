@@ -39,19 +39,19 @@ const decodePolyline = (encoded: string): [number, number][] => {
   return points;
 };
 
-export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
+export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId: string, noMapScroll?: boolean }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const isMapLoadedRef = useRef<boolean>(false);
-  
+
   const address = useGeneralStore((state) => state.address || '');
   const DEFAULT_COORDINATES = { lng: -73.7562, lat: 42.6526 };
   const coordinates = useGeneralStore(
     (state) => state.coordinates ?? DEFAULT_COORDINATES
   );
-  
+
   const mockRoutes: any = [];
   const routes = useTransitRouteStore((state) => state.slides[slideId]?.routes || mockRoutes);
 
@@ -73,6 +73,17 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
       attributionControl: false,
     });
 
+    if (noMapScroll) {
+      mapRef.current.dragPan.disable();
+      mapRef.current.scrollZoom.disable();
+      mapRef.current.boxZoom.disable();
+      mapRef.current.dragRotate.disable();
+      mapRef.current.keyboard.disable();
+      mapRef.current.doubleClickZoom.disable();
+      mapRef.current.touchZoomRotate.disable();
+    }
+
+
     // Add custom attribution control
     mapRef.current.addControl(
       new mapboxgl.AttributionControl({
@@ -91,7 +102,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
           }, 100);
         }
       });
-      
+
       resizeObserverRef.current.observe(mapContainerRef.current);
     }
 
@@ -193,11 +204,11 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
 
       markersRef.current.push(originMarker);
 
-      
+
       routes.forEach((route: any, routeIndex: number) => {
 
         const routeColor = routeColors[routeIndex % routeColors.length];
-        
+
         // Process each leg of the route
         route.legs?.forEach((leg: any, legIndex: number) => {
           if (leg.legGeometry?.points) {
@@ -248,18 +259,18 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
 
           if (endPoint?.lon && endPoint?.lat && route.travel) {
 
-            
+
             // Validate coordinates
             const isValidLng = endPoint.lon >= -180 && endPoint.lon <= 180;
             const isValidLat = endPoint.lat >= -90 && endPoint.lat <= 90;
-            
 
-            
+
+
             if (!isValidLng || !isValidLat) {
               console.error('Invalid coordinates for banner:', endPoint);
               return;
             }
-            
+
             // Create duration banner element with location pin style
             const bannerEl = document.createElement('div');
             bannerEl.className = 'route-duration-banner';
@@ -320,7 +331,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
               // Ensure coordinates are numbers
               const markerLng = Number(endPoint.lon);
               const markerLat = Number(endPoint.lat);
-              
+
 
 
               // Double check coordinates are valid numbers
@@ -352,7 +363,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
                   zIndex: computedStyle.zIndex
                 });
               }, 100);
-              
+
             } catch (error) {
               console.error('Error adding marker:', error);
             }
@@ -370,10 +381,10 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
       // Fit map to show all routes
       if (routes.length > 0) {
         const bounds = new mapboxgl.LngLatBounds();
-        
+
         // Add origin to bounds
         bounds.extend([coordinates.lng, coordinates.lat]);
-        
+
         routes.forEach((route: any) => {
           route.legs?.forEach((leg: any) => {
             if (leg.from?.lon && leg.from?.lat) {
@@ -386,15 +397,15 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
         });
 
         if (!bounds.isEmpty()) {
-          mapRef.current?.fitBounds(bounds, { 
+          mapRef.current?.fitBounds(bounds, {
             padding: 50,
-            maxZoom: 15 
+            maxZoom: 15
           });
         }
       }
 
 
-      
+
     } catch (error) {
       console.error('Error in addRoutesToMap:', error);
     }
@@ -403,7 +414,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
   // Update routes when they change
   useEffect(() => {
 
-    
+
     if (!mapRef.current) {
 
       return;
@@ -412,10 +423,10 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
     // Function to handle route updates
     const updateRoutes = () => {
 
-      
+
       // Clear existing routes first
       clearExistingRoutes();
-      
+
       // Add new routes if they exist
       if (routes && routes.length > 0) {
         addRoutesToMap();
@@ -434,7 +445,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
         updateRoutes();
         mapRef.current?.off('load', handleLoad);
       };
-      
+
       mapRef.current?.on('load', handleLoad);
     }
 
@@ -464,7 +475,7 @@ export default function TransitRoutesPreview({ slideId }: { slideId: string }) {
           }}
         />
       </div>
-      
+
       {/* Custom Footer */}
       <div className="w-full bg-[#F4F4F4] p-3 flex items-center justify-between rounded-b-lg flex-shrink-0 z-20">
         <img

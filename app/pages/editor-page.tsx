@@ -23,6 +23,7 @@ import Template3Preview from "@/components/slide-previews/template-3-preview"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faTimesCircle, faGear } from '@fortawesome/free-solid-svg-icons';
+import bcrypt from "bcryptjs";
 
 import {
   DndContext,
@@ -60,6 +61,11 @@ export default function EditorPage() {
   const [publishMessage, setPublishMessage] = useState('');
   const [publishUrl, setPublishUrl] = useState('');
 
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const template = useGeneralStore((state) => state.template || '');
   const setTemplate = useGeneralStore((state) => state.setTemplate);
 
@@ -71,6 +77,9 @@ export default function EditorPage() {
 
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 0);
   const setRotationInterval = useGeneralStore((state) => state.setRotationInterval);
+
+  const publishPassword = useGeneralStore((state) => state.publishPassword || '');
+  const setPublishPassword = useGeneralStore((state) => state.setPublishPassword);
 
   const [tempRotationInterval, setTempRotationInterval] = useState(rotationInterval);
 
@@ -182,43 +191,78 @@ export default function EditorPage() {
     }
   };
 
+  const openPasswordModal = () => {
+    if (!publishPassword) {
+      setIsSettingPassword(true);
+    } else {
+      setIsSettingPassword(false);
+    }
+    setPasswordInput("");
+    setErrorMessage("");
+    setShowPasswordModal(true);
+  };
+
   const handlePublish = async () => {
+    if (isSettingPassword) {
+      if (!passwordInput.trim()) {
+        setErrorMessage("Password cannot be empty.");
+        return;
+      }
+      const hashed = await bcrypt.hash(passwordInput, 10);
+      setPublishPassword(hashed);
+      setShowPasswordModal(false);
+      setErrorMessage("");
+      alert("Password set successfully. Please publish again.");
+      return;
+    } else {
+      const match = await bcrypt.compare(passwordInput, publishPassword);
+      if (!match) {
+        setErrorMessage("Incorrect password. Please try again.");
+        return;
+      }
+      setShowPasswordModal(false);
+      handlePublishingStep();
+    }
+  };
+
+  const handlePublishingStep = async () => {
     setPublishing(true);
     setPublishStatus(null);
-    setPublishMessage('');
-    setPublishUrl('');
+    setPublishMessage("");
+    setPublishUrl("");
 
     try {
       const response = await publish();
-      setPublishStatus('success');
-      setPublishMessage('Mobility Screen published successfully!');
+      setPublishStatus("success");
+      setPublishMessage("Mobility Screen published successfully!");
       setPublishUrl(response.url);
     } catch (err: any) {
-      setPublishStatus('error');
-      setPublishMessage(err.message || 'Failed to publish. Please try again.');
+      setPublishStatus("error");
+      setPublishMessage(err.message || "Failed to publish. Please try again.");
     } finally {
       setPublishing(false);
     }
   };
 
+
   const renderSlideComponent = (type: string, slideId: string) => {
     switch (type) {
       case "qr":
-        return <QRSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
+        return <QRSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "transit-destinations":
-        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
+        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "fixed-routes":
-        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
+        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "transit-routes":
-        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
+        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "template-1":
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "template-2":
-        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
+        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "template-3":
-        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
+        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       default:
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={handlePublish} />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
   };
 
@@ -353,7 +397,7 @@ export default function EditorPage() {
               handleAddSlide();
             }}
           >
-            <Upload className="w-4 h-4 mr-2" />
+            <Upload className="w-4 h-4 mr-2 border-none" />
             Add Slide
           </Button>
 
@@ -481,6 +525,58 @@ export default function EditorPage() {
         </div>
       )}
 
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative">
+            <button
+              onClick={() => setShowPasswordModal(false)}
+              className="absolute top-2 right-3 text-gray-400 hover:text-black text-2xl"
+            >
+              ×
+            </button>
+
+            <h2 className={`text-xl font-semibold ${publishPassword ? 'mb-6' : 'mb-1'}`}>
+              {isSettingPassword ? "Set Publishing Password" : "Enter Your Publishing Password"}
+            </h2>
+            {!publishPassword && (
+              <p className="mb-4 text-[#7e807f] text-sm">Save this password somewhere safe</p>
+            )}
+
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder={isSettingPassword ? "Create a password" : "Enter password"}
+              className="border border-gray-300 p-2 rounded w-full"
+            />
+
+            {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
+
+            <div className="mt-6 flex justify-end gap-2">
+
+              <Button
+                variant="outline"
+                className="w-[120px] text-[#000000] bg-transparent bg-[#FFFFFF] hover:bg-[#FFFFFF]/90"
+                onClick={() => setShowPasswordModal(false)}
+              >
+
+                Cancel
+              </Button>
+              <Button
+                variant="outline"
+                className="w-[120px] text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90 border-none"
+                onClick={() => {
+                  handlePublish();
+                }}
+              >
+
+                {publishPassword ? 'Continue' : 'Set Password'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {publishing || publishStatus ? (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative">
@@ -514,7 +610,7 @@ export default function EditorPage() {
                   target="_blank"
                   className="text-blue-600 underline break-words"
                 >
-                  {publishUrl}
+                  {publishUrl + '?mode=tv'}
                 </a>
               </div>
             )}

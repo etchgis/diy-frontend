@@ -48,13 +48,15 @@ async function importData(setup: any) {
     setAddress,
     setSlides,
     setShortcode,
-    setRotationInterval
+    setRotationInterval,
+    setPublishPassword
   } = useGeneralStore.getState();
 
   setCoordinates({ lat: setup.coordinates.lat, lng: setup.coordinates.lng });
   setAddress(setup.address || 'Albany, NY');
   setShortcode(setup.shortcode || '');
   setRotationInterval(setup.rotationInterval || 20);
+  setPublishPassword(setup.publishPassword || '');
   const slides: any = [];
 
   setup.screens.forEach((slide: any) => {
@@ -75,6 +77,7 @@ async function importData(setup: any) {
       setTableHeaderTextColor(slide.id, '#ffffff');
       setTableTextColor(slide.id, '#ffffff');
       setDestinations(slide.id, slide.data.destinations || []);
+      console.log('Destinations set for slide:', slide.id, slide.data.destinations || []);
     }
 
     if (slide.type === 'fixed-routes') {

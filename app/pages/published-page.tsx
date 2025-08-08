@@ -15,8 +15,12 @@ import { useTransitDestinationsStore } from '@/stores/transitDestinations';
 import { useTransitRouteStore } from '@/stores/transitRoutes';
 import { useInterval } from '@dnd-kit/utilities';
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
+  const searchParams = useSearchParams();
+  const isTvMode = searchParams.get('mode') === 'tv';
+  
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
@@ -34,24 +38,27 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const allFixedRouteSlidesState = useFixedRouteStore((state) => state.slides);
   const allTransitRouteSlidesState = useTransitRouteStore((state) => state.slides);
 
-
   const goToNextSlide = useCallback(() => {
     setActiveIndex((prev) => (prev + 1) % slides.length);
   }, [slides.length]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      if (!isTvMode) return; // Only handle keyboard navigation in TV mode
+      
       if (event.key === 'ArrowRight') {
         setActiveIndex((prev) => (prev + 1) % slides.length);
       } else if (event.key === 'ArrowLeft') {
         setActiveIndex((prev) => (prev - 1 + slides.length) % slides.length);
       }
     },
-    [slides.length]
+    [slides.length, isTvMode]
   );
 
-  // Auto-rotation effect
+  // Auto-rotation effect - only in TV mode
   useEffect(() => {
+    if (!isTvMode) return;
+    
     // Only start auto-rotation if we have slides and a valid rotation interval
     if (slides.length > 1 && rotationInterval > 0) {
       intervalRef.current = setInterval(() => {
@@ -64,7 +71,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         }
       };
     }
-  }, [slides.length, rotationInterval, goToNextSlide]);
+  }, [slides.length, rotationInterval, goToNextSlide, isTvMode]);
 
   useEffect(() => {
     const loadSlides = async () => {
@@ -73,21 +80,21 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         setSlides(result.screens);
         setScreens(result);
         setIsLoading(false);
+        
       }
     };
     loadSlides();
   }, [shortcode, setSlides]);
 
-
-
   // Function and useEffect to fetch transit destination data every 5 minutes
   const getTransitDestinationData = async () => {
     const transitSlides = slides.filter((slide: any) => slide.type === 'transit-destinations');
-
+    console.log(slides, transitSlides);
     if (!transitSlides.length) return;
 
     for (const slide of transitSlides) {
       const destinations = allSlidesState[slide.id]?.destinations || [];
+      console.log(destinations);
       await getDestinationData(destinations, slide.id, setDestinationData);
     }
   };
@@ -123,7 +130,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const transitRouteData = allTransitRouteSlidesState[slide.id]?.routes || [];
       await getDestinationData(transitRouteData, slide.id, setRoutesData);
     }
-
   }
 
   const hasFetchedDestinations = useRef(false);
@@ -132,32 +138,30 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     if (hasFetchedDestinations.current || slides.length === 0) return;
     hasFetchedDestinations.current = true;
 
-
     getTransitDestinationData();
     getFixedRouteData();
     getTransitRoutesData();
 
     setInterval(() => {
-
       getTransitDestinationData();
       getFixedRouteData();
       getTransitRoutesData();
     }, 60000 * 5);
   }, [slides]);
 
-
-
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+    if (isTvMode) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [handleKeyDown, isTvMode]);
 
   const renderSlidePreview = (type: string, slideId: string) => {
     switch (type) {
       case 'qr':
         return <QRSlidePreview slideId={slideId} />;
       case 'transit-destinations':
-        return <TransitDestinationPreview slideId={slideId} />;
+        return <TransitDestinationPreview slideId={slideId} mobileMode={!isTvMode}/>;
       case 'fixed-routes':
         return <FixedRoutePreview slideId={slideId} />;
       case 'template-1':
@@ -166,11 +170,42 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         return <Template2Preview slideId={slideId} />;
       case 'template-3':
         return <Template3Preview slideId={slideId} />;
+      case 'transit-routes':
+        return <TransitRoutesPreview slideId={slideId} noMapScroll={!isTvMode}/>;
       default:
         return null;
     }
   };
 
+  // Scrollable mode - show all slides vertically
+  if (!isTvMode) {
+    return (
+      <div className="w-full min-h-screen bg-gray-100">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center w-full h-screen">
+            <h1 className="text-2xl font-bold">Loading slides...</h1>
+          </div>
+        ) : (
+          <div className="">
+            {slides.map((slide: any, index: number) => (
+              <div key={slide.id} className="w-full">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                  <div className="bg-gray-800 text-white px-4 py-2 text-sm font-medium">
+                    Slide {index + 1}: {slide.type}
+                  </div>
+                  <div className="w-full h-[90vh]">
+                    {renderSlidePreview(slide.type, slide.id)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // TV mode - slideshow with rotation
   return (
     <div className="w-screen h-screen overflow-hidden bg-white relative">
       {/* Persistent TransitRoutesPreview */}

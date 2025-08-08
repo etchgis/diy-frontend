@@ -15,6 +15,8 @@ interface Store {
   location?: string;
   shortcode?: string;
   rotationInterval?: number,
+  firstPublish?: boolean;
+  publishPassword?: string;
   coordinates?: {
     lat: number;
     lng: number;
@@ -27,6 +29,8 @@ interface Store {
   setCoordinates: (coordinates: { lat: number; lng: number }) => void;
   setShortcode: (shortCode: string) => void;
   setRotationInterval: (interval: number) => void;
+  setFirstPublish: (firstPublish: boolean) => void;
+  setPublishPassword: (publishPassword: string) => void;
 }
 
 export const useGeneralStore = create<Store>()(
@@ -64,6 +68,12 @@ export const useGeneralStore = create<Store>()(
 
       setRotationInterval: (interval) => set(() => ({
         rotationInterval: interval,
+      })),
+      setFirstPublish: (firstPublish) => set(() => ({
+        firstPublish,
+      })),
+      setPublishPassword: (publishPassword) => set(() => ({
+        publishPassword, 
       })),
     }),
     {
