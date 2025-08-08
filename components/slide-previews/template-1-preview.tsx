@@ -92,8 +92,8 @@ export default function Template1Preview({ slideId, previewMode }: { slideId: st
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 p-6 flex gap-4">
-        {/* Left Box */}
-        <div className="flex-1 h-full">
+        {/* Left Box - Text Content */}
+        <div className="h-full" style={{ width: leftContentSize }}>
           <div
             className={`h-full w-full rounded-lg p-6 flex items-start ${isEditor ? 'border-2 border-[#11d1f7] bg-[#11d1f7]/10' : ''
               }`}
@@ -113,8 +113,8 @@ export default function Template1Preview({ slideId, previewMode }: { slideId: st
           </div>
         </div>
 
-        {/* Right Box */}
-        <div className="flex-1 h-full">
+        {/* Right Box - Image Content */}
+        <div className="h-full" style={{ width: rightContentSize }}>
           <div
             className={`h-full w-full rounded-lg flex items-center justify-center p-6 ${isEditor ? 'border-2 border-[#11d1f7] bg-[#11d1f7]/10' : ''
               }`}

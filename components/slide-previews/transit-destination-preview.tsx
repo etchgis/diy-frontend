@@ -75,58 +75,67 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
               <div className="flex items-center gap-2">
                 <span>{dest.name}</span>
               </div>
-              <div className="flex items-center gap-2">
-                {dest.legs.map((leg: any, index: number) => {
+              <div className={`flex items-center gap-2 overflow-hidden ${dest.legs.filter((l: any) => !(l.mode === 'WALK' && l.duration <= 240)).length > 4 ? 'flex-wrap py-2' : ''}`}>
+                {dest.legs.map((leg: any, legIndex: number) => {
                   if (leg.mode === 'WALK' && leg.duration <= 240) {
-                    return null; // Do not render anything if the condition is true
+                    return null;
                   }
+
+                  const visibleLegs = dest.legs.filter((l: any) => !(l.mode === 'WALK' && l.duration <= 240));
+                  const hasMany = visibleLegs.length > 4;
+                  const currentVisibleIndex = visibleLegs.findIndex((l: any) => l === leg);
+                  const isLastVisibleLeg = currentVisibleIndex === visibleLegs.length - 1;
+                  console.log(visibleLegs);
+
                   return (
-                    <div className="all-leg-content" key={index}>
-                      <div className="flex items-center gap-2">
-                        {/* Leg icon */}
-                        {leg.mode === 'WALK' ? (
-                          <img
-                            className="leg-icon"
-                            src="/images/walking-man.png"
-                            style={{ width: '35px', height: '35px' }}
-                            alt=""
-                          />
-                        ) : (
-                          <div className="bus-leg flex items-center gap-1">
+                    <div className="flex items-center gap-2" key={legIndex}>
+                      <div className={hasMany ? "all-leg-content" : "all-leg-content"}>
+                        <div className={hasMany ? "flex flex-col items-center gap-1" : "flex items-center gap-2"}>
+                          {/* Leg icon */}
+                          {leg.mode === 'WALK' ? (
                             <img
                               className="leg-icon"
-                              src="/images/bus-icon.png"
-                              style={{ width: '35px', height: '35px' }}
+                              src="/images/walking-man.png"
+                              style={{ width: hasMany ? '24px' : '35px', height: hasMany ? '24px' : '35px' }}
                               alt=""
                             />
-                            <div
-                              className="bus-info px-2 py-1 rounded"
-                              style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }}
-                            >
-                              <p className="text-sm" style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'black' }}>
-                                {leg.routeShortName?.length > 5
-                                  ? `${leg.agencyId || "N/A"} ${leg.routeShortName.match(/\d+/)?.[0] || ""}`
-                                  : leg.routeShortName || leg.tripShortName || "N/A"}
-                              </p>
+                          ) : (
+                            <div className="bus-leg flex items-center gap-1">
+                              <img
+                                className="leg-icon"
+                                src="/images/bus-icon.png"
+                                style={{ width: hasMany ? '24px' : '35px', height: hasMany ? '24px' : '35px' }}
+                                alt=""
+                              />
+                              <div
+                                className={`bus-info rounded ${hasMany ? 'px-1 py-0.5' : 'px-2 py-1'}`}
+                                style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }}
+                              >
+                                <p className={hasMany ? "text-xs leading-tight text-center" : "text-sm"} style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'black' }}>
+                                  {leg.routeShortName?.length > 5
+                                    ? `${leg.agencyId || "N/A"} ${leg.routeShortName.match(/\d+/)?.[0] || ""}`
+                                    : leg.routeShortName || leg.tripShortName || "N/A"}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
 
-                        {/* Arrow icon if not last leg */}
-                        {index !== dest.legs.length - 1 && (
-                          <img
-                            src="/images/right-arrow.png"
-                            alt=""
-                            className="arrow-icon"
-                            style={{ width: '30px', height: '30px', marginLeft: '8px' }}
-                          />
-                        )}
+                        {/* Duration below icons */}
+                        <p className={`leg-duration ${leg.mode === 'WALK' ? 'walk-duration' : ''} ${hasMany ? 'text-xs leading-tight' : ''}`}>
+                          {formatDuration(leg.duration)}
+                        </p>
                       </div>
 
-                      {/* Duration below icons */}
-                      <p className={`leg-duration ${leg.mode === 'WALK' ? 'walk-duration' : ''}`}>
-                        {formatDuration(leg.duration)}
-                      </p>
+                      {/* Arrow icon if not last visible leg */}
+                      {!isLastVisibleLeg && (
+                        <img
+                          src="/images/right-arrow.png"
+                          alt=""
+                          className="arrow-icon flex-shrink-0"
+                          style={{ width: hasMany ? '15px' : '25px', height: hasMany ? '15px' : '25px', marginLeft: hasMany ? '4px' : '8px', display: hasMany ? 'none' : 'block' }}
+                        />
+                      )}
                     </div>
                   );
                 })}

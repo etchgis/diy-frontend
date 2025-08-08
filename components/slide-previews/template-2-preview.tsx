@@ -84,7 +84,7 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
       {/* Content Area */}
       <div className="flex-1 p-6 flex gap-4 min-h-0">
         {/* Left Image Box */}
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="min-w-0 flex flex-col" style={{ width: leftContentSize }}>
           <div
             className={`flex-1 rounded-lg flex items-center justify-center p-6 overflow-hidden ${isEditor ? 'border-2 border-[#11d1f7] bg-[#11d1f7]/10' : ''
               }`}
@@ -118,7 +118,7 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
         </div>
 
         {/* Right Text Box */}
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="min-w-0 flex flex-col" style={{ width: rightContentSize }}>
           <div className={`flex-1 rounded-lg p-6 flex items-start ${isEditor ? 'border-2 border-[#11d1f7] bg-[#11d1f7]/10' : ''
             }`}>
             {isEditor ? (
