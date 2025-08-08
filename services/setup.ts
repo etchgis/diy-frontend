@@ -100,11 +100,13 @@ async function importData(setup: any) {
     if (slide.type === 'transit-routes') {
       const {
         setDestination,
-        setLocation
+        setLocation,
+        setRoutes
       } = useTransitRouteStore.getState();
 
       setDestination(slide.id, slide.data.destination || '');
       setLocation(slide.id, slide.data.location || '');
+      setRoutes(slide.id, slide.data.routes || []);
 
     }
 

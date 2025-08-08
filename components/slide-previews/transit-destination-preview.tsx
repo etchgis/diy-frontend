@@ -103,7 +103,9 @@ export default function TransitDestinationPreview({ slideId }: { slideId: string
                               className="bus-info px-2 py-1 rounded"
                               style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }}
                             >
-                              <p className="text-sm" style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'white' }}>{leg.tripShortName}</p>
+                              <p className="text-sm" style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'black' }}>{leg.routeShortName.length > 5
+                                ? `${leg.agencyId || "N/A"} ${leg.routeShortName.match(/\d+/)?.[0] || ""}`
+                                : leg.routeShortName}</p>
                             </div>
                           </div>
                         )}

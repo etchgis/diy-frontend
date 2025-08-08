@@ -12,6 +12,7 @@ import { SetupSlides } from '@/services/setup';
 import { useFixedRouteStore } from '@/stores/fixedRoute';
 import { useGeneralStore } from '@/stores/general';
 import { useTransitDestinationsStore } from '@/stores/transitDestinations';
+import { useTransitRouteStore } from '@/stores/transitRoutes';
 import { useInterval } from '@dnd-kit/utilities';
 import { useEffect, useState, useCallback, useRef } from 'react';
 
@@ -28,8 +29,10 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
   const setScheduleData = useFixedRouteStore((state) => state.setScheduleData);
+  const setRoutesData = useTransitRouteStore((state) => state.setRoutes);
   const allSlidesState = useTransitDestinationsStore((state) => state.slides);
   const allFixedRouteSlidesState = useFixedRouteStore((state) => state.slides);
+  const allTransitRouteSlidesState = useTransitRouteStore((state) => state.slides);
 
 
   const goToNextSlide = useCallback(() => {
@@ -112,18 +115,33 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   }
 
+  const getTransitRoutesData = async () => {
+    const transitRoutesSlides = slides.filter((slide: any) => slide.type === 'transit-routes');
+    if (!transitRoutesSlides.length) return;
+
+    for (const slide of transitRoutesSlides) {
+      const transitRouteData = allTransitRouteSlidesState[slide.id]?.routes || [];
+      await getDestinationData(transitRouteData, slide.id, setRoutesData);
+    }
+
+  }
+
   const hasFetchedDestinations = useRef(false);
 
   useEffect(() => {
     if (hasFetchedDestinations.current || slides.length === 0) return;
     hasFetchedDestinations.current = true;
 
+    console.log('fetching');
     getTransitDestinationData();
     getFixedRouteData();
+    getTransitRoutesData();
 
     setInterval(() => {
+      console.log('feching interval');
       getTransitDestinationData();
       getFixedRouteData();
+      getTransitRoutesData();
     }, 60000 * 5);
   }, [slides]);
 

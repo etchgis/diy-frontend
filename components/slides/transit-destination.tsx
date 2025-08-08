@@ -176,7 +176,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       const result = await fetchTransitData(origin, destination);
       const enrichedDestination = {
         name: newDestination.name,
-        route: result.route || "N/A",
+        route: result.route && result.route.length > 5 ? result.agencyId || "N/A" : result.route || "N/A",
         departure: formatTime(result.startTime),
         arrival: formatTime(result.endTime),
         travel: formatDuration(result.duration),
@@ -191,7 +191,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
     } catch (error: any) {
       console.log(error);
       setErrorMessage(slideId, "Destination out of range or no data available");
-      setTimeout(() => setErrorMessage(slideId, ""), 5000);
+      setTimeout(() => {setErrorMessage(slideId, "")}, 5000);
     }
 
 

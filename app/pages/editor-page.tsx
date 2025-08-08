@@ -503,7 +503,7 @@ export default function EditorPage() {
             )}
 
             {publishStatus === 'success' && (
-              <div className="text-center space-y-4">
+              <div className="text-center space-y-4 z-1000">
                 <h2 className="text-xl font-semibold text-green-600 flex items-center gap-2 justify-center">
                   <FontAwesomeIcon style={{ width: '25px', height: '25px' }} icon={faCheckCircle} />
                   Published!

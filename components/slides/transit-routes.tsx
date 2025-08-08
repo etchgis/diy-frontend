@@ -28,6 +28,9 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
   const errorMessage = useTransitRouteStore((state) => state.slides[slideId]?.errorMessage || '');
   const setErrorMessage = useTransitRouteStore((state) => state.setErrorMessage);
 
+  const setIsLoading = useTransitRouteStore((state) => state.setIsLoading);
+  const isLoading = useTransitRouteStore((state) => state.slides[slideId]?.isLoading || false);
+
 
   const coordinates = useGeneralStore(
     (state) => state.coordinates ?? { lng: -73.7562, lat: 42.6526 }
@@ -115,6 +118,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
     const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
 
     try {
+      setIsLoading(slideId, true);
       const result = await fetchTransitData(origin, destination);
       const enrichedRoute = {
         name: newDestination.name,
@@ -129,14 +133,19 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
       setQuery('');
       console.log(enrichedRoute);
       setRoutes(slideId, [...routes, enrichedRoute]);
+      setIsLoading(slideId, false);
     } catch (error: any) {
       setErrorMessage(slideId, error.message || 'Failed to fetch route data');
-      setInterval(() => {
+      setIsLoading(slideId, false);
+      setTimeout(() => {
         setErrorMessage(slideId, '');
-      }
-      , 5000);
+      }, 5000);
     }
   };
+
+  useEffect(() => {
+    console.log('here', errorMessage);
+  }, [errorMessage]);
 
   const handleDeleteRoute = (routeName: string) => {
     const updatedRoutes = routes.filter((route: any) => route.name !== routeName);
@@ -206,14 +215,24 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
                   )}
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="border-[#cbd5e0] bg-transparent flex-shrink-0"
-                  onClick={handleCreate}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
+                {isLoading ? (
+                  // Spinner (same size as button)
+                  <div className="w-10 h-10 flex items-center justify-center border border-[#cbd5e0] rounded-md">
+                    <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="border-[#cbd5e0] bg-transparent"
+                    onClick={handleCreate}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -270,7 +289,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
             {routes && routes.length > 0 && (
               <div className="mt-2">
                 {routes.map((route: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between bg-[#f4f4f4] p-2 rounded">
+                  <div key={index} className="flex mt-2 items-center justify-between bg-[#f4f4f4] p-2 rounded">
                     <span className="text-xs text-[#4a5568] truncate pr-2">{route.name}</span>
                     <Button
                       variant="ghost"
