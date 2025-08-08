@@ -1,26 +1,52 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Plus } from "lucide-react"
+import { HelpCircle, ChevronRight, Plus, X } from "lucide-react"
 import TransitRoutesPreview from "../slide-previews/transit-routes-preview"
 import { useTransitRouteStore } from "@/stores/transitRoutes"
 import { useGeneralStore } from "@/stores/general"
 import { useEffect, useRef, useState } from "react"
+import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
+import { formatTime, formatDuration } from "@/utils/formats"
 
 export default function TransitRoutesSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const renderCount = useRef(0);
 
   const destination = useTransitRouteStore((state) => state.slides[slideId]?.destination || '');
   const setDestination = useTransitRouteStore((state) => state.setDestination);
 
-  const setAddress = useGeneralStore((state) => state.setAddress);
-  const address = useGeneralStore((state) => state.address);
+
+  const mockRoutes: any = [];
+  const routes = useTransitRouteStore((state) => state.slides[slideId]?.routes || mockRoutes);
+  const setRoutes = useTransitRouteStore((state) => state.setRoutes);
+
+  const errorMessage = useTransitRouteStore((state) => state.slides[slideId]?.errorMessage || '');
+  const setErrorMessage = useTransitRouteStore((state) => state.setErrorMessage);
+
+  const setIsLoading = useTransitRouteStore((state) => state.setIsLoading);
+  const isLoading = useTransitRouteStore((state) => state.slides[slideId]?.isLoading || false);
+
+
+  const coordinates = useGeneralStore(
+    (state) => state.coordinates ?? { lng: -73.7562, lat: 42.6526 }
+  );
+
+  const prevValuesRef = useRef({ destination: '' });
 
   useEffect(() => {
+    if (
+      prevValuesRef.current.destination === destination
+    ) {
+      return;
+    }
+
+    prevValuesRef.current = { destination };
+
     renderCount.current += 1;
     const isDev = process.env.NODE_ENV === 'development';
 
@@ -42,14 +68,99 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [address, destination]);
+  }, [destination]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    if (query.length < 3) return;
+
+    const fetchSuggestions = async () => {
+      if (selectedFeature) return;
+      const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`;
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        const data = await res.json();
+        console.log(data.features);
+        const nyOnly = data.features.filter((feat: any) =>
+          feat.place_name.includes("New York")
+        );
+        setSuggestions(nyOnly.map((feat: any) => feat));
+      } catch (err: any) {
+        if (err.name !== "AbortError") console.error(err);
+      }
+    };
+
+    fetchSuggestions();
+    return () => controller.abort();
+  }, [query]);
+
+  const handleSelect = (feature: any) => {
+    setSelectedFeature(feature);
+    setQuery(feature.place_name);
+    setDestination(slideId, feature.place_name);
+    setSuggestions([]);
+  };
+
+  const handleCreate = async () => {
+    if (!selectedFeature) return;
+
+    const newDestination = {
+      name: query,
+      coordinates: {
+        lat: selectedFeature.center[1],
+        lng: selectedFeature.center[0],
+      },
+    };
+
+    const origin = `${coordinates.lat},${coordinates.lng}`;
+    const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+
+    try {
+      setIsLoading(slideId, true);
+      const result = await fetchTransitData(origin, destination);
+      const enrichedRoute = {
+        name: newDestination.name,
+        route: result.route || "N/A",
+        departure: formatTime(result.startTime),
+        arrival: formatTime(result.endTime),
+        travel: formatDuration(result.duration),
+        legs: result.legs,
+        coordinates: newDestination.coordinates,
+      };
+
+      setQuery('');
+      console.log(enrichedRoute);
+      setRoutes(slideId, [...routes, enrichedRoute]);
+      setIsLoading(slideId, false);
+    } catch (error: any) {
+      setErrorMessage(slideId, error.message || 'Failed to fetch route data');
+      setIsLoading(slideId, false);
+      setTimeout(() => {
+        setErrorMessage(slideId, '');
+      }, 5000);
+    }
+  };
+
+  useEffect(() => {
+    console.log('here', errorMessage);
+  }, [errorMessage]);
+
+  const handleDeleteRoute = (routeName: string) => {
+    const updatedRoutes = routes.filter((route: any) => route.name !== routeName);
+    setRoutes(slideId, updatedRoutes);
+    if (routeName === destination) {
+      setDestination(slideId, '');
+    }
+  };
 
 
   return (
     <>
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0">
         {/* Main Content */}
-        <div className="flex-1 bg-white">
+        <div className="flex-1 bg-white min-w-0">
           <div className="p-6">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-[#4a5568] mb-4">
@@ -57,36 +168,97 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
               <ChevronRight className="w-4 h-4" />
               <span className="font-medium">Transit Route Map Page Template</span>
             </div>
-
             <p className="text-[#606061] mb-6">Input the destinations that you would like for the map to show.</p>
 
             {/* Destination Search */}
+            {/* Destination Search */}
             <div className="mb-6">
-              <label className="block text-[#4a5568] font-medium mb-2">Destination</label>
-              <div className="relative">
-                <img
-                  src="/images/search-icon.png"
-                  alt="Search"
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                />
-                <Input
-                  placeholder="Albany Airport"
-                  className="pl-10 bg-white border-[#cbd5e0]"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                />
+              <div className="flex items-center mb-1">
+                <label className="block text-[#4a5568] font-medium mb-2">Add Destination</label>
+                {errorMessage && (
+                  <div className="mb-2 text-red-500 text-sm flex items-center ml-9">
+                    {errorMessage}
+                  </div>
+                )}
+              </div>
+              <div className="flex w-full gap-2">
+                <div className="relative flex-1 min-w-0">
+                  <img
+                    src="/images/search-icon.png"
+                    alt="Search"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+                  />
+                  <Input
+                    placeholder="i.e Albany Airport"
+                    value={query}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setQuery(value);
+                      setSelectedFeature(null);
+                      setDestination(slideId, value);
+                    }}
+                    className="pl-10 bg-white border-[#cbd5e0] w-full"
+                  />
+
+                  {suggestions.length > 0 && (
+                    <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                      {suggestions.map((feature: any, idx) => (
+                        <li
+                          key={idx}
+                          onClick={() => handleSelect(feature)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black text-sm"
+                        >
+                          {feature.place_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {isLoading ? (
+                  // Spinner (same size as button)
+                  <div className="w-10 h-10 flex items-center justify-center border border-[#cbd5e0] rounded-md">
+                    <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="border-[#cbd5e0] bg-transparent"
+                    onClick={handleCreate}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
 
-            {/* Map Preview */}
-            <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
-              <TransitRoutesPreview slideId={slideId}/>
+            {/* Map Preview - Responsive container */}
+
+            <div className="w-full">
+              <div className=" h-[550px]  border border-[#e2e8f0] rounded-lg overflow-hidden">
+                <TransitRoutesPreview slideId={slideId} />
+              </div>
             </div>
 
+
             {/* Footer Buttons */}
-            <div className="flex gap-3 mt-4">
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
+            <div className="flex gap-3 mt-4 flex-wrap">
+              <Button
+                className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium"
+                onClick={() => handlePreview()}
+              >
+                Preview Screens
+              </Button>
+              <Button
+                className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium"
+                onClick={() => handlePublish()}
+              >
+                Publish Screens
+              </Button>
               {saveStatus !== 'idle' && (
                 <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
                   {saveStatus === 'saving' ? (
@@ -107,22 +279,41 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
+        <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 flex-shrink-0">
           <div className="mb-4">
             <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Destinations</h3>
-            <div className="text-xs text-[#718096]">No destinations added yet</div>
+            {routes && routes.length === 0 && (
+              <div className="text-xs text-[#718096]">No destinations added yet</div>
+            )}
+
+            {routes && routes.length > 0 && (
+              <div className="mt-2">
+                {routes.map((route: any, index: number) => (
+                  <div key={index} className="flex mt-2 items-center justify-between bg-[#f4f4f4] p-2 rounded">
+                    <span className="text-xs text-[#4a5568] truncate pr-2">{route.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 flex-shrink-0"
+                      onClick={() => handleDeleteRoute(route.name)}
+                    >
+                      <X className="w-2 h-2" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-
           <div className="mt-auto">
-
-            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
+            <Button
+              className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2"
+              onClick={() => { handleDelete(slideId) }}
+            >
               Delete Screen
             </Button>
           </div>
         </div>
       </div>
-
-
     </>
   )
 

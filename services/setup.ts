@@ -88,8 +88,8 @@ async function importData(setup: any) {
         setBgImage
       } = useFixedRouteStore.getState();
 
-      setStopName(slide.id, slide.data.stop?.label || '');
-      setDescription(slide.id, slide.data.stop?.description || '');
+      setStopName(slide.id, slide.data.stopName || '');
+      setDescription(slide.id, slide.data.description || '');
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#000000');
       setTitleColor(slide.id, slide.data.slideTitleColor || '#ffffff');
       setTableColor(slide.id, slide.data.tableColor || '#ffffff');
@@ -100,11 +100,13 @@ async function importData(setup: any) {
     if (slide.type === 'transit-routes') {
       const {
         setDestination,
-        setLocation
+        setLocation,
+        setRoutes
       } = useTransitRouteStore.getState();
 
       setDestination(slide.id, slide.data.destination || '');
       setLocation(slide.id, slide.data.location || '');
+      setRoutes(slide.id, slide.data.routes || []);
 
     }
 

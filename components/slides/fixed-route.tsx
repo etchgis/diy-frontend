@@ -49,8 +49,13 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const bgImage = useFixedRouteStore((state) => state.slides[slideId]?.bgImage || '');
   const setBgImage = useFixedRouteStore((state) => state.setBgImage);
 
+  const setIsLoading = useFixedRouteStore((state) => state.setIsLoading);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const coordinates = useGeneralStore((state) => state.coordinates || { lat: 0, lng: 0 });
+
+  const setScheduleData = useFixedRouteStore((state) => state.setScheduleData);
+
 
   useEffect(() => {
     fetchAllStops(coordinates).then((stops) => {
@@ -88,7 +93,23 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
   async function fetchData(stopId: string) {
     try {
+      setIsLoading(slideId, true);
       const data = await fetchStopData(stopId, selectedStop.services[0].service_id, selectedStop.services[0].organization_id);
+      const arr: any = [];
+      data?.trains.forEach((item: any) => {
+        arr.push({
+          destination: item.destination,
+          route: item.details.id,
+          routeColor: item.details.color,
+          tableTextColor: item.details.textColor,
+          time: item.arrivalTime,
+          duration: item.arrival,
+          status: item.status,
+        });
+      });
+
+      setScheduleData(slideId, arr);
+      setIsLoading(slideId, false);
       console.log('Stop Data:', data);
     } catch (error) {
       console.error('Error fetching stop data:', error);
@@ -96,7 +117,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   }
 
   useEffect(() => {
-    if(selectedStop && selectedStop.stop_id){
+    if (selectedStop && selectedStop.stop_id) {
       fetchData(selectedStop.stop_id);
     }
   }, [selectedStop]);

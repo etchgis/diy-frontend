@@ -97,10 +97,11 @@ export async function publish() {
 
       if (slideData) {
         console.log('Transit Route Slide Data:', slideData);
-        const { destination, location } = slideData;
+        const { destination, location, routes } = slideData;
 
         screenObj.data.destination = destination;
         screenObj.data.location = location;
+        screenObj.data.routes = routes;
       } else {
       }
     }

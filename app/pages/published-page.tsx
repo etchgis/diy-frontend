@@ -6,10 +6,13 @@ import Template2Preview from '@/components/slide-previews/template-2-preview';
 import Template3Preview from '@/components/slide-previews/template-3-preview';
 import TransitDestinationPreview from '@/components/slide-previews/transit-destination-preview';
 import TransitRoutesPreview from '@/components/slide-previews/transit-routes-preview';
+import { fetchStopData } from '@/services/data-gathering/fetchStopData';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
+import { useFixedRouteStore } from '@/stores/fixedRoute';
 import { useGeneralStore } from '@/stores/general';
 import { useTransitDestinationsStore } from '@/stores/transitDestinations';
+import { useTransitRouteStore } from '@/stores/transitRoutes';
 import { useInterval } from '@dnd-kit/utilities';
 import { useEffect, useState, useCallback, useRef } from 'react';
 
@@ -23,6 +26,14 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentSlide = slides?.[activeIndex] || null;
+
+  const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
+  const setScheduleData = useFixedRouteStore((state) => state.setScheduleData);
+  const setRoutesData = useTransitRouteStore((state) => state.setRoutes);
+  const allSlidesState = useTransitDestinationsStore((state) => state.slides);
+  const allFixedRouteSlidesState = useFixedRouteStore((state) => state.slides);
+  const allTransitRouteSlidesState = useTransitRouteStore((state) => state.slides);
+
 
   const goToNextSlide = useCallback(() => {
     setActiveIndex((prev) => (prev + 1) % slides.length);
@@ -67,21 +78,74 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     loadSlides();
   }, [shortcode, setSlides]);
 
-  // useEffect(() => {
-  //   console.log(slides);
 
-  //   if (slides && slides[0]?.data) {
-  //     const transitSlides = slides.filter(slide => slide.type === 'transit-destinations');
 
-  //     transitSlides.forEach((slide: any) => {
-  //       console.log(slide);
-  //       const setDestinationData = (data: any) => {
-  //         useTransitDestinationsStore.getState().setDestinationData(slide.id, data);
-  //       };
-  //       getDestinationData(slide.data.destinations, slide.id, setDestinationData);
-  //     });
-  //   }
-  // }, [slides]);
+  // Function and useEffect to fetch transit destination data every 5 minutes
+  const getTransitDestinationData = async () => {
+    const transitSlides = slides.filter((slide: any) => slide.type === 'transit-destinations');
+
+    if (!transitSlides.length) return;
+
+    for (const slide of transitSlides) {
+      const destinations = allSlidesState[slide.id]?.destinations || [];
+      await getDestinationData(destinations, slide.id, setDestinationData);
+    }
+  };
+
+  const getFixedRouteData = async () => {
+    const fixedRouteSlides = slides.filter((slide: any) => slide.type === 'fixed-routes');
+    if (!fixedRouteSlides.length) return;
+    for (const slide of fixedRouteSlides) {
+      const fixedRouteData = allFixedRouteSlidesState[slide.id]?.selectedStop || [];
+      const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_id, fixedRouteData.services[0].organization_id);
+      const arr: any = [];
+      data?.trains.forEach((item: any) => {
+        arr.push({
+          destination: item.destination,
+          route: item.details.id,
+          routeColor: item.details.color,
+          tableTextColor: item.details.textColor,
+          time: item.arrivalTime,
+          duration: item.arrival,
+          status: item.status,
+        });
+      });
+
+      setScheduleData(slide.id, arr);
+    }
+  }
+
+  const getTransitRoutesData = async () => {
+    const transitRoutesSlides = slides.filter((slide: any) => slide.type === 'transit-routes');
+    if (!transitRoutesSlides.length) return;
+
+    for (const slide of transitRoutesSlides) {
+      const transitRouteData = allTransitRouteSlidesState[slide.id]?.routes || [];
+      await getDestinationData(transitRouteData, slide.id, setRoutesData);
+    }
+
+  }
+
+  const hasFetchedDestinations = useRef(false);
+
+  useEffect(() => {
+    if (hasFetchedDestinations.current || slides.length === 0) return;
+    hasFetchedDestinations.current = true;
+
+    console.log('fetching');
+    getTransitDestinationData();
+    getFixedRouteData();
+    getTransitRoutesData();
+
+    setInterval(() => {
+      console.log('feching interval');
+      getTransitDestinationData();
+      getFixedRouteData();
+      getTransitRoutesData();
+    }, 60000 * 5);
+  }, [slides]);
+
+
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
