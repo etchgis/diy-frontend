@@ -115,7 +115,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             backgroundColor: `#${item.routeColor}`,
                           }}
                         >
-                          {item.route}
+                          {item.route.split(':')[0]}
                         </div>
                         <div className="font-medium min-w-[80px] text-center">{item.time}</div>
                         <div className=" min-w-[80px] text-center">{item.duration}</div>
@@ -160,7 +160,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             backgroundColor: `#${item.routeColor}`,
                           }}
                         >
-                          {item.route}
+                          {item.route.split(':')[0]}
                         </div>
                         <div
                           className="font-medium text-center"
