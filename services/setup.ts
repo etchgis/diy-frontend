@@ -85,7 +85,8 @@ async function importData(setup: any) {
         setTitleColor,
         setTableColor,
         setTableTextColor,
-        setBgImage
+        setBgImage,
+        setSelectedStop
       } = useFixedRouteStore.getState();
 
       setStopName(slide.id, slide.data.stopName || '');
@@ -95,6 +96,7 @@ async function importData(setup: any) {
       setTableColor(slide.id, slide.data.tableColor || '#ffffff');
       setTableTextColor(slide.id, slide.data.tableTextColor || '#000000');
       setBgImage(slide.id, slide.data.bgImage || '');
+      setSelectedStop(slide.id, slide.data.selectedStop || null);
     }
 
     if (slide.type === 'transit-routes') {

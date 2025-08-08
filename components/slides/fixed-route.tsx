@@ -116,6 +116,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
     }
   }
 
+
   useEffect(() => {
     if (selectedStop && selectedStop.stop_id) {
       fetchData(selectedStop.stop_id);

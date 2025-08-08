@@ -73,7 +73,8 @@ export async function publish() {
           titleColor,
           tableColor,
           tableTextColor,
-          bgImage
+          bgImage,
+          selectedStop
         } = slideData;
 
         screenObj.data.stopName = stopName;
@@ -83,6 +84,7 @@ export async function publish() {
         screenObj.data.tableColor = tableColor;
         screenObj.data.tableTextColor = tableTextColor;
         screenObj.data.bgImage = bgImage;
+        screenObj.data.selectedStop = selectedStop;
       } else {
       }
     }
