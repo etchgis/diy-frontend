@@ -47,10 +47,10 @@ export async function publish() {
         screenObj.data.alternatingRowColor = alternateRowColor;
         screenObj.data.tableHeaderTextColor = tableHeaderTextColor;
         screenObj.data.tableTextColor = tableTextColor;
-        screenObj.data.destinations = destinations.map((destination: any) => ({
+        screenObj.data.destinations = destinations?.map((destination: any) => ({
           name: destination.name,
           coordinates: destination.coordinates,
-        }));
+        })) || [];
         console.log(screenObj.data.destinations);
       } else {
       }
