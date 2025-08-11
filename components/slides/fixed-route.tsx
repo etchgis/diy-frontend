@@ -59,7 +59,6 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
   useEffect(() => {
     fetchAllStops(coordinates).then((stops) => {
-      console.log(stops.filter((stop:any) => stop.stop_name.toLowerCase().includes('world trade')));
       setAllStops(stops);
     }
     ).catch((err) => {
@@ -95,7 +94,11 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
     try {
       setIsLoading(slideId, true);
       console.log(selectedStop);
-      const data = await fetchStopData(stopId, selectedStop.services[0].service_guid, selectedStop.services[0].organization_guid);
+      const data = await fetchStopData(
+        stopId,
+        selectedStop.services[0].service_guid || selectedStop.services[0].service_id,
+        selectedStop.services[0].organization_guid || selectedStop.services[0].organization_id
+      );
       const arr: any = [];
       data?.trains.forEach((item: any) => {
         arr.push({
@@ -232,7 +235,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
                           onClick={() => handleSelectStop(stop)}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
                         >
-                          {stop.stop_name}
+                          {stop.stop_name} - {stop.services[0]?.agency_name || 'No Agency'}
                         </li>
                       ))}
                     </ul>
