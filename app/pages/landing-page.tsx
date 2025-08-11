@@ -50,17 +50,36 @@ export default function LandingPage() {
 
     const fetchSuggestions = async () => {
       if (selectedFeature) return;
+
       const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
+      const newYorkBbox = "-79.7624,40.4774,-71.7517,45.0153"; // NY State bbox
+
+      const poiUrl = `https://api.mapbox.com/search/searchbox/v1/forward?q=${encodeURIComponent(query)}` +
+        `&access_token=${accessToken}` +
+        `&limit=10` +
+        `&types=poi` +
+        `&proximity=-74.0060,40.7128`;
+
+      const generalUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
+        `?autocomplete=true&bbox=${newYorkBbox}&limit=10&access_token=${accessToken}`;
 
       try {
-        const res = await fetch(url, { signal: controller.signal });
-        const data = await res.json();
+        const [poiRes, generalRes] = await Promise.all([
+          fetch(poiUrl, { signal: controller.signal }),
+          fetch(generalUrl, { signal: controller.signal })
+        ]);
 
-        const nyOnly = data.features.filter((feat: any) =>
-          feat.place_name.includes("New York")
-        );
-        setSuggestions(nyOnly.map((feat: any) => feat));
+        const poiData = await poiRes.json();
+        const generalData = await generalRes.json();
+
+        const merged = [
+          ...poiData.features,
+          ...generalData.features.filter(
+            (f: any) => !poiData.features.find((p: any) => p.id === f.id)
+          )
+        ];
+
+        setSuggestions(merged.slice(0, 5));
       } catch (err: any) {
         if (err.name !== "AbortError") console.error(err);
       }
@@ -72,7 +91,7 @@ export default function LandingPage() {
 
   const handleSelect = (feature: any) => {
     setSelectedFeature(feature);
-    setQuery(feature.place_name);
+    setQuery(feature.place_name || feature.properties.name + ', ' + feature.properties.full_address);
     setSuggestions([]);
   };
 
@@ -99,8 +118,8 @@ export default function LandingPage() {
       useGeneralStore.setState({ slides: [{ id: uuidv4(), type: template }] });
 
       if (hasLocation && hasTemplate) {
-        setAddress(selectedFeature.place_name);
-        const [lng, lat] = selectedFeature.center;
+        setAddress(selectedFeature.place_name || selectedFeature.properties.name + ', ' + selectedFeature.properties.full_address);
+        const [lng, lat] = selectedFeature.geometry.coordinates;
         setCoordinates({ lat, lng });
         router.push('/editor');
       }
@@ -190,7 +209,7 @@ export default function LandingPage() {
                                 onClick={() => handleSelect(feature)}
                                 className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
                               >
-                                {feature.place_name}
+                                {feature.place_name || feature.properties.name + ', ' + feature.properties.full_address}
                               </li>
                             ))}
                           </ul>

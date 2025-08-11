@@ -72,21 +72,40 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
 
   useEffect(() => {
     const controller = new AbortController();
-    if (query.length < 3) return;
+    if (query?.length < 3) return;
 
     const fetchSuggestions = async () => {
       if (selectedFeature) return;
+
       const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`;
+      const newYorkBbox = "-79.7624,40.4774,-71.7517,45.0153"; // NY State bbox
+
+      const poiUrl = `https://api.mapbox.com/search/searchbox/v1/forward?q=${encodeURIComponent(query)}` +
+        `&access_token=${accessToken}` +
+        `&limit=10` +
+        `&types=poi` +
+        `&proximity=-74.0060,40.7128`;
+
+      const generalUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
+        `?autocomplete=true&bbox=${newYorkBbox}&limit=10&access_token=${accessToken}`;
 
       try {
-        const res = await fetch(url, { signal: controller.signal });
-        const data = await res.json();
+        const [poiRes, generalRes] = await Promise.all([
+          fetch(poiUrl, { signal: controller.signal }),
+          fetch(generalUrl, { signal: controller.signal })
+        ]);
 
-        const nyOnly = data.features.filter((feat: any) =>
-          feat.place_name.includes("New York")
-        );
-        setSuggestions(nyOnly.map((feat: any) => feat));
+        const poiData = await poiRes.json();
+        const generalData = await generalRes.json();
+
+        const merged = [
+          ...poiData.features,
+          ...generalData.features.filter(
+            (f: any) => !poiData.features.find((p: any) => p.id === f.id)
+          )
+        ];
+
+        setSuggestions(merged.slice(0, 5));
       } catch (err: any) {
         if (err.name !== "AbortError") console.error(err);
       }
@@ -98,8 +117,8 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
 
   const handleSelect = (feature: any) => {
     setSelectedFeature(feature);
-    setQuery(feature.place_name);
-    setDestination(slideId, feature.place_name);
+    setQuery(feature.place_name || feature.properties.name + ', ' + feature.properties.full_address);
+    setDestination(slideId, feature.place_name || feature.properties.name + ', ' + feature.properties.full_address);
     setSuggestions([]);
   };
 
@@ -109,8 +128,8 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
     const newDestination = {
       name: query,
       coordinates: {
-        lat: selectedFeature.center[1],
-        lng: selectedFeature.center[0],
+        lat: selectedFeature.geometry.coordinates[1],
+        lng: selectedFeature.geometry.coordinates[0],
       },
     };
 
@@ -208,7 +227,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
                           onClick={() => handleSelect(feature)}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black text-sm"
                         >
-                          {feature.place_name}
+                       {feature.place_name || feature.properties.name + ', ' + feature.properties.full_address}
                         </li>
                       ))}
                     </ul>

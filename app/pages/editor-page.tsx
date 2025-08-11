@@ -312,38 +312,37 @@ export default function EditorPage() {
           />
         </div>
 
-        <div className="p-4">
+        <div className="p-4 flex flex-col flex-1 min-h-0">
           <h3 className="text-[#4a5568] font-medium mb-3 text-sm">Screen Order Preview</h3>
-          <div className="space-y-2 mb-4">
 
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => {
-                const { active, over } = event;
-                if (active.id !== over?.id) {
-                  const oldIndex = slides.findIndex((s: any) => s.id === active.id);
-                  const newIndex = slides.findIndex((s: any) => s.id === over?.id);
-                  const reordered: any = arrayMove(slides, oldIndex, newIndex);
-                  setSlides(reordered);
-                }
-              }}
-            >
-              <SortableContext items={slides.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
-                <div className="h-[68vh] overflow-y-auto space-y-2 mb-4 pr-1 pl-1 pt-2">
-                  {slides.map((slide: any) => (
-                    <SortableSlide
-                      key={slide.id}
-                      slide={slide}
-                      activeSlideId={activeSlideId}
-                      setActiveSlideId={setActiveSlideId}
-                      renderSlidePreview={renderSlidePreview}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(event) => {
+              const { active, over } = event;
+              if (active.id !== over?.id) {
+                const oldIndex = slides.findIndex((s: any) => s.id === active.id);
+                const newIndex = slides.findIndex((s: any) => s.id === over?.id);
+                const reordered: any = arrayMove(slides, oldIndex, newIndex);
+                setSlides(reordered);
+              }
+            }}
+          >
+            <SortableContext items={slides.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
+              <div className="h-[60vh] max-h-[60vh] overflow-y-auto space-y-2 mb-4 pr-1 pl-1 pt-2">
+                {slides.map((slide: any) => (
+                  <SortableSlide
+                    key={slide.id}
+                    slide={slide}
+                    activeSlideId={activeSlideId}
+                    setActiveSlideId={setActiveSlideId}
+                    renderSlidePreview={renderSlidePreview}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+
           <div className="mb-4">
             <Select value={template} onValueChange={(value) => setTemplate(value)}>
               <SelectTrigger className="w-full text-xs">
@@ -390,9 +389,10 @@ export default function EditorPage() {
               </SelectContent>
             </Select>
           </div>
+
           <Button
             variant="outline"
-            className="w-full text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90"
+            className="w-full text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90 mb-2"
             onClick={() => {
               handleAddSlide();
             }}
@@ -403,7 +403,7 @@ export default function EditorPage() {
 
           <Button
             variant="outline"
-            className="w-full text-[#000000] bg-transparent bg-[#D3D3D3] hover:bg-[#D3D3D3]/90 mt-2"
+            className="w-full text-[#000000] bg-transparent bg-[#D3D3D3] hover:bg-[#D3D3D3]/90"
             onClick={() => {
               showSettings ? setShowSettings(false) : setShowSettings(true);
             }}
@@ -412,7 +412,6 @@ export default function EditorPage() {
             Screen Settings
           </Button>
         </div>
-
       </div>
 
       {/* Right Content Area */}

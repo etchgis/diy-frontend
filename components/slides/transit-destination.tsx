@@ -112,37 +112,55 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
   useEffect(() => {
     const controller = new AbortController();
+
     if (query.length < 3) {
       setSuggestions([]);
       return;
     }
 
     const fetchSuggestions = async () => {
-
       if (selectedFeature) return;
+
       const accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&proximity=ip&types=address,place,poi&limit=5&access_token=${accessToken}&bbox=-79.7624,40.4774,-71.7517,45.0159`; // NY bounding box
+      const newYorkBbox = "-79.7624,40.4774,-71.7517,45.0153"; // NY State bbox
+
+      const poiUrl = `https://api.mapbox.com/search/searchbox/v1/forward?q=${encodeURIComponent(query)}` +
+          `&access_token=${accessToken}` +
+          `&limit=10` +
+          `&types=poi` +
+          `&proximity=-74.0060,40.7128`;
+
+      const generalUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
+        `?autocomplete=true&bbox=${newYorkBbox}&limit=10&access_token=${accessToken}`;
 
       try {
-        const res = await fetch(url, { signal: controller.signal });
-        const data = await res.json();
-        const nyOnly = data.features.filter((feat: any) =>
-          feat.place_name.includes("New York")
-        );
+        const [poiRes, generalRes] = await Promise.all([
+          fetch(poiUrl, { signal: controller.signal }),
+          fetch(generalUrl, { signal: controller.signal })
+        ]);
 
-        setSuggestions(nyOnly.map((feat: any) => feat));
+        const poiData = await poiRes.json();
+        const generalData = await generalRes.json();
+
+        const merged = [
+          ...poiData.features,
+          ...generalData.features.filter(
+            (f: any) => !poiData.features.find((p: any) => p.id === f.id)
+          )
+        ];
+
+        setSuggestions(merged.slice(0, 5));
       } catch (err: any) {
         if (err.name !== "AbortError") console.error(err);
       }
     };
-
     fetchSuggestions();
     return () => controller.abort();
   }, [query]);
 
   const handleSelect = (feature: any) => {
     setSelectedFeature(slideId, feature);
-    setQuery(slideId, feature.place_name);
+    setQuery(slideId, feature.place_name || `${feature.properties.name}, ${feature.properties.full_address}`);
     setSuggestions([]);
   };
 
@@ -159,8 +177,8 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       const newDestination = {
         name: displayName || query,
         coordinates: {
-          lat: selectedFeature.center[1],
-          lng: selectedFeature.center[0],
+          lat: selectedFeature.geometry.coordinates[1],
+          lng: selectedFeature.geometry.coordinates[0],
         },
       };
 
@@ -191,7 +209,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
     } catch (error: any) {
 
       setErrorMessage(slideId, "Destination out of range or no data available");
-      setTimeout(() => {setErrorMessage(slideId, "")}, 5000);
+      setTimeout(() => { setErrorMessage(slideId, "") }, 5000);
     }
 
 
@@ -256,7 +274,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                         onClick={() => handleSelect(feature)}
                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
                       >
-                        {feature.place_name}
+                        {feature.place_name || feature.properties.name + ', ' + feature.properties.full_address}
                       </li>
                     ))}
                   </ul>

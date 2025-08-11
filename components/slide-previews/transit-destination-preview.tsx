@@ -34,14 +34,94 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
     "Albany-Rensselaer Train Station",
   ];
 
+  // Dynamic styling based on editor mode
+  const getHeaderStyles = () => {
+    if (mobileMode) return 'text-sm p-2';
+    return isEditor ? 'text-lg p-4' : 'text-[3.0vh] p-[2.5vh]';
+  };
+
+  const getRowStyles = () => {
+    if (mobileMode) return 'text-sm';
+    return isEditor ? 'text-base' : 'text-[2.8vh]';
+  };
+
+  const getGridGap = () => {
+    if (mobileMode) return 'gap-2';
+    return isEditor ? 'gap-4' : 'gap-[1vh]';
+  };
+
+  const getRowPadding = () => {
+    if (mobileMode) return 'px-2';
+    return isEditor ? 'px-4' : 'px-[1.5vh]';
+  };
+
+  const getIconSize = () => {
+    if (mobileMode) return { width: '20px', height: '20px' };
+    if (isEditor) return { width: '35px', height: '35px' };
+    return { width: '3vh', height: '3vh' };
+  };
+
+  const getIconSizeForManyLegs = (hasMany: boolean) => {
+    if (mobileMode || hasMany) return { width: '20px', height: '20px' };
+    if (isEditor) return { width: '35px', height: '35px' };
+    return { width: '2.5vh', height: '2.5vh' };
+  };
+
+  const getBusPadding = (hasMany: boolean) => {
+    if (mobileMode || hasMany) return 'px-1 py-0.5';
+    if (isEditor) return 'px-2 py-1';
+    return 'px-[0.8vh] py-[0.4vh]';
+  };
+
+  const getBusTextSize = (hasMany: boolean) => {
+    if (mobileMode || hasMany) return 'text-xs';
+    if (isEditor) return 'text-sm';
+    return 'text-[1.6vh]';
+  };
+
+  const getDurationTextSize = (hasMany: boolean) => {
+    if (mobileMode || hasMany) return 'text-xs';
+    if (isEditor) return 'text-sm';
+    return 'text-[1.4vh]';
+  };
+
+  const getArrowSize = (hasMany: boolean) => {
+    if (mobileMode || hasMany) return { width: '12px', height: '12px' };
+    if (isEditor) return { width: '25px', height: '25px' };
+    return { width: '2vh', height: '2vh' };
+  };
+
+  const getArrowMargin = (hasMany: boolean) => {
+    if (mobileMode || hasMany) return '2px';
+    if (isEditor) return '8px';
+    return '0.6vh';
+  };
+
+  const getFooterPadding = () => {
+    if (mobileMode) return 'p-2';
+    return isEditor ? 'p-3' : 'p-[1.2vh]';
+  };
+
+  const getFooterImageSize = () => {
+    if (mobileMode) return { logo: 'h-[20px] w-[180px]', nysdot: 'h-6' };
+    if (isEditor) return { logo: 'h-[25px] w-[246px]', nysdot: 'h-8' };
+    return { logo: 'h-[2.5vh] w-[20vh]', nysdot: 'h-[3vh]' };
+  };
+
+  const getEmptyRowTextSize = () => {
+    if (mobileMode) return 'text-lg';
+    if (isEditor) return 'text-2xl';
+    return 'text-[2.5vh]';
+  };
+
   return (
     <div className={`w-full h-full flex flex-col text-white overflow-hidden ${mobileMode ? 'mb-4' : 'mb-6'}`} style={{ backgroundColor }}>
       {/* Header - Fixed height */}
-      <div 
-        className={`text-white flex-shrink-0 ${mobileMode ? 'text-sm p-2' : 'text-lg p-4'}`} 
+      <div
+        className={`text-white flex-shrink-0 ${getHeaderStyles()}`}
         style={{ backgroundColor, color: tableHeaderTextColor }}
       >
-        <div className={`grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr] gap-2' : 'grid-cols-[1fr_2fr_1fr_1fr_1fr] gap-4'} font-medium`}>
+        <div className={`grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr]' : 'grid-cols-[1fr_2fr_1fr_1fr_1fr]'} ${getGridGap()} font-medium`}>
           <div>Destination</div>
           <div>Route</div>
           <div>Departure</div>
@@ -56,7 +136,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
         {destinationData && destinationData.map((dest: any, index: number) => (
           <div
             key={index}
-            className={`flex-1 grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr] gap-2 px-2 text-sm' : 'grid-cols-[1fr_2fr_1fr_1fr_1fr] gap-4 px-4 text-base'} w-full min-w-0 items-center`}
+            className={`flex-1 grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr]' : 'grid-cols-[1fr_2fr_1fr_1fr_1fr]'} ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
             style={{
               backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
               color: tableTextColor,
@@ -85,7 +165,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
                           <img
                             className="leg-icon"
                             src="/images/walking-man.png"
-                            style={{ width: mobileMode || hasMany ? '20px' : '35px', height: mobileMode || hasMany ? '20px' : '35px' }}
+                            style={getIconSizeForManyLegs(hasMany)}
                             alt=""
                           />
                         ) : (
@@ -93,15 +173,15 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
                             <img
                               className="leg-icon"
                               src="/images/bus-icon.png"
-                              style={{ width: mobileMode || hasMany ? '20px' : '35px', height: mobileMode || hasMany ? '20px' : '35px' }}
+                              style={getIconSizeForManyLegs(hasMany)}
                               alt=""
                             />
                             <div
-                              className={`bus-info rounded ${mobileMode || hasMany ? 'px-1 py-0.5' : 'px-2 py-1'}`}
+                              className={`bus-info rounded ${getBusPadding(hasMany)}`}
                               style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }}
                             >
-                              <p 
-                                className={mobileMode || hasMany ? "text-xs leading-tight text-center" : "text-sm"}
+                              <p
+                                className={`${getBusTextSize(hasMany)} leading-tight text-center`}
                                 style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'black' }}
                               >
                                 {leg.routeShortName?.length > 5
@@ -114,7 +194,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
                       </div>
 
                       {/* Duration below icons */}
-                      <p className={`leg-duration ${leg.mode === 'WALK' ? 'walk-duration' : ''} ${mobileMode || hasMany ? 'text-xs leading-tight' : 'text-sm'}`}>
+                      <p className={`leg-duration ${leg.mode === 'WALK' ? 'walk-duration' : ''} ${getDurationTextSize(hasMany)} leading-tight`}>
                         {formatDuration(leg.duration)}
                       </p>
                     </div>
@@ -125,10 +205,9 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
                         src="/images/right-arrow.png"
                         alt=""
                         className="arrow-icon flex-shrink-0"
-                        style={{ 
-                          width: mobileMode || hasMany ? '12px' : '25px', 
-                          height: mobileMode || hasMany ? '12px' : '25px', 
-                          marginLeft: mobileMode || hasMany ? '2px' : '8px',
+                        style={{
+                          ...getArrowSize(hasMany),
+                          marginLeft: getArrowMargin(hasMany),
                           display: mobileMode && hasMany ? 'none' : 'block'
                         }}
                       />
@@ -147,7 +226,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
         {Array.from({ length: Math.max(0, totalRows - destinationData.length) }).map((_, index) => (
           <div
             key={`empty-${index}`}
-            className={`flex-1 grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr] gap-2 px-2 text-sm' : 'grid-cols-[1fr_2fr_1fr_1fr_1fr] gap-4 px-4 text-base'} w-full min-w-0 items-center`}
+            className={`flex-1 grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr]' : 'grid-cols-[1fr_2fr_1fr_1fr_1fr]'} ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
             style={{
               backgroundColor: (destinationData.length + index) % 2 === 0 ? rowColor : alternateRowColor,
               color: tableTextColor,
@@ -157,7 +236,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
               <span className="text-[#cbd5e0]">-</span>
             </div>
             <div className="flex flex-col items-center">
-              <div className={mobileMode ? 'text-lg' : 'text-2xl'}>-</div>
+              <div className={`text-[#cbd5e0] ${getEmptyRowTextSize()}`}>-</div>
             </div>
             <div className="text-[#cbd5e0]">-</div>
             <div className="text-[#cbd5e0]">-</div>
@@ -167,16 +246,16 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
       </div>
 
       {/* Footer - Fixed height */}
-      <div className={`bg-[#F4F4F4] flex items-center justify-between flex-shrink-0 ${mobileMode ? 'p-2' : 'p-3'}`}>
-        <img 
-          src="/images/statewide-mobility-services.png" 
-          alt="Statewide Mobility Services" 
-          className={mobileMode ? 'h-[20px] w-[180px]' : 'h-[25px] w-[246px]'} 
+      <div className={`bg-[#F4F4F4] flex items-center justify-between flex-shrink-0 ${getFooterPadding()}`}>
+        <img
+          src="/images/statewide-mobility-services.png"
+          alt="Statewide Mobility Services"
+          className={getFooterImageSize().logo}
         />
-        <img 
-          src="/images/nysdot-footer-logo.png" 
-          alt="NYSDOT" 
-          className={mobileMode ? 'h-6' : 'h-8'} 
+        <img
+          src="/images/nysdot-footer-logo.png"
+          alt="NYSDOT"
+          className={getFooterImageSize().nysdot}
         />
       </div>
     </div>
