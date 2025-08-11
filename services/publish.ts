@@ -39,7 +39,8 @@ export async function publish() {
           alternateRowColor,
           tableHeaderTextColor,
           tableTextColor,
-          destinations
+          destinations,
+          alternateRowTextColor
         } = slideData;
 
         // Use the slide data as needed
@@ -48,6 +49,7 @@ export async function publish() {
         screenObj.data.alternatingRowColor = alternateRowColor;
         screenObj.data.tableHeaderTextColor = tableHeaderTextColor;
         screenObj.data.tableTextColor = tableTextColor;
+        screenObj.data.alternateRowTextColor = alternateRowTextColor;
         screenObj.data.destinations = destinations?.map((destination: any) => ({
           name: destination.name,
           coordinates: destination.coordinates,

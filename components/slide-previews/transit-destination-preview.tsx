@@ -14,6 +14,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
   const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '#78B1DD');
   const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '#ffffff');
   const tableTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableTextColor || '#ffffff');
+  const alternateRowTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowTextColor || '#ffffff');
 
   const mockDestinations: any = [];
   const destinationData = useTransitDestinationsStore((state) => state.slides[slideId]?.destinationData || mockDestinations);
@@ -139,7 +140,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
             className={`flex-1 grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr]' : 'grid-cols-[1fr_2fr_1fr_1fr_1fr]'} ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
             style={{
               backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
-              color: tableTextColor,
+              color: index % 2 === 0 ? tableTextColor : alternateRowTextColor,
             }}
           >
             <div className="flex items-center gap-2 truncate">
@@ -229,18 +230,18 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
             className={`flex-1 grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr]' : 'grid-cols-[1fr_2fr_1fr_1fr_1fr]'} ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
             style={{
               backgroundColor: (destinationData.length + index) % 2 === 0 ? rowColor : alternateRowColor,
-              color: tableTextColor,
+              color: index % 2 === 0 ? tableTextColor : alternateRowTextColor,
             }}
           >
             <div className="flex items-center gap-2">
-              <span className="text-[#cbd5e0]">-</span>
+              <span className="">-</span>
             </div>
             <div className="flex flex-col items-center">
-              <div className={`text-[#cbd5e0] ${getEmptyRowTextSize()}`}>-</div>
+              <div className={`${getEmptyRowTextSize()}`}>-</div>
             </div>
-            <div className="text-[#cbd5e0]">-</div>
-            <div className="text-[#cbd5e0]">-</div>
-            <div className="text-[#cbd5e0]">-</div>
+            <div className="">-</div>
+            <div className="">-</div>
+            <div className="">-</div>
           </div>
         ))}
       </div>

@@ -29,6 +29,9 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const alternateRowColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowColor || '#78B1DD');
   const setAlternateRowColor = useTransitDestinationsStore((state) => state.setAlternateRowColor);
 
+  const alternateRowTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowTextColor || '#ffffff');
+  const setAlternateRowTextColor = useTransitDestinationsStore((state) => state.setAlternateRowTextColor);
+
   const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '#ffffff');
   const setTableHeaderTextColor = useTransitDestinationsStore((state) => state.setTableHeaderTextColor);
 
@@ -125,10 +128,10 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       const newYorkBbox = "-79.7624,40.4774,-71.7517,45.0153"; // NY State bbox
 
       const poiUrl = `https://api.mapbox.com/search/searchbox/v1/forward?q=${encodeURIComponent(query)}` +
-          `&access_token=${accessToken}` +
-          `&limit=10` +
-          `&types=poi` +
-          `&proximity=-74.0060,40.7128`;
+        `&access_token=${accessToken}` +
+        `&limit=10` +
+        `&types=poi` +
+        `&proximity=-74.0060,40.7128`;
 
       const generalUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
         `?autocomplete=true&bbox=${newYorkBbox}&limit=10&access_token=${accessToken}`;
@@ -395,7 +398,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
             </div>
 
             <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Text Color</label>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Row Text Color</label>
               <div className="flex items-center gap-2">
                 <div className="colorContainer">
                   <input
@@ -406,6 +409,21 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                   />
                 </div>
                 <Input value={tableTextColor} className="flex-1 text-xs" onChange={(e) => { setTableTextColor(slideId, e.target.value) }} />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Alternating Row Text Color</label>
+              <div className="flex items-center gap-2">
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={alternateRowTextColor}
+                    onChange={(e) => setAlternateRowTextColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={alternateRowTextColor} className="flex-1 text-xs" onChange={(e) => { setAlternateRowTextColor(slideId, e.target.value) }} />
               </div>
             </div>
 

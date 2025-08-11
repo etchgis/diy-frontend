@@ -68,14 +68,16 @@ async function importData(setup: any) {
         setAlternateRowColor,
         setTableHeaderTextColor,
         setTableTextColor,
-        setDestinations
+        setDestinations,
+        setAlternateRowTextColor
       } = useTransitDestinationsStore.getState();
 
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
       setRowColor(slide.id, slide.data.rowColor || '#192F51');
       setAlternateRowColor(slide.id, slide.data.alternatingRowColor || '#78B1DD');
-      setTableHeaderTextColor(slide.id, '#ffffff');
-      setTableTextColor(slide.id, '#ffffff');
+      setTableHeaderTextColor(slide.id, slide.data.tableHeaderTextColor || '#ffffff');
+      setTableTextColor(slide.id, slide.data.tableTextColor || '#ffffff');
+      setAlternateRowTextColor(slide.id, slide.data.alternateRowTextColor || '#ffffff');
       setDestinations(slide.id, slide.data.destinations || []);
       console.log('Destinations set for slide:', slide.id, slide.data.destinations || []);
     }

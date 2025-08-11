@@ -5,6 +5,7 @@ interface TransitionDestinationsSlideData {
   backgroundColor: string;
   rowColor: string;
   alternateRowColor: string;
+  alternateRowTextColor: string;
   tableHeaderTextColor: string;
   tableTextColor: string;
   destinations: any[];
@@ -34,6 +35,7 @@ interface SlideStore {
   setErrorMessage: (slideId: string, message: string) => void;
   setDestinationData: (slideId: string, data: any[]) => void;
   setLoading: (slideId: string, loading: boolean) => void;  
+  setAlternateRowTextColor: (slideId: string, color: string) => void;
 }
 
 export const useTransitDestinationsStore = create<SlideStore>()(
@@ -189,6 +191,17 @@ export const useTransitDestinationsStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               loading: loading,
+            },
+          },
+        })),
+
+      setAlternateRowTextColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              alternateRowTextColor: color,
             },
           },
         })),
