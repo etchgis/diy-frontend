@@ -59,8 +59,8 @@ The app uses a modular slide system with the following structure:
 
 • This object is added to the slide stack in the general store.
 
- 2. General Store
- Stores overall screen configuration such as:
+ 2. General Store <br>
+ Stores overall screen configuration such as:<br>
  • Center coordinates
  • Slide stack (array of slide objects)
  • Address
