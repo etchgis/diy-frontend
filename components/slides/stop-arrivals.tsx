@@ -14,7 +14,7 @@ import { fetchStopData } from '@/services/data-gathering/fetchStopData';
 import { calculateDistance, formatDistance } from '@/utils/distance';
 
 
-export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
+export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const renderCount = useRef(0);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

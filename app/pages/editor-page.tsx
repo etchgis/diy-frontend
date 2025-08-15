@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react"
 import { v4 as uuidv4 } from "uuid";
 import QRSlidePreview from "@/components/slide-previews/qr-slide-preview"
 import TransitDestinationPreview from "@/components/slide-previews/transit-destination-preview"
-import FixedRouteSlide from "@/components/slides/fixed-route"
+import StopArrivalsSlide from "@/components/slides/stop-arrivals"
 import FixedRoutePreview from "@/components/slide-previews/fixed-route-preview"
 import TransitRoutesPreview from "@/components/slide-previews/transit-routes-preview"
 import TransitRoutesSlide from "@/components/slides/transit-routes"
@@ -251,8 +251,9 @@ export default function EditorPage() {
         return <QRSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "transit-destinations":
         return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
-      case "fixed-routes":
-        return <FixedRouteSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "fixed-routes": // for backwards compatibility
+      case "stop-arrivals":
+        return <StopArrivalsSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "transit-routes":
         return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "template-1":
@@ -273,7 +274,8 @@ export default function EditorPage() {
           return <QRSlidePreview slideId={slideId} />;
         case "transit-destinations":
           return <TransitDestinationPreview slideId={slideId} />;
-        case "fixed-routes":
+        case "fixed-routes": // for backwards compatibility
+        case "stop-arrivals":
           return <FixedRoutePreview slideId={slideId} />;
         case "transit-routes":
           return <TransitRoutesPreview slideId={slideId} />;
