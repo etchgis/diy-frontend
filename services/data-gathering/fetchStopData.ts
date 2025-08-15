@@ -1,11 +1,11 @@
-import { formatTime, formatDuration } from "@/utils/formats";
+import { formatTime, formatDuration } from '@/utils/formats';
 
 function findStatus(realtime: boolean, arrive: number, arriveScheduled: number) {
   const currentTime = Date.now();
   const timeDiff = arrive - currentTime;
   const scheduledTimeDiff = arrive - arriveScheduled;
   if (!realtime) {
-    return 'Scheduled'
+    return 'Scheduled';
   }
   if (timeDiff < 60000) {
     // 1 minute
@@ -23,7 +23,7 @@ function findStatus(realtime: boolean, arrive: number, arriveScheduled: number) 
 async function fetchTrainDetails(arrivals: any[], serviceId: string, organizationId: string) {
   const trainDetails = await Promise.all(
     arrivals.map(async (train: any) => {
-      const endpoint = `https://api-stage.etch.app/skids/feed/${serviceId}/patterns/${train.id}`;
+      const endpoint = `https://api-stage.etch.app/skids/feed/${serviceId}/patterns/${train.id}?nysdot=true`;
       const headers = {
         'Content-Type': 'application/json',
         'X-Organization-Id': organizationId,
@@ -52,7 +52,7 @@ async function formatBusData(data: any, serviceId: string, organizationId: strin
       arrival: formatDuration(Math.round((train.arriveScheduled - Date.now()) / 1000)),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),
     })),
-  }
+  };
 
   const trainDetails = await fetchTrainDetails(data.arrivals, serviceId, organizationId);
   formattedData.trains.forEach((train: any, index: number) => {
@@ -75,9 +75,9 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     const response = await fetch(endpoint, {
       method: 'GET',
       headers: headers,
-    })
+    });
 
-    console.log(response)
+    console.log(response);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch stop data: ${response.statusText}`);

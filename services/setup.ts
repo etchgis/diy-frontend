@@ -6,6 +6,7 @@ import { useTransitRouteStore } from "@/stores/transitRoutes";
 import { useTemplate1Store } from "@/stores/template1";
 import { useTemplate2Store } from "@/stores/template2";
 import { useTemplate3Store } from "@/stores/template3";
+import { useRouteTimesStore } from "@/stores/routeTimes";
 import { set } from "react-hook-form";
 
 export async function SetupSlides(shortcode: string) {
@@ -185,6 +186,30 @@ async function importData(setup: any) {
       setImage(slide.id, slide.data.image || null);
       setBgImage(slide.id, slide.data.bgImage || null);
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#305fff');
+    }
+
+    if (slide.type === 'route-times') {
+      const {
+        setRouteName,
+        setSelectedRoute,
+        setDescription,
+        setViewMode,
+        setBackgroundColor,
+        setTitleColor,
+        setTableColor,
+        setTableTextColor,
+        setBgImage,
+      } = useRouteTimesStore.getState();
+
+      setRouteName(slide.id, slide.data.routeName || '');
+      setSelectedRoute(slide.id, slide.data.selectedRoute || undefined);
+      setDescription(slide.id, slide.data.description || '');
+      setViewMode(slide.id, slide.data.viewMode || 'map');
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
+      setTitleColor(slide.id, slide.data.slideTitleColor || '#ffffff');
+      setTableColor(slide.id, slide.data.tableColor || '#ffffff');
+      setTableTextColor(slide.id, slide.data.tableTextColor || '#000000');
+      setBgImage(slide.id, slide.data.bgImage || '');
     }
   });
 
