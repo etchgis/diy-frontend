@@ -23,6 +23,8 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
   const [filteredStops, setFilteredStops] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [nearbyStops, setNearbyStops] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
 
@@ -61,7 +63,8 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
 
 
   useEffect(() => {
-    fetchAllStops(coordinates).then((stops) => {
+    // Fetch stops within 5km by default
+    fetchAllStops({ coordinates, radius: 5000 }).then((stops) => {
       setAllStops(stops);
 
       // Calculate and sort stops by distance, show top 10 nearby stops
@@ -93,18 +96,71 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
   const handleInputChange = (value: string) => {
     setStopName(slideId, value);
 
-    // If input is empty, show nearby stops, otherwise filter by search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // If input is empty, show nearby stops immediately
     if (value.trim() === '') {
       setFilteredStops(nearbyStops);
       setShowDropdown(nearbyStops.length > 0);
-    } else {
-      // Filter stops based on the input value
-      const filtered = allStops.filter((stop) =>
-        stop.stop_name.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredStops(filtered);
-      setShowDropdown(filtered.length > 0);
+      setIsSearching(false);
+      return;
     }
+
+    // For non-empty input, first do local filtering for immediate feedback
+    const localFiltered = allStops.filter((stop) =>
+      stop.stop_name.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredStops(localFiltered);
+    setShowDropdown(localFiltered.length > 0);
+
+    // Only do API search if 3 or more characters are entered
+    if (value.trim().length < 3) {
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+
+    const localResultsCount = localFiltered.length;
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const searchResults = await fetchAllStops({
+          coordinates,
+          radius: 1000000, // TODO comment out: no distance restriction for text search
+          search: value,
+        });
+
+        if (searchResults && searchResults.length > 0) {
+          const resultsWithDistance = searchResults.map((stop: any) => ({
+            ...stop,
+            distance: calculateDistance(
+              coordinates.lat,
+              coordinates.lng,
+              stop.stop_lat,
+              stop.stop_lon
+            ),
+          }));
+
+          resultsWithDistance.sort((a: any, b: any) => a.distance - b.distance);
+
+          setFilteredStops(resultsWithDistance);
+          setShowDropdown(true);
+        } else {
+          console.log('No API results found for:', value);
+          // only hide dropdown if local also had no results
+          if (localResultsCount === 0) {
+            setShowDropdown(false);
+          }
+        }
+        setIsSearching(false);
+      } catch (error) {
+        console.error('Error searching stops:', error);
+        setIsSearching(false);
+        // Keep the local filtered results on error
+      }
+    }, 300); // 300ms debounce delay
   };
 
   const handleSelectStop = (stop: any) => {
@@ -276,6 +332,11 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                   />
                   {showDropdown && filteredStops.length > 0 && (
                     <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                      {isSearching && (
+                        <li className="px-4 py-2 text-gray-500 italic text-sm">
+                          Searching stops...
+                        </li>
+                      )}
                       {filteredStops.map((stop, index) => (
                         <li
                           key={index}
