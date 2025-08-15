@@ -245,7 +245,7 @@ export default function LandingPage() {
                           </SelectItem>
                           <SelectItem value="fixed-routes">
                             <div className="flex items-center gap-2 text-xs">
-                              Fixed Route Table Page
+                              Stop Arrivals Page
                             </div>
                           </SelectItem>
                           <SelectItem value="qr">

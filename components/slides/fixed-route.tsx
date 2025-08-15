@@ -207,7 +207,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
             <div className="flex items-center gap-2 text-[#4a5568] mb-4">
               <span>Home</span>
               <ChevronRight className="w-4 h-4" />
-              <span className="font-medium">Fixed Route Table Page Template</span>
+              <span className="font-medium">Stop Arrivals Page Template</span>
             </div>
 
             <p className="text-[#606061] mb-6">
