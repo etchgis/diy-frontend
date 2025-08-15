@@ -6,6 +6,7 @@ import { useTransitRouteStore } from '@/stores/transitRoutes';
 import { useTemplate1Store } from '@/stores/template1';
 import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
+import { useRouteTimesStore } from '@/stores/routeTimes';
 
 export async function publish() {
   const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword} = useGeneralStore.getState();
@@ -201,6 +202,40 @@ export async function publish() {
         screenObj.data.title = title;
         screenObj.data.image = image;
         screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
+      } else {
+      }
+    }
+
+    if (slide.type === 'route-times') {
+      screenObj.type = 'route-times';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useRouteTimesStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const {
+          routeName,
+          selectedRoute,
+          description,
+          viewMode,
+          backgroundColor,
+          titleColor,
+          tableColor,
+          tableTextColor,
+          bgImage
+        } = slideData;
+
+        screenObj.data.routeName = routeName;
+        screenObj.data.selectedRoute = selectedRoute;
+        screenObj.data.description = description;
+        screenObj.data.viewMode = viewMode;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.slideTitleColor = titleColor;
+        screenObj.data.tableColor = tableColor;
+        screenObj.data.tableTextColor = tableTextColor;
         screenObj.data.bgImage = bgImage;
       } else {
       }

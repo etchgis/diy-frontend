@@ -13,6 +13,8 @@ import StopArrivalsSlide from "@/components/slides/stop-arrivals"
 import FixedRoutePreview from "@/components/slide-previews/fixed-route-preview"
 import TransitRoutesPreview from "@/components/slide-previews/transit-routes-preview"
 import TransitRoutesSlide from "@/components/slides/transit-routes"
+import RouteTimesSlide from "@/components/slides/route-times"
+import RouteTimesPreview from "@/components/slide-previews/route-times-preview"
 import { useRouter } from 'next/navigation';
 import Template1Slide from "@/components/slides/template-1"
 import Template1Preview from "@/components/slide-previews/template-1-preview"
@@ -256,6 +258,8 @@ export default function EditorPage() {
         return <StopArrivalsSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "transit-routes":
         return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "route-times":
+        return <RouteTimesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "template-1":
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "template-2":
@@ -279,6 +283,8 @@ export default function EditorPage() {
           return <FixedRoutePreview slideId={slideId} />;
         case "transit-routes":
           return <TransitRoutesPreview slideId={slideId} />;
+        case "route-times":
+          return <RouteTimesPreview slideId={slideId} />;
         case "template-1":
           return <Template1Preview slideId={slideId} previewMode={showModal} />;
         case "template-2":
@@ -366,6 +372,11 @@ export default function EditorPage() {
                 <SelectItem value="fixed-routes">
                   <div className="flex items-center gap-2 text-xs">
                     Stop Arrivals Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="route-times">
+                  <div className="flex items-center gap-2 text-xs">
+                    Route Times Page
                   </div>
                 </SelectItem>
                 <SelectItem value="qr">
