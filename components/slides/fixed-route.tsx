@@ -1,16 +1,17 @@
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Plus } from "lucide-react"
-import FixedRoutePreview from "../slide-previews/fixed-route-preview"
-import { useEffect, useRef, useState } from "react"
-import { useFixedRouteStore } from "../../stores/fixedRoute";
-import { set } from "react-hook-form"
-import { deleteImage } from "@/services/deleteImage"
-import { uploadImage } from "@/services/uploadImage"
-import { useGeneralStore } from "@/stores/general"
-import { fetchAllStops } from "@/services/data-gathering/fetchAllStops"
-import { fetchStopData } from "@/services/data-gathering/fetchStopData"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { HelpCircle, ChevronRight, Plus } from 'lucide-react';
+import FixedRoutePreview from '../slide-previews/fixed-route-preview';
+import { useEffect, useRef, useState } from 'react';
+import { useFixedRouteStore } from '../../stores/fixedRoute';
+import { set } from 'react-hook-form';
+import { deleteImage } from '@/services/deleteImage';
+import { uploadImage } from '@/services/uploadImage';
+import { useGeneralStore } from '@/stores/general';
+import { fetchAllStops } from '@/services/data-gathering/fetchAllStops';
+import { fetchStopData } from '@/services/data-gathering/fetchStopData';
+import { calculateDistance, formatDistance } from '@/utils/distance';
 
 
 export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
@@ -21,6 +22,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const [allStops, setAllStops] = useState<any[]>([]);
   const [filteredStops, setFilteredStops] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [nearbyStops, setNearbyStops] = useState<any[]>([]);
 
 
 
@@ -61,22 +63,48 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   useEffect(() => {
     fetchAllStops(coordinates).then((stops) => {
       setAllStops(stops);
+
+      // Calculate and sort stops by distance, show top 10 nearby stops
+      if (coordinates.lat && coordinates.lng) {
+        const stopsWithDistance = stops.map((stop: any) => ({
+          ...stop,
+          distance: calculateDistance(
+            coordinates.lat,
+            coordinates.lng,
+            stop.stop_lat,
+            stop.stop_lon
+          ),
+        }));
+
+        const sortedStops = stopsWithDistance
+          .sort((a: any, b: any) => a.distance - b.distance)
+          .slice(0, 10);
+
+        setNearbyStops(sortedStops);
+        setFilteredStops(sortedStops);
+      }
     }
     ).catch((err) => {
       console.error('Failed to fetch stops:', err);
     }
     );
-  }, []);
+  }, [coordinates]);
 
   const handleInputChange = (value: string) => {
     setStopName(slideId, value);
 
-    // Filter stops based on the input value
-    const filtered = allStops.filter((stop) =>
-      stop.stop_name.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredStops(filtered);
-    setShowDropdown(filtered.length > 0);
+    // If input is empty, show nearby stops, otherwise filter by search
+    if (value.trim() === '') {
+      setFilteredStops(nearbyStops);
+      setShowDropdown(nearbyStops.length > 0);
+    } else {
+      // Filter stops based on the input value
+      const filtered = allStops.filter((stop) =>
+        stop.stop_name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredStops(filtered);
+      setShowDropdown(filtered.length > 0);
+    }
   };
 
   const handleSelectStop = (stop: any) => {
@@ -144,7 +172,9 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
     setSaveStatus('saving');
 
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
 
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
@@ -153,7 +183,9 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -191,13 +223,13 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
   const scheduleData = [
     {
-      destination: "Airport directly to Rte 7 & Donald",
-      route: "117",
-      routeColor: "bg-green-600",
-      time: "9:49 PM",
-      duration: "27 min",
+      destination: 'Airport directly to Rte 7 & Donald',
+      route: '117',
+      routeColor: 'bg-green-600',
+      time: '9:49 PM',
+      duration: '27 min',
     },
-  ]
+  ];
 
   return (
     <>
@@ -229,7 +261,12 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
                     value={stopName}
                     onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => {
-                      if (filteredStops.length > 0) setShowDropdown(true);
+                      if (stopName.trim() === '' && nearbyStops.length > 0) {
+                        setFilteredStops(nearbyStops);
+                        setShowDropdown(true);
+                      } else if (filteredStops.length > 0) {
+                        setShowDropdown(true);
+                      }
                     }}
                     onBlur={() => {
                       // Delay to allow click on dropdown items
@@ -246,6 +283,11 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
                         >
                           {stop.stop_name} - {stop.services[0]?.agency_name || 'No Agency'}
+                          {stop.distance !== undefined && (
+                            <span className="text-gray-500 text-sm ml-2">
+                              ({formatDistance(stop.distance)})
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -310,7 +352,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
                     className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
                   />
                 </div>
-                <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => { setBackgroundColor(slideId, e.target.value) }} />
+                <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => { setBackgroundColor(slideId, e.target.value); }} />
               </div>
             </div>
 
@@ -408,7 +450,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
             <div className="mt-auto">
 
-              <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
+              <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId); }}>
                 Delete Screen
               </Button>
             </div>
@@ -419,5 +461,5 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
 
 
     </>
-  )
+  );
 }
