@@ -20,6 +20,7 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [allStops, setAllStops] = useState<any[]>([]);
   const [filteredStops, setFilteredStops] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
 
 
@@ -75,12 +76,14 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
       stop.stop_name.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredStops(filtered);
+    setShowDropdown(filtered.length > 0);
   };
 
   const handleSelectStop = (stop: any) => {
     setStopName(slideId, stop.stop_name);
     setFilteredStops([]);
     setSelectedStop(slideId, stop);
+    setShowDropdown(false);
   };
 
   const handleAddStop = () => {
@@ -225,9 +228,16 @@ export default function FixedRouteSlide({ slideId, handleDelete, handlePreview, 
                     className="flex-1 bg-white border-[#cbd5e0]"
                     value={stopName}
                     onChange={(e) => handleInputChange(e.target.value)}
+                    onFocus={() => {
+                      if (filteredStops.length > 0) setShowDropdown(true);
+                    }}
+                    onBlur={() => {
+                      // Delay to allow click on dropdown items
+                      setTimeout(() => setShowDropdown(false), 200);
+                    }}
                     placeholder="Enter text here... "
                   />
-                  {filteredStops.length > 0 && (
+                  {showDropdown && filteredStops.length > 0 && (
                     <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
                       {filteredStops.map((stop, index) => (
                         <li
