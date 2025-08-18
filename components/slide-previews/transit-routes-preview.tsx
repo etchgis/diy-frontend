@@ -482,7 +482,7 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
           <div className="absolute top-4 left-4 z-20">
             <div className="p-3 bg-white rounded-lg shadow-lg border border-yellow-200">
               <p className="text-yellow-600 text-sm">
-                ⚠️ Fixed Route data currently not available. Times are not accurate.
+                ⚠️ Transit route data currently not available. Times are not accurate.
               </p>
             </div>
           </div>

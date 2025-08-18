@@ -103,7 +103,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 }}
               >
                 <p className="text-yellow-600 text-sm">
-                  ⚠️ Fixed Route data currently not available. Please check try again later.
+                  ⚠️ Stop arrival data currently not available. Please check try again later.
                 </p>
               </div>
             </div>

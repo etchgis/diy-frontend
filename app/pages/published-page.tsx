@@ -106,12 +106,19 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const getTransitDestinationData = async () => {
     const transitSlides = slides.filter((slide: any) => slide.type === 'transit-destinations');
     console.log(slides, transitSlides);
-    if (!transitSlides.length) {return;}
-
+    if (!transitSlides.length) {
+      return;
+    }
+  
     for (const slide of transitSlides) {
       const destinations = allSlidesState[slide.id]?.destinations || [];
       console.log(destinations);
-      await getDestinationData(destinations, slide.id, setDestinationData, setDataError);
+  
+      try {
+        await getDestinationData(destinations, slide.id, setDestinationData, setDataError);
+      } catch (error) {
+        console.error(`Failed to fetch data for slide ID ${slide.id}:`, error);
+      }
     }
   };
 
@@ -120,6 +127,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     if (!fixedRouteSlides.length) {return;}
     for (const slide of fixedRouteSlides) {
       const fixedRouteData = allFixedRouteSlidesState[slide.id]?.selectedStop || [];
+      if(!fixedRouteData?.stop_id || !fixedRouteData?.services?.length) {continue;}
       const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid, slide.id, setFixedRouteDataError);
       const arr: any = [];
       data?.trains.forEach((item: any) => {
