@@ -7,12 +7,12 @@ import { useRouteTimesStore } from '../../stores/routeTimes';
 import { deleteImage } from '@/services/deleteImage';
 import { uploadImage } from '@/services/uploadImage';
 import { useGeneralStore } from '@/stores/general';
-import { fetchRoutes, fetchRoutesDebounced } from '@/services/data-gathering/fetchRoutes';
+import { fetchRoutes } from '@/services/data-gathering/fetchRoutes';
 import {
   fetchRouteData,
   fetchRouteTimetable,
-  fetchPatternDetails,
 } from '@/services/data-gathering/fetchRouteData';
+import { processRoutePatterns, formatTimetableData } from '@/services/data-gathering/processRoutePatterns';
 
 export default function RouteTimesSlide({
   slideId,
@@ -151,21 +151,12 @@ export default function RouteTimesSlide({
       );
 
       if (specificRoute && specificRoute.patterns && specificRoute.patterns.length > 0) {
-        // Get pattern details for the first pattern
-        const firstPattern = specificRoute.patterns[0];
-        const patternId = firstPattern.id || `${route.route_id}:0`;
-
-        const patternDetails = await fetchPatternDetails(
-          serviceId,
-          patternId,
-          organizationId
-        );
-
-        if (patternDetails) {
-          setPatternData(slideId, patternDetails);
+        const combinedPatternData = processRoutePatterns(specificRoute.patterns);
+        if (combinedPatternData) {
+          setPatternData(slideId, combinedPatternData);
 
           // Auto-select view mode based on stop count
-          const stopCount = patternDetails.stops ? patternDetails.stops.length : 0;
+          const stopCount = combinedPatternData.stops.length;
           if (stopCount <= 5) {
             setViewMode(slideId, 'timetable');
           } else {
@@ -187,24 +178,7 @@ export default function RouteTimesSlide({
       );
 
       if (timetableData) {
-        // Store the timetable data directly as it comes from the API
-        // Each item represents a stop with its departures
-        const formattedData = timetableData.stops.map(stop => ({
-          trip_id: 'timetable',
-          stops: [{
-            stopId: stop.stopId,
-            stop_id: stop.stopId,
-            stopName: stop.stopName,
-            stop_name: stop.stopName,
-            stop_lat: stop.stopLat,
-            stop_lon: stop.stopLon,
-            arrival_time: null,
-            departure_time: null,
-            stop_sequence: 0,
-            departures: stop.departures,
-          }],
-        }));
-
+        const formattedData = formatTimetableData(timetableData);
         setRouteData(slideId, formattedData);
       }
 

@@ -39,11 +39,51 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   useEffect(() => {
     if (viewMode !== 'map' || !mapContainerRef.current || mapRef.current) {return;}
 
+    // Calculate initial center from pattern data if available
+    let initialCenter: [number, number] = [-73.7562, 42.6526]; // Default to Albany
+    let initialZoom = 12;
+
+    if (patternData?.stops && patternData.stops.length > 0) {
+      const bounds = new mapboxgl.LngLatBounds();
+
+      patternData.stops.forEach((stop: any) => {
+        let lon, lat;
+        if (stop.coordinates && stop.coordinates.length === 2) {
+          [lon, lat] = stop.coordinates;
+        } else if (stop.lon !== undefined && stop.lat !== undefined) {
+          lon = stop.lon;
+          lat = stop.lat;
+        }
+
+        if (lon !== undefined && lat !== undefined) {
+          bounds.extend([lon, lat]);
+        }
+      });
+
+      if (!bounds.isEmpty()) {
+        const center = bounds.getCenter();
+        initialCenter = [center.lng, center.lat];
+
+        // Calculate appropriate zoom level based on bounds
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        const latDiff = Math.abs(ne.lat - sw.lat);
+        const lngDiff = Math.abs(ne.lng - sw.lng);
+        const maxDiff = Math.max(latDiff, lngDiff);
+
+        if (maxDiff < 0.01) {initialZoom = 15;}
+        else if (maxDiff < 0.05) {initialZoom = 13;}
+        else if (maxDiff < 0.1) {initialZoom = 12;}
+        else if (maxDiff < 0.5) {initialZoom = 10;}
+        else {initialZoom = 9;}
+      }
+    }
+
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [-73.7562, 42.6526], // Default to Albany, NY
-      zoom: 12,
+      center: initialCenter,
+      zoom: initialZoom,
       attributionControl: false,
     });
 
@@ -62,7 +102,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [viewMode]);
+  }, [viewMode, patternData]);
 
   // Update map with route data
   useEffect(() => {
@@ -115,8 +155,6 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
     // Add stop markers
     if (patternData.stops && patternData.stops.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-
       patternData.stops.forEach((stop: any, index: number) => {
         // Check for coordinates in different formats
         let lon, lat;
@@ -156,16 +194,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
           .addTo(mapRef.current);
 
         markersRef.current.push(marker);
-        bounds.extend([lon, lat]);
       });
-
-      // Fit map to show all stops
-      if (!bounds.isEmpty()) {
-        mapRef.current.fitBounds(bounds, {
-          padding: 50,
-          maxZoom: 15,
-        });
-      }
     }
     };
 
