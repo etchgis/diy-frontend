@@ -6,6 +6,7 @@ import Template2Preview from '@/components/slide-previews/template-2-preview';
 import Template3Preview from '@/components/slide-previews/template-3-preview';
 import TransitDestinationPreview from '@/components/slide-previews/transit-destination-preview';
 import TransitRoutesPreview from '@/components/slide-previews/transit-routes-preview';
+import RouteTimesPreview from '@/components/slide-previews/route-times-preview';
 import { fetchStopData } from '@/services/data-gathering/fetchStopData';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
@@ -13,6 +14,9 @@ import { useFixedRouteStore } from '@/stores/fixedRoute';
 import { useGeneralStore } from '@/stores/general';
 import { useTransitDestinationsStore } from '@/stores/transitDestinations';
 import { useTransitRouteStore } from '@/stores/transitRoutes';
+import { useRouteTimesStore } from '@/stores/routeTimes';
+import { fetchRouteData, fetchRouteTimetable } from '@/services/data-gathering/fetchRouteData';
+import { processRoutePatterns, formatTimetableData } from '@/services/data-gathering/processRoutePatterns';
 import { useInterval } from '@dnd-kit/utilities';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -21,7 +25,7 @@ import { set } from 'react-hook-form';
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const searchParams = useSearchParams();
   const isTvMode = searchParams.get('mode') === 'tv';
-  
+
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
@@ -45,6 +49,10 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const allSlidesState = useTransitDestinationsStore((state) => state.slides);
   const allFixedRouteSlidesState = useFixedRouteStore((state) => state.slides);
   const allTransitRouteSlidesState = useTransitRouteStore((state) => state.slides);
+  const allRouteTimesSlidesState = useRouteTimesStore((state) => state.slides);
+  const setRouteTimesPatternData = useRouteTimesStore((state) => state.setPatternData);
+  const setRouteTimesRouteData = useRouteTimesStore((state) => state.setRouteData);
+  const setRouteTimesIsLoading = useRouteTimesStore((state) => state.setIsLoading);
 
   const goToNextSlide = useCallback(() => {
     setActiveIndex((prev) => (prev + 1) % slides.length);
@@ -52,8 +60,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (!isTvMode) return; // Only handle keyboard navigation in TV mode
-      
+      if (!isTvMode) {return;} // Only handle keyboard navigation in TV mode
+
       if (event.key === 'ArrowRight') {
         setActiveIndex((prev) => (prev + 1) % slides.length);
       } else if (event.key === 'ArrowLeft') {
@@ -65,8 +73,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   // Auto-rotation effect - only in TV mode
   useEffect(() => {
-    if (!isTvMode) return;
-    
+    if (!isTvMode) {return;}
+
     // Only start auto-rotation if we have slides and a valid rotation interval
     if (slides.length > 1 && rotationInterval > 0) {
       intervalRef.current = setInterval(() => {
@@ -98,7 +106,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const getTransitDestinationData = async () => {
     const transitSlides = slides.filter((slide: any) => slide.type === 'transit-destinations');
     console.log(slides, transitSlides);
-    if (!transitSlides.length) return;
+    if (!transitSlides.length) {return;}
 
     for (const slide of transitSlides) {
       const destinations = allSlidesState[slide.id]?.destinations || [];
@@ -109,7 +117,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   const getFixedRouteData = async () => {
     const fixedRouteSlides = slides.filter((slide: any) => slide.type === 'fixed-routes');
-    if (!fixedRouteSlides.length) return;
+    if (!fixedRouteSlides.length) {return;}
     for (const slide of fixedRouteSlides) {
       const fixedRouteData = allFixedRouteSlidesState[slide.id]?.selectedStop || [];
       const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid, slide.id, setFixedRouteDataError);
@@ -128,32 +136,96 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
       setScheduleData(slide.id, arr);
     }
-  }
+  };
 
   const getTransitRoutesData = async () => {
     const transitRoutesSlides = slides.filter((slide: any) => slide.type === 'transit-routes');
-    if (!transitRoutesSlides.length) return;
+    if (!transitRoutesSlides.length) {return;}
 
     for (const slide of transitRoutesSlides) {
       const transitRouteData = allTransitRouteSlidesState[slide.id]?.routes || [];
       await getDestinationData(transitRouteData, slide.id, setRoutesData, setTransitRoutesDataError);
     }
-  }
+  };
+
+  const getRouteTimesData = async () => {
+    const routeTimesSlides = slides.filter((slide: any) => slide.type === 'route-times');
+    if (!routeTimesSlides.length) {return;}
+
+    for (const slide of routeTimesSlides) {
+      const slideData = allRouteTimesSlidesState[slide.id];
+      if (!slideData?.selectedRoute) {continue;}
+
+      const route = slideData.selectedRoute;
+      const service: any = route.services[0];
+      const organizationId = service.organization_guid || service.organization_id;
+      const serviceId = service.service_guid || service.service_id;
+
+      try {
+        setRouteTimesIsLoading(slide.id, true);
+
+        // Fetch route patterns and geometry
+        const routeDataArray = await fetchRouteData(
+          organizationId,
+          [serviceId],
+          true,
+          true
+        );
+
+        // Find the specific route from the results
+        const specificRoute = routeDataArray.find((r: any) =>
+          r.id === route.route_id ||
+          r.shortName === route.route_short_name
+        );
+
+        if (specificRoute && specificRoute.patterns && specificRoute.patterns.length > 0) {
+          const combinedPatternData = processRoutePatterns(specificRoute.patterns);
+          if (combinedPatternData) {
+            setRouteTimesPatternData(slide.id, combinedPatternData);
+          }
+        }
+
+        // Fetch timetable data
+        const now = Date.now();
+        const endTime = now + (3 * 60 * 60 * 1000); // 3 hours from now
+
+        const timetableData = await fetchRouteTimetable(
+          organizationId,
+          serviceId,
+          route.route_id,
+          now,
+          endTime
+        );
+
+        if (timetableData) {
+          const formattedData = formatTimetableData(timetableData);
+          setRouteTimesRouteData(slide.id, formattedData);
+        }
+
+        setRouteTimesIsLoading(slide.id, false);
+      } catch (error) {
+        console.error('Error fetching route times data:', error);
+        setRouteTimesIsLoading(slide.id, false);
+      }
+    }
+  };
 
   const hasFetchedDestinations = useRef(false);
 
   useEffect(() => {
-    if (hasFetchedDestinations.current || slides.length === 0) return;
+    if (hasFetchedDestinations.current || slides.length === 0) {return;}
     hasFetchedDestinations.current = true;
 
     getTransitDestinationData();
     getFixedRouteData();
     getTransitRoutesData();
+    getRouteTimesData();
 
     setInterval(() => {
       getTransitDestinationData();
       getFixedRouteData();
       getTransitRoutesData();
+      getRouteTimesData();
     }, 60000 * 5);
   }, [slides]);
 
@@ -180,6 +252,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         return <Template3Preview slideId={slideId} />;
       case 'transit-routes':
         return <TransitRoutesPreview slideId={slideId} noMapScroll={!isTvMode}/>;
+      case 'route-times':
+        return <RouteTimesPreview slideId={slideId} />;
       default:
         return null;
     }
