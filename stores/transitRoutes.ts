@@ -6,7 +6,7 @@ interface TransitRouteSlideData {
   location: string;
   routes: any;
   isLoading: boolean;
-  setDataError?: boolean;
+  dataError?: boolean;
   mapRef: mapboxgl.Map | null;
   errorMessage: string;
 }
@@ -96,7 +96,7 @@ export const useTransitRouteStore = create<SlideStore>()(
             ...state.slides,
             [slideId]: {
               ...(state.slides[slideId] || {}),
-              setDataError: error,
+              dataError: error,
             },
           },
         })),

@@ -15,6 +15,7 @@ export async function getDestinationData(
     return;
   }
 
+
   const results = await Promise.allSettled(
     destList.map(async (dest) => {
       const origin = `${coordinates.lat},${coordinates.lng}`;

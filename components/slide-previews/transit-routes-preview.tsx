@@ -54,6 +54,7 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
   const mockRoutes: any = [];
   const routes = useTransitRouteStore((state) => state.slides[slideId]?.routes || mockRoutes);
+  const dataError = useTransitRouteStore((state) => state.slides[slideId]?.dataError || false);
 
   // Route colors for different routes
   const routeColors = [
@@ -475,6 +476,17 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
             height: '100%'
           }}
         />
+
+         {/* Error message overlay - positioned in top-left corner */}
+         {dataError && (
+          <div className="absolute top-4 left-4 z-20">
+            <div className="p-3 bg-white rounded-lg shadow-lg border border-yellow-200">
+              <p className="text-yellow-600 text-sm">
+                ⚠️ Fixed Route data currently not available. Times are not accurate.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Custom Footer */}
