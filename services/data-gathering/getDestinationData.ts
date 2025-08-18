@@ -14,8 +14,6 @@ export async function getDestinationData(
   if (!coordinates) {
     return;
   }
-  // setDataError(slideId, true);
-  // throw new Error("All destination fetches failed");
 
   const results = await Promise.allSettled(
     destList.map(async (dest) => {

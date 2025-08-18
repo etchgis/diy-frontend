@@ -145,7 +145,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
           >
             <div className="col-span-5 flex items-center justify-center">
               <p className="text-yellow-600 text-sm">
-                ⚠️  Transit Destination data currently not available. Please check your internet connection or try again later.
+                ⚠️  Transit Destination data currently not available. Please try again later.
               </p>
             </div>
           </div>
