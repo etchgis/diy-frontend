@@ -1,7 +1,25 @@
-export async function fetchAllStops(coordinates: {lat: number, lng: number}): Promise<any> {
-  try {
+interface FetchStopsOptions {
+  coordinates: {lat: number, lng: number};
+  radius?: number; // in meters, default 1000
+  search?: string; // search term for filtering
+}
 
-    const url = `https://api.etch.app/nysdot-stops/nearby-stops?lat=${coordinates.lat}&lon=${coordinates.lng}`;
+export async function fetchAllStops(options: FetchStopsOptions | {lat: number, lng: number}): Promise<any> {
+  try {
+    // Handle both old signature (coordinates only) and new signature (options object)
+    const coordinates = 'coordinates' in options ? options.coordinates : options;
+    const radius = 'radius' in options ? options.radius : undefined;
+    const search = 'search' in options ? options.search : undefined;
+
+    let url = `https://api.etch.app/nysdot-stops/nearby-stops?lat=${coordinates.lat}&lon=${coordinates.lng}`;
+
+    if (radius !== undefined) {
+      url += `&radius=${radius}`;
+    }
+
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
 
     const response = await fetch(url);
 
@@ -15,7 +33,7 @@ export async function fetchAllStops(coordinates: {lat: number, lng: number}): Pr
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error fetching stops:", error.message || error);
+    console.error('Error fetching stops:', error.message || error);
     throw error;
   }
 }
