@@ -18,7 +18,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const description = slideData?.description || '';
   const selectedRoute = slideData?.selectedRoute;
   const viewMode = slideData?.viewMode || 'map';
-  const routeData = slideData?.routeData || [];
+  const routeData: any = slideData?.routeData || [];
   const patternData = slideData?.patternData;
   const isLoading = slideData?.isLoading || false;
 
@@ -39,11 +39,51 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   useEffect(() => {
     if (viewMode !== 'map' || !mapContainerRef.current || mapRef.current) {return;}
 
+    // Calculate initial center from pattern data if available
+    let initialCenter: [number, number] = [-73.7562, 42.6526]; // Default to Albany
+    let initialZoom = 12;
+
+    if (patternData?.stops && patternData.stops.length > 0) {
+      const bounds = new mapboxgl.LngLatBounds();
+
+      patternData.stops.forEach((stop: any) => {
+        let lon, lat;
+        if (stop.coordinates && stop.coordinates.length === 2) {
+          [lon, lat] = stop.coordinates;
+        } else if (stop.lon !== undefined && stop.lat !== undefined) {
+          lon = stop.lon;
+          lat = stop.lat;
+        }
+
+        if (lon !== undefined && lat !== undefined) {
+          bounds.extend([lon, lat]);
+        }
+      });
+
+      if (!bounds.isEmpty()) {
+        const center = bounds.getCenter();
+        initialCenter = [center.lng, center.lat];
+
+        // Calculate appropriate zoom level based on bounds
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        const latDiff = Math.abs(ne.lat - sw.lat);
+        const lngDiff = Math.abs(ne.lng - sw.lng);
+        const maxDiff = Math.max(latDiff, lngDiff);
+
+        if (maxDiff < 0.01) {initialZoom = 15;}
+        else if (maxDiff < 0.05) {initialZoom = 13;}
+        else if (maxDiff < 0.1) {initialZoom = 12;}
+        else if (maxDiff < 0.5) {initialZoom = 10;}
+        else {initialZoom = 9;}
+      }
+    }
+
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [-73.7562, 42.6526], // Default to Albany, NY
-      zoom: 12,
+      center: initialCenter,
+      zoom: initialZoom,
       attributionControl: false,
     });
 
@@ -62,7 +102,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [viewMode]);
+  }, [viewMode, patternData]);
 
   // Update map with route data
   useEffect(() => {
@@ -115,8 +155,6 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
     // Add stop markers
     if (patternData.stops && patternData.stops.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-
       patternData.stops.forEach((stop: any, index: number) => {
         // Check for coordinates in different formats
         let lon, lat;
@@ -153,19 +191,10 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
           anchor: 'center',
         })
           .setLngLat([lon, lat])
-          .addTo(mapRef.current);
+          .addTo(mapRef.current!);
 
         markersRef.current.push(marker);
-        bounds.extend([lon, lat]);
       });
-
-      // Fit map to show all stops
-      if (!bounds.isEmpty()) {
-        mapRef.current.fitBounds(bounds, {
-          padding: 50,
-          maxZoom: 15,
-        });
-      }
     }
     };
 
@@ -195,7 +224,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     const tripsMap = new Map();
 
     // Process timetable data format (from fetchRouteTimetable)
-    routeData.forEach(item => {
+    routeData.forEach((item: any) => {
       // Check if this is timetable format with stops array containing departures
       if (item.stops && item.stops[0]?.departures) {
         const stop = item.stops[0];
@@ -217,8 +246,8 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     // Sort trips by first departure time
     const trips = Array.from(tripsMap.values());
     trips.sort((a, b) => {
-      const aFirstDep = Array.from(a.stops.values())[0];
-      const bFirstDep = Array.from(b.stops.values())[0];
+      const aFirstDep: any = Array.from(a.stops.values())[0];
+      const bFirstDep: any = Array.from(b.stops.values())[0];
       return (aFirstDep?.departTime || 0) - (bFirstDep?.departTime || 0);
     });
 
@@ -263,7 +292,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
               {stops.map((stop: any, index: number) => {
                 // Find departures for this stop - check both stop.id and stop.stopId
                 const stopId = stop.stopId || stop.id;
-                const stopDepartures = routeData.find(rd =>
+                const stopDepartures = routeData.find((rd: any) =>
                   rd.stops[0]?.stop_id === stopId || rd.stops[0]?.stopId === stopId
                 )?.stops[0]?.departures || [];
 

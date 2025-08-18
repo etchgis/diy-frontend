@@ -248,6 +248,11 @@ export default function LandingPage() {
                               Stop Arrivals Page
                             </div>
                           </SelectItem>
+                          <SelectItem value="route-times">
+                            <div className="flex items-center gap-2 text-xs">
+                              Route Times Page
+                            </div>
+                          </SelectItem>
                           <SelectItem value="qr">
                             <div className="flex items-center gap-2 text-xs">
                               QR Code Page
