@@ -149,7 +149,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       if (!slideData?.selectedRoute) {continue;}
 
       const route = slideData.selectedRoute;
-      const service = route.services[0];
+      const service: any = route.services[0];
       const organizationId = service.organization_guid || service.organization_id;
       const serviceId = service.service_guid || service.service_id;
 

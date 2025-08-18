@@ -345,14 +345,16 @@ export default function RouteTimesSlide({
                   <Button
                     variant={viewMode === 'map' ? 'default' : 'outline'}
                     onClick={() => handleViewModeChange('map')}
-                    className={viewMode === 'map' ? 'bg-[#face00] text-black' : ''}
+                    className={`${viewMode === 'map' ? 'bg-[#face00] text-black hover:bg-[#face00]/90' : ''
+                      }`}
                   >
                     Map View
                   </Button>
                   <Button
                     variant={viewMode === 'timetable' ? 'default' : 'outline'}
                     onClick={() => handleViewModeChange('timetable')}
-                    className={viewMode === 'timetable' ? 'bg-[#face00] text-black' : ''}
+                    className={`${viewMode === 'timetable' ? 'bg-[#face00] text-black hover:bg-[#face00]/90' : ''
+                      }`}
                   >
                     Timetable View
                   </Button>

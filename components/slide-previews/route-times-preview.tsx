@@ -18,7 +18,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const description = slideData?.description || '';
   const selectedRoute = slideData?.selectedRoute;
   const viewMode = slideData?.viewMode || 'map';
-  const routeData = slideData?.routeData || [];
+  const routeData: any = slideData?.routeData || [];
   const patternData = slideData?.patternData;
   const isLoading = slideData?.isLoading || false;
 
@@ -191,7 +191,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
           anchor: 'center',
         })
           .setLngLat([lon, lat])
-          .addTo(mapRef.current);
+          .addTo(mapRef.current!);
 
         markersRef.current.push(marker);
       });
@@ -224,7 +224,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     const tripsMap = new Map();
 
     // Process timetable data format (from fetchRouteTimetable)
-    routeData.forEach(item => {
+    routeData.forEach((item: any) => {
       // Check if this is timetable format with stops array containing departures
       if (item.stops && item.stops[0]?.departures) {
         const stop = item.stops[0];
@@ -246,8 +246,8 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     // Sort trips by first departure time
     const trips = Array.from(tripsMap.values());
     trips.sort((a, b) => {
-      const aFirstDep = Array.from(a.stops.values())[0];
-      const bFirstDep = Array.from(b.stops.values())[0];
+      const aFirstDep: any = Array.from(a.stops.values())[0];
+      const bFirstDep: any = Array.from(b.stops.values())[0];
       return (aFirstDep?.departTime || 0) - (bFirstDep?.departTime || 0);
     });
 
@@ -292,7 +292,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
               {stops.map((stop: any, index: number) => {
                 // Find departures for this stop - check both stop.id and stop.stopId
                 const stopId = stop.stopId || stop.id;
-                const stopDepartures = routeData.find(rd =>
+                const stopDepartures = routeData.find((rd: any) =>
                   rd.stops[0]?.stop_id === stopId || rd.stops[0]?.stopId === stopId
                 )?.stops[0]?.departures || [];
 
