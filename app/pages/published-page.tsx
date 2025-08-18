@@ -16,6 +16,7 @@ import { useTransitRouteStore } from '@/stores/transitRoutes';
 import { useInterval } from '@dnd-kit/utilities';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { set } from 'react-hook-form';
 
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const searchParams = useSearchParams();
@@ -32,7 +33,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const currentSlide = slides?.[activeIndex] || null;
 
   const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
+  const setDataError = useTransitDestinationsStore((state) => state.setDataError);
+
   const setScheduleData = useFixedRouteStore((state) => state.setScheduleData);
+  const setFixedRouteDataError = useFixedRouteStore((state) => state.setDataError);
+
   const setRoutesData = useTransitRouteStore((state) => state.setRoutes);
   const allSlidesState = useTransitDestinationsStore((state) => state.slides);
   const allFixedRouteSlidesState = useFixedRouteStore((state) => state.slides);
@@ -95,7 +100,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     for (const slide of transitSlides) {
       const destinations = allSlidesState[slide.id]?.destinations || [];
       console.log(destinations);
-      await getDestinationData(destinations, slide.id, setDestinationData);
+      await getDestinationData(destinations, slide.id, setDestinationData, setDataError);
     }
   };
 
@@ -128,7 +133,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
     for (const slide of transitRoutesSlides) {
       const transitRouteData = allTransitRouteSlidesState[slide.id]?.routes || [];
-      await getDestinationData(transitRouteData, slide.id, setRoutesData);
+      await getDestinationData(transitRouteData, slide.id, setRoutesData, setDataError);
     }
   }
 

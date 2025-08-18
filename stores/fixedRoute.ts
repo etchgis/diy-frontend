@@ -11,6 +11,7 @@ interface FixedRouteSlideData {
   tableTextColor: string;
   bgImage: string;
   selectedStop: any;
+  dataError: boolean;
   scheduleData?: any;
   isLoading: boolean;
 }
@@ -27,6 +28,7 @@ interface SlideStore {
   setSelectedStop: (slideId: string, stop: any) => void;
   setScheduleData: (slideId: string, scheduleData: any) => void;
   setIsLoading: (slideId: string, isLoading: boolean) => void;
+  setDataError: (slideId: string, error: boolean) => void;
 }
 
 export const useFixedRouteStore = create<SlideStore>()(
@@ -117,6 +119,14 @@ export const useFixedRouteStore = create<SlideStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), isLoading },
+          },
+        })),
+
+      setDataError: (slideId, error) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), dataError: error },
           },
         })),
     }),

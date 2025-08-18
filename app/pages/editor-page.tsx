@@ -84,6 +84,8 @@ export default function EditorPage() {
   const [tempRotationInterval, setTempRotationInterval] = useState(rotationInterval);
 
   const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
+  const setDataError = useTransitDestinationsStore((state) => state.setDataError);
+
   const allSlidesState = useTransitDestinationsStore((state) => state.slides);
   const setLoading = useTransitDestinationsStore((state) => state.setLoading);
 
@@ -129,7 +131,7 @@ export default function EditorPage() {
       setLoading(slide.id, true);
 
       try {
-        await getDestinationData(destinations, slide.id, setDestinationData);
+        await getDestinationData(destinations, slide.id, setDestinationData, setDataError);
       } finally {
         setLoading(slide.id, false);
       }
