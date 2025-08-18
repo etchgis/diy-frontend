@@ -8,11 +8,14 @@ export async function getDestinationData(
   setDestinationData: (slideId: string, data: any[]) => void,
   setDataError: (slideId: string, error: boolean) => void
 ) {
-  console.log('hit');
+  
+  if(destList.length === 0) return;
   const coordinates = useGeneralStore.getState().coordinates || null;
   if (!coordinates) {
     return;
   }
+  // setDataError(slideId, true);
+  // throw new Error("All destination fetches failed");
 
   const results = await Promise.allSettled(
     destList.map(async (dest) => {

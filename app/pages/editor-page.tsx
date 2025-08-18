@@ -130,7 +130,7 @@ export default function EditorPage() {
 
     for (const slide of transitSlides) {
       const destinations = allSlidesState[slide.id]?.destinations || [];
-      setLoading(slide.id, true);
+      console.log(destinations);
 
       try {
         await getDestinationData(destinations, slide.id, setDestinationData, setDataError);

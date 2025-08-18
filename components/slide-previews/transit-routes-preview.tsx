@@ -448,6 +448,7 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
       mapRef.current?.on('load', handleLoad);
     }
+    console.log(routes);
 
   }, [routes, coordinates]); // Depend on both routes and coordinates
 

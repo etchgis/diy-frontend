@@ -50,8 +50,6 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const loading = useTransitDestinationsStore((state) => state.slides[slideId]?.loading || false);
   const setLoading = useTransitDestinationsStore((state) => state.setLoading);
 
-
-
   const displayName = useTransitDestinationsStore((state) => state.slides[slideId]?.displayName || '');
   const setDisplayName = useTransitDestinationsStore((state) => state.setDisplayName);
 
