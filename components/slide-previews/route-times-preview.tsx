@@ -1,6 +1,7 @@
 import { useRouteTimesStore } from '@/stores/routeTimes';
 import { useEffect, useState, useRef } from 'react';
 import { formatDepartureTime } from '@/services/data-gathering/fetchRouteData';
+import { formatTime12Hour } from '@/utils/timeFormatters';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { renderRouteOnMap, calculateStopBounds, calculateZoomFromBounds } from '@/services/map/renderRouteOnMap';
@@ -23,6 +24,8 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const routeData = slideData?.routeData || [];
   const patternData = slideData?.patternData;
   const isLoading = slideData?.isLoading || false;
+  const isShowingNextDay = slideData?.isShowingNextDay || false;
+  const isShowingLaterToday = slideData?.isShowingLaterToday || false;
 
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -183,16 +186,6 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     }
   }, [patternData, selectedRoute, viewMode]);
 
-  // Helper function to format time for timetable view
-  const formatTimetableTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    const displayMinutes = minutes.toString().padStart(2, '0');
-    return `${displayHours}:${displayMinutes} ${ampm}`;
-  };
 
   // Get unique trips for timetable view
   const getUniqueTrips = (): TripData[] => {
@@ -231,7 +224,14 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       return (aFirstDep?.departTime || 0) - (bFirstDep?.departTime || 0);
     });
 
-    return trips;
+    // If no upcoming trips, show all trips (they'll be for tomorrow)
+    const upcomingTrips = trips.filter(trip => {
+      const firstDep = Array.from(trip.stops.values())[0] as Departure | undefined;
+      return firstDep && firstDep.departTime >= currentTime;
+    });
+
+    // Return upcoming trips if available, otherwise return all trips (next day's schedule)
+    return upcomingTrips.length > 0 ? upcomingTrips : trips;
   };
 
   // Get all stops for timetable columns
@@ -377,76 +377,107 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     const uniqueHeadsigns = new Set(trips.map(trip => trip.headsign));
     const showTripColumn = uniqueHeadsigns.size > 1;
 
+    // Check if there are no trips at all
+    const hasNoTrips = trips.length === 0;
+
     return (
       <div className="h-full overflow-auto p-4" style={{ backgroundColor: tableColor }}>
-        <div className="min-w-max">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {showTripColumn && (
-                  <th
-                    className="text-left p-3 border-b-2 font-semibold"
-                    style={{ color: tableTextColor, borderColor: tableTextColor }}
-                  >
-                    Trip
-                  </th>
-                )}
-                {displayStops.map((stop: StopInfo) => (
-                  <th
-                    key={stop.id}
-                    className="text-center p-3 border-b-2 font-semibold"
-                    style={{ color: tableTextColor, borderColor: tableTextColor }}
-                  >
-                    {stop.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {trips.slice(0, 10).map((trip: TripData, tripIndex: number) => (
-                <tr key={trip.tripId} className={tripIndex % 2 === 0 ? 'bg-gray-50' : ''}>
+        {(isShowingNextDay || isShowingLaterToday) && (
+          <div className="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm font-medium">
+              {isShowingLaterToday
+                ? '🌙 Showing schedule for later today'
+                : '📅 Showing tomorrow\'s schedule - no more departures today'}
+            </p>
+          </div>
+        )}
+
+        {hasNoTrips ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center p-8">
+              <div className="mb-4">
+                <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-lg font-medium mb-2" style={{ color: tableTextColor }}>
+                No Schedule Available
+              </p>
+              <p className="text-sm opacity-75" style={{ color: tableTextColor }}>
+                No departure times are currently available for this route.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="min-w-max">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
                   {showTripColumn && (
-                    <td
-                      className="p-3 border-b font-medium"
-                      style={{ color: tableTextColor }}
+                    <th
+                      className="text-left p-3 border-b-2 font-semibold"
+                      style={{ color: tableTextColor, borderColor: tableTextColor }}
                     >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="px-2 py-1 text-xs font-bold rounded"
-                          style={{
-                            backgroundColor: selectedRoute?.route_color ? `#${selectedRoute.route_color}` : '#0074D9',
-                            color: selectedRoute?.route_text_color ? `#${selectedRoute.route_text_color}` : '#FFFFFF',
-                          }}
-                        >
-                          {selectedRoute?.route_short_name || 'Route'}
-                        </span>
-                        <span className="text-sm">{trip.headsign}</span>
-                      </div>
-                    </td>
+                      Trip
+                    </th>
                   )}
-                  {displayStops.map((stop: StopInfo) => {
-                    const departure = trip.stops.get(stop.id);
-                    return (
+                  {displayStops.map((stop: StopInfo) => (
+                    <th
+                      key={stop.id}
+                      className="text-center p-3 border-b-2 font-semibold"
+                      style={{ color: tableTextColor, borderColor: tableTextColor }}
+                    >
+                      {stop.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {trips.slice(0, 10).map((trip: TripData, tripIndex: number) => (
+                  <tr key={trip.tripId} className={tripIndex % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {showTripColumn && (
                       <td
-                        key={stop.id || `stop-${stop.name}`}
-                        className="text-center p-3 border-b"
+                        className="p-3 border-b font-medium"
                         style={{ color: tableTextColor }}
                       >
-                        {departure ? formatTimetableTime(departure.departTime) : '-'}
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="px-2 py-1 text-xs font-bold rounded"
+                            style={{
+                              backgroundColor: selectedRoute?.route_color ? `#${selectedRoute.route_color}` : '#0074D9',
+                              color: selectedRoute?.route_text_color ? `#${selectedRoute.route_text_color}` : '#FFFFFF',
+                            }}
+                          >
+                            {selectedRoute?.route_short_name || 'Route'}
+                          </span>
+                          <span className="text-sm">{trip.headsign}</span>
+                        </div>
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    )}
+                    {displayStops.map((stop: StopInfo) => {
+                      const departure = trip.stops.get(stop.id);
+                      return (
+                        <td
+                          key={stop.id || `stop-${stop.name}`}
+                          className="text-center p-3 border-b"
+                          style={{ color: tableTextColor }}
+                        >
+                          {departure ? formatTime12Hour(departure.departTime) : '-'}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-        {stops.length > 5 && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-            <p className="text-yellow-800 text-sm">
-              ⚠️ Showing first 5 stops only. Timetable view works best with fewer stops.
-            </p>
+            {stops.length > 5 && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-yellow-800 text-sm">
+                  ⚠️ Showing first 5 stops only. Timetable view works best with fewer stops.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

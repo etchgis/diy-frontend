@@ -1,3 +1,5 @@
+import { formatTime12Hour } from '@/utils/timeFormatters';
+
 // Types for route timetable API
 interface RouteTimetableResponse {
   route: {
@@ -363,13 +365,7 @@ export function formatDepartureTime(
     return `${diffMinutes} min`;
   } else {
     // Show actual time for departures more than an hour away
-    const date = new Date(departureTime);
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    const displayMinutes = minutes.toString().padStart(2, '0');
-    return `${displayHours}:${displayMinutes} ${ampm}`;
+    return formatTime12Hour(departureTime);
   }
 }
 

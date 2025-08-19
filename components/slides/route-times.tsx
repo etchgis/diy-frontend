@@ -8,11 +8,7 @@ import { deleteImage } from '@/services/deleteImage';
 import { uploadImage } from '@/services/uploadImage';
 import { useGeneralStore } from '@/stores/general';
 import { fetchRoutes } from '@/services/data-gathering/fetchRoutes';
-import {
-  fetchRouteData,
-  fetchRouteTimetable,
-} from '@/services/data-gathering/fetchRouteData';
-import { processRoutePatterns, formatTimetableData } from '@/services/data-gathering/processRoutePatterns';
+import { fetchCompleteRouteData } from '@/services/route-times/routeDataFetcher';
 
 export default function RouteTimesSlide({
   slideId,
@@ -132,62 +128,25 @@ export default function RouteTimesSlide({
     try {
       setIsLoading(slideId, true);
 
-      const service = route.services[0];
-      const organizationId = service.organization_guid || service.organization_id;
-      const serviceId = service.service_guid || service.service_id;
+      const result = await fetchCompleteRouteData(route);
 
-      // Fetch route patterns and geometry
-      const routeDataArray = await fetchRouteData(
-        organizationId,
-        [serviceId],
-        true,
-        true
-      );
+      if (result.patternData) {
+        const hadPatternDataBefore = !!slideData?.patternData;
+        setPatternData(slideId, result.patternData);
 
-      // Find the specific route from the results
-      const specificRoute = routeDataArray.find(r =>
-        r.id === route.route_id ||
-        r.shortName === route.route_short_name
-      );
-
-      if (specificRoute && specificRoute.patterns && specificRoute.patterns.length > 0) {
-        const combinedPatternData = processRoutePatterns(specificRoute.patterns);
-        if (combinedPatternData) {
-          const hadPatternDataBefore = !!slideData?.patternData;
-
-          setPatternData(slideId, combinedPatternData);
-
-          // Only auto-select view mode if this is truly a new route selection
-          // (no previous pattern data AND no explicit view mode set)
-          if (!hadPatternDataBefore) {
-            // Auto-select view mode based on stop count
-            const stopCount = combinedPatternData.stops.length;
-            if (stopCount <= 5) {
-              setViewMode(slideId, 'timetable');
-            } else {
-              setViewMode(slideId, 'map');
-            }
+        // Only auto-select view mode if this is truly a new route selection
+        if (!hadPatternDataBefore) {
+          // Auto-select view mode based on stop count
+          const stopCount = result.patternData.stops.length;
+          if (stopCount <= 5) {
+            setViewMode(slideId, 'timetable');
+          } else {
+            setViewMode(slideId, 'map');
           }
         }
       }
 
-      // Fetch timetable data
-      const now = Date.now();
-      const endTime = now + (3 * 60 * 60 * 1000); // 3 hours from now
-
-      const timetableData = await fetchRouteTimetable(
-        organizationId,
-        serviceId,
-        route.route_id,
-        now,
-        endTime
-      );
-
-      if (timetableData) {
-        const formattedData = formatTimetableData(timetableData);
-        setRouteData(slideId, formattedData);
-      }
-
+      setRouteData(slideId, result.timetableData, result.isNextDay, result.isLaterToday);
       setIsLoading(slideId, false);
     } catch (error) {
       console.error('Error fetching route data:', error);
