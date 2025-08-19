@@ -487,18 +487,13 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   return (
     <div
       className="h-full flex flex-col relative"
-      style={{ backgroundColor }}
+      style={{
+        backgroundColor: !bgImage ? backgroundColor : undefined,
+        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
-      {bgImage && (
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url(${bgImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-      )}
 
       {/* Header */}
       <div className="p-4 relative z-10">
