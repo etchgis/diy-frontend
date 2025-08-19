@@ -1,4 +1,5 @@
 import { formatTime, formatDuration } from '@/utils/formats';
+import { set } from 'react-hook-form';
 
 function findStatus(realtime: boolean, arrive: number, arriveScheduled: number) {
   const currentTime = Date.now();
@@ -62,7 +63,7 @@ async function formatBusData(data: any, serviceId: string, organizationId: strin
   return formattedData;
 }
 
-export async function fetchStopData(stopId: string, serviceId: string, organizationId: string) {
+export async function fetchStopData(stopId: string, serviceId: string, organizationId: string, slideId: string, setDataError: (slideId: string, error: boolean) => void) {
   try {
 
 
@@ -80,7 +81,10 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     console.log(response);
 
     if (!response.ok) {
+      setDataError(slideId, true);
       throw new Error(`Failed to fetch stop data: ${response.statusText}`);
+    } else {
+      setDataError(slideId, false);
     }
 
 

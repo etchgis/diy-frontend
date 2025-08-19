@@ -18,6 +18,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const bgImage = useFixedRouteStore((state) => state.slides[slideId]?.bgImage || '');
   const selectedStop = useFixedRouteStore((state) => state.slides[slideId]?.selectedStop || null);
   const scheduleData = useFixedRouteStore((state) => state.slides[slideId]?.scheduleData || null);
+  const dataError = useFixedRouteStore((state) => state.slides[slideId]?.dataError || null);
 
   const pathname = usePathname();
   const isEditor = pathname.includes('/editor');
@@ -88,116 +89,135 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
           {/* Schedule Table or Loading Spinner */}
           {isLoading ? (
             <LoadingSpinner />
-          ) : (
-            <>
-              {isEditor ? (
-                <div className="text-black">
-                  {scheduleData && scheduleData.map((item: any, index: number) => (
-                    <div
-                      key={index}
-                      className={`flex items-center justify-between ${description ? 'p-[10px]' : 'p-[12px]'} border-b border-[#e2e8f0] last:border-b-0`}
-                      style={{
-                        backgroundColor: !bgImage ? tableColor : 'transparent',
-                        color: tableTextColor,
-                      }}
-                    >
-                      <div className="flex-1">
-                        <span className="font-medium">{item.destination}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
+          )
+          : dataError ? (
+            // Show warning message if dataError is true
+            <div className="flex items-center justify-center h-full">
+              <div
+                className="p-6 bg-white rounded-lg shadow-md"
+                style={{
+                  backgroundColor: tableColor,
+                  color: tableTextColor,
+                  maxWidth: '400px',
+                  textAlign: 'center',
+                }}
+              >
+                <p className="text-yellow-600 text-sm">
+                  ⚠️ Stop arrival data currently not available. Please check try again later.
+                </p>
+              </div>
+            </div>
+          )
+              : (
+                <>
+                  {isEditor ? (
+                    <div className="text-black">
+                      {scheduleData && scheduleData.map((item: any, index: number) => (
                         <div
-                          className={`rounded font-bold text-center`}
+                          key={index}
+                          className={`flex items-center justify-between ${description ? 'p-[10px]' : 'p-[12px]'} border-b border-[#e2e8f0] last:border-b-0`}
                           style={{
-                            padding: 'clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)',
-                            fontSize: 'clamp(0.75rem, 1.2vw, 0.875rem)',
-                            minWidth: 'clamp(40px, 4vw, 50px)',
-                            color: `#${item.routeTextColor}`,
-                            backgroundColor: `#${item.routeColor}`,
+                            backgroundColor: !bgImage ? tableColor : 'transparent',
+                            color: tableTextColor,
                           }}
                         >
-                          {item.route.split(':')[0]}
+                          <div className="flex-1">
+                            <span className="font-medium">{item.destination}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`rounded font-bold text-center`}
+                              style={{
+                                padding: 'clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)',
+                                fontSize: 'clamp(0.75rem, 1.2vw, 0.875rem)',
+                                minWidth: 'clamp(40px, 4vw, 50px)',
+                                color: `#${item.routeTextColor}`,
+                                backgroundColor: `#${item.routeColor}`,
+                              }}
+                            >
+                              {item.route.split(':')[0]}
+                            </div>
+                            <div className="font-medium min-w-[80px] text-center">{item.time}</div>
+                            <div className=" min-w-[80px] text-center">{item.duration}</div>
+                            <Button variant="outline" size="sm" className="min-w-[90px] bg-transparent">
+                              Scheduled
+                            </Button>
+                          </div>
                         </div>
-                        <div className="font-medium min-w-[80px] text-center">{item.time}</div>
-                        <div className=" min-w-[80px] text-center">{item.duration}</div>
-                        <Button variant="outline" size="sm" className="min-w-[90px] bg-transparent">
-                          Scheduled
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-black flex flex-col" style={{ height: '80%' }}>
-                  {scheduleData.map((item: any, index: number) => (
-                    <div
-                      key={index}
-                      className="flex-1 flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0"
-                      style={{
-                        backgroundColor: !bgImage ? tableColor : 'transparent',
-                        color: tableTextColor,
-                        padding: `clamp(0.5rem, 1.5vw, ${description ? '0.625rem' : '0.75rem'})`,
-                      }}
-                    >
-                      <div className="flex-1">
-                        <span
-                          className="font-medium"
-                          style={{ fontSize: 'clamp(0.875rem, 2vw, 1.125rem)' }}
-                        >
-                          {item.destination}
-                        </span>
-                      </div>
-                      <div
-                        className="flex items-center"
-                        style={{ gap: 'clamp(0.5rem, 1vw, 1rem)' }}
-                      >
+                  ) : (
+                    <div className="text-black flex flex-col" style={{ height: '80%' }}>
+                      {scheduleData && scheduleData.map((item: any, index: number) => (
                         <div
-                          className={`rounded font-bold text-center`}
+                          key={index}
+                          className="flex-1 flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0"
                           style={{
-                            padding: 'clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)',
-                            fontSize: 'clamp(0.75rem, 1.2vw, 0.875rem)',
-                            minWidth: 'clamp(40px, 4vw, 50px)',
-                            color: `#${item.routeTextColor}`,
-                            backgroundColor: `#${item.routeColor}`,
+                            backgroundColor: !bgImage ? tableColor : 'transparent',
+                            color: tableTextColor,
+                            padding: `clamp(0.5rem, 1.5vw, ${description ? '0.625rem' : '0.75rem'})`,
                           }}
                         >
-                          {item.route.split(':')[0]}
+                          <div className="flex-1">
+                            <span
+                              className="font-medium"
+                              style={{ fontSize: 'clamp(0.875rem, 2vw, 1.125rem)' }}
+                            >
+                              {item.destination}
+                            </span>
+                          </div>
+                          <div
+                            className="flex items-center"
+                            style={{ gap: 'clamp(0.5rem, 1vw, 1rem)' }}
+                          >
+                            <div
+                              className={`rounded font-bold text-center`}
+                              style={{
+                                padding: 'clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)',
+                                fontSize: 'clamp(0.75rem, 1.2vw, 0.875rem)',
+                                minWidth: 'clamp(40px, 4vw, 50px)',
+                                color: `#${item.routeTextColor}`,
+                                backgroundColor: `#${item.routeColor}`,
+                              }}
+                            >
+                              {item.route.split(':')[0]}
+                            </div>
+                            <div
+                              className="font-medium text-center"
+                              style={{
+                                fontSize: 'clamp(0.875rem, 1.5vw, 1rem)',
+                                minWidth: 'clamp(60px, 6vw, 80px)'
+                              }}
+                            >
+                              {item.time}
+                            </div>
+                            <div
+                              className="text-center"
+                              style={{
+                                fontSize: 'clamp(0.875rem, 1.5vw, 1rem)',
+                                minWidth: 'clamp(60px, 6vw, 80px)'
+                              }}
+                            >
+                              {item.duration}
+                            </div>
+                            <Button
+                              variant="outline"
+                              className="bg-transparent"
+                              style={{
+                                fontSize: 'clamp(0.75rem, 1.2vw, 0.875rem)',
+                                padding: 'clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)',
+                                minWidth: 'clamp(70px, 7vw, 90px)',
+                              }}
+                            >
+                              Scheduled
+                            </Button>
+                          </div>
                         </div>
-                        <div
-                          className="font-medium text-center"
-                          style={{
-                            fontSize: 'clamp(0.875rem, 1.5vw, 1rem)',
-                            minWidth: 'clamp(60px, 6vw, 80px)'
-                          }}
-                        >
-                          {item.time}
-                        </div>
-                        <div
-                          className="text-center"
-                          style={{
-                            fontSize: 'clamp(0.875rem, 1.5vw, 1rem)',
-                            minWidth: 'clamp(60px, 6vw, 80px)'
-                          }}
-                        >
-                          {item.duration}
-                        </div>
-                        <Button
-                          variant="outline"
-                          className="bg-transparent"
-                          style={{
-                            fontSize: 'clamp(0.75rem, 1.2vw, 0.875rem)',
-                            padding: 'clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)',
-                            minWidth: 'clamp(70px, 7vw, 90px)',
-                          }}
-                        >
-                          Scheduled
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
-            </>
-          )}
         </div>
 
         {/* Footer */}

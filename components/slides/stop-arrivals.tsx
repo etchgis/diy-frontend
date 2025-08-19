@@ -184,7 +184,9 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
       const data = await fetchStopData(
         stopId,
         selectedStop.services[0].service_guid || selectedStop.services[0].service_id,
-        selectedStop.services[0].organization_guid || selectedStop.services[0].organization_id
+        selectedStop.services[0].organization_guid || selectedStop.services[0].organization_id,
+        slideId,
+        (slideId: string, error: boolean) => useFixedRouteStore.getState().setDataError(slideId, error)
       );
       const arr: any = [];
       data?.trains.forEach((item: any) => {

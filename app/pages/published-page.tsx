@@ -18,6 +18,7 @@ import { useRouteTimesStore } from '@/stores/routeTimes';
 import { fetchCompleteRouteData } from '@/services/route-times/routeDataFetcher';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { set } from 'react-hook-form';
 
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const searchParams = useSearchParams();
@@ -34,7 +35,14 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const currentSlide = slides?.[activeIndex] || null;
 
   const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
+  const setDataError = useTransitDestinationsStore((state) => state.setDataError);
+
+
   const setScheduleData = useFixedRouteStore((state) => state.setScheduleData);
+  const setFixedRouteDataError = useFixedRouteStore((state) => state.setDataError);
+
+  const setTransitRoutesDataError = useTransitRouteStore((state) => state.setDataError);
+
   const setRoutesData = useTransitRouteStore((state) => state.setRoutes);
   const allSlidesState = useTransitDestinationsStore((state) => state.slides);
   const allFixedRouteSlidesState = useFixedRouteStore((state) => state.slides);
@@ -96,12 +104,19 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const getTransitDestinationData = async () => {
     const transitSlides = slides.filter((slide: any) => slide.type === 'transit-destinations');
     console.log(slides, transitSlides);
-    if (!transitSlides.length) {return;}
-
+    if (!transitSlides.length) {
+      return;
+    }
+  
     for (const slide of transitSlides) {
       const destinations = allSlidesState[slide.id]?.destinations || [];
       console.log(destinations);
-      await getDestinationData(destinations, slide.id, setDestinationData);
+  
+      try {
+        await getDestinationData(destinations, slide.id, setDestinationData, setDataError);
+      } catch (error) {
+        console.error(`Failed to fetch data for slide ID ${slide.id}:`, error);
+      }
     }
   };
 
@@ -110,7 +125,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     if (!fixedRouteSlides.length) {return;}
     for (const slide of fixedRouteSlides) {
       const fixedRouteData = allFixedRouteSlidesState[slide.id]?.selectedStop || [];
-      const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid);
+      if(!fixedRouteData?.stop_id || !fixedRouteData?.services?.length) {continue;}
+      const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid, slide.id, setFixedRouteDataError);
       const arr: any = [];
       data?.trains.forEach((item: any) => {
         arr.push({
@@ -134,7 +150,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
     for (const slide of transitRoutesSlides) {
       const transitRouteData = allTransitRouteSlidesState[slide.id]?.routes || [];
-      await getDestinationData(transitRouteData, slide.id, setRoutesData);
+      await getDestinationData(transitRouteData, slide.id, setRoutesData, setTransitRoutesDataError);
     }
   };
 
