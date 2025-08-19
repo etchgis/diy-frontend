@@ -15,9 +15,7 @@ import { useGeneralStore } from '@/stores/general';
 import { useTransitDestinationsStore } from '@/stores/transitDestinations';
 import { useTransitRouteStore } from '@/stores/transitRoutes';
 import { useRouteTimesStore } from '@/stores/routeTimes';
-import { fetchRouteData, fetchRouteTimetable } from '@/services/data-gathering/fetchRouteData';
-import { processRoutePatterns, formatTimetableData } from '@/services/data-gathering/processRoutePatterns';
-import { useInterval } from '@dnd-kit/utilities';
+import { fetchCompleteRouteData } from '@/services/route-times/routeDataFetcher';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { set } from 'react-hook-form';
@@ -135,7 +133,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           destination: item.destination,
           route: item.details.id,
           routeColor: item.details.color,
-          tableTextColor: item.details.textColor,
+          routeTextColor: item.details.textColor,
           time: item.arrivalTime,
           duration: item.arrival,
           status: item.status,
@@ -164,52 +162,16 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const slideData = allRouteTimesSlidesState[slide.id];
       if (!slideData?.selectedRoute) {continue;}
 
-      const route = slideData.selectedRoute;
-      const service: any = route.services[0];
-      const organizationId = service.organization_guid || service.organization_id;
-      const serviceId = service.service_guid || service.service_id;
-
       try {
         setRouteTimesIsLoading(slide.id, true);
 
-        // Fetch route patterns and geometry
-        const routeDataArray = await fetchRouteData(
-          organizationId,
-          [serviceId],
-          true,
-          true
-        );
+        const result = await fetchCompleteRouteData(slideData.selectedRoute);
 
-        // Find the specific route from the results
-        const specificRoute = routeDataArray.find((r: any) =>
-          r.id === route.route_id ||
-          r.shortName === route.route_short_name
-        );
-
-        if (specificRoute && specificRoute.patterns && specificRoute.patterns.length > 0) {
-          const combinedPatternData = processRoutePatterns(specificRoute.patterns);
-          if (combinedPatternData) {
-            setRouteTimesPatternData(slide.id, combinedPatternData);
-          }
+        if (result.patternData) {
+          setRouteTimesPatternData(slide.id, result.patternData);
         }
 
-        // Fetch timetable data
-        const now = Date.now();
-        const endTime = now + (3 * 60 * 60 * 1000); // 3 hours from now
-
-        const timetableData = await fetchRouteTimetable(
-          organizationId,
-          serviceId,
-          route.route_id,
-          now,
-          endTime
-        );
-
-        if (timetableData) {
-          const formattedData = formatTimetableData(timetableData);
-          setRouteTimesRouteData(slide.id, formattedData);
-        }
-
+        setRouteTimesRouteData(slide.id, result.timetableData, result.isNextDay, result.isLaterToday);
         setRouteTimesIsLoading(slide.id, false);
       } catch (error) {
         console.error('Error fetching route times data:', error);

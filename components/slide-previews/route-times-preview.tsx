@@ -1,8 +1,11 @@
 import { useRouteTimesStore } from '@/stores/routeTimes';
 import { useEffect, useState, useRef } from 'react';
 import { formatDepartureTime } from '@/services/data-gathering/fetchRouteData';
+import { formatTime12Hour } from '@/utils/timeFormatters';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { renderRouteOnMap, calculateStopBounds, calculateZoomFromBounds } from '@/services/map/renderRouteOnMap';
+import type { RouteDataItem, TripData, StopInfo, Departure, StopWithDepartures, PatternStop } from '@/types/route-times';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
@@ -21,11 +24,15 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const routeData: any = slideData?.routeData || [];
   const patternData = slideData?.patternData;
   const isLoading = slideData?.isLoading || false;
+  const isShowingNextDay = slideData?.isShowingNextDay || false;
+  const isShowingLaterToday = slideData?.isShowingLaterToday || false;
 
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapContainer, setMapContainer] = useState<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const mapIdRef = useRef<string>(`map-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -37,200 +44,163 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
   // Initialize map when in map view
   useEffect(() => {
-    if (viewMode !== 'map' || !mapContainerRef.current || mapRef.current) {return;}
+    setMapLoaded(false);
+
+    if (viewMode !== 'map') {
+      // Clean up map when switching away from map view
+      if (mapRef.current) {
+        try {
+          markersRef.current.forEach(marker => marker.remove());
+          markersRef.current = [];
+          mapRef.current.remove();
+          mapRef.current = null;
+        } catch (e) {
+          console.error('Error cleaning up map:', e);
+          mapRef.current = null;
+        }
+      }
+      return;
+    }
+
+    // Wait for container to be available
+    if (!mapContainer) {
+      return;
+    }
+
+    // Clean up any existing map
+    if (mapRef.current) {
+      try {
+        markersRef.current.forEach(marker => marker.remove());
+        markersRef.current = [];
+        mapRef.current.remove();
+      } catch (e) {
+        console.error('Error removing existing map:', e);
+      }
+      mapRef.current = null;
+    }
 
     // Calculate initial center from pattern data if available
     let initialCenter: [number, number] = [-73.7562, 42.6526]; // Default to Albany
     let initialZoom = 12;
 
     if (patternData?.stops && patternData.stops.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-
-      patternData.stops.forEach((stop: any) => {
-        let lon, lat;
-        if (stop.coordinates && stop.coordinates.length === 2) {
-          [lon, lat] = stop.coordinates;
-        } else if (stop.lon !== undefined && stop.lat !== undefined) {
-          lon = stop.lon;
-          lat = stop.lat;
-        }
-
-        if (lon !== undefined && lat !== undefined) {
-          bounds.extend([lon, lat]);
-        }
-      });
-
-      if (!bounds.isEmpty()) {
+      const bounds = calculateStopBounds(patternData.stops);
+      if (bounds) {
         const center = bounds.getCenter();
         initialCenter = [center.lng, center.lat];
-
-        // Calculate appropriate zoom level based on bounds
-        const ne = bounds.getNorthEast();
-        const sw = bounds.getSouthWest();
-        const latDiff = Math.abs(ne.lat - sw.lat);
-        const lngDiff = Math.abs(ne.lng - sw.lng);
-        const maxDiff = Math.max(latDiff, lngDiff);
-
-        if (maxDiff < 0.01) {initialZoom = 15;}
-        else if (maxDiff < 0.05) {initialZoom = 13;}
-        else if (maxDiff < 0.1) {initialZoom = 12;}
-        else if (maxDiff < 0.5) {initialZoom = 10;}
-        else {initialZoom = 9;}
+        initialZoom = calculateZoomFromBounds(bounds);
       }
     }
 
-    mapRef.current = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: initialCenter,
-      zoom: initialZoom,
-      attributionControl: false,
-    });
+    try {
+      // Create new map
+      const map = new mapboxgl.Map({
+        container: mapContainer,
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: initialCenter,
+        zoom: initialZoom,
+        attributionControl: false,
+      });
 
-    // Disable interactions for preview
-    mapRef.current.dragPan.disable();
-    mapRef.current.scrollZoom.disable();
-    mapRef.current.boxZoom.disable();
-    mapRef.current.dragRotate.disable();
-    mapRef.current.keyboard.disable();
-    mapRef.current.doubleClickZoom.disable();
-    mapRef.current.touchZoomRotate.disable();
+      // Store reference
+      mapRef.current = map;
+
+      // Disable interactions for preview
+      map.dragPan.disable();
+      map.scrollZoom.disable();
+      map.boxZoom.disable();
+      map.dragRotate.disable();
+      map.keyboard.disable();
+      map.doubleClickZoom.disable();
+      map.touchZoomRotate.disable();
+
+      // Force a resize and mark as loaded after map loads
+      map.once('load', () => {
+        map.resize();
+        setMapLoaded(true);
+
+        // Add route and stops data if available
+        if (patternData) {
+          const newMarkers = renderRouteOnMap({
+            map,
+            patternData,
+            selectedRoute,
+            markers: markersRef.current,
+          });
+          markersRef.current = newMarkers;
+        }
+      });
+    } catch (e) {
+      console.error('Error creating map:', e);
+    }
 
     return () => {
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
-      mapRef.current?.remove();
-      mapRef.current = null;
+      setMapLoaded(false);
+      if (mapRef.current) {
+        try {
+          markersRef.current.forEach(marker => marker.remove());
+          markersRef.current = [];
+          mapRef.current.remove();
+          mapRef.current = null;
+        } catch (e) {
+          console.error('Error in cleanup:', e);
+          mapRef.current = null;
+        }
+      }
     };
-  }, [viewMode, patternData]);
+  }, [viewMode, slideId, mapContainer, patternData, selectedRoute]);
 
-  // Update map with route data
+  // Update map with pattern data changes
   useEffect(() => {
     if (!mapRef.current || viewMode !== 'map' || !patternData) {return;}
 
-    const updateMap = () => {
+    const updateMapData = () => {
       if (!mapRef.current) {return;}
 
-      // Clear existing markers and layers
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
-
-      // Remove existing route layer if it exists
-      if (mapRef.current.getLayer('route-line')) {
-        mapRef.current.removeLayer('route-line');
-      }
-      if (mapRef.current.getSource('route')) {
-        mapRef.current.removeSource('route');
-      }
-
-      // Add route line if we have coordinates
-      if (patternData.coordinates && patternData.coordinates.length > 0) {
-        mapRef.current.addSource('route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: patternData.coordinates,
-          },
-        },
+      // Render route and stops
+      const newMarkers = renderRouteOnMap({
+        map: mapRef.current,
+        patternData,
+        selectedRoute,
+        markers: markersRef.current,
       });
+      markersRef.current = newMarkers;
 
-      mapRef.current.addLayer({
-        id: 'route-line',
-        type: 'line',
-        source: 'route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': selectedRoute?.route_color ? `#${selectedRoute.route_color}` : '#0074D9',
-          'line-width': 4,
-          'line-opacity': 0.8,
-        },
-      });
-    }
-
-    // Add stop markers
-    if (patternData.stops && patternData.stops.length > 0) {
-      patternData.stops.forEach((stop: any, index: number) => {
-        // Check for coordinates in different formats
-        let lon, lat;
-        if (stop.coordinates && stop.coordinates.length === 2) {
-          [lon, lat] = stop.coordinates;
-        } else if (stop.lon !== undefined && stop.lat !== undefined) {
-          lon = stop.lon;
-          lat = stop.lat;
-        } else {
-          return; // Skip this stop if no valid coordinates
+      // Update bounds if we have stops
+      if (patternData.stops && patternData.stops.length > 0) {
+        const bounds = calculateStopBounds(patternData.stops);
+        if (bounds) {
+          mapRef.current.fitBounds(bounds, {
+            padding: 50,
+            maxZoom: 15,
+          });
         }
-
-        // Create marker element
-        const markerEl = document.createElement('div');
-        markerEl.className = 'route-stop-marker';
-        markerEl.style.cssText = `
-          width: 24px;
-          height: 24px;
-          background: ${selectedRoute?.route_color ? `#${selectedRoute.route_color}` : '#0074D9'};
-          color: ${selectedRoute?.route_text_color ? `#${selectedRoute.route_text_color}` : '#FFFFFF'};
-          border: 2px solid white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: 12px;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        `;
-        markerEl.textContent = (index + 1).toString();
-
-        const marker = new mapboxgl.Marker({
-          element: markerEl,
-          anchor: 'center',
-        })
-          .setLngLat([lon, lat])
-          .addTo(mapRef.current!);
-
-        markersRef.current.push(marker);
-      });
-    }
+      }
     };
 
-    // Check if map is loaded, if not wait for it
-    if (mapRef.current.isStyleLoaded()) {
-      updateMap();
+    // Wait for map to be loaded before updating
+    if (mapRef.current.loaded()) {
+      updateMapData();
     } else {
-      mapRef.current.once('load', updateMap);
+      mapRef.current.once('load', updateMapData);
     }
-  }, [viewMode, patternData, selectedRoute]);
+  }, [patternData, selectedRoute, viewMode]);
 
-  // Helper function to format time for timetable view
-  const formatTimetableTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    const displayMinutes = minutes.toString().padStart(2, '0');
-    return `${displayHours}:${displayMinutes} ${ampm}`;
-  };
 
   // Get unique trips for timetable view
-  const getUniqueTrips = () => {
+  const getUniqueTrips = (): TripData[] => {
     if (!routeData || routeData.length === 0) {return [];}
 
-    const tripsMap = new Map();
+    const tripsMap = new Map<string, TripData>();
 
     // Process timetable data format (from fetchRouteTimetable)
-    routeData.forEach((item: any) => {
+    (routeData as RouteDataItem[]).forEach(item => {
       // Check if this is timetable format with stops array containing departures
-      if (item.stops && item.stops[0]?.departures) {
-        const stop = item.stops[0];
+      if (item.stops && item.stops[0] && 'departures' in item.stops[0]) {
+        const stop = item.stops[0] as StopWithDepartures;
         const stopId = stop.stopId || stop.stop_id;
 
-        stop.departures.forEach((dep: any) => {
+        stop.departures?.forEach((dep: Departure) => {
           if (!tripsMap.has(dep.tripId)) {
             tripsMap.set(dep.tripId, {
               tripId: dep.tripId,
@@ -238,7 +208,10 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
               stops: new Map(),
             });
           }
-          tripsMap.get(dep.tripId).stops.set(stopId, dep);
+          const tripData = tripsMap.get(dep.tripId);
+          if (tripData) {
+            tripData.stops.set(stopId, dep);
+          }
         });
       }
     });
@@ -246,27 +219,34 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     // Sort trips by first departure time
     const trips = Array.from(tripsMap.values());
     trips.sort((a, b) => {
-      const aFirstDep: any = Array.from(a.stops.values())[0];
-      const bFirstDep: any = Array.from(b.stops.values())[0];
+      const aFirstDep = Array.from(a.stops.values())[0] as Departure | undefined;
+      const bFirstDep = Array.from(b.stops.values())[0] as Departure | undefined;
       return (aFirstDep?.departTime || 0) - (bFirstDep?.departTime || 0);
     });
 
-    return trips;
+    // If no upcoming trips, show all trips (they'll be for tomorrow)
+    const upcomingTrips = trips.filter(trip => {
+      const firstDep = Array.from(trip.stops.values())[0] as Departure | undefined;
+      return firstDep && firstDep.departTime >= currentTime;
+    });
+
+    // Return upcoming trips if available, otherwise return all trips (next day's schedule)
+    return upcomingTrips.length > 0 ? upcomingTrips : trips;
   };
 
   // Get all stops for timetable columns
-  const getAllStops = () => {
+  const getAllStops = (): StopInfo[] => {
     // First try patternData stops
     if (patternData?.stops && patternData.stops.length > 0) {
-      return patternData.stops.map((stop: any) => ({
-        id: stop.stopId || stop.id,
-        name: stop.name || stop.stopName,
+      return patternData.stops.map((stop: PatternStop) => ({
+        id: stop.stopId || stop.id || '',
+        name: stop.name || stop.stopName || '',
       }));
     }
 
     // Fall back to routeData if available
     if (routeData && routeData.length > 0) {
-      return routeData.map((item: any) => {
+      return (routeData as RouteDataItem[]).map((item) => {
         const stop = item.stops?.[0];
         return {
           id: stop?.stopId || stop?.stop_id || '',
@@ -280,7 +260,6 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
   const renderMapView = () => {
     const stops = patternData?.stops || [];
-    const departures = routeData[0]?.stops[0]?.departures || [];
 
     return (
       <div className="flex h-full">
@@ -289,16 +268,24 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
           <div className="p-4">
             <h3 className="font-semibold mb-3" style={{ color: tableTextColor }}>Stop Times</h3>
             <div className="space-y-3">
-              {stops.map((stop: any, index: number) => {
+              {stops.map((stop: PatternStop, index: number) => {
                 // Find departures for this stop - check both stop.id and stop.stopId
                 const stopId = stop.stopId || stop.id;
-                const stopDepartures = routeData.find((rd: any) =>
-                  rd.stops[0]?.stop_id === stopId || rd.stops[0]?.stopId === stopId
-                )?.stops[0]?.departures || [];
+                const stopData = (routeData as RouteDataItem[]).find(rd => {
+                  const firstStop = rd.stops[0];
+                  return firstStop && (
+                    firstStop.stop_id === stopId ||
+                    ('stopId' in firstStop && (firstStop as StopWithDepartures).stopId === stopId)
+                  );
+                });
+
+                const stopDepartures = stopData?.stops[0] && 'departures' in stopData.stops[0]
+                  ? (stopData.stops[0] as StopWithDepartures).departures
+                  : [];
 
                 // Get next 4 upcoming departures
                 const upcomingDepartures = stopDepartures
-                  .filter((dep: any) => dep.departTime >= currentTime)
+                  .filter((dep: Departure) => dep.departTime >= currentTime)
                   .slice(0, 4);
 
                 return (
@@ -319,7 +306,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
                         </div>
                         {upcomingDepartures.length > 0 ? (
                           <div className="flex flex-wrap gap-x-2 gap-y-1">
-                            {upcomingDepartures.map((dep: any, depIndex: number) => (
+                            {upcomingDepartures.map((dep: Departure, depIndex: number) => (
                               <div
                                 key={`${dep.tripId}-${depIndex}`}
                                 className="text-xs"
@@ -355,15 +342,25 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
         </div>
 
         {/* Right Panel - Map */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative" style={{ minHeight: '400px' }}>
           <div
-            ref={mapContainerRef}
+            ref={setMapContainer}
+            id={mapIdRef.current}
             className="absolute inset-0"
             style={{
               width: '100%',
               height: '100%',
+              visibility: mapLoaded ? 'visible' : 'hidden',
             }}
           />
+          {!mapLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500 mx-auto mb-2" />
+                <p className="text-gray-500">Loading map...</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -380,76 +377,107 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     const uniqueHeadsigns = new Set(trips.map(trip => trip.headsign));
     const showTripColumn = uniqueHeadsigns.size > 1;
 
+    // Check if there are no trips at all
+    const hasNoTrips = trips.length === 0;
+
     return (
       <div className="h-full overflow-auto p-4" style={{ backgroundColor: tableColor }}>
-        <div className="min-w-max">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {showTripColumn && (
-                  <th
-                    className="text-left p-3 border-b-2 font-semibold"
-                    style={{ color: tableTextColor, borderColor: tableTextColor }}
-                  >
-                    Trip
-                  </th>
-                )}
-                {displayStops.map((stop: any) => (
-                  <th
-                    key={stop.id}
-                    className="text-center p-3 border-b-2 font-semibold"
-                    style={{ color: tableTextColor, borderColor: tableTextColor }}
-                  >
-                    {stop.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {trips.slice(0, 10).map((trip: any, tripIndex: number) => (
-                <tr key={trip.tripId} className={tripIndex % 2 === 0 ? 'bg-gray-50' : ''}>
+        {(isShowingNextDay || isShowingLaterToday) && (
+          <div className="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm font-medium">
+              {isShowingLaterToday
+                ? '🌙 Showing schedule for later today'
+                : '📅 Showing tomorrow\'s schedule - no more departures today'}
+            </p>
+          </div>
+        )}
+
+        {hasNoTrips ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center p-8">
+              <div className="mb-4">
+                <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-lg font-medium mb-2" style={{ color: tableTextColor }}>
+                No Schedule Available
+              </p>
+              <p className="text-sm opacity-75" style={{ color: tableTextColor }}>
+                No departure times are currently available for this route.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="min-w-max">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
                   {showTripColumn && (
-                    <td
-                      className="p-3 border-b font-medium"
-                      style={{ color: tableTextColor }}
+                    <th
+                      className="text-left p-3 border-b-2 font-semibold"
+                      style={{ color: tableTextColor, borderColor: tableTextColor }}
                     >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="px-2 py-1 text-xs font-bold rounded"
-                          style={{
-                            backgroundColor: selectedRoute?.route_color ? `#${selectedRoute.route_color}` : '#0074D9',
-                            color: selectedRoute?.route_text_color ? `#${selectedRoute.route_text_color}` : '#FFFFFF',
-                          }}
-                        >
-                          {selectedRoute?.route_short_name || 'Route'}
-                        </span>
-                        <span className="text-sm">{trip.headsign}</span>
-                      </div>
-                    </td>
+                      Trip
+                    </th>
                   )}
-                  {displayStops.map((stop: any) => {
-                    const departure = trip.stops.get(stop.id);
-                    return (
+                  {displayStops.map((stop: StopInfo) => (
+                    <th
+                      key={stop.id}
+                      className="text-center p-3 border-b-2 font-semibold"
+                      style={{ color: tableTextColor, borderColor: tableTextColor }}
+                    >
+                      {stop.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {trips.slice(0, 10).map((trip: TripData, tripIndex: number) => (
+                  <tr key={trip.tripId} className={tripIndex % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {showTripColumn && (
                       <td
-                        key={stop.id || `stop-${stop.name}`}
-                        className="text-center p-3 border-b"
+                        className="p-3 border-b font-medium"
                         style={{ color: tableTextColor }}
                       >
-                        {departure ? formatTimetableTime(departure.departTime) : '-'}
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="px-2 py-1 text-xs font-bold rounded"
+                            style={{
+                              backgroundColor: selectedRoute?.route_color ? `#${selectedRoute.route_color}` : '#0074D9',
+                              color: selectedRoute?.route_text_color ? `#${selectedRoute.route_text_color}` : '#FFFFFF',
+                            }}
+                          >
+                            {selectedRoute?.route_short_name || 'Route'}
+                          </span>
+                          <span className="text-sm">{trip.headsign}</span>
+                        </div>
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    )}
+                    {displayStops.map((stop: StopInfo) => {
+                      const departure = trip.stops.get(stop.id);
+                      return (
+                        <td
+                          key={stop.id || `stop-${stop.name}`}
+                          className="text-center p-3 border-b"
+                          style={{ color: tableTextColor }}
+                        >
+                          {departure ? formatTime12Hour(departure.departTime) : '-'}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-        {stops.length > 5 && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-            <p className="text-yellow-800 text-sm">
-              ⚠️ Showing first 5 stops only. Timetable view works best with fewer stops.
-            </p>
+            {stops.length > 5 && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-yellow-800 text-sm">
+                  ⚠️ Showing first 5 stops only. Timetable view works best with fewer stops.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -459,18 +487,13 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   return (
     <div
       className="h-full flex flex-col relative"
-      style={{ backgroundColor }}
+      style={{
+        backgroundColor: !bgImage ? backgroundColor : undefined,
+        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
-      {bgImage && (
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url(${bgImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-      )}
 
       {/* Header */}
       <div className="p-4 relative z-10">

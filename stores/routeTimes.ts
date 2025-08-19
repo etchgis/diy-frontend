@@ -41,6 +41,8 @@ interface RouteTimesSlide {
   routeData: RouteScheduleData[];
   patternData?: any;
   isLoading: boolean;
+  isShowingNextDay?: boolean;
+  isShowingLaterToday?: boolean;
 }
 
 interface RouteTimesStore {
@@ -56,7 +58,7 @@ interface RouteTimesStore {
   setTableColor: (slideId: string, color: string) => void;
   setTableTextColor: (slideId: string, color: string) => void;
   setBgImage: (slideId: string, image: string) => void;
-  setRouteData: (slideId: string, data: RouteScheduleData[]) => void;
+  setRouteData: (slideId: string, data: RouteScheduleData[], isNextDay?: boolean, isLaterToday?: boolean) => void;
   setPatternData: (slideId: string, data: any) => void;
   setIsLoading: (slideId: string, loading: boolean) => void;
   clearSlide: (slideId: string) => void;
@@ -75,6 +77,8 @@ const getDefaultSlide = (): RouteTimesSlide => ({
   routeData: [],
   patternData: undefined,
   isLoading: false,
+  isShowingNextDay: false,
+  isShowingLaterToday: false,
 });
 
 export const useRouteTimesStore = create<RouteTimesStore>()(
@@ -192,7 +196,7 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
           },
         })),
 
-      setRouteData: (slideId, data) =>
+      setRouteData: (slideId, data, isNextDay = false, isLaterToday = false) =>
         set((state) => ({
           slides: {
             ...state.slides,
@@ -200,6 +204,8 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
               ...getDefaultSlide(),
               ...state.slides[slideId],
               routeData: data,
+              isShowingNextDay: isNextDay && !isLaterToday,
+              isShowingLaterToday: isLaterToday,
             },
           },
         })),
@@ -230,7 +236,9 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
 
       clearSlide: (slideId) =>
         set((state) => {
-          const { [slideId]: _, ...remainingSlides } = state.slides;
+          const remainingSlides = Object.fromEntries(
+            Object.entries(state.slides).filter(([key]) => key !== slideId)
+          );
           return { slides: remainingSlides };
         }),
     }),
