@@ -21,7 +21,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const description = slideData?.description || '';
   const selectedRoute = slideData?.selectedRoute;
   const viewMode = slideData?.viewMode || 'map';
-  const routeData = slideData?.routeData || [];
+  const routeData: any = slideData?.routeData || [];
   const patternData = slideData?.patternData;
   const isLoading = slideData?.isLoading || false;
   const isShowingNextDay = slideData?.isShowingNextDay || false;
