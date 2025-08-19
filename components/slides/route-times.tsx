@@ -153,14 +153,20 @@ export default function RouteTimesSlide({
       if (specificRoute && specificRoute.patterns && specificRoute.patterns.length > 0) {
         const combinedPatternData = processRoutePatterns(specificRoute.patterns);
         if (combinedPatternData) {
+          const hadPatternDataBefore = !!slideData?.patternData;
+
           setPatternData(slideId, combinedPatternData);
 
-          // Auto-select view mode based on stop count
-          const stopCount = combinedPatternData.stops.length;
-          if (stopCount <= 5) {
-            setViewMode(slideId, 'timetable');
-          } else {
-            setViewMode(slideId, 'map');
+          // Only auto-select view mode if this is truly a new route selection
+          // (no previous pattern data AND no explicit view mode set)
+          if (!hadPatternDataBefore) {
+            // Auto-select view mode based on stop count
+            const stopCount = combinedPatternData.stops.length;
+            if (stopCount <= 5) {
+              setViewMode(slideId, 'timetable');
+            } else {
+              setViewMode(slideId, 'map');
+            }
           }
         }
       }
