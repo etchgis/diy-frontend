@@ -73,7 +73,7 @@ export default function Template3Preview({ slideId, previewMode }: { slideId: st
                 className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
               />
             ) : (
-              <div className="w-full bg-transparent text-4xl font-light">
+              <div className="w-full bg-transparent text-[60px] font-light">
                 {title || ''}
               </div>
             )}

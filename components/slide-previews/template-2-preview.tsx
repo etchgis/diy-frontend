@@ -74,7 +74,7 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
               className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
             />
           ) : (
-            <div className="w-full bg-transparent text-4xl font-light">
+            <div className="w-full bg-transparent text-[60px] font-light">
               {title || ''}
             </div>
           )}
@@ -129,7 +129,7 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
                 className="w-full h-full bg-transparent outline-none resize-none text-2xl font-light placeholder-white/50"
               />
             ) : (
-              <div className="w-full h-full bg-transparent text-2xl font-light whitespace-pre-wrap">
+              <div className="w-full h-full bg-transparent text-[38px] font-light whitespace-pre-wrap">
                 {content || ''}
               </div>
             )}

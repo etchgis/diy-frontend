@@ -96,7 +96,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       // Create new map
       const map = new mapboxgl.Map({
         container: mapContainer,
-        style: 'mapbox://styles/mapbox/light-v11',
+        style: 'mapbox://styles/mapbox/streets-v12',
         center: initialCenter,
         zoom: initialZoom,
         attributionControl: false,

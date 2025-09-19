@@ -188,7 +188,7 @@ export default function LandingPage() {
 
                 <div className="space-y-6">
                   <div>
-                    <p className="text-white mb-4">1. Set an initial central location for the screens</p>
+                    <p className="text-white mb-4">1. Set an initial central location for the screens (i.e. worksite/company/property name)</p>
                     <div className="flex gap-3">
                       <div className="flex-1 relative">
                         <Input
