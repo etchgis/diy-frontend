@@ -110,10 +110,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   
     for (const slide of transitSlides) {
       const destinations = allSlidesState[slide.id]?.destinations || [];
+      const currentDestinationData = allSlidesState[slide.id]?.destinationData || [];
       console.log(destinations);
   
       try {
-        await getDestinationData(destinations, slide.id, setDestinationData, setDataError);
+        await getDestinationData(destinations, slide.id, setDestinationData, setDataError, currentDestinationData);
       } catch (error) {
         console.error(`Failed to fetch data for slide ID ${slide.id}:`, error);
       }

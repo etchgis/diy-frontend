@@ -133,7 +133,9 @@ export default function EditorPage() {
       console.log(destinations);
 
       try {
-        await getDestinationData(destinations, slide.id, setDestinationData, setDataError);
+        setLoading(slide.id, true);
+        const currentDestinationData = allSlidesState[slide.id]?.destinationData || [];
+        await getDestinationData(destinations, slide.id, setDestinationData, setDataError, currentDestinationData);
       } finally {
         setLoading(slide.id, false);
       }

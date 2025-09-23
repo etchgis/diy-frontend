@@ -1,5 +1,3 @@
-import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData";
-import { getDestinationData } from "@/services/data-gathering/getDestinationData";
 import { useGeneralStore } from "@/stores/general";
 import { useTransitDestinationsStore } from "@/stores/transitDestinations";
 import { formatDuration, formatTime } from "@/utils/formats";
@@ -19,14 +17,10 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
 
   const mockDestinations: any = [];
   const destinationData = useTransitDestinationsStore((state) => state.slides[slideId]?.destinationData || mockDestinations);
-  const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
-
-  const coordinates = useGeneralStore((state) => state.coordinates || null);
-
-  const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
 
   // Always show exactly 6 rows total
   const totalRows = 6;
+
 
   const destinationTags = [
     "Albany International Airport",
@@ -152,94 +146,79 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
         ) : (
           // Render actual destinations if no dataError
           <>
-            {destinationData && destinationData.map((dest: any, index: number) => (
-              <div
-                key={index}
-                className={`flex-1 grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr]' : 'grid-cols-[1.5fr_2fr_1fr_1fr_1fr]'} ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
-                style={{
-                  backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
-                  color: index % 2 === 0 ? tableTextColor : alternateRowTextColor,
-                }}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <span>{dest.name}</span>
-                </div>
-                <div className={`flex items-center gap-1 overflow-hidden ${dest.legs.filter((l: any) => !(l.mode === 'WALK' && l.duration <= 240)).length > 3 ? 'flex-wrap py-1' : ''}`}>
-                  {dest.legs.map((leg: any, legIndex: number) => {
-                    if (leg.mode === 'WALK' && leg.duration <= 240) {
-                      return null;
-                    }
+            {destinationData && destinationData.map((dest: any, index: number) => {
+              // Sanitize values with a dash if nothing exists
+              const name = dest.name || '-';
+              const route = dest.route || '-';
+              const departure = dest.departure || '-';
+              const arrival = dest.arrival || '-';
+              const travel = dest.travel || '-';
+              const legs = dest.legs && dest.legs.length > 0 ? dest.legs : [];
 
-                    const visibleLegs = dest.legs.filter((l: any) => !(l.mode === 'WALK' && l.duration <= 240));
-                    const hasMany = visibleLegs.length > 3;
-                    const currentVisibleIndex = visibleLegs.findIndex((l: any) => l === leg);
-                    const isLastVisibleLeg = currentVisibleIndex === visibleLegs.length - 1;
+              return (
+                <div
+                  key={index}
+                  className={`flex-1 grid ${mobileMode ? 'grid-cols-[1fr_1.5fr_1fr_1fr_1fr]' : 'grid-cols-[1.5fr_2fr_1fr_1fr_1fr]'} ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
+                  style={{
+                    backgroundColor: index % 2 === 0 ? rowColor : alternateRowColor,
+                    color: index % 2 === 0 ? tableTextColor : alternateRowTextColor,
+                  }}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span>{name}</span>
+                  </div>
+                  <div className={`flex items-center gap-1 overflow-hidden ${legs.filter((l: any) => !(l.mode === 'WALK' && l.duration <= 240)).length > 3 ? 'flex-wrap py-1' : ''}`}>
+                    {legs.map((leg: any, legIndex: number) => {
+                      if (leg.mode === 'WALK' && leg.duration <= 240) return null;
 
-                    return (
-                      <div className="flex items-center gap-1" key={legIndex}>
-                        <div className={hasMany ? "all-leg-content" : "all-leg-content"}>
-                          <div className={hasMany ? "flex flex-col items-center gap-0.5" : "flex items-center gap-1"}>
-                            {/* Leg icon */}
-                            {leg.mode === 'WALK' ? (
-                              <img
-                                className="leg-icon"
-                                src="/images/walking-man.png"
-                                style={getIconSizeForManyLegs(hasMany)}
-                                alt=""
-                              />
-                            ) : (
-                              <div className="bus-leg flex items-center gap-0.5">
-                                <img
-                                  className="leg-icon"
-                                  src="/images/bus-icon.png"
-                                  style={getIconSizeForManyLegs(hasMany)}
-                                  alt=""
-                                />
-                                <div
-                                  className={`bus-info rounded ${getBusPadding(hasMany)}`}
-                                  style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }}
-                                >
-                                  <p
-                                    className={`${getBusTextSize(hasMany)} leading-tight text-center`}
-                                    style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'black' }}
-                                  >
-                                    {leg.routeShortName?.length > 5
-                                      ? `${leg.agencyId || "N/A"} ${leg.routeShortName.match(/\d+/)?.[0] || ""}`
-                                      : leg.routeShortName || leg.tripShortName || "N/A"}
-                                  </p>
+                      const visibleLegs = legs.filter((l: any) => !(l.mode === 'WALK' && l.duration <= 240));
+                      const hasMany = visibleLegs.length > 3;
+                      const currentVisibleIndex = visibleLegs.findIndex((l: any) => l === leg);
+                      const isLastVisibleLeg = currentVisibleIndex === visibleLegs.length - 1;
+
+                      return (
+                        <div className="flex items-center gap-1" key={legIndex}>
+                          <div className={hasMany ? "all-leg-content" : "all-leg-content"}>
+                            <div className={hasMany ? "flex flex-col items-center gap-0.5" : "flex items-center gap-1"}>
+                              {leg.mode === 'WALK' ? (
+                                <img className="leg-icon" src="/images/walking-man.png" style={getIconSizeForManyLegs(hasMany)} alt="" />
+                              ) : (
+                                <div className="bus-leg flex items-center gap-0.5">
+                                  <img className="leg-icon" src="/images/bus-icon.png" style={getIconSizeForManyLegs(hasMany)} alt="" />
+                                  <div className={`bus-info rounded ${getBusPadding(hasMany)}`} style={{ backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white' }}>
+                                    <p className={`${getBusTextSize(hasMany)} leading-tight text-center`} style={{ color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'black' }}>
+                                      {leg.routeShortName?.length > 5 ? `${leg.agencyId || "N/A"} ${leg.routeShortName.match(/\d+/)?.[0] || ""}` : leg.routeShortName || leg.tripShortName || "N/A"}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
+                            <p className={`leg-duration mt-2 ${leg.mode === 'WALK' ? 'walk-duration' : ''} ${getDurationTextSize(hasMany)} leading-tight`}>
+                              {leg.duration ? formatDuration(leg.duration) : '-'}
+                            </p>
                           </div>
-
-                          {/* Duration below icons */}
-                          <p className={`leg-duration mt-2 ${leg.mode === 'WALK' ? 'walk-duration' : ''} ${getDurationTextSize(hasMany)} leading-tight`}>
-                            {formatDuration(leg.duration)}
-                          </p>
+                          {!isLastVisibleLeg && (
+                            <img
+                              src="/images/right-arrow.png"
+                              alt=""
+                              className="arrow-icon flex-shrink-0"
+                              style={{
+                                ...getArrowSize(hasMany),
+                                marginLeft: getArrowMargin(hasMany),
+                                display: mobileMode && hasMany ? 'none' : 'block'
+                              }}
+                            />
+                          )}
                         </div>
-
-                        {/* Arrow icon if not last visible leg */}
-                        {!isLastVisibleLeg && (
-                          <img
-                            src="/images/right-arrow.png"
-                            alt=""
-                            className="arrow-icon flex-shrink-0"
-                            style={{
-                              ...getArrowSize(hasMany),
-                              marginLeft: getArrowMargin(hasMany),
-                              display: mobileMode && hasMany ? 'none' : 'block'
-                            }}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                  <div className="truncate">{departure}</div>
+                  <div className="truncate">{arrival}</div>
+                  <div>{travel}</div>
                 </div>
-                <div className="truncate">{dest.departure}</div>
-                <div className="truncate">{dest.arrival}</div>
-                <div>{dest.travel}</div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Add empty rows to fill remaining space */}
             {Array.from({ length: Math.max(0, totalRows - destinationData.length) }).map((_, index) => (

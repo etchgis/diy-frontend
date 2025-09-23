@@ -139,26 +139,39 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
     try {
       setIsLoading(slideId, true);
       const result = await fetchTransitData(origin, destination);
+
       const enrichedRoute = {
         name: newDestination.name,
-        route: result.route || "N/A",
-        departure: formatTime(result.startTime),
-        arrival: formatTime(result.endTime),
-        travel: formatDuration(result.duration),
-        legs: result.legs,
+        route: result.route || null,
+        departure: result.startTime ? formatTime(result.startTime) : null,
+        arrival: result.endTime ? formatTime(result.endTime) : null,
+        travel: result.duration ? formatDuration(result.duration) : null,
+        legs: result.legs || null,
         coordinates: newDestination.coordinates,
       };
 
-      setQuery('');
-
       setRoutes(slideId, [...routes, enrichedRoute]);
-      setIsLoading(slideId, false);
     } catch (error: any) {
+      // If fetch fails, still add fallback route
+      const fallbackRoute = {
+        name: newDestination.name,
+        route: null,
+        departure: null,
+        arrival: null,
+        travel: null,
+        legs: null,
+        coordinates: newDestination.coordinates,
+      };
+
+      setRoutes(slideId, [...routes, fallbackRoute]);
+
       setErrorMessage(slideId, error.message || 'Failed to fetch route data');
-      setIsLoading(slideId, false);
       setTimeout(() => {
         setErrorMessage(slideId, '');
       }, 5000);
+    } finally {
+      setQuery('');
+      setIsLoading(slideId, false);
     }
   };
 
@@ -227,7 +240,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
                           onClick={() => handleSelect(feature)}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black text-sm"
                         >
-                       {feature.place_name || feature.properties.name + ', ' + feature.properties.full_address}
+                          {feature.place_name || feature.properties.name + ', ' + feature.properties.full_address}
                         </li>
                       ))}
                     </ul>

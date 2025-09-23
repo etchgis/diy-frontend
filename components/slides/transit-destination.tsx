@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
-import { getDestinationData } from "@/services/data-gathering/getDestinationData"
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -172,7 +171,6 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       return;
     }
     try {
-
       setLoading(slideId, true);
 
       const newDestination = {
@@ -193,6 +191,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
 
       const result = await fetchTransitData(origin, destination);
+
       const enrichedDestination = {
         name: newDestination.name,
         route: result.route && result.route.length > 5 ? result.agencyId || "N/A" : result.route || "N/A",
@@ -203,16 +202,34 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
         coordinates: newDestination.coordinates,
         dark: updatedDestinations.length % 2 === 0,
       };
+
       const updatedDestinationData = [...destinationData, enrichedDestination];
       setDestinations(slideId, updatedDestinations);
       setDestinationData(slideId, updatedDestinationData);
-
     } catch (error: any) {
+      // Always add a fallback destination
+      const fallbackDestination = {
+        name: displayName || query,
+        route: null,
+        departure: null,
+        arrival: null,
+        travel: null,
+        legs: null,
+        coordinates: {
+          lat: selectedFeature.geometry.coordinates[1],
+          lng: selectedFeature.geometry.coordinates[0],
+        },
+        dark: (destinations.length + 1) % 2 === 0,
+      };
+
+      setDestinations(slideId, [...destinations, { name: fallbackDestination.name, coordinates: fallbackDestination.coordinates }]);
+      setDestinationData(slideId, [...destinationData, fallbackDestination]);
 
       setErrorMessage(slideId, "Destination out of range or no data available");
-      setTimeout(() => { setErrorMessage(slideId, "") }, 5000);
+      setTimeout(() => {
+        setErrorMessage(slideId, "");
+      }, 5000);
     }
-
 
     setLoading(slideId, false);
   };
