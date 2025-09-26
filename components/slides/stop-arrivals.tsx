@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { HelpCircle, ChevronRight, Plus } from 'lucide-react';
+import { HelpCircle, ChevronRight, Plus, ExternalLink, MapPin } from 'lucide-react';
 import FixedRoutePreview from '../slide-previews/fixed-route-preview';
 import { useEffect, useRef, useState } from 'react';
 import { useFixedRouteStore } from '../../stores/fixedRoute';
@@ -358,6 +358,37 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                 </div>
 
               </div>
+
+              {selectedStop && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <h4 className="font-medium text-[#4a5568] text-sm">Selected Stop</h4>
+                      </div>
+                      <p className="text-sm text-[#606061] mb-1">{selectedStop.stop_name}</p>
+                      <p className="text-xs text-[#718096]">
+                        {selectedStop.services[0]?.agency_name || 'No Agency'}
+                      </p>
+                      {selectedStop.distance !== undefined && (
+                        <p className="text-xs text-[#718096] mt-1">
+                          Distance: {formatDistance(selectedStop.distance)}
+                        </p>
+                      )}
+                    </div>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${selectedStop.stop_lat},${selectedStop.stop_lon}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-colors whitespace-nowrap flex-shrink-0"
+                    >
+                      View on Map
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-[#4a5568] font-medium mb-2">Sub Description</label>
