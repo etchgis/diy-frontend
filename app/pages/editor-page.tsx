@@ -365,7 +365,7 @@ export default function EditorPage() {
               <SelectContent>
                 <SelectItem value="transit-routes">
                   <div className="flex items-center gap-2 text-xs">
-                    Transit Route Map Page
+                    Transit Route Destination Map Page
                   </div>
                 </SelectItem>
                 <SelectItem value="transit-destinations">

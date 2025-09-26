@@ -198,7 +198,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
             <div className="flex items-center gap-2 text-[#4a5568] mb-4">
               <span>Home</span>
               <ChevronRight className="w-4 h-4" />
-              <span className="font-medium">Transit Route Map Page Template</span>
+              <span className="font-medium">Transit Route Destination Map Page</span>
             </div>
             <p className="text-[#606061] mb-6">Input the destinations that you would like for the map to show.</p>
 
