@@ -9,6 +9,8 @@ import { useEffect, useRef, useState } from "react"
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
 
+const MAX_DESTINATIONS = 6;
+
 export default function TransitRoutesSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -198,7 +200,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
             <div className="flex items-center gap-2 text-[#4a5568] mb-4">
               <span>Home</span>
               <ChevronRight className="w-4 h-4" />
-              <span className="font-medium">Transit Route Map Page Template</span>
+              <span className="font-medium">Transit Route Destination Map Page</span>
             </div>
             <p className="text-[#606061] mb-6">Input the destinations that you would like for the map to show.</p>
 
@@ -207,12 +209,20 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
             <div className="mb-6">
               <div className="flex items-center mb-1">
                 <label className="block text-[#4a5568] font-medium mb-2">Add Destination</label>
+                <span className="text-xs text-[#718096] ml-2 mb-2">
+                  ({routes.length}/{MAX_DESTINATIONS} destinations)
+                </span>
                 {errorMessage && (
                   <div className="mb-2 text-red-500 text-sm flex items-center ml-9">
                     {errorMessage}
                   </div>
                 )}
               </div>
+              {routes.length >= MAX_DESTINATIONS && (
+                <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
+                  Maximum of {MAX_DESTINATIONS} destinations reached. Remove a destination to add another.
+                </div>
+              )}
               <div className="flex w-full gap-2">
                 <div className="relative flex-1 min-w-0">
                   <img
@@ -261,6 +271,7 @@ export default function TransitRoutesSlide({ slideId, handleDelete, handlePrevie
                     size="icon"
                     className="border-[#cbd5e0] bg-transparent"
                     onClick={handleCreate}
+                    disabled={routes.length >= MAX_DESTINATIONS}
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
