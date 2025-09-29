@@ -304,8 +304,7 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
             </div>
 
             <p className="text-[#606061] mb-6">
-              Input the single fixed route stop that you would like for the table to show
-            </p>
+            This table displays a single stop with the various routes that pass through this stop. Input the single fixed route stop that you would like for the table to show.             </p>
 
             {/* Fixed Route Stop Input */}
 

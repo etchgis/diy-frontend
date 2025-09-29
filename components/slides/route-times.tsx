@@ -233,7 +233,7 @@ export default function RouteTimesSlide({
             </div>
 
             <p className="text-[#606061] mb-6">
-              Select a route to display stop times and route information
+            This template can only accommodate a single route for both the map and list view. The list view displays the closets routes by proximity. Select a route to display stop times and route information. 
             </p>
 
             {/* Route Selection */}
