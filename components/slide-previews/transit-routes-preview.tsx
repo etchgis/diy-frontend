@@ -68,7 +68,7 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/mapbox/streets-v12',
       center: [coordinates.lng, coordinates.lat],
       zoom: 10,
       attributionControl: false,
