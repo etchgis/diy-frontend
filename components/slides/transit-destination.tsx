@@ -227,7 +227,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       setDestinations(slideId, [...destinations, { name: fallbackDestination.name, coordinates: fallbackDestination.coordinates }]);
       setDestinationData(slideId, [...destinationData, fallbackDestination]);
 
-      setErrorMessage(slideId, "Destination out of range or no data available");
+      setErrorMessage(slideId, "There is currently no good trip for this destination.");
       setTimeout(() => {
         setErrorMessage(slideId, "");
       }, 5000);

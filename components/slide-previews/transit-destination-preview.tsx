@@ -168,7 +168,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
                     <span>{name}</span>
                   </div>
                   <div className={`flex items-center gap-1 overflow-hidden ${legs.filter((l: any) => !(l.mode === 'WALK' && l.duration <= 240)).length > 3 ? 'flex-wrap py-1' : ''}`}>
-                    {legs.map((leg: any, legIndex: number) => {
+                    {legs && legs.length > 0 ? legs.map((leg: any, legIndex: number) => {
                       if (leg.mode === 'WALK' && leg.duration <= 240) return null;
 
                       const visibleLegs = legs.filter((l: any) => !(l.mode === 'WALK' && l.duration <= 240));
@@ -211,7 +211,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
                           )}
                         </div>
                       );
-                    })}
+                    }): 'No trasnit option available'}
                   </div>
                   <div className="truncate">{departure}</div>
                   <div className="truncate">{arrival}</div>

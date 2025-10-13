@@ -27,7 +27,7 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
 
     const allData: any = [];
     if (!data || !data.plan ) {
-      throw new Error("Destination out of range or no data available");
+      throw new Error("There is currently no good trip for this destination.");
     }
     data.plan.itineraries.forEach((result: any) => {
       allData.push(result);
