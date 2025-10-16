@@ -112,7 +112,7 @@ export default function TransitRoutesPreview({
         compact: true,
         customAttribution: "© Mapbox © OpenStreetMap",
       }),
-      "bottom-right"
+      "top-right"
     );
 
     // Set up ResizeObserver
@@ -444,10 +444,28 @@ export default function TransitRoutesPreview({
           }}
         />
 
-        {/* Legend - positioned in top-left corner with conditional sizing */}
+        {/* Error message overlay */}
+        {dataError && (
+          <div className="absolute top-4 left-4 z-30">
+            <div className="p-3 bg-white rounded-lg shadow-lg border border-yellow-200">
+              <p className="text-yellow-600 text-sm">
+                ⚠️ Transit route data currently not available. Times are not
+                accurate.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Legend */}
         {routes && routes.length > 0 && (
-          <div className="absolute top-4 left-4 z-20">
-            <div className={`bg-white rounded-lg shadow-lg ${isEditor ? 'p-3 max-w-[250px]' : 'p-4 max-w-[300px]'}`}>
+          <div className="absolute bottom-4 right-4 z-20">
+            <div 
+              className={`bg-white rounded-lg shadow-lg ${isEditor ? 'p-3 max-w-[250px]' : 'p-4 max-w-[300px]'}`}
+              style={{ 
+                maxHeight: 'calc(100vh - 120px)',
+                overflowY: 'auto'
+              }}
+            >
               <h3 className={`font-bold mb-2 text-gray-700 ${isEditor ? 'text-sm' : 'text-base'}`}>Routes</h3>
               <div className={isEditor ? 'space-y-2' : 'space-y-2.5'}>
                 {routes.map((route: any, index: number) => {
@@ -469,18 +487,6 @@ export default function TransitRoutesPreview({
                   );
                 })}
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Error message overlay - positioned in top-left corner */}
-        {dataError && (
-          <div className="absolute top-4 left-4 z-20">
-            <div className="p-3 bg-white rounded-lg shadow-lg border border-yellow-200">
-              <p className="text-yellow-600 text-sm">
-                ⚠️ Transit route data currently not available. Times are not
-                accurate.
-              </p>
             </div>
           </div>
         )}
