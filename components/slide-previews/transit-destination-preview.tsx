@@ -211,7 +211,7 @@ export default function TransitDestinationPreview({ slideId, mobileMode = false 
                           )}
                         </div>
                       );
-                    }): 'No trasnit option available'}
+                    }): 'No transit option available'}
                   </div>
                   <div className="truncate">{departure}</div>
                   <div className="truncate">{arrival}</div>
