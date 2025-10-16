@@ -85,13 +85,12 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
     }
 
 
-    // Add custom attribution control
     mapRef.current.addControl(
       new mapboxgl.AttributionControl({
         compact: true,
         customAttribution: '© Mapbox © OpenStreetMap'
       }),
-      'top-right'
+      'bottom-right'
     );
 
     // Set up ResizeObserver
@@ -121,7 +120,6 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
     // Set map loaded flag
     mapRef.current.on('load', () => {
       isMapLoadedRef.current = true;
-
     });
 
     return () => {
@@ -147,7 +145,6 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
     if (!mapRef.current) return;
 
     // Clear markers
-
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
@@ -178,8 +175,6 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
   const addRoutesToMap = () => {
     if (!mapRef.current || !routes || routes.length === 0) return;
 
-
-
     try {
       // Add origin marker first (always visible)
       const originMarkerEl = document.createElement('div');
@@ -194,8 +189,6 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
         z-index: 1;
       `;
 
-
-
       const originMarker = new mapboxgl.Marker({
         element: originMarkerEl,
         anchor: 'center'
@@ -205,9 +198,7 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
       markersRef.current.push(originMarker);
 
-
       routes.forEach((route: any, routeIndex: number) => {
-
         const routeColor = routeColors[routeIndex % routeColors.length];
 
         // Process each leg of the route
@@ -255,17 +246,10 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
           const lastLeg = route.legs[route.legs.length - 1];
           const endPoint = lastLeg.to;
 
-
-
-
           if (endPoint?.lon && endPoint?.lat && route.travel) {
-
-
             // Validate coordinates
             const isValidLng = endPoint.lon >= -180 && endPoint.lon <= 180;
             const isValidLat = endPoint.lat >= -90 && endPoint.lat <= 90;
-
-
 
             if (!isValidLng || !isValidLat) {
               console.error('Invalid coordinates for banner:', endPoint);
@@ -318,22 +302,10 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
               `;
             }
 
-
-
             try {
-              // Debug: Log coordinates being used
-              console.log('Creating marker with coordinates:', {
-                lon: endPoint.lon,
-                lat: endPoint.lat,
-                type: typeof endPoint.lon,
-                typelat: typeof endPoint.lat
-              });
-
               // Ensure coordinates are numbers
               const markerLng = Number(endPoint.lon);
               const markerLat = Number(endPoint.lat);
-
-
 
               // Double check coordinates are valid numbers
               if (isNaN(markerLng) || isNaN(markerLat)) {
@@ -349,32 +321,10 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
                 .setLngLat([markerLng, markerLat])
                 .addTo(mapRef.current!);
 
-
               markersRef.current.push(marker);
-
-              // Debug: Check if marker is properly attached to map
-              setTimeout(() => {
-                const markerElement = marker.getElement();
-                const computedStyle = window.getComputedStyle(markerElement);
-                console.log('Marker DOM element styles:', {
-                  position: computedStyle.position,
-                  transform: computedStyle.transform,
-                  left: computedStyle.left,
-                  top: computedStyle.top,
-                  zIndex: computedStyle.zIndex
-                });
-              }, 100);
-
             } catch (error) {
               console.error('Error adding marker:', error);
             }
-          } else {
-            console.log('Banner not created - missing data:', {
-              hasEndpoint: !!endPoint,
-              hasCoords: !!(endPoint?.lon && endPoint?.lat),
-              hasTravel: !!route.travel,
-              endPointData: endPoint
-            });
           }
         }
       });
@@ -404,9 +354,6 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
           });
         }
       }
-
-
-
     } catch (error) {
       console.error('Error in addRoutesToMap:', error);
     }
@@ -414,17 +361,12 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
   // Update routes when they change
   useEffect(() => {
-
-
     if (!mapRef.current) {
-
       return;
     }
 
     // Function to handle route updates
     const updateRoutes = () => {
-
-
       // Clear existing routes first
       clearExistingRoutes();
 
@@ -436,13 +378,10 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
     // Check if map is loaded and update routes
     if (isMapLoadedRef.current) {
-
       updateRoutes();
     } else {
-
       // If map isn't loaded yet, wait for it
       const handleLoad = () => {
-
         updateRoutes();
         mapRef.current?.off('load', handleLoad);
       };
@@ -450,7 +389,6 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
       mapRef.current?.on('load', handleLoad);
     }
     console.log(routes);
-
   }, [routes, coordinates]); // Depend on both routes and coordinates
 
   // Force resize when component mounts
@@ -477,8 +415,36 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
           }}
         />
 
-         {/* Error message overlay - positioned in top-left corner */}
-         {dataError && (
+        {/* Legend - positioned in top-left corner */}
+        {routes && routes.length > 0 && (
+          <div className="absolute top-4 left-4 z-20">
+            <div className="bg-white rounded-lg shadow-lg p-3 max-w-[250px]">
+              <h3 className="text-sm font-bold mb-2 text-gray-700">Routes</h3>
+              <div className="space-y-2">
+                {routes.map((route: any, index: number) => {
+                  const routeColor = routeColors[index % routeColors.length];
+                  // Get route name - you can customize this based on your route data structure
+                  const routeName = route.name || route.description || `Route ${index + 1}`;
+                  
+                  return (
+                    <div key={index} className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: routeColor }}
+                      />
+                      <span className="text-xs text-gray-700 truncate">
+                        {routeName}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error message overlay - positioned in top-left corner */}
+        {dataError && (
           <div className="absolute top-4 left-4 z-20">
             <div className="p-3 bg-white rounded-lg shadow-lg border border-yellow-200">
               <p className="text-yellow-600 text-sm">
