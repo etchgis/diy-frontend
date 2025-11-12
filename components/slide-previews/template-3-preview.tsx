@@ -16,6 +16,7 @@ export default function Template3Preview({ slideId, previewMode }: { slideId: st
 
   const bgImage = useTemplate3Store((state) => state.slides[slideId]?.bgImage || '');
   const backgroundColor = useTemplate3Store((state) => state.slides[slideId]?.backgroundColor || '#305fff');
+  const textColor = useTemplate3Store((state) => state.slides[slideId]?.textColor || '#ffffff');
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
@@ -48,12 +49,13 @@ export default function Template3Preview({ slideId, previewMode }: { slideId: st
 
   return (
     <div
-      className="w-full h-full flex flex-col justify-between text-white overflow-hidden mb-6 relative"
+      className="w-full h-full flex flex-col justify-between overflow-hidden mb-6 relative"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
         backgroundImage: bgImage ? `url(${bgImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        color: textColor,
       }}
     >
       {/* Main Content Area */}
@@ -71,9 +73,10 @@ export default function Template3Preview({ slideId, previewMode }: { slideId: st
                 onChange={(e) => setTitle(slideId, e.target.value)}
                 placeholder="Type title here"
                 className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
+                style={{ color: textColor }}
               />
             ) : (
-              <div className="w-full bg-transparent text-[60px] font-light">
+              <div className="w-full bg-transparent text-[60px] font-light" style={{ color: textColor }}>
                 {title || ''}
               </div>
             )}
@@ -95,11 +98,11 @@ export default function Template3Preview({ slideId, previewMode }: { slideId: st
                 className="w-full h-full object-contain"
               />
             ) : (
-              <div className="text-center">
+              <div className="text-center" style={{ color: textColor }}>
                 {isEditor && (
                   <>
-                    <div className="text-lg mb-4">Drag and Drop Image Here</div>
-                    <div className="text-sm text-white/80 mb-6">
+                    <div className="text-lg mb-4" style={{ color: textColor }}>Drag and Drop Image Here</div>
+                    <div className="text-sm mb-6" style={{ color: textColor, opacity: 0.8 }}>
                       accepted files: .png, .jpg, .gif
                     </div>
                   </>

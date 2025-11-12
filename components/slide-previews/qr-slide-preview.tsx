@@ -5,6 +5,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || '');
   const url = useQRStore((state) => state.slides[slideId]?.url || '');
   const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
+  const textColor = useQRStore((state) => state.slides[slideId]?.textColor || '#ffffff');
   const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
   const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || '');
 
@@ -15,12 +16,13 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
 
   return (
     <div
-      className="w-full h-full flex flex-col justify-between text-white overflow-hidden mb-6 relative"
+      className="w-full h-full flex flex-col justify-between overflow-hidden mb-6 relative"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
         backgroundImage: bgImage ? `url(${bgImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        color: textColor,
       }}
     >
       {/* QR Code and Text */}
@@ -37,7 +39,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
             )}
           </div>
         </div>
-        <div className="text-lg font-medium text-center">{text}</div>
+        <div className="text-lg font-medium text-center" style={{ color: textColor }}>{text}</div>
       </div>
 
       {/* Footer */}
