@@ -55,7 +55,7 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
 
   return (
     <div
-      className="w-full h-full flex flex-col justify-between rounded-lg overflow-hidden mb-6 relative"
+      className="w-full h-full flex flex-col justify-between overflow-hidden mb-6 relative"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
         backgroundImage: bgImage ? `url(${bgImage})` : undefined,
@@ -65,8 +65,8 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
       }}
     >
       {/* Title Area */}
-      <div className="p-6 border-b border-white/20 flex-shrink-0">
-        <div className={`w-full rounded px-4 py-2 ${isEditor ? 'border-2 border-[#11d1f7]' : ''}`}>
+      <div className="p-3 border-b border-white/20 flex-shrink-0">
+        <div className={`w-full rounded px-4 ${isEditor ? 'border-2 border-[#11d1f7] py-2' : ''}`}>
           {isEditor ? (
             <input
               type="text"
@@ -77,7 +77,7 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
               style={{ color: textColor }}
             />
           ) : (
-            <div className="w-full bg-transparent text-[60px] font-light" style={{ color: textColor }}>
+            <div className="w-full bg-transparent font-light" style={{ color: textColor, fontSize: 'clamp(3.2rem, 11vh, 11rem)' }}>
               {title || ''}
             </div>
           )}
@@ -133,7 +133,7 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
                 style={{ color: textColor }}
               />
             ) : (
-              <div className="w-full h-full bg-transparent text-[38px] font-light whitespace-pre-wrap" style={{ color: textColor }}>
+              <div className="w-full h-full bg-transparent font-light whitespace-pre-wrap" style={{ color: textColor, fontSize: 'clamp(2rem, 6vh, 6rem)' }}>
                 {content || ''}
               </div>
             )}

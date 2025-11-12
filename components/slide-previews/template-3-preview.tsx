@@ -61,9 +61,9 @@ export default function Template3Preview({ slideId, previewMode }: { slideId: st
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Title Area */}
-        <div className="p-6 border-b border-white/20 flex-shrink-0">
+        <div className="p-3 border-b border-white/20 flex-shrink-0">
           <div
-            className={`w-full rounded px-4 py-2 ${isEditor ? 'border-2 border-[#11d1f7]' : ''
+            className={`w-full rounded px-4 ${isEditor ? 'border-2 border-[#11d1f7] py-2' : ''
               }`}
           >
             {isEditor ? (
@@ -76,7 +76,7 @@ export default function Template3Preview({ slideId, previewMode }: { slideId: st
                 style={{ color: textColor }}
               />
             ) : (
-              <div className="w-full bg-transparent text-[60px] font-light" style={{ color: textColor }}>
+              <div className="w-full bg-transparent font-light" style={{ color: textColor, fontSize: 'clamp(3.2rem, 11vh, 11rem)' }}>
                 {title || ''}
               </div>
             )}
