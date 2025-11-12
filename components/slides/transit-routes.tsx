@@ -279,7 +279,7 @@ export default function TransitRoutesSlide({
                   <img
                     src="/images/search-icon.png"
                     alt="Search"
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 z-10"
                   />
                   <Input
                     placeholder="i.e Albany Airport"
@@ -292,6 +292,23 @@ export default function TransitRoutesSlide({
                     }}
                     className="pl-10 bg-white border-[#cbd5e0] text-[#1a202c] w-full"
                   />
+
+                  {suggestions.length > 0 && query.trim().length > 0 && (
+                    <ul className="absolute top-full left-0 z-20 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                      {suggestions.map((feature: any, idx) => (
+                        <li
+                          key={idx}
+                          onClick={() => handleSelect(feature)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black text-sm"
+                        >
+                          {feature.place_name ||
+                            feature.properties.name +
+                              ", " +
+                              feature.properties.full_address}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 {/* Display Name Input */}
@@ -301,23 +318,6 @@ export default function TransitRoutesSlide({
                   onChange={(e) => setDisplayName(slideId, e.target.value)}
                   className="bg-white text-[#1a202c] w-[48%]"
                 />
-
-                {suggestions.length > 0 && (
-                  <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
-                    {suggestions.map((feature: any, idx) => (
-                      <li
-                        key={idx}
-                        onClick={() => handleSelect(feature)}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black text-sm"
-                      >
-                        {feature.place_name ||
-                          feature.properties.name +
-                            ", " +
-                            feature.properties.full_address}
-                      </li>
-                    ))}
-                  </ul>
-                )}
 
                 {isLoading ? (
                   // Spinner (same size as button)

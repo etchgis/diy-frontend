@@ -198,7 +198,6 @@ export default function TransitDestinationPreview({
                 const arrival = dest.arrival || "-";
                 const travel = dest.travel || "-";
                 const legs = dest.legs && dest.legs.length > 0 ? dest.legs : [];
-                console.log(legs);
 
                 return (
                   <div

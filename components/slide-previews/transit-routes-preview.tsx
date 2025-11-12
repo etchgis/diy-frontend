@@ -417,7 +417,6 @@ export default function TransitRoutesPreview({
 
       mapRef.current?.on("load", handleLoad);
     }
-    console.log(routes);
   }, [routes, coordinates]); // Depend on both routes and coordinates
 
   // Force resize when component mounts
