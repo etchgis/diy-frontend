@@ -10,7 +10,7 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
     const time = `${hours % 12 || 12}:${minutes < 10 ? `0${minutes}` : minutes}${hours >= 12 ? 'pm' : 'am'}`;
     const date = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()}`;
 
-    const query = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&mode=TRANSIT,WALK`;
+    const query = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&mode=TRANSIT,WALK,SUBWAY`;
 
     // Query for WALK-only mode
     const walkQuery = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&mode=WALK`;
@@ -26,6 +26,8 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
 
     const data = await response.json();
 
+    console.log(data);
+
     const allData: any = [];
     data.plan.itineraries.forEach((result: any) => {
       allData.push(result);
@@ -39,7 +41,6 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
         const walkData = await walkResponse.json();
         if (walkData?.plan?.itineraries && walkData.plan.itineraries.length > 0) {
           walkItinerary = walkData.plan.itineraries[0];
-          console.log(walkItinerary);
           // Check if duration is under 20 minutes (1200 seconds)
           if (walkItinerary.duration < 1200) {
             allData.push(walkItinerary);
@@ -54,6 +55,7 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
     if ((!data || !data.plan) && !walkItinerary ) {
       throw new Error("There is currently no good trip for this destination.");
     }
+
 
     const formattedData = formatTripData(allData);
 
