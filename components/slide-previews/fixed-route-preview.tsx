@@ -66,7 +66,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
                 }}
               >
-                Stop #10506 arrival times
+                Stop #{selectedStop?.stop_id} arrival times
               </div>
               <h2
                 className="font-bold mb-1 sm:mb-2"
@@ -103,7 +103,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 }}
               >
                 <p className="text-yellow-600 text-sm">
-                  ⚠️ Stop arrival data currently not available. Please check try again later.
+                  ⚠️ Stop arrival data currently not available. Please check again later.
                 </p>
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                                 backgroundColor: `#${item.routeColor}`,
                               }}
                             >
-                              {item.route.split(':')[0]}
+                              {item.routeId}
                             </div>
                             <div className="font-medium min-w-[80px] text-center">{item.time}</div>
                             <div className=" min-w-[80px] text-center">{item.duration}</div>
@@ -180,7 +180,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                                 backgroundColor: `#${item.routeColor}`,
                               }}
                             >
-                              {item.route.split(':')[0]}
+                              {item.routeId}
                             </div>
                             <div
                               className="font-medium text-center"
