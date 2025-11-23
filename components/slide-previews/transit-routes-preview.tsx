@@ -1,9 +1,10 @@
-'use client'
-import { useEffect, useRef } from 'react'
-import mapboxgl from 'mapbox-gl'
-import { useGeneralStore } from '@/stores/general';
-import { useTransitRouteStore } from '@/stores/transitRoutes';
-import 'mapbox-gl/dist/mapbox-gl.css';
+"use client";
+import { useEffect, useRef } from "react";
+import mapboxgl from "mapbox-gl";
+import { useGeneralStore } from "@/stores/general";
+import { useTransitRouteStore } from "@/stores/transitRoutes";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { usePathname } from "next/navigation";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
@@ -15,13 +16,15 @@ const decodePolyline = (encoded: string): [number, number][] => {
   let lng = 0;
 
   while (index < encoded.length) {
-    let b, shift = 0, result = 0;
+    let b,
+      shift = 0,
+      result = 0;
     do {
       b = encoded.charCodeAt(index++) - 63;
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    const dlat = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+    const dlat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
     lat += dlat;
 
     shift = 0;
@@ -31,7 +34,7 @@ const decodePolyline = (encoded: string): [number, number][] => {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    const dlng = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+    const dlng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
     lng += dlng;
 
     points.push([lng / 1e5, lat / 1e5]);
@@ -39,27 +42,47 @@ const decodePolyline = (encoded: string): [number, number][] => {
   return points;
 };
 
-export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId: string, noMapScroll?: boolean }) {
+export default function TransitRoutesPreview({
+  slideId,
+  noMapScroll,
+}: {
+  slideId: string;
+  noMapScroll?: boolean;
+}) {
+  const pathname = usePathname();
+  const isEditor = pathname.includes("/editor");
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const isMapLoadedRef = useRef<boolean>(false);
 
-  const address = useGeneralStore((state) => state.address || '');
+  const address = useGeneralStore((state) => state.address || "");
   const DEFAULT_COORDINATES = { lng: -73.7562, lat: 42.6526 };
   const coordinates = useGeneralStore(
     (state) => state.coordinates ?? DEFAULT_COORDINATES
   );
 
   const mockRoutes: any = [];
-  const routes = useTransitRouteStore((state) => state.slides[slideId]?.routes || mockRoutes);
-  const dataError = useTransitRouteStore((state) => state.slides[slideId]?.dataError || false);
+  const routes = useTransitRouteStore(
+    (state) => state.slides[slideId]?.routes || mockRoutes
+  );
+  const dataError = useTransitRouteStore(
+    (state) => state.slides[slideId]?.dataError || false
+  );
 
   // Route colors for different routes
   const routeColors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F06292', '#AED581', '#FFB74D'
+    "#FF6B6B",
+    "#4ECDC4",
+    "#45B7D1",
+    "#96CEB4",
+    "#FFEAA7",
+    "#DDA0DD",
+    "#98D8C8",
+    "#F06292",
+    "#AED581",
+    "#FFB74D",
   ];
 
   // Initialize map only once
@@ -68,7 +91,7 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: "mapbox://styles/mapbox/streets-v12",
       center: [coordinates.lng, coordinates.lat],
       zoom: 10,
       attributionControl: false,
@@ -84,18 +107,16 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
       mapRef.current.touchZoomRotate.disable();
     }
 
-
-    // Add custom attribution control
     mapRef.current.addControl(
       new mapboxgl.AttributionControl({
         compact: true,
-        customAttribution: '© Mapbox © OpenStreetMap'
+        customAttribution: "© Mapbox © OpenStreetMap",
       }),
-      'top-right'
+      "top-right"
     );
 
     // Set up ResizeObserver
-    if (mapContainerRef.current && 'ResizeObserver' in window) {
+    if (mapContainerRef.current && "ResizeObserver" in window) {
       resizeObserverRef.current = new ResizeObserver((entries) => {
         if (mapRef.current) {
           setTimeout(() => {
@@ -116,19 +137,18 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
       }
     };
 
-    window.addEventListener('resize', handleWindowResize);
+    window.addEventListener("resize", handleWindowResize);
 
     // Set map loaded flag
-    mapRef.current.on('load', () => {
+    mapRef.current.on("load", () => {
       isMapLoadedRef.current = true;
-
     });
 
     return () => {
       resizeObserverRef.current?.disconnect();
-      window.removeEventListener('resize', handleWindowResize);
+      window.removeEventListener("resize", handleWindowResize);
       // Clear all markers before removing map
-      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
@@ -147,15 +167,14 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
     if (!mapRef.current) return;
 
     // Clear markers
-
-    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
     // Clear existing sources and layers
     const style = mapRef.current.getStyle();
     if (style && style.layers) {
       style.layers.forEach((layer: any) => {
-        if (layer.id.startsWith('route-layer-')) {
+        if (layer.id.startsWith("route-layer-")) {
           if (mapRef.current?.getLayer(layer.id)) {
             mapRef.current.removeLayer(layer.id);
           }
@@ -165,7 +184,7 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
     if (style && style.sources) {
       Object.keys(style.sources).forEach((sourceId) => {
-        if (sourceId.startsWith('route-')) {
+        if (sourceId.startsWith("route-")) {
           if (mapRef.current?.getSource(sourceId)) {
             mapRef.current.removeSource(sourceId);
           }
@@ -178,11 +197,9 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
   const addRoutesToMap = () => {
     if (!mapRef.current || !routes || routes.length === 0) return;
 
-
-
     try {
       // Add origin marker first (always visible)
-      const originMarkerEl = document.createElement('div');
+      const originMarkerEl = document.createElement("div");
       originMarkerEl.style.cssText = `
         width: 20px;
         height: 20px;
@@ -194,20 +211,16 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
         z-index: 1;
       `;
 
-
-
       const originMarker = new mapboxgl.Marker({
         element: originMarkerEl,
-        anchor: 'center'
+        anchor: "center",
       })
         .setLngLat([coordinates.lng, coordinates.lat])
         .addTo(mapRef.current!);
 
       markersRef.current.push(originMarker);
 
-
       routes.forEach((route: any, routeIndex: number) => {
-
         const routeColor = routeColors[routeIndex % routeColors.length];
 
         // Process each leg of the route
@@ -221,31 +234,31 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
             // Add source
             mapRef.current?.addSource(sourceId, {
-              type: 'geojson',
+              type: "geojson",
               data: {
-                type: 'Feature',
+                type: "Feature",
                 properties: {},
                 geometry: {
-                  type: 'LineString',
-                  coordinates: routeCoordinates
-                }
-              }
+                  type: "LineString",
+                  coordinates: routeCoordinates,
+                },
+              },
             });
 
             // Add route layer
             mapRef.current?.addLayer({
               id: layerId,
-              type: 'line',
+              type: "line",
               source: sourceId,
               layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
+                "line-join": "round",
+                "line-cap": "round",
               },
               paint: {
-                'line-color': routeColor,
-                'line-width': 4,
-                'line-opacity': 0.8
-              }
+                "line-color": routeColor,
+                "line-width": 4,
+                "line-opacity": 0.8,
+              },
             });
           }
         });
@@ -255,26 +268,19 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
           const lastLeg = route.legs[route.legs.length - 1];
           const endPoint = lastLeg.to;
 
-
-
-
           if (endPoint?.lon && endPoint?.lat && route.travel) {
-
-
             // Validate coordinates
             const isValidLng = endPoint.lon >= -180 && endPoint.lon <= 180;
             const isValidLat = endPoint.lat >= -90 && endPoint.lat <= 90;
 
-
-
             if (!isValidLng || !isValidLat) {
-              console.error('Invalid coordinates for banner:', endPoint);
+              console.error("Invalid coordinates for banner:", endPoint);
               return;
             }
 
             // Create duration banner element with location pin style
-            const bannerEl = document.createElement('div');
-            bannerEl.className = 'route-duration-banner';
+            const bannerEl = document.createElement("div");
+            bannerEl.className = "route-duration-banner";
             bannerEl.innerHTML = `
               <div class="pin-content">${route.travel}</div>
               <div class="pin-point"></div>
@@ -288,7 +294,9 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
             `;
 
             // Style the content area
-            const pinContent = bannerEl.querySelector('.pin-content') as HTMLElement;
+            const pinContent = bannerEl.querySelector(
+              ".pin-content"
+            ) as HTMLElement;
             if (pinContent) {
               pinContent.style.cssText = `
                 background: ${routeColor};
@@ -306,7 +314,9 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
             }
 
             // Style the pin point
-            const pinPoint = bannerEl.querySelector('.pin-point') as HTMLElement;
+            const pinPoint = bannerEl.querySelector(
+              ".pin-point"
+            ) as HTMLElement;
             if (pinPoint) {
               pinPoint.style.cssText = `
                 width: 0;
@@ -318,63 +328,32 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
               `;
             }
 
-
-
             try {
-              // Debug: Log coordinates being used
-              console.log('Creating marker with coordinates:', {
-                lon: endPoint.lon,
-                lat: endPoint.lat,
-                type: typeof endPoint.lon,
-                typelat: typeof endPoint.lat
-              });
-
               // Ensure coordinates are numbers
               const markerLng = Number(endPoint.lon);
               const markerLat = Number(endPoint.lat);
 
-
-
               // Double check coordinates are valid numbers
               if (isNaN(markerLng) || isNaN(markerLat)) {
-                console.error('Invalid coordinate numbers:', { markerLng, markerLat });
+                console.error("Invalid coordinate numbers:", {
+                  markerLng,
+                  markerLat,
+                });
                 return;
               }
 
               // Create marker with explicit coordinate conversion
               const marker = new mapboxgl.Marker({
                 element: bannerEl,
-                anchor: 'bottom'
+                anchor: "bottom",
               })
                 .setLngLat([markerLng, markerLat])
                 .addTo(mapRef.current!);
 
-
               markersRef.current.push(marker);
-
-              // Debug: Check if marker is properly attached to map
-              setTimeout(() => {
-                const markerElement = marker.getElement();
-                const computedStyle = window.getComputedStyle(markerElement);
-                console.log('Marker DOM element styles:', {
-                  position: computedStyle.position,
-                  transform: computedStyle.transform,
-                  left: computedStyle.left,
-                  top: computedStyle.top,
-                  zIndex: computedStyle.zIndex
-                });
-              }, 100);
-
             } catch (error) {
-              console.error('Error adding marker:', error);
+              console.error("Error adding marker:", error);
             }
-          } else {
-            console.log('Banner not created - missing data:', {
-              hasEndpoint: !!endPoint,
-              hasCoords: !!(endPoint?.lon && endPoint?.lat),
-              hasTravel: !!route.travel,
-              endPointData: endPoint
-            });
           }
         }
       });
@@ -400,31 +379,23 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
         if (!bounds.isEmpty()) {
           mapRef.current?.fitBounds(bounds, {
             padding: 50,
-            maxZoom: 15
+            maxZoom: 15,
           });
         }
       }
-
-
-
     } catch (error) {
-      console.error('Error in addRoutesToMap:', error);
+      console.error("Error in addRoutesToMap:", error);
     }
   };
 
   // Update routes when they change
   useEffect(() => {
-
-
     if (!mapRef.current) {
-
       return;
     }
 
     // Function to handle route updates
     const updateRoutes = () => {
-
-
       // Clear existing routes first
       clearExistingRoutes();
 
@@ -436,21 +407,16 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
 
     // Check if map is loaded and update routes
     if (isMapLoadedRef.current) {
-
       updateRoutes();
     } else {
-
       // If map isn't loaded yet, wait for it
       const handleLoad = () => {
-
         updateRoutes();
-        mapRef.current?.off('load', handleLoad);
+        mapRef.current?.off("load", handleLoad);
       };
 
-      mapRef.current?.on('load', handleLoad);
+      mapRef.current?.on("load", handleLoad);
     }
-    console.log(routes);
-
   }, [routes, coordinates]); // Depend on both routes and coordinates
 
   // Force resize when component mounts
@@ -472,18 +438,54 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
           ref={mapContainerRef}
           className="absolute inset-0"
           style={{
-            width: '100%',
-            height: '100%'
+            width: "100%",
+            height: "100%",
           }}
         />
 
-         {/* Error message overlay - positioned in top-left corner */}
-         {dataError && (
-          <div className="absolute top-4 left-4 z-20">
+        {/* Error message overlay */}
+        {dataError && (
+          <div className="absolute top-4 left-4 z-30">
             <div className="p-3 bg-white rounded-lg shadow-lg border border-yellow-200">
               <p className="text-yellow-600 text-sm">
-                ⚠️ Transit route data currently not available. Times are not accurate.
+                ⚠️ Transit route data currently not available. Times are not
+                accurate.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Legend */}
+        {routes && routes.length > 0 && (
+          <div className="absolute bottom-4 right-4 z-20">
+            <div 
+              className={`bg-white rounded-lg shadow-lg ${isEditor ? 'p-3 max-w-[250px]' : 'p-4 max-w-[300px]'}`}
+              style={{ 
+                maxHeight: 'calc(100vh - 120px)',
+                overflowY: 'auto'
+              }}
+            >
+              <h3 className={`font-bold mb-2 text-gray-700 ${isEditor ? 'text-sm' : 'text-base'}`}>Routes</h3>
+              <div className={isEditor ? 'space-y-2' : 'space-y-2.5'}>
+                {routes.map((route: any, index: number) => {
+                  const routeColor = routeColors[index % routeColors.length];
+                  // Get route name - you can customize this based on your route data structure
+                  const routeName =
+                    route.name || route.description || `Route ${index + 1}`;
+
+                  return (
+                    <div key={index} className="flex items-center gap-2">
+                      <div
+                        className={`rounded-sm flex-shrink-0 ${isEditor ? 'w-4 h-4' : 'w-5 h-5'}`}
+                        style={{ backgroundColor: routeColor }}
+                      />
+                      <span className={`text-gray-700 truncate ${isEditor ? 'text-xs' : 'text-sm'}`}>
+                        {routeName}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -496,8 +498,12 @@ export default function TransitRoutesPreview({ slideId, noMapScroll }: { slideId
           alt="Statewide Mobility Services"
           className="h-[25px] w-[246px]"
         />
-        <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
+        <img
+          src="/images/nysdot-footer-logo.png"
+          alt="NYSDOT"
+          className="h-8"
+        />
       </div>
     </div>
-  )
+  );
 }

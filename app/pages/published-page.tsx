@@ -133,6 +133,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         arr.push({
           destination: item.destination,
           route: item.details.id,
+          routeId: item.routeId,
           routeColor: item.details.color,
           routeTextColor: item.details.textColor,
           time: item.arrivalTime,

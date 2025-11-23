@@ -9,6 +9,8 @@ import { useGeneralStore } from "@/stores/general"
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
 
+const MAX_DESTINATIONS = 6;
+
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -225,7 +227,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       setDestinations(slideId, [...destinations, { name: fallbackDestination.name, coordinates: fallbackDestination.coordinates }]);
       setDestinationData(slideId, [...destinationData, fallbackDestination]);
 
-      setErrorMessage(slideId, "Destination out of range or no data available");
+      setErrorMessage(slideId, "There is currently no good trip for this destination.");
       setTimeout(() => {
         setErrorMessage(slideId, "");
       }, 5000);
@@ -250,18 +252,26 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               <span className="font-medium">Transit Destination Table Page Template</span>
             </div>
 
-            <p className="text-[#606061] mb-6">Input the destinations that you would like for the table to show</p>
+            <p className="text-[#606061] mb-6">Input the destinations that you would like for the map to show. The maximum number of routes that this table can accommodate is 6.</p>
 
             {/* Destination Input */}
             <div className="mb-6">
               <div className="flex items-center mb-1">
                 <label className="block text-[#4a5568] font-medium mb-2">Add Destination</label>
+                <span className="text-xs text-[#718096] ml-2 mb-2">
+                  ({destinations.length}/{MAX_DESTINATIONS} destinations)
+                </span>
                 {errorMessage && (
                   <div className="mb-2 text-red-500 text-sm flex items-center ml-9">
                     {errorMessage}
                   </div>
                 )}
               </div>
+              {destinations.length >= MAX_DESTINATIONS && (
+                <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
+                  Maximum of {MAX_DESTINATIONS} destinations reached. Remove a destination to add another.
+                </div>
+              )}
               <div className="flex gap-3">
                 {/* Destination Input */}
                 <Input
@@ -313,6 +323,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                     size="icon"
                     className="border-[#cbd5e0] bg-transparent"
                     onClick={handleCreate}
+                    disabled={destinations.length >= MAX_DESTINATIONS}
                   >
                     <Plus className="w-4 h-4" />
                   </Button>

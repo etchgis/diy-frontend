@@ -5,6 +5,7 @@ interface TransitRouteSlideData {
   destination: string;
   location: string;
   routes: any;
+  displayName?: string;
   isLoading: boolean;
   dataError?: boolean;
   mapRef: mapboxgl.Map | null;
@@ -20,6 +21,7 @@ interface SlideStore {
   setIsLoading: (slideId: string, isLoading: boolean) => void;
   setErrorMessage: (slideId: string, errorMessage: string) => void;
   setDataError: (slideId: string, error: boolean) => void;
+  setDisplayName: (slideId: string, name: string) => void;
   getMapRef: (slideId: string) => mapboxgl.Map | null;
 }
 
@@ -97,6 +99,16 @@ export const useTransitRouteStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               dataError: error,
+            },
+          },
+        })),
+      setDisplayName: (slideId, name) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              displayName: name,
             },
           },
         })),

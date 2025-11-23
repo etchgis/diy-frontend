@@ -29,6 +29,9 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
   const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const setBackgroundColor = useQRStore((state) => state.setBackgroundColor);
 
+  const textColor = useQRStore((state) => state.slides[slideId]?.textColor || '#ffffff');
+  const setTextColor = useQRStore((state) => state.setTextColor);
+
   const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || '');
   const setBgImage = useQRStore((state) => state.setBgImage);
 
@@ -65,7 +68,7 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [backgroundColor, text, url]);
+  }, [backgroundColor, textColor, text, url]);
 
   const handleGenerateQR = () => {
     if (!tempQR.trim()) return;
@@ -197,6 +200,21 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
                   />
                 </div>
                 <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => setBackgroundColor(slideId, e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Text Color</label>
+              <div className="flex items-center gap-2">
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={textColor}
+                    onChange={(e) => setTextColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={textColor} className="flex-1 text-xs" onChange={(e) => setTextColor(slideId, e.target.value)} />
               </div>
             </div>
 
