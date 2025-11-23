@@ -140,7 +140,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             <div className="font-medium min-w-[80px] text-center">{item.time}</div>
                             <div className=" min-w-[80px] text-center">{item.duration}</div>
                             <Button variant="outline" size="sm" className="min-w-[90px] bg-transparent">
-                              Scheduled
+                              {item.status}
                             </Button>
                           </div>
                         </div>
@@ -209,7 +209,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                                 minWidth: 'clamp(70px, 7vw, 90px)',
                               }}
                             >
-                              Scheduled
+                              {item.status}
                             </Button>
                           </div>
                         </div>
