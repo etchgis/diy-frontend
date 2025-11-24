@@ -31,6 +31,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [screens, setScreens] = useState<any[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const dataRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentSlide = slides?.[activeIndex] || null;
 
@@ -44,10 +45,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const setTransitRoutesDataError = useTransitRouteStore((state) => state.setDataError);
 
   const setRoutesData = useTransitRouteStore((state) => state.setRoutes);
-  const allSlidesState = useTransitDestinationsStore((state) => state.slides);
-  const allFixedRouteSlidesState = useFixedRouteStore((state) => state.slides);
-  const allTransitRouteSlidesState = useTransitRouteStore((state) => state.slides);
-  const allRouteTimesSlidesState = useRouteTimesStore((state) => state.slides);
   const setRouteTimesPatternData = useRouteTimesStore((state) => state.setPatternData);
   const setRouteTimesRouteData = useRouteTimesStore((state) => state.setRouteData);
   const setRouteTimesIsLoading = useRouteTimesStore((state) => state.setIsLoading);
@@ -100,32 +97,48 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     loadSlides();
   }, [shortcode, setSlides]);
 
-  // Function and useEffect to fetch transit destination data every 5 minutes
+  // Function and useEffect to fetch transit destination data every 60 seconds
   const getTransitDestinationData = async () => {
-    const transitSlides = slides.filter((slide: any) => slide.type === 'transit-destinations');
-    console.log(slides, transitSlides);
+    console.log('[DATA UPDATE] Fetching transit destination data...', new Date().toLocaleTimeString());
+    // Get current slides from store to avoid stale closure
+    const currentSlides = useGeneralStore.getState().slides;
+    const transitSlides = currentSlides.filter((slide: any) => slide.type === 'transit-destinations');
+
     if (!transitSlides.length) {
+      console.log('[DATA UPDATE] No transit destination slides found');
       return;
     }
-  
+
     for (const slide of transitSlides) {
-      const destinations = allSlidesState[slide.id]?.destinations || [];
-      const currentDestinationData = allSlidesState[slide.id]?.destinationData || [];
-      console.log(destinations);
-  
+      const currentState = useTransitDestinationsStore.getState().slides;
+      const destinations = currentState[slide.id]?.destinations || [];
+      const currentDestinationData = currentState[slide.id]?.destinationData || [];
+
       try {
         await getDestinationData(destinations, slide.id, setDestinationData, setDataError, currentDestinationData);
+        const updatedState = useTransitDestinationsStore.getState().slides;
+        const updatedData = updatedState[slide.id]?.destinationData || [];
+        console.log(`[DATA UPDATE] Transit destinations updated for slide ${slide.id}:`, updatedData);
       } catch (error) {
-        console.error(`Failed to fetch data for slide ID ${slide.id}:`, error);
+        console.error(`[DATA UPDATE] Failed to fetch data for slide ID ${slide.id}:`, error);
       }
     }
   };
 
   const getFixedRouteData = async () => {
-    const fixedRouteSlides = slides.filter((slide: any) => slide.type === 'fixed-routes');
-    if (!fixedRouteSlides.length) {return;}
+    console.log('[DATA UPDATE] Fetching fixed route data...', new Date().toLocaleTimeString());
+    // Get current slides from store to avoid stale closure
+    const currentSlides = useGeneralStore.getState().slides;
+    const fixedRouteSlides = currentSlides.filter((slide: any) => slide.type === 'fixed-routes');
+
+    if (!fixedRouteSlides.length) {
+      console.log('[DATA UPDATE] No fixed route slides found');
+      return;
+    }
+
     for (const slide of fixedRouteSlides) {
-      const fixedRouteData = allFixedRouteSlidesState[slide.id]?.selectedStop || [];
+      const currentState = useFixedRouteStore.getState().slides;
+      const fixedRouteData = currentState[slide.id]?.selectedStop || [];
       if(!fixedRouteData?.stop_id || !fixedRouteData?.services?.length) {continue;}
       const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid, slide.id, setFixedRouteDataError);
       const arr: any = [];
@@ -143,25 +156,45 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       });
 
       setScheduleData(slide.id, arr);
+      console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, arr);
     }
   };
 
   const getTransitRoutesData = async () => {
-    const transitRoutesSlides = slides.filter((slide: any) => slide.type === 'transit-routes');
-    if (!transitRoutesSlides.length) {return;}
+    console.log('[DATA UPDATE] Fetching transit routes data...', new Date().toLocaleTimeString());
+    // Get current slides from store to avoid stale closure
+    const currentSlides = useGeneralStore.getState().slides;
+    const transitRoutesSlides = currentSlides.filter((slide: any) => slide.type === 'transit-routes');
+
+    if (!transitRoutesSlides.length) {
+      console.log('[DATA UPDATE] No transit routes slides found');
+      return;
+    }
 
     for (const slide of transitRoutesSlides) {
-      const transitRouteData = allTransitRouteSlidesState[slide.id]?.routes || [];
+      const currentState = useTransitRouteStore.getState().slides;
+      const transitRouteData = currentState[slide.id]?.routes || [];
       await getDestinationData(transitRouteData, slide.id, setRoutesData, setTransitRoutesDataError);
+      const updatedState = useTransitRouteStore.getState().slides;
+      const updatedData = updatedState[slide.id]?.routes || [];
+      console.log(`[DATA UPDATE] Transit routes updated for slide ${slide.id}:`, updatedData);
     }
   };
 
   const getRouteTimesData = async () => {
-    const routeTimesSlides = slides.filter((slide: any) => slide.type === 'route-times');
-    if (!routeTimesSlides.length) {return;}
+    console.log('[DATA UPDATE] Fetching route times data...', new Date().toLocaleTimeString());
+    // Get current slides from store to avoid stale closure
+    const currentSlides = useGeneralStore.getState().slides;
+    const routeTimesSlides = currentSlides.filter((slide: any) => slide.type === 'route-times');
+
+    if (!routeTimesSlides.length) {
+      console.log('[DATA UPDATE] No route times slides found');
+      return;
+    }
 
     for (const slide of routeTimesSlides) {
-      const slideData = allRouteTimesSlidesState[slide.id];
+      const currentState = useRouteTimesStore.getState().slides;
+      const slideData = currentState[slide.id];
       if (!slideData?.selectedRoute) {continue;}
 
       try {
@@ -175,8 +208,15 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
         setRouteTimesRouteData(slide.id, result.timetableData, result.isNextDay, result.isLaterToday);
         setRouteTimesIsLoading(slide.id, false);
+
+        console.log(`[DATA UPDATE] Route times updated for slide ${slide.id}:`, {
+          patternData: result.patternData,
+          timetableData: result.timetableData,
+          isNextDay: result.isNextDay,
+          isLaterToday: result.isLaterToday
+        });
       } catch (error) {
-        console.error('Error fetching route times data:', error);
+        console.error(`[DATA UPDATE] Error fetching route times data for slide ${slide.id}:`, error);
         setRouteTimesIsLoading(slide.id, false);
       }
     }
@@ -185,20 +225,38 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const hasFetchedDestinations = useRef(false);
 
   useEffect(() => {
-    if (hasFetchedDestinations.current || slides.length === 0) {return;}
-    hasFetchedDestinations.current = true;
+    if (slides.length === 0) {return;}
 
-    getTransitDestinationData();
-    getFixedRouteData();
-    getTransitRoutesData();
-    getRouteTimesData();
-
-    setInterval(() => {
+    // Only fetch initially if we haven't fetched yet
+    if (!hasFetchedDestinations.current) {
+      hasFetchedDestinations.current = true;
+      console.log('[DATA UPDATE] Initial data fetch on page load');
       getTransitDestinationData();
       getFixedRouteData();
       getTransitRoutesData();
       getRouteTimesData();
-    }, 60000 * 5);
+    }
+
+    // Only set up interval if it doesn't exist
+    if (!dataRefreshIntervalRef.current) {
+      dataRefreshIntervalRef.current = setInterval(() => {
+        console.log('[DATA UPDATE] ========== 60-second refresh triggered ==========');
+        getTransitDestinationData();
+        getFixedRouteData();
+        getTransitRoutesData();
+        getRouteTimesData();
+      }, 60000);
+      console.log('[DATA UPDATE] Auto-refresh interval started (60 seconds)');
+    }
+
+    return () => {
+      // Only clear on unmount, not on re-renders
+      if (dataRefreshIntervalRef.current) {
+        console.log('[DATA UPDATE] Auto-refresh interval cleared (component unmounting)');
+        clearInterval(dataRefreshIntervalRef.current);
+        dataRefreshIntervalRef.current = null;
+      }
+    };
   }, [slides]);
 
   useEffect(() => {
