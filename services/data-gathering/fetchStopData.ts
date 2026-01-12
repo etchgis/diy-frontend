@@ -49,6 +49,7 @@ async function formatBusData(data: any, serviceId: string, organizationId: strin
     station: data.name,
     trains: data.arrivals.map((train: any) => ({
       destination: train.headsign,
+      routeId: train.routeId,
       arrivalTime: formatTime(Math.round((train.arrive))),
       arrival: formatDuration(Math.round((train.arriveScheduled - Date.now()) / 1000)),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),
@@ -89,6 +90,7 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
 
 
     const result = await response.json();
+    console.log(result);
 
     const formattedData = await formatBusData(result, serviceId, organizationId);
 

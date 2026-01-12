@@ -193,6 +193,7 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
         arr.push({
           destination: item.destination,
           route: item.details.id,
+          routeId: item.routeId,
           routeColor: item.details.color,
           routeTextColor: item.details.textColor,
           time: item.arrivalTime,
