@@ -20,6 +20,7 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
   const bgImage = useTemplate2Store((state) => state.slides[slideId]?.bgImage || '');
   const backgroundColor = useTemplate2Store((state) => state.slides[slideId]?.backgroundColor || '#305fff');
   const textColor = useTemplate2Store((state) => state.slides[slideId]?.textColor || '#ffffff');
+  const titleColor = useTemplate2Store((state) => state.slides[slideId]?.titleColor || '#ffffff');
 
   const leftContentSize = useTemplate2Store((state) => state.slides[slideId]?.leftContentSize || '60%');
   const rightContentSize = useTemplate2Store((state) => state.slides[slideId]?.rightContentSize || '40%');
@@ -74,10 +75,10 @@ export default function Template2Preview({ slideId, previewMode }: { slideId: st
               onChange={(e) => setTitle(slideId, e.target.value)}
               placeholder="Type title here"
               className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
-              style={{ color: textColor }}
+              style={{ color: titleColor }}
             />
           ) : (
-            <div className="w-full bg-transparent font-light" style={{ color: textColor, fontSize: 'clamp(3.2rem, 11vh, 11rem)' }}>
+            <div className="w-full bg-transparent font-light" style={{ color: titleColor, fontSize: 'clamp(3.2rem, 11vh, 11rem)' }}>
               {title || ''}
             </div>
           )}

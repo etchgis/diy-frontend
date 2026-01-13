@@ -8,6 +8,7 @@ interface Template1SlideData {
   bgImage?: string;
   backgroundColor?: string;
   textColor?: string;
+  titleColor?: string;
   leftContentSize: string;
   rightContentSize: string;
 }
@@ -20,6 +21,7 @@ interface SlideStore {
   setBgImage: (slideId: string, bgImage: string) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
   setTextColor: (slideId: string, color: string) => void;
+  setTitleColor: (slideId: string, color: string) => void;
   setLeftContentSize: (slideId: string, size: string) => void;
   setRightContentSize: (slideId: string, size: string) => void;
 }
@@ -88,6 +90,17 @@ export const useTemplate1Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               textColor: color,
+            },
+          },
+        })),
+
+      setTitleColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              titleColor: color,
             },
           },
         })),

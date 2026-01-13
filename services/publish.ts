@@ -149,7 +149,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize } = slideData;
+        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize, textColor, titleColor } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -158,6 +158,8 @@ export async function publish() {
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.leftContentSize = leftContentSize;
         screenObj.data.rightContentSize = rightContentSize;
+        screenObj.data.textColor = textColor;
+        screenObj.data.titleColor = titleColor;
 
       } else {
       }
@@ -174,7 +176,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage } = slideData;
+        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage, textColor, titleColor } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -183,6 +185,8 @@ export async function publish() {
         screenObj.data.leftContentSize = leftContentSize;
         screenObj.data.rightContentSize = rightContentSize;
         screenObj.data.bgImage = bgImage;
+        screenObj.data.textColor = textColor;
+        screenObj.data.titleColor = titleColor;
       } else {
       }
     }
@@ -197,12 +201,14 @@ export async function publish() {
 
       if (slideData) {
 
-        const { title, image, backgroundColor, bgImage } = slideData;
+        const { title, image, backgroundColor, bgImage, textColor, titleColor } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.image = image;
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.bgImage = bgImage;
+        screenObj.data.textColor = textColor;
+        screenObj.data.titleColor = titleColor;
       } else {
       }
     }

@@ -22,10 +22,12 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
   const bgImage = useTemplate2Store((state) => state.slides[slideId]?.bgImage || '');
   const backgroundColor = useTemplate2Store((state) => state.slides[slideId]?.backgroundColor || '#305fff');
   const textColor = useTemplate2Store((state) => state.slides[slideId]?.textColor || '#ffffff');
+  const titleColor = useTemplate2Store((state) => state.slides[slideId]?.titleColor || '#ffffff');
 
   const setBgImage = useTemplate2Store((state) => state.setBgImage);
   const setBackgroundColor = useTemplate2Store((state) => state.setBackgroundColor);
   const setTextColor = useTemplate2Store((state) => state.setTextColor);
+  const setTitleColor = useTemplate2Store((state) => state.setTitleColor);
 
   const leftContentSize = useTemplate2Store((state) => state.slides[slideId]?.leftContentSize || '');
   const setLeftContentSize = useTemplate2Store((state) => state.setLeftContentSize);
@@ -56,7 +58,7 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, text, image, backgroundColor, textColor, leftContentSize, rightContentSize, bgImage]);
+  }, [title, text, image, backgroundColor, textColor, titleColor, leftContentSize, rightContentSize, bgImage]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -175,6 +177,21 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
                 />
               </div>
               <Input value={textColor} className="flex-1 text-xs" onChange={(e) => setTextColor(slideId, e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Color</label>
+            <div className="flex items-center gap-2">
+              <div className="colorContainer">
+                <input
+                  type="color"
+                  value={titleColor}
+                  onChange={(e) => setTitleColor(slideId, e.target.value)}
+                  className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                />
+              </div>
+              <Input value={titleColor} className="flex-1 text-xs" onChange={(e) => setTitleColor(slideId, e.target.value)} />
             </div>
           </div>
 

@@ -142,7 +142,9 @@ async function importData(setup: any) {
         setBgImage,
         setBackgroundColor,
         setLeftContentSize,
-        setRightContentSize
+        setRightContentSize,
+        setTextColor,
+        setTitleColor
       } = useTemplate1Store.getState();
 
       setText(slide.id, slide.data.text || '');
@@ -152,6 +154,8 @@ async function importData(setup: any) {
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#305fff');
       setLeftContentSize(slide.id, slide.data.leftContentSize || '60%');
       setRightContentSize(slide.id, slide.data.rightContentSize || '40%');
+      setTextColor(slide.id, slide.data.textColor || '#ffffff');
+      setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
     }
 
     if (slide.type === 'template-2') {
@@ -162,7 +166,9 @@ async function importData(setup: any) {
         setBgImage,
         setBackgroundColor,
         setLeftContentSize,
-        setRightContentSize
+        setRightContentSize,
+        setTextColor,
+        setTitleColor
       } = useTemplate2Store.getState();
     
       setText(slide.id, slide.data.text || '');
@@ -172,6 +178,8 @@ async function importData(setup: any) {
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#305fff');
       setLeftContentSize(slide.id, slide.data.leftContentSize || '60%');
       setRightContentSize(slide.id, slide.data.rightContentSize || '40%');
+      setTextColor(slide.id, slide.data.textColor || '#ffffff');
+      setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
 
     }
 
@@ -181,11 +189,15 @@ async function importData(setup: any) {
         setImage,
         setBgImage,
         setBackgroundColor,
+        setTextColor,
+        setTitleColor
       } = useTemplate3Store.getState();
       setTitle(slide.id, slide.data.title || '');
       setImage(slide.id, slide.data.image || null);
       setBgImage(slide.id, slide.data.bgImage || null);
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#305fff');
+      setTextColor(slide.id, slide.data.textColor || '#ffffff');
+      setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
     }
 
     if (slide.type === 'route-times') {

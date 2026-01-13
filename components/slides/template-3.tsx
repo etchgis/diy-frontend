@@ -29,6 +29,9 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
   const textColor = useTemplate3Store((state) => state.slides[slideId]?.textColor || '#ffffff');
   const setTextColor = useTemplate3Store((state) => state.setTextColor);
 
+  const titleColor = useTemplate3Store((state) => state.slides[slideId]?.titleColor || '#ffffff');
+  const setTitleColor = useTemplate3Store((state) => state.setTitleColor);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   useEffect(() => {
@@ -53,7 +56,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, image, backgroundColor, textColor, bgImage]);
+  }, [title, image, backgroundColor, textColor, titleColor, bgImage]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -159,17 +162,17 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
           </div>
 
           <div>
-            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Text Color</label>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Color</label>
             <div className="flex items-center gap-2">
               <div className="colorContainer">
                 <input
                   type="color"
-                  value={textColor}
-                  onChange={(e) => setTextColor(slideId, e.target.value)}
+                  value={titleColor}
+                  onChange={(e) => setTitleColor(slideId, e.target.value)}
                   className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
                 />
               </div>
-              <Input value={textColor} className="flex-1 text-xs" onChange={(e) => setTextColor(slideId, e.target.value)} />
+              <Input value={titleColor} className="flex-1 text-xs" onChange={(e) => setTitleColor(slideId, e.target.value)} />
             </div>
           </div>
 
