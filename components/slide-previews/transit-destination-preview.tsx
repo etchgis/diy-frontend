@@ -3,6 +3,7 @@ import { useTransitDestinationsStore } from "@/stores/transitDestinations";
 import { formatDuration, formatTime } from "@/utils/formats";
 import { usePathname } from "next/navigation";
 import { use, useEffect } from "react";
+import Footer from "../shared-components/footer";
 
 export default function TransitDestinationPreview({
   slideId,
@@ -472,21 +473,7 @@ export default function TransitDestinationPreview({
         )}
       </div>
 
-      {/* Footer - Fixed height */}
-      <div
-        className={`bg-[#F4F4F4] flex items-center justify-between flex-shrink-0 ${getFooterPadding()}`}
-      >
-        <img
-          src="/images/statewide-mobility-services.png"
-          alt="Statewide Mobility Services"
-          className={getFooterImageSize().logo}
-        />
-        <img
-          src="/images/nysdot-footer-logo.png"
-          alt="NYSDOT"
-          className={getFooterImageSize().nysdot}
-        />
-      </div>
+      <Footer />
     </div>
   );
 }

@@ -17,6 +17,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const tableColor = slideData?.tableColor || '#FFFFFF';
   const tableTextColor = slideData?.tableTextColor || '#000000';
   const bgImage = slideData?.bgImage || '';
+  const logoImage = slideData?.logoImage || '';
   const routeName = slideData?.routeName || '';
   const description = slideData?.description || '';
   const selectedRoute = slideData?.selectedRoute;
@@ -497,7 +498,15 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
       {/* Header */}
       <div className="p-4 relative z-10">
-        <h1 className="text-2xl font-bold" style={{ color: titleColor }}>
+        {logoImage && (
+          <img
+            src={logoImage}
+            alt="Logo"
+            className="absolute top-4 right-4 max-h-12 object-contain"
+          />
+        )}
+
+        <h1 className="text-2xl font-bold pr-20" style={{ color: titleColor }}>
           {selectedRoute ? (
             <>
               {selectedRoute.route_short_name && (

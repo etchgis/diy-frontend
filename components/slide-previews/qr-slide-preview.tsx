@@ -1,18 +1,24 @@
 import { useQRStore } from "@/stores/qr";
 import QRCode from "react-qr-code";
+import Footer from "../shared-components/footer";
 
 export default function QRSlidePreview({ slideId }: { slideId: string }) {
-  const text = useQRStore((state) => state.slides[slideId]?.text || '');
-  const url = useQRStore((state) => state.slides[slideId]?.url || '');
-  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
-  const textColor = useQRStore((state) => state.slides[slideId]?.textColor || '#ffffff');
+  const text = useQRStore((state) => state.slides[slideId]?.text || "");
+  const url = useQRStore((state) => state.slides[slideId]?.url || "");
+  const backgroundColor = useQRStore(
+    (state) => state.slides[slideId]?.backgroundColor || "#192F51"
+  );
+  const textColor = useQRStore(
+    (state) => state.slides[slideId]?.textColor || "#ffffff"
+  );
   const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
-  const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || '');
-
+  const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || "");
+  const logoImage = useQRStore(
+    (state) => state.slides[slideId]?.logoImage || ""
+  );
 
   const containerSizeRem = 2 * qrSize;
   const qrPixelSize = 32 * qrSize;
-
 
   return (
     <div
@@ -20,17 +26,29 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
         backgroundImage: bgImage ? `url(${bgImage})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         color: textColor,
       }}
     >
+      {/* Logo (only if present) */}
+      {logoImage && (
+        <img
+          src={logoImage}
+          alt="Logo"
+          className="absolute top-6 right-6 max-h-16 object-contain z-20"
+        />
+      )}
+
       {/* QR Code and Text */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-6">
         <div className="bg-white p-4 mb-4">
           <div
             className="flex items-center justify-center"
-            style={{ width: `${containerSizeRem}rem`, height: `${containerSizeRem}rem` }}
+            style={{
+              width: `${containerSizeRem}rem`,
+              height: `${containerSizeRem}rem`,
+            }}
           >
             {url ? (
               <QRCode value={url} size={qrPixelSize} />
@@ -39,18 +57,16 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
             )}
           </div>
         </div>
-        <div className="text-lg font-medium text-center" style={{ color: textColor }}>{text}</div>
+        <div
+          className="text-lg font-medium text-center"
+          style={{ color: textColor }}
+        >
+          {text}
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 w-full bg-[#F4F4F4] p-3 flex items-center justify-between rounded-b-lg z-10">
-        <img
-          src="/images/statewide-mobility-services.png"
-          alt="Statewide Mobility Services"
-          className="h-[25px] w-[246px]"
-        />
-        <img src="/images/nysdot-footer-logo.png" alt="NYSDOT" className="h-8" />
-      </div>
+      <Footer />
     </div>
   );
 }

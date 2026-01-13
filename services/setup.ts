@@ -92,6 +92,7 @@ async function importData(setup: any) {
         setTableColor,
         setTableTextColor,
         setBgImage,
+        setLogoImage,
         setSelectedStop
       } = useFixedRouteStore.getState();
 
@@ -102,6 +103,7 @@ async function importData(setup: any) {
       setTableColor(slide.id, slide.data.tableColor || '#ffffff');
       setTableTextColor(slide.id, slide.data.tableTextColor || '#000000');
       setBgImage(slide.id, slide.data.bgImage || '');
+      setLogoImage(slide.id, slide.data.logoImage || '');
       setSelectedStop(slide.id, slide.data.selectedStop || undefined);
     }
 
@@ -124,7 +126,8 @@ async function importData(setup: any) {
         setUrl,
         setBackgroundColor,
         setQRSize,
-        setBgImage
+        setBgImage,
+        setLogoImage
       } = useQRStore.getState();
 
       setText(slide.id, slide.data.text || '');
@@ -132,6 +135,7 @@ async function importData(setup: any) {
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
       setQRSize(slide.id, slide.data.qrSize || 5);
       setBgImage(slide.id, slide.data.bgImage || '');
+      setLogoImage(slide.id, slide.data.logoImage || '');
     }
 
     if (slide.type === 'template-1') {
@@ -144,7 +148,8 @@ async function importData(setup: any) {
         setLeftContentSize,
         setRightContentSize,
         setTextColor,
-        setTitleColor
+        setTitleColor,
+        setLogoImage
       } = useTemplate1Store.getState();
 
       setText(slide.id, slide.data.text || '');
@@ -156,6 +161,7 @@ async function importData(setup: any) {
       setRightContentSize(slide.id, slide.data.rightContentSize || '40%');
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
+      setLogoImage(slide.id, slide.data.logoImage || '');
     }
 
     if (slide.type === 'template-2') {
@@ -168,9 +174,10 @@ async function importData(setup: any) {
         setLeftContentSize,
         setRightContentSize,
         setTextColor,
-        setTitleColor
+        setTitleColor,
+        setLogoImage
       } = useTemplate2Store.getState();
-    
+
       setText(slide.id, slide.data.text || '');
       setTitle(slide.id, slide.data.title || '');
       setImage(slide.id, slide.data.image || null);
@@ -180,6 +187,7 @@ async function importData(setup: any) {
       setRightContentSize(slide.id, slide.data.rightContentSize || '40%');
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
+      setLogoImage(slide.id, slide.data.logoImage || '');
 
     }
 
@@ -190,7 +198,8 @@ async function importData(setup: any) {
         setBgImage,
         setBackgroundColor,
         setTextColor,
-        setTitleColor
+        setTitleColor,
+        setLogoImage
       } = useTemplate3Store.getState();
       setTitle(slide.id, slide.data.title || '');
       setImage(slide.id, slide.data.image || null);
@@ -198,6 +207,7 @@ async function importData(setup: any) {
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#305fff');
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
+      setLogoImage(slide.id, slide.data.logoImage || '');
     }
 
     if (slide.type === 'route-times') {
@@ -211,6 +221,7 @@ async function importData(setup: any) {
         setTableColor,
         setTableTextColor,
         setBgImage,
+        setLogoImage
       } = useRouteTimesStore.getState();
 
       setRouteName(slide.id, slide.data.routeName || '');
@@ -222,6 +233,7 @@ async function importData(setup: any) {
       setTableColor(slide.id, slide.data.tableColor || '#ffffff');
       setTableTextColor(slide.id, slide.data.tableTextColor || '#000000');
       setBgImage(slide.id, slide.data.bgImage || '');
+      setLogoImage(slide.id, slide.data.logoImage || '');
     }
   });
 

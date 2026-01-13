@@ -8,6 +8,7 @@ interface Template3SlideData {
   backgroundColor: string;
   textColor?: string;
   titleColor?: string;
+  logoImage?: string;
 }
 
 interface SlideStore {
@@ -18,6 +19,7 @@ interface SlideStore {
   setBackgroundColor: (slideId: string, color: string) => void;
   setTextColor: (slideId: string, color: string) => void;
   setTitleColor: (slideId: string, color: string) => void;
+  setLogoImage: (slideId: string, logoImage: string) => void;
 }
 
 export const useTemplate3Store = create<SlideStore>()(
@@ -87,6 +89,17 @@ export const useTemplate3Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               titleColor: color,
+            },
+          },
+        })),
+
+      setLogoImage: (slideId, logoImage) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              logoImage,
             },
           },
         })),

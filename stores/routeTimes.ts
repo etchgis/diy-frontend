@@ -38,6 +38,7 @@ interface RouteTimesSlide {
   tableColor: string;
   tableTextColor: string;
   bgImage: string;
+  logoImage: string;
   routeData: RouteScheduleData[];
   patternData?: any;
   isLoading: boolean;
@@ -58,6 +59,7 @@ interface RouteTimesStore {
   setTableColor: (slideId: string, color: string) => void;
   setTableTextColor: (slideId: string, color: string) => void;
   setBgImage: (slideId: string, image: string) => void;
+  setLogoImage: (slideId: string, image: string) => void;
   setRouteData: (slideId: string, data: RouteScheduleData[], isNextDay?: boolean, isLaterToday?: boolean) => void;
   setPatternData: (slideId: string, data: any) => void;
   setIsLoading: (slideId: string, loading: boolean) => void;
@@ -74,6 +76,7 @@ const getDefaultSlide = (): RouteTimesSlide => ({
   tableColor: '#FFFFFF',
   tableTextColor: '#000000',
   bgImage: '',
+  logoImage: '',
   routeData: [],
   patternData: undefined,
   isLoading: false,
@@ -192,6 +195,18 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
               ...getDefaultSlide(),
               ...state.slides[slideId],
               bgImage: image,
+            },
+          },
+        })),
+
+      setLogoImage: (slideId, image) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              logoImage: image,
             },
           },
         })),

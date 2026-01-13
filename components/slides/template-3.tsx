@@ -15,6 +15,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const renderCount = useRef(0);
 
   const title = useTemplate3Store((state) => state.slides[slideId]?.title || '');
@@ -31,6 +32,9 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
 
   const titleColor = useTemplate3Store((state) => state.slides[slideId]?.titleColor || '#ffffff');
   const setTitleColor = useTemplate3Store((state) => state.setTitleColor);
+
+  const logoImage = useTemplate3Store((state) => state.slides[slideId]?.logoImage || '');
+  const setLogoImage = useTemplate3Store((state) => state.setLogoImage);
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
@@ -56,25 +60,30 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, image, backgroundColor, textColor, titleColor, bgImage]);
+  }, [title, image, backgroundColor, textColor, titleColor, bgImage, logoImage]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (fileInputRef.current) {
+    if (target === 'bg' && fileInputRef.current) {
       fileInputRef.current.value = '';
+    } else if (target === 'logo' && logoInputRef.current) {
+      logoInputRef.current.value = '';
     }
 
+    const currentImage = target === 'bg' ? bgImage : logoImage;
+    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
+
     uploadImage(shortcode, file).then((data) => {
-      if (bgImage) {
-        deleteImage(bgImage).then(() => {
+      if (currentImage) {
+        deleteImage(currentImage).then(() => {
 
         }).catch((err) => {
           console.error('Failed to delete previous image:', err);
         });
       }
-      setBgImage(slideId, data.url);
+      setImageFn(slideId, data.url);
     }
     ).catch((err) => {
       console.error('Image upload failed:', err);
@@ -82,13 +91,17 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
 
   };
 
-  const handleRemoveImage = () => {
-    if (bgImage) {
-      deleteImage(bgImage).then(() => {
+  const handleRemoveImage = (target: 'bg' | 'logo') => {
+    const currentImage = target === 'bg' ? bgImage : logoImage;
+    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
+    const inputRef = target === 'bg' ? fileInputRef : logoInputRef;
 
-        setBgImage(slideId, '');
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+    if (currentImage) {
+      deleteImage(currentImage).then(() => {
+
+        setImageFn(slideId, '');
+        if (inputRef.current) {
+          inputRef.current.value = '';
         }
       }).catch((err) => {
         console.error('Failed to delete image:', err);
@@ -192,7 +205,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
                   type="file"
                   accept="image/*"
                   ref={fileInputRef}
-                  onChange={handleImageUpload}
+                  onChange={(e) => handleImageUpload(e, 'bg')}
                   className="hidden"
                 />
                 <Button
@@ -208,7 +221,47 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
                     variant="outline"
                     size="sm"
                     className="text-xs bg-transparent px-2 py-1"
-                    onClick={handleRemoveImage}
+                    onClick={() => handleRemoveImage('bg')}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Logo Image</label>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
+                {logoImage ? (
+                  <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
+                )}
+              </div>
+              <div className="flex gap-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={logoInputRef}
+                  onChange={(e) => handleImageUpload(e, 'logo')}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs bg-transparent px-2 py-1"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  Change
+                </Button>
+                {logoImage && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs bg-transparent px-2 py-1"
+                    onClick={() => handleRemoveImage('logo')}
                   >
                     Remove
                   </Button>
