@@ -7,6 +7,7 @@ import { useTemplate1Store } from "@/stores/template1";
 import { useTemplate2Store } from "@/stores/template2";
 import { useTemplate3Store } from "@/stores/template3";
 import { useRouteTimesStore } from "@/stores/routeTimes";
+import { useFooterStore } from "@/stores/footer";
 import { set } from "react-hook-form";
 
 export async function SetupSlides(shortcode: string) {
@@ -58,6 +59,64 @@ async function importData(setup: any) {
   setShortcode(setup.shortcode || '');
   setRotationInterval(setup.rotationInterval || 20);
   setPublishPassword(setup.publishPassword || '');
+
+  // Restore footer data - always set them to override localStorage defaults
+  const {
+    setLeftImage,
+    setMiddleImage,
+    setRightImage,
+    setLeftType,
+    setMiddleType,
+    setRightType,
+    setBackgroundColor,
+    setTimeTextColor
+  } = useFooterStore.getState();
+
+  const leftImageValue = setup.footer?.leftImage !== undefined
+    ? setup.footer.leftImage
+    : '/images/statewide-mobility-services.png';
+  const middleImageValue = setup.footer?.middleImage !== undefined
+    ? setup.footer.middleImage
+    : '';
+  const rightImageValue = setup.footer?.rightImage !== undefined
+    ? setup.footer.rightImage
+    : '/images/nysdot-footer-logo.png';
+  const leftTypeValue = setup.footer?.leftType !== undefined
+    ? setup.footer.leftType
+    : 'image';
+  const middleTypeValue = setup.footer?.middleType !== undefined
+    ? setup.footer.middleType
+    : 'image';
+  const rightTypeValue = setup.footer?.rightType !== undefined
+    ? setup.footer.rightType
+    : 'image';
+  const backgroundColorValue = setup.footer?.backgroundColor !== undefined
+    ? setup.footer.backgroundColor
+    : '#F4F4F4';
+  const timeTextColorValue = setup.footer?.timeTextColor !== undefined
+    ? setup.footer.timeTextColor
+    : '#000000';
+
+  console.log('[SETUP] Setting footer data:', {
+    leftImageValue,
+    middleImageValue,
+    rightImageValue,
+    leftTypeValue,
+    middleTypeValue,
+    rightTypeValue,
+    backgroundColorValue,
+    timeTextColorValue
+  });
+
+  setLeftImage(leftImageValue);
+  setMiddleImage(middleImageValue);
+  setRightImage(rightImageValue);
+  setLeftType(leftTypeValue);
+  setMiddleType(middleTypeValue);
+  setRightType(rightTypeValue);
+  setBackgroundColor(backgroundColorValue);
+  setTimeTextColor(timeTextColorValue);
+
   const slides: any = [];
 
   setup.screens.forEach((slide: any) => {

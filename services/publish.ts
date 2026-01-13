@@ -7,9 +7,22 @@ import { useTemplate1Store } from '@/stores/template1';
 import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
 import { useRouteTimesStore } from '@/stores/routeTimes';
+import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
   const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword} = useGeneralStore.getState();
+  const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
+
+  console.log('[PUBLISH] Footer data being published:', {
+    leftImage,
+    middleImage,
+    rightImage,
+    leftType,
+    middleType,
+    rightType,
+    backgroundColor,
+    timeTextColor
+  });
 
   const json = {
     location: location,
@@ -19,6 +32,16 @@ export async function publish() {
     rotationInterval: rotationInterval,
     url: url,
     publishPassword: publishPassword,
+    footer: {
+      leftImage: leftImage,
+      middleImage: middleImage,
+      rightImage: rightImage,
+      leftType: leftType,
+      middleType: middleType,
+      rightType: rightType,
+      backgroundColor: backgroundColor,
+      timeTextColor: timeTextColor,
+    },
     screens: [] as any[],
   }
 

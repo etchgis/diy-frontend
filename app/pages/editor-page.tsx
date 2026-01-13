@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Upload, Settings } from "lucide-react"
+import { HelpCircle, ChevronRight, Upload, Settings, Edit } from "lucide-react"
 import QRSlide from "@/components/slides/qr"
 import TransitDestinationSlide from "@/components/slides/transit-destination"
 import { useEffect, useRef, useState } from "react"
@@ -22,6 +22,7 @@ import Template2Slide from "@/components/slides/template-2"
 import Template2Preview from "@/components/slide-previews/template-2-preview"
 import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
+import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faTimesCircle, faGear } from '@fortawesome/free-solid-svg-icons';
@@ -57,6 +58,7 @@ export default function EditorPage() {
   const [showModal, setShowModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [modalSlideIndex, setModalSlideIndex] = useState(0);
+  const [isEditingFooter, setIsEditingFooter] = useState(false);
 
   const [publishing, setPublishing] = useState(false);
   const [publishStatus, setPublishStatus] = useState<'success' | 'error' | null>(null);
@@ -179,6 +181,30 @@ export default function EditorPage() {
     setModalSlideIndex(0);
     setShowModal(true);
   }
+
+  const handleEditFooter = () => {
+    setIsEditingFooter(true);
+    setActiveSlide(null);
+    setActiveSlideId('');
+  };
+
+  const handleCancelFooterEdit = () => {
+    setIsEditingFooter(false);
+    // Return to first slide if slides exist
+    if (slides.length > 0) {
+      setActiveSlide(slides[0]);
+      setActiveSlideId(slides[0].id);
+    }
+  };
+
+  const handleSaveFooterEdit = () => {
+    setIsEditingFooter(false);
+    // Return to first slide if slides exist
+    if (slides.length > 0) {
+      setActiveSlide(slides[0]);
+      setActiveSlideId(slides[0].id);
+    }
+  };
 
   const handleEdit = () => {
     hasFetchedDestinations.current = false;
@@ -420,6 +446,17 @@ export default function EditorPage() {
 
           <Button
             variant="outline"
+            className="w-full text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90 mb-2"
+            onClick={() => {
+              handleEditFooter();
+            }}
+          >
+            <Edit className="w-4 h-4 mr-2 border-none" />
+            Edit Footer
+          </Button>
+
+          <Button
+            variant="outline"
             className="w-full text-[#000000] bg-transparent bg-[#D3D3D3] hover:bg-[#D3D3D3]/90"
             onClick={() => {
               showSettings ? setShowSettings(false) : setShowSettings(true);
@@ -457,7 +494,14 @@ export default function EditorPage() {
         </header>
 
 
-        {activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)}
+        {isEditingFooter ? (
+          <EditFooter
+            handleCancel={handleCancelFooterEdit}
+            handleSave={handleSaveFooterEdit}
+          />
+        ) : (
+          activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)
+        )}
 
 
       </div>
