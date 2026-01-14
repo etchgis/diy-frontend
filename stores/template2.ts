@@ -12,6 +12,9 @@ interface Template2SlideData {
   logoImage?: string;
   leftContentSize: string;
   rightContentSize: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageObjectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 }
 
 interface SlideStore {
@@ -26,6 +29,9 @@ interface SlideStore {
   setLogoImage: (slideId: string, logoImage: string) => void;
   setLeftContentSize: (slideId: string, size: string) => void;
   setRightContentSize: (slideId: string, size: string) => void;
+  setImageWidth: (slideId: string, width: number) => void;
+  setImageHeight: (slideId: string, height: number) => void;
+  setImageObjectFit: (slideId: string, objectFit: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down') => void;
 }
 
 export const useTemplate2Store = create<SlideStore>()(
@@ -139,6 +145,39 @@ export const useTemplate2Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               rightContentSize: size,
+            },
+          },
+        })),
+
+      setImageWidth: (slideId, width) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageWidth: width,
+            },
+          },
+        })),
+
+      setImageHeight: (slideId, height) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageHeight: height,
+            },
+          },
+        })),
+
+      setImageObjectFit: (slideId, objectFit) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageObjectFit: objectFit,
             },
           },
         })),

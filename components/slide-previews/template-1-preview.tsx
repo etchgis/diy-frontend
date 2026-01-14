@@ -2,9 +2,10 @@ import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { useTemplate1Store } from "@/stores/template1";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Footer from "../shared-components/footer";
+import ResizableImage from "../shared-components/resizable-image";
 
 export default function Template1Preview({
   slideId,
@@ -15,6 +16,7 @@ export default function Template1Preview({
 }) {
   const pathname = usePathname();
   const [isEditor, setIsEditor] = useState(pathname.includes("/editor"));
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (previewMode) {
@@ -61,6 +63,18 @@ export default function Template1Preview({
   const rightContentSize = useTemplate1Store(
     (state) => state.slides[slideId]?.rightContentSize || "40%"
   );
+
+  const imageWidth = useTemplate1Store(
+    (state) => state.slides[slideId]?.imageWidth || 400
+  );
+  const imageHeight = useTemplate1Store(
+    (state) => state.slides[slideId]?.imageHeight || 280
+  );
+  const imageObjectFit = useTemplate1Store(
+    (state) => state.slides[slideId]?.imageObjectFit || "contain"
+  );
+  const setImageWidth = useTemplate1Store((state) => state.setImageWidth);
+  const setImageHeight = useTemplate1Store((state) => state.setImageHeight);
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
 
@@ -173,6 +187,7 @@ export default function Template1Preview({
         {/* Right Box - Image Content */}
         <div className="h-full" style={{ width: rightContentSize }}>
           <div
+            ref={imageContainerRef}
             className={`h-full w-full rounded-lg flex items-center justify-center p-6 ${
               isEditor ? "border-2 border-[#11d1f7] bg-[#11d1f7]/10" : ""
             }`}
@@ -180,10 +195,18 @@ export default function Template1Preview({
             onDragOver={isEditor ? handleDragOver : undefined}
           >
             {image ? (
-              <img
+              <ResizableImage
                 src={image}
                 alt="Uploaded"
-                className="w-full h-auto max-h-full object-contain mx-auto"
+                width={imageWidth}
+                height={imageHeight}
+                objectFit={imageObjectFit}
+                onResize={(w, h) => {
+                  setImageWidth(slideId, w);
+                  setImageHeight(slideId, h);
+                }}
+                isEditor={isEditor}
+                containerRef={imageContainerRef}
               />
             ) : (
               <div className="text-center w-full" style={{ color: textColor }}>

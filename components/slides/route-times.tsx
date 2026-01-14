@@ -133,6 +133,8 @@ export default function RouteTimesSlide({
     try {
       setIsLoading(slideId, true);
 
+      console.log(route);
+
       const result = await fetchCompleteRouteData(route);
 
       console.log(result);

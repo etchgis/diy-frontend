@@ -3,7 +3,9 @@ import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { useTemplate3Store } from "@/stores/template3";
 import { usePathname } from "next/navigation";
+import { useRef } from "react";
 import Footer from "../shared-components/footer";
+import ResizableImage from "../shared-components/resizable-image";
 
 export default function Template3Preview({
   slideId,
@@ -14,6 +16,7 @@ export default function Template3Preview({
 }) {
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor") && !previewMode;
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const title = useTemplate3Store(
     (state) => state.slides[slideId]?.title || ""
@@ -40,6 +43,18 @@ export default function Template3Preview({
   const logoImage = useTemplate3Store(
     (state) => state.slides[slideId]?.logoImage || ""
   );
+
+  const imageWidth = useTemplate3Store(
+    (state) => state.slides[slideId]?.imageWidth || 600
+  );
+  const imageHeight = useTemplate3Store(
+    (state) => state.slides[slideId]?.imageHeight || 400
+  );
+  const imageObjectFit = useTemplate3Store(
+    (state) => state.slides[slideId]?.imageObjectFit || "contain"
+  );
+  const setImageWidth = useTemplate3Store((state) => state.setImageWidth);
+  const setImageHeight = useTemplate3Store((state) => state.setImageHeight);
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
 
@@ -126,6 +141,7 @@ export default function Template3Preview({
         {/* Image Drop Area */}
         <div className="flex-1 p-8 min-h-0">
           <div
+            ref={imageContainerRef}
             className={`w-full h-full rounded-lg flex items-center justify-center p-6 overflow-hidden ${
               isEditor ? "border-2 border-[#11d1f7] bg-[#11d1f7]/10" : ""
             }`}
@@ -133,10 +149,18 @@ export default function Template3Preview({
             onDragOver={isEditor ? handleDragOver : undefined}
           >
             {image ? (
-              <img
+              <ResizableImage
                 src={image}
                 alt="Uploaded"
-                className="w-full h-full object-contain"
+                width={imageWidth}
+                height={imageHeight}
+                objectFit={imageObjectFit}
+                onResize={(w, h) => {
+                  setImageWidth(slideId, w);
+                  setImageHeight(slideId, h);
+                }}
+                isEditor={isEditor}
+                containerRef={imageContainerRef}
               />
             ) : (
               <div className="text-center" style={{ color: textColor }}>

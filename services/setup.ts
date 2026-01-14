@@ -208,7 +208,10 @@ async function importData(setup: any) {
         setRightContentSize,
         setTextColor,
         setTitleColor,
-        setLogoImage
+        setLogoImage,
+        setImageWidth,
+        setImageHeight,
+        setImageObjectFit
       } = useTemplate1Store.getState();
 
       setText(slide.id, slide.data.text || '');
@@ -221,6 +224,9 @@ async function importData(setup: any) {
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
       setLogoImage(slide.id, slide.data.logoImage || '');
+      setImageWidth(slide.id, slide.data.imageWidth || 400);
+      setImageHeight(slide.id, slide.data.imageHeight || 280);
+      setImageObjectFit(slide.id, slide.data.imageObjectFit || 'contain');
     }
 
     if (slide.type === 'template-2') {
@@ -234,7 +240,10 @@ async function importData(setup: any) {
         setRightContentSize,
         setTextColor,
         setTitleColor,
-        setLogoImage
+        setLogoImage,
+        setImageWidth,
+        setImageHeight,
+        setImageObjectFit
       } = useTemplate2Store.getState();
 
       setText(slide.id, slide.data.text || '');
@@ -247,6 +256,9 @@ async function importData(setup: any) {
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
       setLogoImage(slide.id, slide.data.logoImage || '');
+      setImageWidth(slide.id, slide.data.imageWidth || 400);
+      setImageHeight(slide.id, slide.data.imageHeight || 280);
+      setImageObjectFit(slide.id, slide.data.imageObjectFit || 'contain');
 
     }
 
@@ -258,7 +270,10 @@ async function importData(setup: any) {
         setBackgroundColor,
         setTextColor,
         setTitleColor,
-        setLogoImage
+        setLogoImage,
+        setImageWidth,
+        setImageHeight,
+        setImageObjectFit
       } = useTemplate3Store.getState();
       setTitle(slide.id, slide.data.title || '');
       setImage(slide.id, slide.data.image || null);
@@ -267,6 +282,9 @@ async function importData(setup: any) {
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
       setLogoImage(slide.id, slide.data.logoImage || '');
+      setImageWidth(slide.id, slide.data.imageWidth || 600);
+      setImageHeight(slide.id, slide.data.imageHeight || 400);
+      setImageObjectFit(slide.id, slide.data.imageObjectFit || 'contain');
     }
 
     if (slide.type === 'route-times') {

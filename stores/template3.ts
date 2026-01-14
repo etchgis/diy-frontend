@@ -9,6 +9,9 @@ interface Template3SlideData {
   textColor?: string;
   titleColor?: string;
   logoImage?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageObjectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 }
 
 interface SlideStore {
@@ -20,6 +23,9 @@ interface SlideStore {
   setTextColor: (slideId: string, color: string) => void;
   setTitleColor: (slideId: string, color: string) => void;
   setLogoImage: (slideId: string, logoImage: string) => void;
+  setImageWidth: (slideId: string, width: number) => void;
+  setImageHeight: (slideId: string, height: number) => void;
+  setImageObjectFit: (slideId: string, objectFit: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down') => void;
 }
 
 export const useTemplate3Store = create<SlideStore>()(
@@ -100,6 +106,39 @@ export const useTemplate3Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               logoImage,
+            },
+          },
+        })),
+
+      setImageWidth: (slideId, width) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageWidth: width,
+            },
+          },
+        })),
+
+      setImageHeight: (slideId, height) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageHeight: height,
+            },
+          },
+        })),
+
+      setImageObjectFit: (slideId, objectFit) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageObjectFit: objectFit,
             },
           },
         })),

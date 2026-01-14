@@ -7,6 +7,7 @@ interface Route {
   route_long_name: string;
   route_color: string;
   route_text_color: string;
+  route_type: string;
   agency_name?: string;
   services: Array<{
     organization_guid: string;

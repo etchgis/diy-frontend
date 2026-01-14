@@ -271,7 +271,7 @@ export default function TransitDestinationPreview({
                                         style={getIconSizeForManyLegs(hasMany)}
                                         alt=""
                                       />
-                                    ) : leg.mode === "RAIL" ? (
+                                    ) : leg.mode == "LIGHT RAIL" ? (
                                       <div className="rail-leg flex items-center gap-0.5">
                                         <img
                                           className="leg-icon"
@@ -355,7 +355,7 @@ export default function TransitDestinationPreview({
                                           </p>
                                         </div>
                                       </div>
-                                    ) : leg.mode == "TRAIN" ? (
+                                    ) : leg.mode == "RAIL" ? (
                                       <div className="rail-leg flex items-center gap-0.5">
                                         <img
                                           className="train-icon"

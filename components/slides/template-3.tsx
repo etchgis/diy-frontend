@@ -36,6 +36,15 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
   const logoImage = useTemplate3Store((state) => state.slides[slideId]?.logoImage || '');
   const setLogoImage = useTemplate3Store((state) => state.setLogoImage);
 
+  const imageWidth = useTemplate3Store((state) => state.slides[slideId]?.imageWidth || 600);
+  const setImageWidth = useTemplate3Store((state) => state.setImageWidth);
+
+  const imageHeight = useTemplate3Store((state) => state.slides[slideId]?.imageHeight || 400);
+  const setImageHeight = useTemplate3Store((state) => state.setImageHeight);
+
+  const imageObjectFit = useTemplate3Store((state) => state.slides[slideId]?.imageObjectFit || 'contain');
+  const setImageObjectFit = useTemplate3Store((state) => state.setImageObjectFit);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   useEffect(() => {
@@ -60,7 +69,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, image, backgroundColor, textColor, titleColor, bgImage, logoImage]);
+  }, [title, image, backgroundColor, textColor, titleColor, bgImage, logoImage, imageWidth, imageHeight, imageObjectFit]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
     const file = e.target.files?.[0];
@@ -268,6 +277,48 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
                 )}
               </div>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Image Width (px)</label>
+            <Input
+              type="number"
+              min="10"
+              max="2000"
+              step="1"
+              value={imageWidth}
+              onChange={(e) => setImageWidth(slideId, Math.round(Number(e.target.value)))}
+              className="text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Image Height (px)</label>
+            <Input
+              type="number"
+              min="10"
+              max="2000"
+              step="1"
+              value={imageHeight}
+              onChange={(e) => setImageHeight(slideId, Math.round(Number(e.target.value)))}
+              className="text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Image Fit</label>
+            <Select value={imageObjectFit} onValueChange={(value) => setImageObjectFit(slideId, value as any)}>
+              <SelectTrigger className="text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="contain">Contain</SelectItem>
+                <SelectItem value="cover">Cover</SelectItem>
+                <SelectItem value="fill">Fill</SelectItem>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="scale-down">Scale Down</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

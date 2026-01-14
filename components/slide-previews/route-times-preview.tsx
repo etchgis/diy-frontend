@@ -259,6 +259,26 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     return [];
   };
 
+  const getModeIcon = (type: string) => {
+    if(type == '0'){
+      return (
+        <img src="images/rail-icon.png" style={{height: '29px', width: '29px', marginRight: '5px'}}></img>
+      )
+    } else if(type == '1') {
+      return (
+        <img src="images/subway-icon.png" style={{height: '29px', width: '29px', marginRight: '5px'}}></img>
+      )
+    } else if(type == '2') {
+      return (
+        <img src="images/train-icon.png" className="train-icon" style={{height: '29px', width: '29px', marginRight: '5px'}}></img>
+      )
+    } else if(type == '3') {
+      return (
+        <img src="images/bus-icon.png" style={{height: '29px', width: '29px', marginRight: '5px'}}></img>
+      )
+    }
+  }
+
   const renderMapView = () => {
     const stops = patternData?.stops || [];
 
@@ -506,26 +526,36 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
           />
         )}
 
-        <h1 className="text-2xl font-bold pr-20" style={{ color: titleColor }}>
-          {selectedRoute ? (
-            <>
-              {selectedRoute.route_short_name && (
-                <span
-                  className="inline-block px-3 py-1 mr-3 rounded"
-                  style={{
-                    backgroundColor: selectedRoute.route_color ? `#${selectedRoute.route_color}` : '#0074D9',
-                    color: selectedRoute.route_text_color ? `#${selectedRoute.route_text_color}` : '#FFFFFF',
-                  }}
-                >
-                  {selectedRoute.route_short_name}
-                </span>
-              )}
-              {selectedRoute.route_long_name || routeName}
-            </>
-          ) : (
-            routeName || 'Select a Route'
-          )}
-        </h1>
+<h1
+  className="text-2xl font-bold pr-20 flex items-center gap-3"
+  style={{ color: titleColor }}
+>
+  {selectedRoute ? (
+    <>
+      {getModeIcon(selectedRoute.route_type)}
+
+      {selectedRoute.route_short_name && (
+        <span
+          className="inline-block px-3 py-1 rounded"
+          style={{
+            backgroundColor: selectedRoute.route_color
+              ? `#${selectedRoute.route_color}`
+              : '#0074D9',
+            color: selectedRoute.route_text_color
+              ? `#${selectedRoute.route_text_color}`
+              : '#FFFFFF',
+          }}
+        >
+          {selectedRoute.route_short_name}
+        </span>
+      )}
+
+      <span>{selectedRoute.route_long_name || routeName}</span>
+    </>
+  ) : (
+    routeName || 'Select a Route'
+  )}
+</h1>
         {description && (
           <p className="mt-2 text-sm" style={{ color: titleColor, opacity: 0.9 }}>
             {description}

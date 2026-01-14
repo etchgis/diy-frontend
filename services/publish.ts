@@ -176,7 +176,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize, textColor, titleColor, logoImage } = slideData;
+        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -188,6 +188,9 @@ export async function publish() {
         screenObj.data.textColor = textColor;
         screenObj.data.titleColor = titleColor;
         screenObj.data.logoImage = logoImage;
+        screenObj.data.imageWidth = imageWidth;
+        screenObj.data.imageHeight = imageHeight;
+        screenObj.data.imageObjectFit = imageObjectFit;
 
       } else {
       }
@@ -204,7 +207,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage, textColor, titleColor, logoImage } = slideData;
+        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -216,6 +219,9 @@ export async function publish() {
         screenObj.data.textColor = textColor;
         screenObj.data.titleColor = titleColor;
         screenObj.data.logoImage = logoImage;
+        screenObj.data.imageWidth = imageWidth;
+        screenObj.data.imageHeight = imageHeight;
+        screenObj.data.imageObjectFit = imageObjectFit;
       } else {
       }
     }
@@ -230,7 +236,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { title, image, backgroundColor, bgImage, textColor, titleColor, logoImage } = slideData;
+        const { title, image, backgroundColor, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.image = image;
@@ -239,6 +245,9 @@ export async function publish() {
         screenObj.data.textColor = textColor;
         screenObj.data.titleColor = titleColor;
         screenObj.data.logoImage = logoImage;
+        screenObj.data.imageWidth = imageWidth;
+        screenObj.data.imageHeight = imageHeight;
+        screenObj.data.imageObjectFit = imageObjectFit;
       } else {
       }
     }
