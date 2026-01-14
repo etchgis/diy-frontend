@@ -260,21 +260,35 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   };
 
   const getModeIcon = (type: string) => {
+    // Use CSS mask to apply titleColor to the icon
+    const iconStyle: React.CSSProperties = {
+      height: '29px',
+      width: '29px',
+      marginRight: '5px',
+      backgroundColor: titleColor,
+      WebkitMaskSize: 'contain',
+      maskSize: 'contain',
+      WebkitMaskRepeat: 'no-repeat',
+      maskRepeat: 'no-repeat',
+      WebkitMaskPosition: 'center',
+      maskPosition: 'center',
+    };
+
     if(type == '0'){
       return (
-        <img src="images/rail-icon.png" style={{height: '29px', width: '29px', marginRight: '5px'}}></img>
+        <div style={{...iconStyle, WebkitMaskImage: 'url(images/rail-icon.png)', maskImage: 'url(images/rail-icon.png)'}}></div>
       )
     } else if(type == '1') {
       return (
-        <img src="images/subway-icon.png" style={{height: '29px', width: '29px', marginRight: '5px'}}></img>
+        <div style={{...iconStyle, WebkitMaskImage: 'url(images/subway-icon.png)', maskImage: 'url(images/subway-icon.png)'}}></div>
       )
     } else if(type == '2') {
       return (
-        <img src="images/train-icon.png" className="train-icon" style={{height: '29px', width: '29px', marginRight: '5px'}}></img>
+        <div style={{...iconStyle, WebkitMaskImage: 'url(images/train-icon.png)', maskImage: 'url(images/train-icon.png)'}}></div>
       )
     } else if(type == '3') {
       return (
-        <img src="images/bus-icon.png" style={{height: '29px', width: '29px', marginRight: '5px'}}></img>
+        <div style={{...iconStyle, WebkitMaskImage: 'url(images/bus-icon.png)', maskImage: 'url(images/bus-icon.png)'}}></div>
       )
     }
   }

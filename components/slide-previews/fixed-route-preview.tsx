@@ -55,6 +55,19 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     (state) => state.slides[slideId]?.isLoading
   );
 
+  // CSS mask style to apply titleColor to the bus icon
+  const busIconStyle: React.CSSProperties = {
+    backgroundColor: titleColor,
+    WebkitMaskImage: 'url(images/bus-icon.png)',
+    maskImage: 'url(images/bus-icon.png)',
+    WebkitMaskSize: 'contain',
+    maskSize: 'contain',
+    WebkitMaskRepeat: 'no-repeat',
+    maskRepeat: 'no-repeat',
+    WebkitMaskPosition: 'center',
+    maskPosition: 'center',
+  };
+
   // Loading Spinner Component
   const LoadingSpinner = () => (
     <div className="flex flex-col items-center justify-center h-full">
@@ -93,8 +106,8 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 />
               )}
 
-              <div className="text-lg mb-2" style={{display: 'flex'}}>
-                <img src="images/bus-icon.png" style={{height: '25px', width: '25px', marginRight: '5px'}}></img>
+              <div className="text-lg mb-2" style={{display: 'flex', alignItems: 'center'}}>
+                <div style={{...busIconStyle, height: '25px', width: '25px', marginRight: '5px'}}></div>
                 <p>Stop #{selectedStop?.stop_id} arrival times</p>
               </div>
 
@@ -123,8 +136,11 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 style={{
                   fontSize: "clamp(0.875rem, 1.5vw, 1.25rem)",
                   marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
               >
+                <div style={{...busIconStyle, height: 'clamp(20px, 2vw, 25px)', width: 'clamp(20px, 2vw, 25px)', marginRight: '5px'}}></div>
                 Stop #{selectedStop?.stop_id} arrival times
               </div>
 
