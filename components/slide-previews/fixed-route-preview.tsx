@@ -93,8 +93,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 />
               )}
 
-              <div className="text-lg mb-2">
-                Stop #{selectedStop?.stop_id} arrival times
+              <div className="text-lg mb-2" style={{display: 'flex'}}>
+                <img src="images/bus-icon.png" style={{height: '25px', width: '25px', marginRight: '5px'}}></img>
+                <p>Stop #{selectedStop?.stop_id} arrival times</p>
               </div>
 
               <h2 className="text-3xl font-bold mb-2">

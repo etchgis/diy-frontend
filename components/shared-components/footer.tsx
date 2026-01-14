@@ -41,7 +41,9 @@ export default function Footer() {
     imageClass: string,
     placeholderClass: string
   ) => {
-    if (type === "time") {
+    if (type === "none") {
+      return <div className={placeholderClass} />;
+    } else if (type === "time") {
       return (
         <div
           className={`font-medium ${placeholderClass}`}

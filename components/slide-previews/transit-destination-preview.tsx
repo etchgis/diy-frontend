@@ -355,7 +355,50 @@ export default function TransitDestinationPreview({
                                           </p>
                                         </div>
                                       </div>
-                                    ) : (
+                                    ) : leg.mode == "TRAIN" ? (
+                                      <div className="rail-leg flex items-center gap-0.5">
+                                        <img
+                                          className="train-icon"
+                                          src="/images/train-icon.png"
+                                          style={getIconSizeForManyLegs(
+                                            hasMany
+                                          )}
+                                          alt=""
+                                        />
+                                        <div
+                                          className={`rail-info rounded ${getBusPadding(
+                                            hasMany
+                                          )}`}
+                                          style={{
+                                            backgroundColor: leg.routeColor
+                                              ? `#${leg.routeColor}`
+                                              : "white",
+                                          }}
+                                        >
+                                          <p
+                                            className={`${getBusTextSize(
+                                              hasMany
+                                            )} leading-tight text-center`}
+                                            style={{
+                                              color: leg.routeTextColor
+                                                ? `#${leg.routeTextColor}`
+                                                : "black",
+                                            }}
+                                          >
+                                            {leg.routeShortName?.length > 5
+                                              ? `${leg.agencyId || "N/A"} ${
+                                                  leg.routeShortName.match(
+                                                    /\d+/
+                                                  )?.[0] || ""
+                                                }`
+                                              : leg.routeShortName ||
+                                                leg.tripShortName ||
+                                                "N/A"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )
+                                    : (
                                       <div className="bus-leg flex items-center gap-0.5">
                                         <img
                                           className="leg-icon"

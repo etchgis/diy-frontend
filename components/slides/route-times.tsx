@@ -93,6 +93,8 @@ export default function RouteTimesSlide({
       try {
         const searchResults = await fetchRoutes(value);
 
+        console.log(searchResults);
+
         if (searchResults && searchResults.length > 0) {
           setFilteredRoutes(searchResults);
           setShowDropdown(true);
@@ -132,6 +134,8 @@ export default function RouteTimesSlide({
       setIsLoading(slideId, true);
 
       const result = await fetchCompleteRouteData(route);
+
+      console.log(result);
 
       if (result.patternData) {
         const hadPatternDataBefore = !!slideData?.patternData;

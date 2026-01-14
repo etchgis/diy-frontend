@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type FooterSectionType = 'image' | 'time';
+type FooterSectionType = 'image' | 'time' | 'none';
 
 interface FooterState {
   leftImage: string;

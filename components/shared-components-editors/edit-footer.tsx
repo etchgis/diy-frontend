@@ -67,7 +67,9 @@ export default function EditFooter({
     imageClass: string,
     placeholderClass: string
   ) => {
-    if (type === "time") {
+    if (type === "none") {
+      return <div className={placeholderClass} />;
+    } else if (type === "time") {
       return (
         <div
           className={`font-medium ${placeholderClass}`}
@@ -313,11 +315,12 @@ export default function EditFooter({
               </label>
               <select
                 value={leftType}
-                onChange={(e) => setLeftType(e.target.value as "image" | "time")}
+                onChange={(e) => setLeftType(e.target.value as "image" | "time" | "none")}
                 className="w-full px-2 py-1 text-xs border rounded"
               >
                 <option value="image">Image</option>
                 <option value="time">Time</option>
+                <option value="none">None</option>
               </select>
             </div>
 
@@ -384,11 +387,12 @@ export default function EditFooter({
               </label>
               <select
                 value={middleType}
-                onChange={(e) => setMiddleType(e.target.value as "image" | "time")}
+                onChange={(e) => setMiddleType(e.target.value as "image" | "time" | "none")}
                 className="w-full px-2 py-1 text-xs border rounded"
               >
                 <option value="image">Image</option>
                 <option value="time">Time</option>
+                <option value="none">None</option>
               </select>
             </div>
 
@@ -455,11 +459,12 @@ export default function EditFooter({
               </label>
               <select
                 value={rightType}
-                onChange={(e) => setRightType(e.target.value as "image" | "time")}
+                onChange={(e) => setRightType(e.target.value as "image" | "time" | "none")}
                 className="w-full px-2 py-1 text-xs border rounded"
               >
                 <option value="image">Image</option>
                 <option value="time">Time</option>
+                <option value="none">None</option>
               </select>
             </div>
 
