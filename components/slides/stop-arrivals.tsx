@@ -39,6 +39,8 @@ export default function StopArrivalsSlide({
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
     "idle"
   );
+  const [isBgUploading, setIsBgUploading] = useState(false);
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
   const renderCount = useRef(0);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
@@ -312,22 +314,26 @@ export default function StopArrivalsSlide({
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const currentImage = imageTargetMap[target].get();
-  
+    const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
+
+    setLoadingFn(true);
     try {
       const data = await uploadImage(shortcode, file);
-  
+
       if (currentImage) {
         await deleteImage(currentImage);
       }
-  
+
       imageTargetMap[target].set(data.url);
 
       if (target === 'bg') bgInputRef.current!.value = '';
       if (target === 'logo') logoInputRef.current!.value = '';
     } catch (err) {
       console.error('Image upload failed:', err);
+    } finally {
+      setLoadingFn(false);
     }
   };
 
@@ -613,7 +619,9 @@ export default function StopArrivalsSlide({
               </label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {bgImage ? (
+                  {isBgUploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  ) : bgImage ? (
                     <img
                       src={bgImage}
                       alt="BG"
@@ -660,7 +668,9 @@ export default function StopArrivalsSlide({
               </label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {logoImage ? (
+                  {isLogoUploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  ) : logoImage ? (
                     <img
                       src={logoImage}
                       alt="BG"

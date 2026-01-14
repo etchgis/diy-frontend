@@ -22,6 +22,8 @@ export default function RouteTimesSlide({
   handlePublish: () => void
 }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isBgUploading, setIsBgUploading] = useState(false);
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
   const renderCount = useRef(0);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -205,7 +207,9 @@ export default function RouteTimesSlide({
 
     const currentImage = target === 'bg' ? bgImage : logoImage;
     const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
+    const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
 
+    setLoadingFn(true);
     uploadImage(shortcode, file).then((data) => {
       if (currentImage) {
         deleteImage(currentImage).then(() => {
@@ -216,6 +220,8 @@ export default function RouteTimesSlide({
       setImageFn(slideId, data.url);
     }).catch((err) => {
       console.error('Image upload failed:', err);
+    }).finally(() => {
+      setLoadingFn(false);
     });
   };
 
@@ -443,7 +449,9 @@ export default function RouteTimesSlide({
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {bgImage ? (
+                  {isBgUploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  ) : bgImage ? (
                     <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
@@ -483,7 +491,9 @@ export default function RouteTimesSlide({
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Logo Image</label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {logoImage ? (
+                  {isLogoUploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  ) : logoImage ? (
                     <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-4 h-4 bg-[#cbd5e0] rounded" />

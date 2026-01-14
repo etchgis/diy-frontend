@@ -3,7 +3,7 @@ import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { useTemplate3Store } from "@/stores/template3";
 import { usePathname } from "next/navigation";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Footer from "../shared-components/footer";
 import ResizableImage from "../shared-components/resizable-image";
 
@@ -16,6 +16,7 @@ export default function Template3Preview({
 }) {
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor") && !previewMode;
+  const [isUploading, setIsUploading] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const title = useTemplate3Store(
@@ -65,6 +66,8 @@ export default function Template3Preview({
 
     const file = e.dataTransfer.files[0];
     if (!file) return;
+
+    setIsUploading(true);
     uploadImage(shortcode, file)
       .then((data) => {
         if (image) {
@@ -78,6 +81,9 @@ export default function Template3Preview({
       })
       .catch((err) => {
         console.error("Image upload failed:", err);
+      })
+      .finally(() => {
+        setIsUploading(false);
       });
   };
 
@@ -148,7 +154,12 @@ export default function Template3Preview({
             onDrop={isEditor ? handleDrop : undefined}
             onDragOver={isEditor ? handleDragOver : undefined}
           >
-            {image ? (
+            {isUploading ? (
+              <div className="flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                <p className="mt-4 text-sm" style={{ color: textColor }}>Uploading...</p>
+              </div>
+            ) : image ? (
               <ResizableImage
                 src={image}
                 alt="Uploaded"

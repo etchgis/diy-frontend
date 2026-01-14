@@ -16,6 +16,7 @@ export default function Template1Preview({
 }) {
   const pathname = usePathname();
   const [isEditor, setIsEditor] = useState(pathname.includes("/editor"));
+  const [isUploading, setIsUploading] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,6 +86,8 @@ export default function Template1Preview({
 
     const file = e.dataTransfer.files[0];
     if (!file) return;
+
+    setIsUploading(true);
     uploadImage(shortcode, file)
       .then((data) => {
         if (image) {
@@ -98,6 +101,9 @@ export default function Template1Preview({
       })
       .catch((err) => {
         console.error("Image upload failed:", err);
+      })
+      .finally(() => {
+        setIsUploading(false);
       });
   };
 
@@ -194,7 +200,12 @@ export default function Template1Preview({
             onDrop={isEditor ? handleDrop : undefined}
             onDragOver={isEditor ? handleDragOver : undefined}
           >
-            {image ? (
+            {isUploading ? (
+              <div className="flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                <p className="mt-4 text-sm" style={{ color: textColor }}>Uploading...</p>
+              </div>
+            ) : image ? (
               <ResizableImage
                 src={image}
                 alt="Uploaded"

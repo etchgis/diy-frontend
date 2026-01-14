@@ -38,6 +38,11 @@ export default function EditFooter({
   const [backgroundColor, setBackgroundColor] = useState(storeBackgroundColor);
   const [timeTextColor, setTimeTextColor] = useState(storeTimeTextColor);
 
+  // Loading states
+  const [isLeftUploading, setIsLeftUploading] = useState(false);
+  const [isMiddleUploading, setIsMiddleUploading] = useState(false);
+  const [isRightUploading, setIsRightUploading] = useState(false);
+
   const shortcode = useGeneralStore((state) => state.shortcode || "");
 
   // Time display for preview
@@ -127,7 +132,9 @@ export default function EditFooter({
 
     const currentImage = target === "left" ? leftImage : target === "middle" ? middleImage : rightImage;
     const localSetImageFn = target === "left" ? setLeftImage : target === "middle" ? setMiddleImage : setRightImage;
+    const setLoadingFn = target === "left" ? setIsLeftUploading : target === "middle" ? setIsMiddleUploading : setIsRightUploading;
 
+    setLoadingFn(true);
     uploadImage(shortcode, file)
       .then((data) => {
         // Only delete if it's not a default image path
@@ -142,6 +149,9 @@ export default function EditFooter({
       })
       .catch((err) => {
         console.error("Image upload failed:", err);
+      })
+      .finally(() => {
+        setLoadingFn(false);
       });
   };
 
@@ -331,7 +341,9 @@ export default function EditFooter({
                 </label>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-full h-16 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden p-2">
-                  {leftImage ? (
+                  {isLeftUploading ? (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  ) : leftImage ? (
                     <img
                       src={leftImage}
                       alt="Left"
@@ -403,7 +415,9 @@ export default function EditFooter({
                 </label>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-full h-16 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden p-2">
-                    {middleImage ? (
+                    {isMiddleUploading ? (
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    ) : middleImage ? (
                       <img
                         src={middleImage}
                         alt="Middle"
@@ -475,7 +489,9 @@ export default function EditFooter({
                 </label>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-full h-16 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden p-2">
-                  {rightImage ? (
+                  {isRightUploading ? (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  ) : rightImage ? (
                     <img
                       src={rightImage}
                       alt="Right"
