@@ -196,7 +196,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
       const enrichedDestination = {
         name: newDestination.name,
-        route: result.route && result.route.length > 5 ? result.agencyId || "N/A" : result.route || "N/A",
+        route: result.route || "N/A",
         departure: formatTime(result.startTime),
         arrival: formatTime(result.endTime),
         travel: formatDuration(result.duration),
