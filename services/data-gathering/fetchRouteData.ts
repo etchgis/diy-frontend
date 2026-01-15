@@ -1,5 +1,10 @@
 import { formatTime12Hour } from '@/utils/timeFormatters';
 
+const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
+if (!SKIDS_URL) {
+  throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
+}
+
 // Types for route timetable API
 interface RouteTimetableResponse {
   route: {
@@ -81,7 +86,7 @@ export async function fetchRouteData(
   includeStops: boolean = true
 ): Promise<RouteData[]> {
   try {
-    let url = `https://api-stage.etch.app/skids/feed/routes?geometry=${includeGeometry}&stops=${includeStops}&nysdot=true`;
+    let url = `${SKIDS_URL}/feed/routes?geometry=${includeGeometry}&stops=${includeStops}&nysdot=true`;
 
     if (serviceIds && serviceIds.length > 0) {
       url += `&serviceIds=${serviceIds.join(',')}`;
@@ -125,7 +130,7 @@ export async function fetchPatternDetails(
   timestamp?: number
 ): Promise<PatternDetails | null> {
   try {
-    let url = `https://api-stage.etch.app/skids/feed/${serviceId}/patterns/${patternId}`;
+    let url = `${SKIDS_URL}/feed/${serviceId}/patterns/${patternId}`;
 
     if (timestamp) {
       url += `?timestamp=${timestamp}&nysdot=true`;
@@ -261,7 +266,7 @@ export async function fetchRouteTimetable(
     }
 
     // Build URL with query parameters
-    let url = `https://api-stage.etch.app/skids/feed/${serviceId}/routes/${routeId}/timetable?` +
+    let url = `${SKIDS_URL}/feed/${serviceId}/routes/${routeId}/timetable?` +
       `startTime=${startTime}&endTime=${endTime}&nysdot=true`;
 
     if (direction !== undefined) {

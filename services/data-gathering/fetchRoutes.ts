@@ -1,3 +1,8 @@
+const NYSDOT_STOPS_URL = process.env.NEXT_PUBLIC_NYSDOT_STOPS_URL;
+if (!NYSDOT_STOPS_URL) {
+  throw new Error('NEXT_PUBLIC_NYSDOT_STOPS_URL environment variable is not configured');
+}
+
 interface Route {
   route_id: string;
   agency_id: string;
@@ -28,7 +33,7 @@ export async function fetchRoutes(search: string): Promise<Route[]> {
       return [];
     }
 
-    const url = `https://api.etch.app/nysdot-stops/routes?search=${encodeURIComponent(search)}`;
+    const url = `${NYSDOT_STOPS_URL}/routes?search=${encodeURIComponent(search)}`;
 
     const response = await fetch(url);
 
