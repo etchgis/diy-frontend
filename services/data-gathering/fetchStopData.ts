@@ -67,6 +67,7 @@ async function formatBusData(data: any, serviceId: string, organizationId: strin
 export async function fetchStopData(stopId: string, serviceId: string, organizationId: string, slideId: string, setDataError: (slideId: string, error: boolean) => void) {
   try {
 
+    console.log(serviceId, organizationId);
 
 
     const endpoint = `https://api-stage.etch.app/skids/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=7&nysdot=true`;
