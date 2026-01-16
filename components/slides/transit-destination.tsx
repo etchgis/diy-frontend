@@ -7,9 +7,11 @@ import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect, useRef, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
+import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
 
 const MAX_DESTINATIONS = 6;
+const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -189,21 +191,70 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       setSelectedFeature(slideId, "");
       setLocationError(slideId, false);
 
-      const origin = `${coordinates.lat},${coordinates.lng}`;
-      const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+      let enrichedDestination;
 
-      const result = await fetchTransitData(origin, destination);
+      // Try SKIDS first if enabled
+      if (USE_SKIDS) {
+        try {
+          console.log('[SKIDS] Attempting to fetch transit data via SKIDS...');
+          const skidsResults = await fetchSkidsTransitData(
+            { lat: coordinates.lat, lng: coordinates.lng },
+            [newDestination]
+          );
 
-      const enrichedDestination = {
-        name: newDestination.name,
-        route: result.route || "N/A",
-        departure: formatTime(result.startTime),
-        arrival: formatTime(result.endTime),
-        travel: formatDuration(result.duration),
-        legs: result.legs,
-        coordinates: newDestination.coordinates,
-        dark: updatedDestinations.length % 2 === 0,
-      };
+          if (skidsResults && skidsResults.length > 0) {
+            const skidsData = skidsResults[0];
+            enrichedDestination = {
+              name: newDestination.name,
+              route: skidsData.route || "N/A",
+              departure: skidsData.departure,
+              arrival: skidsData.arrival,
+              travel: skidsData.travel,
+              legs: skidsData.legs,
+              coordinates: newDestination.coordinates,
+              dark: updatedDestinations.length % 2 === 0,
+            };
+            console.log('[SKIDS] Successfully fetched data via SKIDS');
+          } else {
+            throw new Error('SKIDS returned no results');
+          }
+        } catch (skidsError) {
+          console.error('[SKIDS] SKIDS fetch failed, falling back to OTP:', skidsError);
+          // Fall back to OTP
+          const origin = `${coordinates.lat},${coordinates.lng}`;
+          const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+          const result = await fetchTransitData(origin, destination);
+
+          enrichedDestination = {
+            name: newDestination.name,
+            route: result.route || "N/A",
+            departure: formatTime(result.startTime),
+            arrival: formatTime(result.endTime),
+            travel: formatDuration(result.duration),
+            legs: result.legs,
+            coordinates: newDestination.coordinates,
+            dark: updatedDestinations.length % 2 === 0,
+          };
+          console.log('[OTP] Successfully fetched data via OTP fallback');
+        }
+      } else {
+        // Use OTP directly if SKIDS is disabled
+        console.log('[OTP] Using OTP (SKIDS disabled)');
+        const origin = `${coordinates.lat},${coordinates.lng}`;
+        const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+        const result = await fetchTransitData(origin, destination);
+
+        enrichedDestination = {
+          name: newDestination.name,
+          route: result.route || "N/A",
+          departure: formatTime(result.startTime),
+          arrival: formatTime(result.endTime),
+          travel: formatDuration(result.duration),
+          legs: result.legs,
+          coordinates: newDestination.coordinates,
+          dark: updatedDestinations.length % 2 === 0,
+        };
+      }
 
       const updatedDestinationData = [...destinationData, enrichedDestination];
       setDestinations(slideId, updatedDestinations);
