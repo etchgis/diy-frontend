@@ -45,18 +45,25 @@ async function fetchTrainDetails(arrivals: any[], serviceId: string, organizatio
 }
 
 async function formatBusData(data: any, serviceId: string, organizationId: string) {
+  // Filter out arrivals that are in the past (negative duration)
+  const currentTime = Date.now();
+  const futureArrivals = data.arrivals.filter((train: any) => {
+    const durationSeconds = Math.round((train.arriveScheduled - currentTime) / 1000);
+    return durationSeconds >= 0;
+  });
+
   const formattedData = {
     station: data.name,
-    trains: data.arrivals.map((train: any) => ({
+    trains: futureArrivals.map((train: any) => ({
       destination: train.headsign,
       routeId: train.routeId,
       arrivalTime: formatTime(Math.round((train.arrive))),
-      arrival: formatDuration(Math.round((train.arriveScheduled - Date.now()) / 1000)),
+      arrival: formatDuration(Math.round((train.arriveScheduled - currentTime) / 1000)),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),
     })),
   };
 
-  const trainDetails = await fetchTrainDetails(data.arrivals, serviceId, organizationId);
+  const trainDetails = await fetchTrainDetails(futureArrivals, serviceId, organizationId);
   formattedData.trains.forEach((train: any, index: number) => {
     train.details = trainDetails[index];
   });
