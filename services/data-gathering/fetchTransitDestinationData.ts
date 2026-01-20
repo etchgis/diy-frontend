@@ -1,8 +1,13 @@
 import { formatTripData } from "@/utils/formatTripData";
 
+const OTP_URL = process.env.NEXT_PUBLIC_OTP_URL;
+if (!OTP_URL) {
+  throw new Error('NEXT_PUBLIC_OTP_URL environment variable is not configured');
+}
+
 export async function fetchTransitData(fromPlace: string, toPlace: string): Promise<any> {
   try {
-    const baseUrl = 'https://511ny.etch.app/opentripplanner/otp/routers/default/plan?';
+    const baseUrl = `${OTP_URL}?`;
 
     const now = new Date();
     const hours = now.getHours();

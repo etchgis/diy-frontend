@@ -4,19 +4,26 @@
 
 This project uses **pnpm** as the package manager.
 
-1.**Install dependencies**
+1.**Install pnpm** (if not already installed)
+
+ ```bash
+   corepack enable
+   corepack prepare pnpm@latest --activate
+  ```
+
+2.**Install dependencies**
 
  ```bash
    pnpm install
   ```
   
-2.**Build the project**
+3.**Build the project**
 
  ```bash
    npx next build
   ```
 
-3.**Start the development server**
+4.**Start the development server**
 
 ```bash
    npx next dev

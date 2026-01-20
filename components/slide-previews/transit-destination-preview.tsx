@@ -103,6 +103,26 @@ export default function TransitDestinationPreview({
     return "text-[1.8vh]";
   };
 
+  /**
+   * Format route name for display.
+   * For long route names (e.g., "M34-SBS"), show agencyId + route number like "MTA NYCT 34"
+   * For short route names (e.g., "N", "Q"), show as-is
+   */
+  const formatRouteName = (leg: any): string => {
+    const name = leg.routeShortName || leg.tripShortName || "N/A";
+
+    // For short names display as-is
+    if (name.length <= 5) return name;
+
+    // For longer names, use agencyId + extracted route number
+    const routeNumber = name.match(/\d+/)?.[0];
+    if (routeNumber && leg.agencyId) {
+      return `${leg.agencyId} ${routeNumber}`;
+    }
+
+    return name;
+  };
+
   const getDurationTextSize = (hasMany: boolean) => {
     if (mobileMode || hasMany) return "text-sm";
     if (isEditor) return "text-sm";
@@ -301,15 +321,7 @@ export default function TransitDestinationPreview({
                                                 : "black",
                                             }}
                                           >
-                                            {leg.routeShortName?.length > 5
-                                              ? `${leg.agencyId || "N/A"} ${
-                                                  leg.routeShortName.match(
-                                                    /\d+/
-                                                  )?.[0] || ""
-                                                }`
-                                              : leg.routeShortName ||
-                                                leg.tripShortName ||
-                                                "N/A"}
+                                            {formatRouteName(leg)}
                                           </p>
                                         </div>
                                       </div>
@@ -343,15 +355,7 @@ export default function TransitDestinationPreview({
                                                 : "black",
                                             }}
                                           >
-                                            {leg.routeShortName?.length > 5
-                                              ? `${leg.agencyId || "N/A"} ${
-                                                  leg.routeShortName.match(
-                                                    /\d+/
-                                                  )?.[0] || ""
-                                                }`
-                                              : leg.routeShortName ||
-                                                leg.tripShortName ||
-                                                "N/A"}
+                                            {formatRouteName(leg)}
                                           </p>
                                         </div>
                                       </div>
@@ -428,15 +432,7 @@ export default function TransitDestinationPreview({
                                                 : "black",
                                             }}
                                           >
-                                            {leg.routeShortName?.length > 5
-                                              ? `${leg.agencyId || "N/A"} ${
-                                                  leg.routeShortName.match(
-                                                    /\d+/
-                                                  )?.[0] || ""
-                                                }`
-                                              : leg.routeShortName ||
-                                                leg.tripShortName ||
-                                                "N/A"}
+                                            {formatRouteName(leg)}
                                           </p>
                                         </div>
                                       </div>

@@ -1,6 +1,11 @@
 import { formatTime, formatDuration } from '@/utils/formats';
 import { set } from 'react-hook-form';
 
+const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
+if (!SKIDS_URL) {
+  throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
+}
+
 function findStatus(realtime: boolean, arrive: number, arriveScheduled: number) {
   const currentTime = Date.now();
   const timeDiff = arrive - currentTime;
@@ -24,7 +29,7 @@ function findStatus(realtime: boolean, arrive: number, arriveScheduled: number) 
 async function fetchTrainDetails(arrivals: any[], serviceId: string, organizationId: string) {
   const trainDetails = await Promise.all(
     arrivals.map(async (train: any) => {
-      const endpoint = `https://api-stage.etch.app/skids/feed/${serviceId}/patterns/${train.id}?nysdot=true`;
+      const endpoint = `${SKIDS_URL}/feed/${serviceId}/patterns/${train.id}?nysdot=true`;
       const headers = {
         'Content-Type': 'application/json',
         'X-Organization-Id': organizationId,
@@ -77,7 +82,7 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     console.log(serviceId, organizationId);
 
 
-    const endpoint = `https://api-stage.etch.app/skids/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=7&nysdot=true`;
+    const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=7&nysdot=true`;
     const headers = {
       'Content-Type': 'application/json',
       'X-Organization-Id': `${organizationId}`,

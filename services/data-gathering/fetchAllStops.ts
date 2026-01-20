@@ -1,3 +1,8 @@
+const NYSDOT_STOPS_URL = process.env.NEXT_PUBLIC_NYSDOT_STOPS_URL;
+if (!NYSDOT_STOPS_URL) {
+  throw new Error('NEXT_PUBLIC_NYSDOT_STOPS_URL environment variable is not configured');
+}
+
 interface FetchStopsOptions {
   coordinates: {lat: number, lng: number};
   radius?: number; // in meters, default 1000
@@ -11,7 +16,7 @@ export async function fetchAllStops(options: FetchStopsOptions | {lat: number, l
     const radius = 'radius' in options ? options.radius : undefined;
     const search = 'search' in options ? options.search : undefined;
 
-    let url = `https://api.etch.app/nysdot-stops/nearby-stops?lat=${coordinates.lat}&lon=${coordinates.lng}`;
+    let url = `${NYSDOT_STOPS_URL}/nearby-stops?lat=${coordinates.lat}&lon=${coordinates.lng}`;
 
     if (radius !== undefined) {
       url += `&radius=${radius}`;
