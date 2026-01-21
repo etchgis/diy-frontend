@@ -238,11 +238,14 @@ export async function fetchSkidsTransitData(
     }),
   });
 
+
+
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(`Skids API error: ${response.status} - ${errorBody}`);
   }
 
   const data: SkidsResponse = await response.json();
+  console.log(data);
   return transformSkidsResponse(data, destinations);
 }
