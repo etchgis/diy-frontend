@@ -145,7 +145,8 @@ export default function Template2Preview({
               className="w-full bg-transparent font-light"
               style={{
                 color: titleColor,
-                fontSize: "clamp(3.2rem, 11vh, 11rem)",
+                fontSize: "clamp(1.5rem, 8vh, 11rem)",
+                lineHeight: "1.2"
               }}
             >
               {title || ""}
@@ -233,8 +234,12 @@ export default function Template2Preview({
               />
             ) : (
               <div
-                className="w-full h-full bg-transparent font-light whitespace-pre-wrap"
-                style={{ color: textColor, fontSize: "clamp(2rem, 6vh, 6rem)" }}
+                className="w-full h-full bg-transparent font-light whitespace-pre-wrap overflow-y-auto"
+                style={{
+                  color: textColor,
+                  fontSize: "clamp(1rem, 5vh, 6rem)",
+                  lineHeight: "1.3"
+                }}
               >
                 {content || ""}
               </div>

@@ -135,7 +135,8 @@ export default function Template3Preview({
                 className="w-full bg-transparent font-light"
                 style={{
                   color: titleColor,
-                  fontSize: "clamp(3.2rem, 11vh, 11rem)",
+                  fontSize: "clamp(1.5rem, 8vh, 11rem)",
+                  lineHeight: "1.2"
                 }}
               >
                 {title || ""}
