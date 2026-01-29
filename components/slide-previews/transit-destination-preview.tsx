@@ -41,8 +41,7 @@ export default function TransitDestinationPreview({
     (state) => state.slides[slideId]?.destinationData || mockDestinations
   );
 
-  // Always show exactly 6 rows total
-  const totalRows = 6;
+  const totalRows = 5;
 
   const destinationTags = [
     "Albany International Airport",
@@ -211,7 +210,7 @@ export default function TransitDestinationPreview({
           // Render actual destinations if no dataError
           <>
             {destinationData &&
-              destinationData.map((dest: any, index: number) => {
+              destinationData.slice(0, totalRows).map((dest: any, index: number) => {
                 // Sanitize values with a dash if nothing exists
                 const name = dest.name || "-";
                 const route = dest.route || "-";
@@ -477,7 +476,7 @@ export default function TransitDestinationPreview({
                 );
               })}
 
-            {/* Add empty rows to fill remaining space */}
+            {/* Add empty rows to fill remaining space (before legend) */}
             {Array.from({
               length: Math.max(0, totalRows - destinationData.length),
             }).map((_, index) => (
@@ -508,6 +507,64 @@ export default function TransitDestinationPreview({
                 <div className="">-</div>
               </div>
             ))}
+
+            {/* Legend Row */}
+            <div
+              className={`flex-shrink-0 flex items-center justify-center ${getRowPadding()} ${mobileMode ? "py-2" : isEditor ? "py-3" : "py-[1.5vh]"} w-full`}
+              style={{
+                backgroundColor: backgroundColor,
+                color: tableHeaderTextColor,
+              }}
+            >
+              <div className={`flex items-center ${mobileMode ? "gap-3" : isEditor ? "gap-6" : "gap-[3vh]"} flex-wrap justify-center`}>
+                {/* Bus */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/bus-icon.png"
+                    alt="Bus"
+                    style={getIconSize()}
+                  />
+                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Bus</span>
+                </div>
+                {/* Walk */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/walking-man.png"
+                    alt="Walk"
+                    style={getIconSize()}
+                  />
+                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Walk</span>
+                </div>
+                {/* Train */}
+                <div className="flex items-center gap-1">
+                  <img
+                    className="train-icon"
+                    src="/images/train-icon.png"
+                    alt="Train"
+                    style={getIconSize()}
+                  />
+                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Train</span>
+                </div>
+                {/* Light Rail */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/rail-icon.png"
+                    alt="Light Rail"
+                    style={getIconSize()}
+                  />
+                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Light Rail</span>
+                </div>
+                {/* Subway */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/subway-icon.png"
+                    alt="Subway"
+                    style={getIconSize()}
+                  />
+                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Subway</span>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>

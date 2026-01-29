@@ -10,7 +10,7 @@ import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinat
 import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
 
-const MAX_DESTINATIONS = 6;
+const MAX_DESTINATIONS = 5;
 const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
@@ -303,7 +303,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               <span className="font-medium">Transit Destination Table Page Template</span>
             </div>
 
-            <p className="text-[#606061] mb-6">Input the destinations that you would like for the map to show. The maximum number of routes that this table can accommodate is 6.</p>
+            <p className="text-[#606061] mb-6">Input the destinations that you would like for the map to show. The maximum number of routes that this table can accommodate is 5.</p>
 
             {/* Destination Input */}
             <div className="mb-6">
