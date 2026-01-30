@@ -7,6 +7,7 @@ import Template3Preview from '@/components/slide-previews/template-3-preview';
 import TransitDestinationPreview from '@/components/slide-previews/transit-destination-preview';
 import TransitRoutesPreview from '@/components/slide-previews/transit-routes-preview';
 import RouteTimesPreview from '@/components/slide-previews/route-times-preview';
+import ImageOnlyPreview from '@/components/slide-previews/image-only-preview';
 import { fetchStopData } from '@/services/data-gathering/fetchStopData';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
@@ -280,6 +281,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         return <Template2Preview slideId={slideId} />;
       case 'template-3':
         return <Template3Preview slideId={slideId} />;
+      case 'image-only':
+        return <ImageOnlyPreview slideId={slideId} />;
       case 'transit-routes':
         return <TransitRoutesPreview slideId={slideId} noMapScroll={!isTvMode}/>;
       case 'route-times':

@@ -7,6 +7,7 @@ import { useTemplate1Store } from '@/stores/template1';
 import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
 import { useRouteTimesStore } from '@/stores/routeTimes';
+import { useImageOnlyStore } from '@/stores/imageOnly';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
@@ -249,6 +250,26 @@ export async function publish() {
         screenObj.data.imageHeight = imageHeight;
         screenObj.data.imageObjectFit = imageObjectFit;
       } else {
+      }
+    }
+
+    if (slide.type === 'image-only') {
+      screenObj.type = 'image-only';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useImageOnlyStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { image, imageObjectFit, backgroundColor, fullScreen, imageWidth, imageHeight } = slideData;
+
+        screenObj.data.image = image;
+        screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.fullScreen = fullScreen;
+        screenObj.data.imageWidth = imageWidth;
+        screenObj.data.imageHeight = imageHeight;
       }
     }
 

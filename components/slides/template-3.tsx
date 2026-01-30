@@ -134,7 +134,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
           <div className="flex items-center gap-2 text-[#4a5568] mb-4">
             <span>Home</span>
             <ChevronRight className="w-4 h-4" />
-            <span className="font-medium">Image Only Page</span>
+            <span className="font-medium">Image and Title Page</span>
           </div>
 
           <p className="text-[#606061] mb-6">

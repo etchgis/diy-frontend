@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import Footer from "../shared-components/footer";
 import ResizableImage from "../shared-components/resizable-image";
+import AutoFitText from "../shared-components/auto-fit-text";
 
 export default function Template2Preview({
   slideId,
@@ -233,16 +234,13 @@ export default function Template2Preview({
                 style={{ color: textColor }}
               />
             ) : (
-              <div
-                className="w-full h-full bg-transparent font-light whitespace-pre-wrap overflow-y-auto"
-                style={{
-                  color: textColor,
-                  fontSize: "clamp(1rem, 5vh, 6rem)",
-                  lineHeight: "1.3"
-                }}
-              >
-                {content || ""}
-              </div>
+              <AutoFitText
+                text={content || ""}
+                color={textColor}
+                maxFontSize={48}
+                minFontSize={4}
+                lineHeight={1.3}
+              />
             )}
           </div>
         </div>

@@ -157,6 +157,18 @@ export default function TransitDestinationPreview({
     return "text-[2.5vh]";
   };
 
+  const getLegendIconSize = () => {
+    if (mobileMode) return { width: "24px", height: "24px" };
+    if (isEditor) return { width: "35px", height: "35px" };
+    return { width: "5vh", height: "5vh" };
+  };
+
+  const getLegendTextSize = () => {
+    if (mobileMode) return "text-xs";
+    if (isEditor) return "text-sm";
+    return "text-[3vh]";
+  };
+
   return (
     <div
       className={`w-full h-full flex flex-col text-white overflow-hidden ${
@@ -516,24 +528,24 @@ export default function TransitDestinationPreview({
                 color: tableHeaderTextColor,
               }}
             >
-              <div className={`flex items-center ${mobileMode ? "gap-3" : isEditor ? "gap-6" : "gap-[3vh]"} flex-wrap justify-center`}>
+              <div className={`flex items-center ${mobileMode ? "gap-3" : isEditor ? "gap-6" : "gap-[4vh]"} flex-wrap justify-center`}>
                 {/* Bus */}
                 <div className="flex items-center gap-1">
                   <img
                     src="/images/bus-icon.png"
                     alt="Bus"
-                    style={getIconSize()}
+                    style={getLegendIconSize()}
                   />
-                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Bus</span>
+                  <span className={getLegendTextSize()}>Bus</span>
                 </div>
                 {/* Walk */}
                 <div className="flex items-center gap-1">
                   <img
                     src="/images/walking-man.png"
                     alt="Walk"
-                    style={getIconSize()}
+                    style={getLegendIconSize()}
                   />
-                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Walk</span>
+                  <span className={getLegendTextSize()}>Walk</span>
                 </div>
                 {/* Train */}
                 <div className="flex items-center gap-1">
@@ -541,27 +553,27 @@ export default function TransitDestinationPreview({
                     className="train-icon"
                     src="/images/train-icon.png"
                     alt="Train"
-                    style={getIconSize()}
+                    style={getLegendIconSize()}
                   />
-                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Train</span>
+                  <span className={getLegendTextSize()}>Train</span>
                 </div>
                 {/* Light Rail */}
                 <div className="flex items-center gap-1">
                   <img
                     src="/images/rail-icon.png"
                     alt="Light Rail"
-                    style={getIconSize()}
+                    style={getLegendIconSize()}
                   />
-                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Light Rail</span>
+                  <span className={getLegendTextSize()}>Light Rail</span>
                 </div>
                 {/* Subway */}
                 <div className="flex items-center gap-1">
                   <img
                     src="/images/subway-icon.png"
                     alt="Subway"
-                    style={getIconSize()}
+                    style={getLegendIconSize()}
                   />
-                  <span className={mobileMode ? "text-xs" : isEditor ? "text-sm" : "text-[2vh]"}>Subway</span>
+                  <span className={getLegendTextSize()}>Subway</span>
                 </div>
               </div>
             </div>

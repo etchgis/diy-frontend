@@ -7,6 +7,7 @@ import { useTemplate1Store } from "@/stores/template1";
 import { useTemplate2Store } from "@/stores/template2";
 import { useTemplate3Store } from "@/stores/template3";
 import { useRouteTimesStore } from "@/stores/routeTimes";
+import { useImageOnlyStore } from "@/stores/imageOnly";
 import { useFooterStore } from "@/stores/footer";
 import { set } from "react-hook-form";
 
@@ -285,6 +286,24 @@ async function importData(setup: any) {
       setImageWidth(slide.id, slide.data.imageWidth || 600);
       setImageHeight(slide.id, slide.data.imageHeight || 400);
       setImageObjectFit(slide.id, slide.data.imageObjectFit || 'contain');
+    }
+
+    if (slide.type === 'image-only') {
+      const {
+        setImage,
+        setImageObjectFit,
+        setBackgroundColor,
+        setFullScreen,
+        setImageWidth,
+        setImageHeight
+      } = useImageOnlyStore.getState();
+
+      setImage(slide.id, slide.data.image || null);
+      setImageObjectFit(slide.id, slide.data.imageObjectFit || 'cover');
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#000000');
+      setFullScreen(slide.id, slide.data.fullScreen ?? true);
+      setImageWidth(slide.id, slide.data.imageWidth || 600);
+      setImageHeight(slide.id, slide.data.imageHeight || 400);
     }
 
     if (slide.type === 'route-times') {

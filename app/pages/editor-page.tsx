@@ -22,6 +22,8 @@ import Template2Slide from "@/components/slides/template-2"
 import Template2Preview from "@/components/slide-previews/template-2-preview"
 import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
+import ImageOnlySlide from "@/components/slides/image-only"
+import ImageOnlyPreview from "@/components/slide-previews/image-only-preview"
 import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -296,6 +298,8 @@ export default function EditorPage() {
         return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "template-3":
         return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "image-only":
+        return <ImageOnlySlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       default:
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
@@ -321,6 +325,8 @@ export default function EditorPage() {
           return <Template2Preview slideId={slideId} previewMode={showModal} />;
         case "template-3":
           return <Template3Preview slideId={slideId} previewMode={showModal} />;
+        case "image-only":
+          return <ImageOnlyPreview slideId={slideId} previewMode={showModal} />;
         default:
           return null;
       }
@@ -414,9 +420,14 @@ export default function EditorPage() {
                     QR Code Page
                   </div>
                 </SelectItem>
-                <SelectItem value="template-3">
+                <SelectItem value="image-only">
                   <div className="flex items-center gap-2 text-xs">
                     Image Only Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="template-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    Image and Title Page
                   </div>
                 </SelectItem>
                 <SelectItem value="template-1">
