@@ -24,6 +24,8 @@ import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
 import ImageOnlySlide from "@/components/slides/image-only"
 import ImageOnlyPreview from "@/components/slide-previews/image-only-preview"
+import WeatherSlide from "@/components/slides/weather"
+import WeatherPreview from "@/components/slide-previews/weather-preview"
 import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -300,6 +302,8 @@ export default function EditorPage() {
         return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "image-only":
         return <ImageOnlySlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "weather":
+        return <WeatherSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       default:
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
@@ -327,6 +331,8 @@ export default function EditorPage() {
           return <Template3Preview slideId={slideId} previewMode={showModal} />;
         case "image-only":
           return <ImageOnlyPreview slideId={slideId} previewMode={showModal} />;
+        case "weather":
+          return <WeatherPreview slideId={slideId} previewMode={showModal} />;
         default:
           return null;
       }
@@ -438,6 +444,11 @@ export default function EditorPage() {
                 <SelectItem value="template-2">
                   <div className="flex items-center gap- text-xs">
                     Right Content/Left Image Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="weather">
+                  <div className="flex items-center gap-2 text-xs">
+                    Weather Page
                   </div>
                 </SelectItem>
               </SelectContent>

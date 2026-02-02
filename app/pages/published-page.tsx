@@ -8,6 +8,8 @@ import TransitDestinationPreview from '@/components/slide-previews/transit-desti
 import TransitRoutesPreview from '@/components/slide-previews/transit-routes-preview';
 import RouteTimesPreview from '@/components/slide-previews/route-times-preview';
 import ImageOnlyPreview from '@/components/slide-previews/image-only-preview';
+import WeatherPreview from '@/components/slide-previews/weather-preview';
+import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
 import { fetchStopData } from '@/services/data-gathering/fetchStopData';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
@@ -223,6 +225,26 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   };
 
+  const getWeatherData = async () => {
+    console.log('[DATA UPDATE] Fetching weather data...', new Date().toLocaleTimeString());
+    const currentSlides = useGeneralStore.getState().slides;
+    const weatherSlides = currentSlides.filter((slide: any) => slide.type === 'weather');
+
+    if (!weatherSlides.length) {
+      console.log('[DATA UPDATE] No weather slides found');
+      return;
+    }
+
+    for (const slide of weatherSlides) {
+      try {
+        await fetchWeatherData(slide.id);
+        console.log(`[DATA UPDATE] Weather data updated for slide ${slide.id}`);
+      } catch (error) {
+        console.error(`[DATA UPDATE] Error fetching weather data for slide ${slide.id}:`, error);
+      }
+    }
+  };
+
   const hasFetchedDestinations = useRef(false);
 
   useEffect(() => {
@@ -236,6 +258,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       getFixedRouteData();
       getTransitRoutesData();
       getRouteTimesData();
+      getWeatherData();
     }
 
     // Only set up interval if it doesn't exist
@@ -246,6 +269,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         getFixedRouteData();
         getTransitRoutesData();
         getRouteTimesData();
+        getWeatherData();
       }, 60000);
       console.log('[DATA UPDATE] Auto-refresh interval started (60 seconds)');
     }
@@ -283,6 +307,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         return <Template3Preview slideId={slideId} />;
       case 'image-only':
         return <ImageOnlyPreview slideId={slideId} />;
+      case 'weather':
+        return <WeatherPreview slideId={slideId} />;
       case 'transit-routes':
         return <TransitRoutesPreview slideId={slideId} noMapScroll={!isTvMode}/>;
       case 'route-times':

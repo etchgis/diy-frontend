@@ -8,6 +8,7 @@ import { useTemplate2Store } from "@/stores/template2";
 import { useTemplate3Store } from "@/stores/template3";
 import { useRouteTimesStore } from "@/stores/routeTimes";
 import { useImageOnlyStore } from "@/stores/imageOnly";
+import { useWeatherStore } from "@/stores/weather";
 import { useFooterStore } from "@/stores/footer";
 import { set } from "react-hook-form";
 
@@ -304,6 +305,24 @@ async function importData(setup: any) {
       setFullScreen(slide.id, slide.data.fullScreen ?? true);
       setImageWidth(slide.id, slide.data.imageWidth || 600);
       setImageHeight(slide.id, slide.data.imageHeight || 400);
+    }
+
+    if (slide.type === 'weather') {
+      const {
+        setTitle,
+        setBackgroundColor,
+        setBgImage,
+        setTitleColor,
+        setTextColor,
+        setLogoImage
+      } = useWeatherStore.getState();
+
+      setTitle(slide.id, slide.data.title || '');
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
+      setBgImage(slide.id, slide.data.bgImage || '');
+      setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
+      setTextColor(slide.id, slide.data.textColor || '#ffffff');
+      setLogoImage(slide.id, slide.data.logoImage || '');
     }
 
     if (slide.type === 'route-times') {

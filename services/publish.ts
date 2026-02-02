@@ -8,6 +8,7 @@ import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
 import { useRouteTimesStore } from '@/stores/routeTimes';
 import { useImageOnlyStore } from '@/stores/imageOnly';
+import { useWeatherStore } from '@/stores/weather';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
@@ -270,6 +271,26 @@ export async function publish() {
         screenObj.data.fullScreen = fullScreen;
         screenObj.data.imageWidth = imageWidth;
         screenObj.data.imageHeight = imageHeight;
+      }
+    }
+
+    if (slide.type === 'weather') {
+      screenObj.type = 'weather';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useWeatherStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { title, backgroundColor, bgImage, titleColor, textColor, logoImage } = slideData;
+
+        screenObj.data.title = title;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.textColor = textColor;
+        screenObj.data.logoImage = logoImage;
       }
     }
 
