@@ -179,39 +179,35 @@ export default function WeatherPreview({
               >
                 7-Day Forecast
               </div>
-              {weatherData.daily.map((day: any, i: number) => (
-                <div
-                  key={day.date}
-                  className="flex items-center justify-between"
-                  style={{
-                    padding: isEditor ? "5px 0" : "1vh 0",
-                    borderBottom:
-                      i < weatherData.daily.length - 1
-                        ? "1px solid rgba(255,255,255,0.1)"
-                        : "none",
-                    fontSize: isEditor ? "1.1rem" : "3.8vh",
-                  }}
-                >
-                  <span className="font-medium" style={{ minWidth: isEditor ? "80px" : "10vh" }}>
-                    {day.dayName}
-                  </span>
-                  <span>
-                    <WeatherIcon code={day.code} size={isEditor ? "1.5rem" : "4.5vh"} />
-                  </span>
-                  <span style={{ minWidth: isEditor ? "60px" : "8vh", textAlign: "right" }}>
-                    {day.high}°
-                  </span>
-                  <span
+              {weatherData.daily.map((day: any, i: number) => {
+                const dayOfMonth = new Date(day.date + "T12:00:00").getDate().toString().padStart(2, "0");
+                return (
+                  <div
+                    key={day.date}
+                    className="flex items-center"
                     style={{
-                      minWidth: isEditor ? "60px" : "8vh",
-                      textAlign: "right",
-                      opacity: 0.6,
+                      padding: isEditor ? "5px 0" : "1vh 0",
+                      borderBottom:
+                        i < weatherData.daily.length - 1
+                          ? "1px solid rgba(255,255,255,0.1)"
+                          : "none",
+                      fontSize: isEditor ? "1.1rem" : "3.8vh",
+                      gap: isEditor ? "12px" : "1.5vh",
                     }}
                   >
-                    {day.low}°
-                  </span>
-                </div>
-              ))}
+                    <span className="font-medium" style={{ minWidth: isEditor ? "120px" : "22vh" }}>
+                      {day.dayName} {dayOfMonth}
+                    </span>
+                    <span style={{ minWidth: isEditor ? "70px" : "10vh", marginLeft: isEditor ? "30px" : "40px"}}>
+                      {day.high}°/{day.low}°
+                    </span>
+                    <span className="flex items-center gap-2" style={{ marginLeft: "auto" }}>
+                      <WeatherIcon code={day.code} size={isEditor ? "1.5rem" : "4.5vh"} />
+                      <span style={{ opacity: 0.8 }}>{day.condition}</span>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

@@ -299,11 +299,11 @@ export default function CitibikePreview({
               <div
                 className="font-medium mb-2 pb-1"
                 style={{
-                  fontSize: isEditor ? "0.85rem" : "2.2vh",
+                  fontSize: isEditor ? "1.5rem" : "3vh",
                   borderBottom: "1px solid rgba(255,255,255,0.2)",
                 }}
               >
-                Nearby Stations
+                Citibike
               </div>
               {stationData.map((station) => (
                 <div
@@ -315,14 +315,14 @@ export default function CitibikePreview({
                 >
                   <div
                     className="font-medium"
-                    style={{ fontSize: isEditor ? "0.75rem" : "1.8vh" }}
+                    style={{ fontSize: isEditor ? "0.85rem" : "2vh" }}
                   >
                     {station.name}
                   </div>
                   <div
                     className="flex justify-between mt-1"
                     style={{
-                      fontSize: isEditor ? "0.65rem" : "1.5vh",
+                      fontSize: isEditor ? "0.70rem" : "1.7vh",
                       opacity: 0.8,
                     }}
                   >
