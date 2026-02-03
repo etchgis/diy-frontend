@@ -96,67 +96,68 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
         >
           {/* Schedule Header */}
           {isEditor ? (
-            <div className="p-6 relative">
-              {/* Logo (only if present) */}
+            <div className="p-6 flex items-center">
+              <div className="flex-1">
+                <div className="text-lg mb-2" style={{display: 'flex', alignItems: 'center'}}>
+                  <div style={{...busIconStyle, height: '25px', width: '25px', marginRight: '5px'}}></div>
+                  <p>Stop #{selectedStop?.stop_id} arrival times</p>
+                </div>
+
+                <h2 className="text-3xl font-bold mb-2">
+                  {selectedStop?.stop_name?.toString().toUpperCase() ||
+                    "UNKNOWN STOP"}
+                </h2>
+
+                <p>{description}</p>
+              </div>
               {logoImage && (
                 <img
                   src={logoImage}
                   alt="Logo"
-                  className="absolute top-6 right-6 max-h-16 object-contain"
+                  className="max-h-16 object-contain ml-4 flex-shrink-0"
                 />
               )}
-
-              <div className="text-lg mb-2" style={{display: 'flex', alignItems: 'center'}}>
-                <div style={{...busIconStyle, height: '25px', width: '25px', marginRight: '5px'}}></div>
-                <p>Stop #{selectedStop?.stop_id} arrival times</p>
-              </div>
-
-              <h2 className="text-3xl font-bold mb-2">
-                {selectedStop?.stop_name?.toString().toUpperCase() ||
-                  "UNKNOWN STOP"}
-              </h2>
-
-              <p>{description}</p>
             </div>
           ) : (
             <div
-              className="p-2 sm:p-4 lg:p-6 xl:p-8 relative"
+              className="p-2 sm:p-4 lg:p-6 xl:p-8 flex items-center"
               style={{ padding: "clamp(0.5rem, 2vw, 2rem)" }}
             >
+              <div className="flex-1">
+                <div
+                  className="mb-1 sm:mb-2"
+                  style={{
+                    fontSize: "clamp(0.875rem, 1.5vw, 1.25rem)",
+                    marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <div style={{...busIconStyle, height: 'clamp(20px, 2vw, 25px)', width: 'clamp(20px, 2vw, 25px)', marginRight: '5px'}}></div>
+                  Stop #{selectedStop?.stop_id} arrival times
+                </div>
+
+                <h2
+                  className="font-bold mb-1 sm:mb-2"
+                  style={{
+                    fontSize: "clamp(1.5rem, 4vw, 3rem)",
+                    marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
+                  }}
+                >
+                  {stopName?.toString().toUpperCase() || "UNKNOWN STOP"}
+                </h2>
+
+                <p style={{ fontSize: "clamp(0.75rem, 1.2vw, 1rem)" }}>
+                  {description}
+                </p>
+              </div>
               {logoImage && (
                 <img
                   src={logoImage}
                   alt="Logo"
-                  className="absolute top-[clamp(0.5rem,2vw,2rem)] right-[clamp(0.5rem,2vw,2rem)] max-h-16 object-contain"
+                  className="max-h-16 object-contain ml-4 flex-shrink-0"
                 />
               )}
-
-              <div
-                className="mb-1 sm:mb-2"
-                style={{
-                  fontSize: "clamp(0.875rem, 1.5vw, 1.25rem)",
-                  marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                <div style={{...busIconStyle, height: 'clamp(20px, 2vw, 25px)', width: 'clamp(20px, 2vw, 25px)', marginRight: '5px'}}></div>
-                Stop #{selectedStop?.stop_id} arrival times
-              </div>
-
-              <h2
-                className="font-bold mb-1 sm:mb-2"
-                style={{
-                  fontSize: "clamp(1.5rem, 4vw, 3rem)",
-                  marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
-                }}
-              >
-                {stopName?.toString().toUpperCase() || "UNKNOWN STOP"}
-              </h2>
-
-              <p style={{ fontSize: "clamp(0.75rem, 1.2vw, 1rem)" }}>
-                {description}
-              </p>
             </div>
           )}
 

@@ -26,6 +26,8 @@ import ImageOnlySlide from "@/components/slides/image-only"
 import ImageOnlyPreview from "@/components/slide-previews/image-only-preview"
 import WeatherSlide from "@/components/slides/weather"
 import WeatherPreview from "@/components/slide-previews/weather-preview"
+import CitibikeSlide from "@/components/slides/citibike"
+import CitibikePreview from "@/components/slide-previews/citibike-preview"
 import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -304,6 +306,8 @@ export default function EditorPage() {
         return <ImageOnlySlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "weather":
         return <WeatherSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "citibike":
+        return <CitibikeSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       default:
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
@@ -333,6 +337,8 @@ export default function EditorPage() {
           return <ImageOnlyPreview slideId={slideId} previewMode={showModal} />;
         case "weather":
           return <WeatherPreview slideId={slideId} previewMode={showModal} />;
+        case "citibike":
+          return <CitibikePreview slideId={slideId} previewMode={showModal} />;
         default:
           return null;
       }
@@ -449,6 +455,11 @@ export default function EditorPage() {
                 <SelectItem value="weather">
                   <div className="flex items-center gap-2 text-xs">
                     Weather Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="citibike">
+                  <div className="flex items-center gap-2 text-xs">
+                    Citibike Page
                   </div>
                 </SelectItem>
               </SelectContent>

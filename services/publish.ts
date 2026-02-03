@@ -9,6 +9,7 @@ import { useTemplate3Store } from '@/stores/template3';
 import { useRouteTimesStore } from '@/stores/routeTimes';
 import { useImageOnlyStore } from '@/stores/imageOnly';
 import { useWeatherStore } from '@/stores/weather';
+import { useCitibikeStore } from '@/stores/citibike';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
@@ -291,6 +292,27 @@ export async function publish() {
         screenObj.data.titleColor = titleColor;
         screenObj.data.textColor = textColor;
         screenObj.data.logoImage = logoImage;
+      }
+    }
+
+    if (slide.type === 'citibike') {
+      screenObj.type = 'citibike';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useCitibikeStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius } = slideData;
+
+        screenObj.data.title = title;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.textColor = textColor;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.searchRadius = searchRadius;
       }
     }
 

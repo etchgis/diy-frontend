@@ -64,19 +64,10 @@ export default function WeatherPreview({
         color: textColor,
       }}
     >
-      {/* Logo */}
-      {logoImage && (
-        <img
-          src={logoImage}
-          alt="Logo"
-          className="absolute top-6 right-6 max-h-16 object-contain z-20"
-        />
-      )}
-
-      {/* Title */}
-      <div className="p-3 border-b border-white/20 flex-shrink-0">
+      {/* Title + Logo */}
+      <div className="p-3 border-b border-white/20 flex-shrink-0 flex items-center">
         <div
-          className={`w-full rounded px-4 ${
+          className={`flex-1 rounded px-4 ${
             isEditor ? "border-2 border-[#11d1f7] py-2" : ""
           }`}
         >
@@ -102,6 +93,13 @@ export default function WeatherPreview({
             </div>
           )}
         </div>
+        {logoImage && (
+          <img
+            src={logoImage}
+            alt="Logo"
+            className="max-h-16 object-contain ml-4 flex-shrink-0"
+          />
+        )}
       </div>
 
       {/* Weather Content */}

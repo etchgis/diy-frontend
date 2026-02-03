@@ -531,49 +531,50 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     >
 
       {/* Header */}
-      <div className="p-4 relative z-10">
+      <div className="p-4 z-10 flex items-center">
+        <div className="flex-1">
+          <h1
+            className="text-2xl font-bold flex items-center gap-3"
+            style={{ color: titleColor }}
+          >
+            {selectedRoute ? (
+              <>
+                {getModeIcon(selectedRoute.route_type)}
+
+                {selectedRoute.route_short_name && (
+                  <span
+                    className="inline-block px-3 py-1 rounded"
+                    style={{
+                      backgroundColor: selectedRoute.route_color
+                        ? `#${selectedRoute.route_color}`
+                        : '#0074D9',
+                      color: selectedRoute.route_text_color
+                        ? `#${selectedRoute.route_text_color}`
+                        : '#FFFFFF',
+                    }}
+                  >
+                    {selectedRoute.route_short_name}
+                  </span>
+                )}
+
+                <span>{selectedRoute.route_long_name || routeName}</span>
+              </>
+            ) : (
+              routeName || 'Select a Route'
+            )}
+          </h1>
+          {description && (
+            <p className="mt-2 text-sm" style={{ color: titleColor, opacity: 0.9 }}>
+              {description}
+            </p>
+          )}
+        </div>
         {logoImage && (
           <img
             src={logoImage}
             alt="Logo"
-            className="absolute top-4 right-4 max-h-12 object-contain"
+            className="max-h-12 object-contain ml-4 flex-shrink-0"
           />
-        )}
-
-<h1
-  className="text-2xl font-bold pr-20 flex items-center gap-3"
-  style={{ color: titleColor }}
->
-  {selectedRoute ? (
-    <>
-      {getModeIcon(selectedRoute.route_type)}
-
-      {selectedRoute.route_short_name && (
-        <span
-          className="inline-block px-3 py-1 rounded"
-          style={{
-            backgroundColor: selectedRoute.route_color
-              ? `#${selectedRoute.route_color}`
-              : '#0074D9',
-            color: selectedRoute.route_text_color
-              ? `#${selectedRoute.route_text_color}`
-              : '#FFFFFF',
-          }}
-        >
-          {selectedRoute.route_short_name}
-        </span>
-      )}
-
-      <span>{selectedRoute.route_long_name || routeName}</span>
-    </>
-  ) : (
-    routeName || 'Select a Route'
-  )}
-</h1>
-        {description && (
-          <p className="mt-2 text-sm" style={{ color: titleColor, opacity: 0.9 }}>
-            {description}
-          </p>
         )}
       </div>
 

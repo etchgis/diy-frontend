@@ -9,6 +9,7 @@ import { useTemplate3Store } from "@/stores/template3";
 import { useRouteTimesStore } from "@/stores/routeTimes";
 import { useImageOnlyStore } from "@/stores/imageOnly";
 import { useWeatherStore } from "@/stores/weather";
+import { useCitibikeStore } from "@/stores/citibike";
 import { useFooterStore } from "@/stores/footer";
 import { set } from "react-hook-form";
 
@@ -323,6 +324,26 @@ async function importData(setup: any) {
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setLogoImage(slide.id, slide.data.logoImage || '');
+    }
+
+    if (slide.type === 'citibike') {
+      const {
+        setTitle,
+        setBackgroundColor,
+        setBgImage,
+        setTitleColor,
+        setTextColor,
+        setLogoImage,
+        setSearchRadius
+      } = useCitibikeStore.getState();
+
+      setTitle(slide.id, slide.data.title || '');
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
+      setBgImage(slide.id, slide.data.bgImage || '');
+      setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
+      setTextColor(slide.id, slide.data.textColor || '#ffffff');
+      setLogoImage(slide.id, slide.data.logoImage || '');
+      setSearchRadius(slide.id, slide.data.searchRadius || 0.5);
     }
 
     if (slide.type === 'route-times') {
