@@ -699,7 +699,7 @@ export default function EditorPage() {
                 </h2>
                 <p>{publishMessage}</p>
                 <a
-                  href={publishUrl}
+                  href={publishUrl + '?mode=tv'}
                   target="_blank"
                   className="text-blue-600 underline break-words"
                 >
