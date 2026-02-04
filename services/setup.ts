@@ -312,6 +312,7 @@ async function importData(setup: any) {
       const {
         setTitle,
         setBackgroundColor,
+        setContentBackgroundColor,
         setBgImage,
         setTitleColor,
         setTextColor,
@@ -320,6 +321,7 @@ async function importData(setup: any) {
 
       setTitle(slide.id, slide.data.title || '');
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
+      setContentBackgroundColor(slide.id, slide.data.contentBackgroundColor || '');
       setBgImage(slide.id, slide.data.bgImage || '');
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
       setTextColor(slide.id, slide.data.textColor || '#ffffff');

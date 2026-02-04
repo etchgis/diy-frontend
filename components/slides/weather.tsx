@@ -24,6 +24,8 @@ export default function WeatherSlide({ slideId, handleDelete, handlePreview, han
   const setBgImage = useWeatherStore((state) => state.setBgImage);
   const titleColor = useWeatherStore((state) => state.slides[slideId]?.titleColor || '#ffffff');
   const setTitleColor = useWeatherStore((state) => state.setTitleColor);
+  const contentBackgroundColor = useWeatherStore((state) => state.slides[slideId]?.contentBackgroundColor || '');
+  const setContentBackgroundColor = useWeatherStore((state) => state.setContentBackgroundColor);
   const textColor = useWeatherStore((state) => state.slides[slideId]?.textColor || '#ffffff');
   const setTextColor = useWeatherStore((state) => state.setTextColor);
   const logoImage = useWeatherStore((state) => state.slides[slideId]?.logoImage || '');
@@ -48,7 +50,7 @@ export default function WeatherSlide({ slideId, handleDelete, handlePreview, han
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => setSaveStatus('saved'), 600);
-  }, [title, backgroundColor, bgImage, titleColor, textColor, logoImage]);
+  }, [title, backgroundColor, contentBackgroundColor, bgImage, titleColor, textColor, logoImage]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
     const file = e.target.files?.[0];
@@ -176,6 +178,26 @@ export default function WeatherSlide({ slideId, handleDelete, handlePreview, han
                 />
               </div>
               <Input value={textColor} className="flex-1 text-xs" onChange={(e) => setTextColor(slideId, e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Content Background</label>
+            <div className="flex items-center gap-2">
+              <div className="colorContainer">
+                <input
+                  type="color"
+                  value={contentBackgroundColor || '#000000'}
+                  onChange={(e) => setContentBackgroundColor(slideId, e.target.value)}
+                  className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
+                />
+              </div>
+              <Input value={contentBackgroundColor} placeholder="Transparent" className="flex-1 text-xs" onChange={(e) => setContentBackgroundColor(slideId, e.target.value)} />
+              {contentBackgroundColor && (
+                <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => setContentBackgroundColor(slideId, '')}>
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
 

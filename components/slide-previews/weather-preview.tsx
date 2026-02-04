@@ -36,6 +36,9 @@ export default function WeatherPreview({
   const logoImage = useWeatherStore(
     (state) => state.slides[slideId]?.logoImage || ""
   );
+  const contentBackgroundColor = useWeatherStore(
+    (state) => state.slides[slideId]?.contentBackgroundColor || ""
+  );
   const weatherData = useWeatherStore(
     (state) => state.slides[slideId]?.weatherData || null
   );
@@ -103,7 +106,7 @@ export default function WeatherPreview({
       </div>
 
       {/* Weather Content */}
-      <div className="flex-1 min-h-0 p-6 flex gap-6">
+      <div className="flex-1 min-h-0 p-6 flex" style={{ gap: isEditor ? "8px" : "1vh" }}>
         {dataError ? (
           <div className="w-full flex items-center justify-center">
             <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? "1rem" : "3vh" }}>
@@ -119,7 +122,14 @@ export default function WeatherPreview({
         ) : (
           <>
             {/* Left: Current Weather */}
-            <div className="flex-1 flex flex-col justify-center items-center">
+            <div
+              className="flex-1 flex flex-col justify-center items-center"
+              style={{
+                backgroundColor: contentBackgroundColor || undefined,
+                borderRadius: contentBackgroundColor ? "8px" : undefined,
+                padding: contentBackgroundColor ? (isEditor ? "16px" : "2vh") : undefined,
+              }}
+            >
               <div
                 style={{
                   fontSize: isEditor ? "1.1rem" : "3.5vh",
@@ -168,7 +178,14 @@ export default function WeatherPreview({
             </div>
 
             {/* Right: 7-Day Forecast */}
-            <div className="flex-1 flex flex-col justify-center">
+            <div
+              className="flex-1 flex flex-col justify-center"
+              style={{
+                backgroundColor: contentBackgroundColor || undefined,
+                borderRadius: contentBackgroundColor ? "8px" : undefined,
+                padding: contentBackgroundColor ? (isEditor ? "16px" : "2vh") : undefined,
+              }}
+            >
               <div
                 className="font-medium mb-2"
                 style={{

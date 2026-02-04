@@ -286,10 +286,11 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        const { title, backgroundColor, bgImage, titleColor, textColor, logoImage } = slideData;
+        const { title, backgroundColor, contentBackgroundColor, bgImage, titleColor, textColor, logoImage } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.contentBackgroundColor = contentBackgroundColor;
         screenObj.data.bgImage = bgImage;
         screenObj.data.titleColor = titleColor;
         screenObj.data.textColor = textColor;

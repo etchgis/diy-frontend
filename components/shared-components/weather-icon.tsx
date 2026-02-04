@@ -1,5 +1,7 @@
 import React from "react";
 
+/* === SVG ICON COMPONENTS ===
+
 const CLOUD = "M16,36 Q8,36 8,29 Q8,23 14,22 Q15,14 23,12 Q30,12 33,16 Q36,13 40,15 Q44,17 44,22 Q48,23 48,28 Q48,36 40,36 Z";
 
 function Sun({ style }: { style: React.CSSProperties }) {
@@ -132,6 +134,22 @@ function Thunderstorm({ style }: { style: React.CSSProperties }) {
   );
 }
 
+*/
+
+function getWeatherIconPath(code: number): string {
+  if (code === 0) return "/images/weather-icons/Sunny.png";
+  if (code <= 3) return "/images/weather-icons/Mostly Cloudy.png";
+  if (code <= 48) return "/images/weather-icons/Haze.png";
+  if (code <= 53) return "/images/weather-icons/Slight Drizzle.png";
+  if (code <= 57) return "/images/weather-icons/Drizzle.png";
+  if (code <= 67) return "/images/weather-icons/Drizzle.png";
+  if (code <= 77) return "/images/weather-icons/Snow.png";
+  if (code <= 82) return "/images/weather-icons/Drizzle.png";
+  if (code <= 86) return "/images/weather-icons/Snow.png";
+  if (code <= 99) return "/images/weather-icons/Thunderstorms.png";
+  return "/images/weather-icons/Cloudy.png";
+}
+
 export default function WeatherIcon({
   code,
   size = "1em",
@@ -144,16 +162,34 @@ export default function WeatherIcon({
     height: size,
     display: "inline-block",
     flexShrink: 0,
+    objectFit: "contain",
   };
 
-  if (code === 0) return <Sun style={style} />;
-  if (code <= 3) return <PartlyCloudy style={style} />;
-  if (code <= 48) return <Fog style={style} />;
-  if (code <= 57) return <Drizzle style={style} />;
-  if (code <= 67) return <Rain style={style} />;
-  if (code <= 77) return <Snow style={style} />;
-  if (code <= 82) return <Rain style={style} />;
-  if (code <= 86) return <Snow style={style} />;
-  if (code <= 99) return <Thunderstorm style={style} />;
-  return <Cloud style={style} />;
+  return (
+    <img
+      src={getWeatherIconPath(code)}
+      alt="weather"
+      style={style}
+    />
+  );
+
+  /* === SVG rendering (commented out — kept for easy restoration) ===
+  const svgStyle: React.CSSProperties = {
+    width: size,
+    height: size,
+    display: "inline-block",
+    flexShrink: 0,
+  };
+
+  if (code === 0) return <Sun style={svgStyle} />;
+  if (code <= 3) return <PartlyCloudy style={svgStyle} />;
+  if (code <= 48) return <Fog style={svgStyle} />;
+  if (code <= 57) return <Drizzle style={svgStyle} />;
+  if (code <= 67) return <Rain style={svgStyle} />;
+  if (code <= 77) return <Snow style={svgStyle} />;
+  if (code <= 82) return <Rain style={svgStyle} />;
+  if (code <= 86) return <Snow style={svgStyle} />;
+  if (code <= 99) return <Thunderstorm style={svgStyle} />;
+  return <Cloud style={svgStyle} />;
+  === END SVG rendering === */
 }
