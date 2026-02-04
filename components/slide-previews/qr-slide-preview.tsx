@@ -1,6 +1,7 @@
 import { useQRStore } from "@/stores/qr";
 import QRCode from "react-qr-code";
 import Footer from "../shared-components/footer";
+import { usePathname } from "next/navigation";
 
 export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || "");
@@ -15,9 +16,13 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || "");
   const logoImage = useQRStore(
     (state) => state.slides[slideId]?.logoImage || ""
-  );
 
-  const containerSizeRem = 2 * qrSize;
+  );
+  const pathname = usePathname();
+  const isEditor = pathname.includes("/editor");
+
+
+  const containerSize = isEditor ? `${2 * qrSize}rem` : `${qrSize * 8}vh`;
   const qrPixelSize = 32 * qrSize;
 
   return (
@@ -42,24 +47,27 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
 
       {/* QR Code and Text */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-6">
-        <div className="bg-white p-4 mb-4">
+        <div className="bg-white mb-4" style={{ padding: isEditor ? "1rem" : "2vh" }}>
           <div
             className="flex items-center justify-center"
             style={{
-              width: `${containerSizeRem}rem`,
-              height: `${containerSizeRem}rem`,
+              width: containerSize,
+              height: containerSize,
             }}
           >
             {url ? (
-              <QRCode value={url} size={qrPixelSize} />
+              <QRCode value={url} size={qrPixelSize} style={{ width: "100%", height: "100%" }} />
             ) : (
-              <div className="text-gray-400 text-sm">No QR Code Data</div>
+              <div className="text-gray-400" style={{ fontSize: isEditor ? "0.875rem" : "3vh" }}>No QR Code Data</div>
             )}
           </div>
         </div>
         <div
-          className="text-lg font-medium text-center"
-          style={{ color: textColor }}
+          className="font-medium text-center"
+          style={{
+            color: textColor,
+            fontSize: isEditor ? "1.125rem" : "4vh",
+          }}
         >
           {text}
         </div>

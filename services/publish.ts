@@ -155,7 +155,8 @@ export async function publish() {
           url,
           backgroundColor,
           bgImage,
-          logoImage
+          logoImage,
+          qrSize
         } = slideData;
 
         screenObj.data.text = text;
@@ -163,6 +164,7 @@ export async function publish() {
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.bgImage = bgImage;
         screenObj.data.logoImage = logoImage;
+        screenObj.data.qrSize = qrSize;
       } else {
       }
 

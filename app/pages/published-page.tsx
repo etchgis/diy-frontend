@@ -27,7 +27,7 @@ import { set } from 'react-hook-form';
 
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const searchParams = useSearchParams();
-  const isTvMode = searchParams.get('mode') === 'tv';
+  const isTvMode = searchParams.get('mode') !== 'web';
 
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
