@@ -381,10 +381,10 @@ async function main() {
   }
 
   // ── Write CSV ────────────────────────────────────────────────────────
-  const csvHeader = "Endpoint,Status,Response Time,Detail,Error";
+  const csvHeader = "Endpoint,Status,Response Time,Detail,Error,URL";
   const csvRows = results.map((r) => {
     const esc = (s) => `"${String(s).replace(/"/g, '""')}"`;
-    return [esc(r.name), r.status, r.elapsed, esc(r.detail), esc(r.error)].join(
+    return [esc(r.name), r.status, r.elapsed, esc(r.detail), esc(r.error), esc(r.url)].join(
       ","
     );
   });
