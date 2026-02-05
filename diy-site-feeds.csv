@@ -1,0 +1,26 @@
+Screen Type,Feed/API Name,API URL / Endpoint,Data Fetched,HTTP Method,Source File
+Weather,Open-Meteo Forecast,"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto","Current temp, condition, wind, humidity; 7-day forecast highs/lows/conditions",GET,services/data-gathering/fetchWeatherData.ts
+Citibike,Citibike GBFS - Station Information,https://gbfs.citibikenyc.com/gbfs/en/station_information.json,"Station names, coordinates, capacity, station IDs",GET,services/data-gathering/fetchCitibikeData.ts
+Citibike,Citibike GBFS - Station Status,https://gbfs.citibikenyc.com/gbfs/en/station_status.json,"Available bikes, e-bikes, docks per station",GET,services/data-gathering/fetchCitibikeData.ts
+Transit Route Destination Map,NYSDOT Routes Search,https://api.etch.app/nysdot-stops/routes?search={term},"Route IDs, names, colors, agency, services",GET,services/data-gathering/fetchRoutes.ts
+Transit Route Destination Map,SKIDS Route Data,https://api.etch.app/skids/feed/routes?geometry=true&stops=true&nysdot=true,"Route geometry (polylines), stop lists",GET,services/data-gathering/fetchRouteData.ts
+Transit Destination Table,SKIDS Transit Routing (Primary),https://api.etch.app/skids/api/transit/route/coordinates,"Multi-destination itineraries, legs, arrival times, transfers, durations",POST,services/data-gathering/fetchSkidsDestinationData.ts
+Transit Destination Table,OTP Transit Routing (Fallback),"https://511ny.etch.app/opentripplanner/otp/routers/default/plan?fromPlace={from}&toPlace={to}&mode=TRANSIT,WALK,SUBWAY","Trip itineraries, departure/arrival times, transfer info",GET,services/data-gathering/fetchTransitDestinationData.ts
+Stop Arrivals,SKIDS Stop Arrivals,https://api.etch.app/skids/feed/{serviceId}/stops/{stopId}?timestamp={ts}&n=7&nysdot=true,"Real-time arrival times, headsigns, delays, realtime status",GET,services/data-gathering/fetchStopData.ts
+Stop Arrivals,SKIDS Pattern/Train Details,https://api.etch.app/skids/feed/{serviceId}/patterns/{trainId}?nysdot=true,"Train/bus pattern details, stop sequence",GET,services/data-gathering/fetchStopData.ts
+Stop Arrivals,NYSDOT Nearby Stops,https://api.etch.app/nysdot-stops/nearby-stops?lat={lat}&lon={lng},"Nearby transit stops with coordinates",GET,services/data-gathering/fetchAllStops.ts
+Stop Arrivals,NYSDOT Routes Search,https://api.etch.app/nysdot-stops/routes?search={term},"Route IDs, names, colors, agency, services",GET,services/data-gathering/fetchRoutes.ts
+Route Times,SKIDS Route Timetable,https://api.etch.app/skids/feed/{serviceId}/routes/{routeId}/timetable?startTime={start}&endTime={end}&nysdot=true,"Scheduled departure times, direction, stops",GET,services/data-gathering/fetchRouteData.ts
+Route Times,SKIDS Pattern Details,https://api.etch.app/skids/feed/{serviceId}/patterns/{patternId}?nysdot=true,"Pattern geometry, stop sequence details",GET,services/data-gathering/fetchRouteData.ts
+QR Code,None (static content),,No external data feeds - user-provided URL and text,,
+Image Only,None (static content),,No external data feeds - user-uploaded image,,
+Image and Title (Template 3),None (static content),,No external data feeds - user content,,
+Left Content / Right Image (Template 1),None (static content),,No external data feeds - user content,,
+Right Content / Left Image (Template 2),None (static content),,No external data feeds - user content,,
+All Screens,Backend - Publish,https://api.etch.app/nysdot-mobility-builder/upload/{shortcode},Publishes screen configuration to backend,POST,services/publish.ts
+All Screens,Backend - Load Config,https://api.etch.app/nysdot-mobility-builder/config/{shortcode},Retrieves saved screen configuration,GET,services/setup.ts
+All Screens,Backend - Image Upload,https://api.etch.app/nysdot-mobility-builder/upload-image/{shortcode},Uploads background/logo images,POST,services/uploadImage.ts
+All Screens,Backend - Image Delete,https://api.etch.app/nysdot-mobility-builder/delete-image,Deletes previously uploaded images,DELETE,services/deleteImage.ts
+All Screens,Backend - Shortcode Check,https://api.etch.app/nysdot-mobility-builder/exists/{shortcode},Checks if shortcode already exists,GET,services/existingCheck.ts
+Admin,Backend - List Shortcodes,https://api.etch.app/nysdot-mobility-builder/shortcodes,Lists all registered shortcodes,GET,app/pages/admin-page.tsx
+Admin,Backend - Admin Auth,https://api.etch.app/nysdot-mobility-builder/admin-auth,Authenticates admin access,POST,app/pages/admin-page.tsx
