@@ -1,24 +1,50 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { HelpCircle, ChevronRight, Plus, ExternalLink, MapPin } from 'lucide-react';
-import FixedRoutePreview from '../slide-previews/fixed-route-preview';
-import { useEffect, useRef, useState } from 'react';
-import { useFixedRouteStore } from '../../stores/fixedRoute';
-import { set } from 'react-hook-form';
-import { deleteImage } from '@/services/deleteImage';
-import { uploadImage } from '@/services/uploadImage';
-import { useGeneralStore } from '@/stores/general';
-import { fetchAllStops } from '@/services/data-gathering/fetchAllStops';
-import { fetchStopData } from '@/services/data-gathering/fetchStopData';
-import { calculateDistance, formatDistance } from '@/utils/distance';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  HelpCircle,
+  ChevronRight,
+  Plus,
+  ExternalLink,
+  MapPin,
+} from "lucide-react";
+import FixedRoutePreview from "../slide-previews/fixed-route-preview";
+import { useEffect, useRef, useState } from "react";
+import { useFixedRouteStore } from "../../stores/fixedRoute";
+import { set } from "react-hook-form";
+import { deleteImage } from "@/services/deleteImage";
+import { uploadImage } from "@/services/uploadImage";
+import { useGeneralStore } from "@/stores/general";
+import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
+import { fetchStopData } from "@/services/data-gathering/fetchStopData";
+import { calculateDistance, formatDistance } from "@/utils/distance";
 
-
-export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+export default function StopArrivalsSlide({
+  slideId,
+  handleDelete,
+  handlePreview,
+  handlePublish,
+}: {
+  slideId: string;
+  handleDelete: (id: string) => void;
+  handlePreview: () => void;
+  handlePublish: () => void;
+}) {
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
+    "idle"
+  );
+  const [isBgUploading, setIsBgUploading] = useState(false);
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
   const renderCount = useRef(0);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [allStops, setAllStops] = useState<any[]>([]);
   const [filteredStops, setFilteredStops] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -26,71 +52,103 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-
-
-
-
-  const stopName = useFixedRouteStore((state) => state.slides[slideId]?.stopName || '');
+  const stopName = useFixedRouteStore(
+    (state) => state.slides[slideId]?.stopName || ""
+  );
   const setStopName = useFixedRouteStore((state) => state.setStopName);
 
-  const selectedStop = useFixedRouteStore((state) => state.slides[slideId]?.selectedStop || undefined);
+  const selectedStop = useFixedRouteStore(
+    (state) => state.slides[slideId]?.selectedStop || undefined
+  );
   const setSelectedStop = useFixedRouteStore((state) => state.setSelectedStop);
 
-  const description = useFixedRouteStore((state) => state.slides[slideId]?.description || '');
+  const description = useFixedRouteStore(
+    (state) => state.slides[slideId]?.description || ""
+  );
   const setDescription = useFixedRouteStore((state) => state.setDescription);
 
-  const backgroundColor = useFixedRouteStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
-  const setBackgroundColor = useFixedRouteStore((state) => state.setBackgroundColor);
+  const backgroundColor = useFixedRouteStore(
+    (state) => state.slides[slideId]?.backgroundColor || "#192F51"
+  );
+  const setBackgroundColor = useFixedRouteStore(
+    (state) => state.setBackgroundColor
+  );
 
-  const titleColor = useFixedRouteStore((state) => state.slides[slideId]?.titleColor || '#FFFFFF');
+  const titleColor = useFixedRouteStore(
+    (state) => state.slides[slideId]?.titleColor || "#FFFFFF"
+  );
   const setTitleColor = useFixedRouteStore((state) => state.setTitleColor);
 
-  const tableColor = useFixedRouteStore((state) => state.slides[slideId]?.tableColor || '#FFFFFF');
+  const tableColor = useFixedRouteStore(
+    (state) => state.slides[slideId]?.tableColor || "#FFFFFF"
+  );
   const setTableColor = useFixedRouteStore((state) => state.setTableColor);
 
-  const tableTextColor = useFixedRouteStore((state) => state.slides[slideId]?.tableTextColor || '#000000');
-  const setTableTextColor = useFixedRouteStore((state) => state.setTableTextColor);
+  const tableTextColor = useFixedRouteStore(
+    (state) => state.slides[slideId]?.tableTextColor || "#000000"
+  );
+  const setTableTextColor = useFixedRouteStore(
+    (state) => state.setTableTextColor
+  );
 
-  const bgImage = useFixedRouteStore((state) => state.slides[slideId]?.bgImage || '');
+  const bgImage = useFixedRouteStore(
+    (state) => state.slides[slideId]?.bgImage || ""
+  );
   const setBgImage = useFixedRouteStore((state) => state.setBgImage);
+
+  const logoImage = useFixedRouteStore(
+    (state) => state.slides[slideId]?.logoImage || ""
+  );
+  const setLogoImage = useFixedRouteStore((state) => state.setLogoImage);
+
+  const titleTextSize = useFixedRouteStore(
+    (state) => state.slides[slideId]?.titleTextSize || 5
+  );
+  const setTitleTextSize = useFixedRouteStore((state) => state.setTitleTextSize);
+
+  const contentTextSize = useFixedRouteStore(
+    (state) => state.slides[slideId]?.contentTextSize || 5
+  );
+  const setContentTextSize = useFixedRouteStore((state) => state.setContentTextSize);
 
   const setIsLoading = useFixedRouteStore((state) => state.setIsLoading);
 
-  const shortcode = useGeneralStore((state) => state.shortcode || '');
-  const coordinates = useGeneralStore((state) => state.coordinates || { lat: 0, lng: 0 });
+  const shortcode = useGeneralStore((state) => state.shortcode || "");
+  const coordinates = useGeneralStore(
+    (state) => state.coordinates || { lat: 0, lng: 0 }
+  );
 
   const setScheduleData = useFixedRouteStore((state) => state.setScheduleData);
 
-
   useEffect(() => {
     // Fetch stops within 5km by default
-    fetchAllStops({ coordinates, radius: 5000 }).then((stops) => {
-      setAllStops(stops);
+    fetchAllStops({ coordinates, radius: 5000 })
+      .then((stops) => {
+        setAllStops(stops);
 
-      // Calculate and sort stops by distance, show top 10 nearby stops
-      if (coordinates.lat && coordinates.lng) {
-        const stopsWithDistance = stops.map((stop: any) => ({
-          ...stop,
-          distance: calculateDistance(
-            coordinates.lat,
-            coordinates.lng,
-            stop.stop_lat,
-            stop.stop_lon
-          ),
-        }));
+        // Calculate and sort stops by distance, show top 10 nearby stops
+        if (coordinates.lat && coordinates.lng) {
+          const stopsWithDistance = stops.map((stop: any) => ({
+            ...stop,
+            distance: calculateDistance(
+              coordinates.lat,
+              coordinates.lng,
+              stop.stop_lat,
+              stop.stop_lon
+            ),
+          }));
 
-        const sortedStops = stopsWithDistance
-          .sort((a: any, b: any) => a.distance - b.distance)
-          .slice(0, 10);
+          const sortedStops = stopsWithDistance
+            .sort((a: any, b: any) => a.distance - b.distance)
+            .slice(0, 10);
 
-        setNearbyStops(sortedStops);
-        setFilteredStops(sortedStops);
-      }
-    }
-    ).catch((err) => {
-      console.error('Failed to fetch stops:', err);
-    }
-    );
+          setNearbyStops(sortedStops);
+          setFilteredStops(sortedStops);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch stops:", err);
+      });
   }, [coordinates]);
 
   const handleInputChange = (value: string) => {
@@ -101,7 +159,7 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
     }
 
     // If input is empty, show nearby stops immediately
-    if (value.trim() === '') {
+    if (value.trim() === "") {
       setFilteredStops(nearbyStops);
       setShowDropdown(nearbyStops.length > 0);
       setIsSearching(false);
@@ -148,7 +206,7 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
           setFilteredStops(resultsWithDistance);
           setShowDropdown(true);
         } else {
-          console.log('No API results found for:', value);
+          console.log("No API results found for:", value);
           // only hide dropdown if local also had no results
           if (localResultsCount === 0) {
             setShowDropdown(false);
@@ -156,7 +214,7 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
         }
         setIsSearching(false);
       } catch (error) {
-        console.error('Error searching stops:', error);
+        console.error("Error searching stops:", error);
         setIsSearching(false);
         // Keep the local filtered results on error
       }
@@ -172,7 +230,6 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
 
   const handleAddStop = () => {
     if (selectedStop) {
-
       // Perform any additional logic with the selected stop
     }
   };
@@ -183,10 +240,13 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
       console.log(selectedStop);
       const data = await fetchStopData(
         stopId,
-        selectedStop.services[0].service_guid || selectedStop.services[0].service_id,
-        selectedStop.services[0].organization_guid || selectedStop.services[0].organization_id,
+        selectedStop.services[0].service_guid ||
+          selectedStop.services[0].service_id,
+        selectedStop.services[0].organization_guid ||
+          selectedStop.services[0].organization_id,
         slideId,
-        (slideId: string, error: boolean) => useFixedRouteStore.getState().setDataError(slideId, error)
+        (slideId: string, error: boolean) =>
+          useFixedRouteStore.getState().setDataError(slideId, error)
       );
       const arr: any = [];
       data?.trains.forEach((item: any) => {
@@ -204,15 +264,12 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
 
       setScheduleData(slideId, arr);
       setIsLoading(slideId, false);
-
     } catch (error) {
-      console.error('Error fetching stop data:', error);
+      console.error("Error fetching stop data:", error);
     }
   }
 
-
   useEffect(() => {
-
     if (selectedStop && selectedStop.stop_id) {
       fetchData(selectedStop.stop_id);
     }
@@ -220,73 +277,100 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
 
   useEffect(() => {
     renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === 'development';
+    const isDev = process.env.NODE_ENV === "development";
     const shouldSkip =
-      (isDev && renderCount.current <= 2) || (!isDev && renderCount.current === 1);
+      (isDev && renderCount.current <= 2) ||
+      (!isDev && renderCount.current === 1);
 
     if (shouldSkip) {
-      setSaveStatus('saved');
+      setSaveStatus("saved");
       return;
     }
 
-    setSaveStatus('saving');
+    setSaveStatus("saving");
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
     saveTimeoutRef.current = setTimeout(() => {
-      setSaveStatus('saved');
+      setSaveStatus("saved");
     }, 600);
-  }, [stopName, description, backgroundColor, titleColor, tableColor, tableTextColor]);
+  }, [
+    stopName,
+    description,
+    backgroundColor,
+    titleColor,
+    tableColor,
+    tableTextColor,
+    titleTextSize,
+    contentTextSize,
+  ]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      return;
-    }
+  type ImageTarget = "bg" | "logo";
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-
-    uploadImage(shortcode, file).then((data) => {
-      if (bgImage) {
-        deleteImage(bgImage).then(() => {
-
-        }).catch((err) => {
-          console.error('Failed to delete previous image:', err);
-        });
-      }
-      setBgImage(slideId, data.url);
-    }
-    ).catch((err) => {
-      console.error('Image upload failed:', err);
-    });
-
+  const imageTargetMap = {
+    bg: {
+      get: () => bgImage,
+      set: (url: string) => setBgImage(slideId, url),
+    },
+    logo: {
+      get: () => logoImage,
+      set: (url: string) => setLogoImage(slideId, url),
+    },
   };
 
-  const handleRemoveImage = () => {
-    if (bgImage) {
-      deleteImage(bgImage).then(() => {
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: ImageTarget
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-        setBgImage(slideId, '');
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }).catch((err) => {
-        console.error('Failed to delete image:', err);
-      });
+    const currentImage = imageTargetMap[target].get();
+    const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
+
+    setLoadingFn(true);
+    try {
+      const data = await uploadImage(shortcode, file);
+
+      if (currentImage) {
+        await deleteImage(currentImage);
+      }
+
+      imageTargetMap[target].set(data.url);
+
+      if (target === 'bg') bgInputRef.current!.value = '';
+      if (target === 'logo') logoInputRef.current!.value = '';
+    } catch (err) {
+      console.error('Image upload failed:', err);
+    } finally {
+      setLoadingFn(false);
+    }
+  };
+
+  const handleRemoveImage = async (target: ImageTarget) => {
+    const currentImage = imageTargetMap[target].get();
+    if (!currentImage) return;
+  
+    try {
+      await deleteImage(currentImage);
+      imageTargetMap[target].set('');
+
+      if (target === 'bg' && bgInputRef.current) bgInputRef.current.value = '';
+      if (target === 'logo' && logoInputRef.current) logoInputRef.current.value = '';
+    } catch (err) {
+      console.error('Failed to delete image:', err);
     }
   };
 
   const scheduleData = [
     {
-      destination: 'Airport directly to Rte 7 & Donald',
-      route: '117',
-      routeColor: 'bg-green-600',
-      time: '9:49 PM',
-      duration: '27 min',
+      destination: "Airport directly to Rte 7 & Donald",
+      route: "117",
+      routeColor: "bg-green-600",
+      time: "9:49 PM",
+      duration: "27 min",
     },
   ];
 
@@ -305,21 +389,25 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
             </div>
 
             <p className="text-[#606061] mb-6">
-            This table displays a single stop with the various routes that pass through this stop. Input the single fixed route stop that you would like for the table to show.             </p>
+              This table displays a single stop with the various routes that
+              pass through this stop. Input the single fixed route stop that you
+              would like for the table to show.{" "}
+            </p>
 
             {/* Fixed Route Stop Input */}
 
-
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-[#4a5568] font-medium mb-2">Fixed Route Stop</label>
+                <label className="block text-[#4a5568] font-medium mb-2">
+                  Fixed Route Stop
+                </label>
                 <div className="relative">
                   <Input
                     className="flex-1 bg-white border-[#cbd5e0]"
                     value={stopName}
                     onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => {
-                      if (stopName.trim() === '' && nearbyStops.length > 0) {
+                      if (stopName.trim() === "" && nearbyStops.length > 0) {
                         setFilteredStops(nearbyStops);
                         setShowDropdown(true);
                       } else if (filteredStops.length > 0) {
@@ -345,7 +433,8 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                           onClick={() => handleSelectStop(stop)}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
                         >
-                          {stop.stop_name} - {stop.services[0]?.agency_name || 'No Agency'}
+                          {stop.stop_name} -{" "}
+                          {stop.services[0]?.agency_name || "No Agency"}
                           {stop.distance !== undefined && (
                             <span className="text-gray-500 text-sm ml-2">
                               ({formatDistance(stop.distance)})
@@ -356,7 +445,6 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                     </ul>
                   )}
                 </div>
-
               </div>
 
               {selectedStop && (
@@ -365,11 +453,15 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                        <h4 className="font-medium text-[#4a5568] text-sm">Selected Stop</h4>
+                        <h4 className="font-medium text-[#4a5568] text-sm">
+                          Selected Stop
+                        </h4>
                       </div>
-                      <p className="text-sm text-[#606061] mb-1">{selectedStop.stop_name}</p>
+                      <p className="text-sm text-[#606061] mb-1">
+                        {selectedStop.stop_name}
+                      </p>
                       <p className="text-xs text-[#718096]">
-                        {selectedStop.services[0]?.agency_name || 'No Agency'}
+                        {selectedStop.services[0]?.agency_name || "No Agency"}
                       </p>
                       {selectedStop.distance !== undefined && (
                         <p className="text-xs text-[#718096] mt-1">
@@ -391,7 +483,9 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
               )}
 
               <div>
-                <label className="block text-[#4a5568] font-medium mb-2">Sub Description</label>
+                <label className="block text-[#4a5568] font-medium mb-2">
+                  Sub Description
+                </label>
                 <Input
                   placeholder="Enter text here..."
                   className="bg-white border-[#cbd5e0]"
@@ -401,18 +495,27 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
               </div>
             </div>
 
-
             <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
               <FixedRoutePreview slideId={slideId} />
             </div>
 
             {/* Footer Buttons */}
             <div className="flex gap-3 mt-4">
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
-              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
-              {saveStatus !== 'idle' && (
+              <Button
+                className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium"
+                onClick={() => handlePreview()}
+              >
+                Preview Screens
+              </Button>
+              <Button
+                className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium"
+                onClick={() => handlePublish()}
+              >
+                Publish Screens
+              </Button>
+              {saveStatus !== "idle" && (
                 <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
-                  {saveStatus === 'saving' ? (
+                  {saveStatus === "saving" ? (
                     <>
                       <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
                       Saving...
@@ -426,33 +529,42 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                 </div>
               )}
             </div>
-
           </div>
         </div>
 
         {/* Right Sidebar */}
         <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
-
           {/* Color Customization */}
           <div className="space-y-3 mb-4">
             <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Background Color
+              </label>
               <div className="flex items-center gap-2">
                 <div className="colorContainer">
                   <input
                     type="color"
                     value={backgroundColor}
-                    onChange={(e) => setBackgroundColor(slideId, e.target.value)}
+                    onChange={(e) =>
+                      setBackgroundColor(slideId, e.target.value)
+                    }
                     className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
                   />
                 </div>
-                <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => { setBackgroundColor(slideId, e.target.value); }} />
+                <Input
+                  value={backgroundColor}
+                  className="flex-1 text-xs"
+                  onChange={(e) => {
+                    setBackgroundColor(slideId, e.target.value);
+                  }}
+                />
               </div>
             </div>
 
-
             <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Slide Title Color</label>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Slide Title Color
+              </label>
               <div className="flex items-center gap-2">
                 <div className="colorContainer">
                   <input
@@ -463,13 +575,18 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                   />
                 </div>
 
-                <Input value={titleColor} className="flex-1 text-xs" onChange={(e) => setTitleColor(slideId, e.target.value)} />
+                <Input
+                  value={titleColor}
+                  className="flex-1 text-xs"
+                  onChange={(e) => setTitleColor(slideId, e.target.value)}
+                />
               </div>
             </div>
 
-
             <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Color</label>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Table Color
+              </label>
               <div className="flex items-center gap-2">
                 <div className="colorContainer">
                   <input
@@ -479,13 +596,18 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                     className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
                   />
                 </div>
-                <Input value={tableColor} className="flex-1 text-xs" onChange={(e) => setTableColor(slideId, e.target.value)} />
+                <Input
+                  value={tableColor}
+                  className="flex-1 text-xs"
+                  onChange={(e) => setTableColor(slideId, e.target.value)}
+                />
               </div>
             </div>
 
-
             <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Text Color</label>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Table Text Color
+              </label>
               <div className="flex items-center gap-2">
                 <div className="colorContainer">
                   <input
@@ -495,17 +617,28 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                     className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
                   />
                 </div>
-                <Input value={tableTextColor} className="flex-1 text-xs" onChange={(e) => setTableTextColor(slideId, e.target.value)} />
+                <Input
+                  value={tableTextColor}
+                  className="flex-1 text-xs"
+                  onChange={(e) => setTableTextColor(slideId, e.target.value)}
+                />
               </div>
             </div>
 
-
             <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Background Image
+              </label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {bgImage ? (
-                    <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
+                  {isBgUploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  ) : bgImage ? (
+                    <img
+                      src={bgImage}
+                      alt="BG"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
                   )}
@@ -515,15 +648,15 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                   <input
                     type="file"
                     accept="image/*"
-                    ref={fileInputRef}
-                    onChange={handleImageUpload}
+                    ref={bgInputRef}
+                    onChange={(e) => handleImageUpload(e, 'bg')}
                     className="hidden"
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => bgInputRef.current?.click()}
                   >
                     Change
                   </Button>
@@ -532,7 +665,7 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
                       variant="outline"
                       size="sm"
                       className="text-xs bg-transparent px-2 py-1"
-                      onClick={handleRemoveImage}
+                      onClick={() => handleRemoveImage('bg')}
                     >
                       Remove
                     </Button>
@@ -541,19 +674,122 @@ export default function StopArrivalsSlide({ slideId, handleDelete, handlePreview
               </div>
             </div>
 
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Logo Image
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
+                  {isLogoUploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  ) : logoImage ? (
+                    <img
+                      src={logoImage}
+                      alt="BG"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  {/* Hidden input */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={logoInputRef}
+                    onChange={(e) => handleImageUpload(e, 'logo')}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs bg-transparent px-2 py-1"
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    Change
+                  </Button>
+                  {logoImage && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs bg-transparent px-2 py-1"
+                      onClick={() => handleRemoveImage('logo')}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Title Text Size
+              </label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
+                  disabled={titleTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
+                  disabled={titleTextSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Content Text Size
+              </label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setContentTextSize(slideId, Math.max(1, contentTextSize - 1))}
+                  disabled={contentTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{contentTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setContentTextSize(slideId, Math.min(10, contentTextSize + 1))}
+                  disabled={contentTextSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
 
             <div className="mt-auto">
-
-              <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId); }}>
+              <Button
+                className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2"
+                onClick={() => {
+                  handleDelete(slideId);
+                }}
+              >
                 Delete Screen
               </Button>
             </div>
           </div>
         </div>
       </div>
-
-
-
     </>
   );
 }

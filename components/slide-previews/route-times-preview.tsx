@@ -17,6 +17,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const tableColor = slideData?.tableColor || '#FFFFFF';
   const tableTextColor = slideData?.tableTextColor || '#000000';
   const bgImage = slideData?.bgImage || '';
+  const logoImage = slideData?.logoImage || '';
   const routeName = slideData?.routeName || '';
   const description = slideData?.description || '';
   const selectedRoute = slideData?.selectedRoute;
@@ -26,6 +27,12 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const isLoading = slideData?.isLoading || false;
   const isShowingNextDay = slideData?.isShowingNextDay || false;
   const isShowingLaterToday = slideData?.isShowingLaterToday || false;
+  const titleTextSize = slideData?.titleTextSize || 5;
+  const contentTextSize = slideData?.contentTextSize || 5;
+
+  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -258,6 +265,40 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     return [];
   };
 
+  const getModeIcon = (type: string) => {
+    // Use CSS mask to apply titleColor to the icon
+    const iconStyle: React.CSSProperties = {
+      height: '29px',
+      width: '29px',
+      marginRight: '5px',
+      backgroundColor: titleColor,
+      WebkitMaskSize: 'contain',
+      maskSize: 'contain',
+      WebkitMaskRepeat: 'no-repeat',
+      maskRepeat: 'no-repeat',
+      WebkitMaskPosition: 'center',
+      maskPosition: 'center',
+    };
+
+    if(type == '0'){
+      return (
+        <div style={{...iconStyle, WebkitMaskImage: 'url(images/rail-icon.png)', maskImage: 'url(images/rail-icon.png)'}}></div>
+      )
+    } else if(type == '1') {
+      return (
+        <div style={{...iconStyle, WebkitMaskImage: 'url(images/subway-icon.png)', maskImage: 'url(images/subway-icon.png)'}}></div>
+      )
+    } else if(type == '2') {
+      return (
+        <div style={{...iconStyle, WebkitMaskImage: 'url(images/train-icon.png)', maskImage: 'url(images/train-icon.png)'}}></div>
+      )
+    } else if(type == '3') {
+      return (
+        <div style={{...iconStyle, WebkitMaskImage: 'url(images/bus-icon.png)', maskImage: 'url(images/bus-icon.png)'}}></div>
+      )
+    }
+  }
+
   const renderMapView = () => {
     const stops = patternData?.stops || [];
 
@@ -266,7 +307,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
         {/* Left Panel - Stop Times */}
         <div className="w-[30%] border-r border-gray-200 overflow-y-auto" style={{ backgroundColor: tableColor }}>
           <div className="p-4">
-            <h3 className="font-semibold mb-3" style={{ color: tableTextColor }}>Stop Times</h3>
+            <h3 className="font-semibold mb-3" style={{ color: tableTextColor, fontSize: `${16 * contentSizeMultiplier}px` }}>Stop Times</h3>
             <div className="space-y-3">
               {stops.map((stop: PatternStop, index: number) => {
                 // Find departures for this stop - check both stop.id and stop.stopId
@@ -496,31 +537,50 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     >
 
       {/* Header */}
-      <div className="p-4 relative z-10">
-        <h1 className="text-2xl font-bold" style={{ color: titleColor }}>
-          {selectedRoute ? (
-            <>
-              {selectedRoute.route_short_name && (
-                <span
-                  className="inline-block px-3 py-1 mr-3 rounded"
-                  style={{
-                    backgroundColor: selectedRoute.route_color ? `#${selectedRoute.route_color}` : '#0074D9',
-                    color: selectedRoute.route_text_color ? `#${selectedRoute.route_text_color}` : '#FFFFFF',
-                  }}
-                >
-                  {selectedRoute.route_short_name}
-                </span>
-              )}
-              {selectedRoute.route_long_name || routeName}
-            </>
-          ) : (
-            routeName || 'Select a Route'
+      <div className="p-4 z-10 flex items-center">
+        <div className="flex-1">
+          <h1
+            className="font-bold flex items-center gap-3"
+            style={{ color: titleColor, fontSize: `${24 * titleSizeMultiplier}px` }}
+          >
+            {selectedRoute ? (
+              <>
+                {getModeIcon(selectedRoute.route_type)}
+
+                {selectedRoute.route_short_name && (
+                  <span
+                    className="inline-block px-3 py-1 rounded"
+                    style={{
+                      backgroundColor: selectedRoute.route_color
+                        ? `#${selectedRoute.route_color}`
+                        : '#0074D9',
+                      color: selectedRoute.route_text_color
+                        ? `#${selectedRoute.route_text_color}`
+                        : '#FFFFFF',
+                    }}
+                  >
+                    {selectedRoute.route_short_name}
+                  </span>
+                )}
+
+                <span>{selectedRoute.route_long_name || routeName}</span>
+              </>
+            ) : (
+              routeName || 'Select a Route'
+            )}
+          </h1>
+          {description && (
+            <p className="mt-2" style={{ color: titleColor, opacity: 0.9, fontSize: `${14 * titleSizeMultiplier}px` }}>
+              {description}
+            </p>
           )}
-        </h1>
-        {description && (
-          <p className="mt-2 text-sm" style={{ color: titleColor, opacity: 0.9 }}>
-            {description}
-          </p>
+        </div>
+        {logoImage && (
+          <img
+            src={logoImage}
+            alt="Logo"
+            className="max-h-12 object-contain ml-4 flex-shrink-0"
+          />
         )}
       </div>
 

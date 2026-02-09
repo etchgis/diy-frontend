@@ -18,17 +18,20 @@ export async function getDestinationData(
   const coordinates = useGeneralStore.getState().coordinates || null;
   if (!coordinates) return;
 
-  const initialData = destList.map((dl, idx) => ({
-    name: dl.name,
-    coordinates: dl.coordinates,
-    arrival: null,
-    departure: null,
-    route: null,
-    legs: [],
-    travel: null,
-    dark: idx % 2 === 0,
-  }));
-  setDestinationData(slideId, initialData);
+  // Only set initial empty data if there's no existing data
+  if (!currentDestinationData || currentDestinationData.length === 0) {
+    const initialData = destList.map((dl, idx) => ({
+      name: dl.name,
+      coordinates: dl.coordinates,
+      arrival: null,
+      departure: null,
+      route: null,
+      legs: [],
+      travel: null,
+      dark: idx % 2 === 0,
+    }));
+    setDestinationData(slideId, initialData);
+  }
 
   try {
     if (USE_SKIDS) {

@@ -12,8 +12,11 @@ import { useGeneralStore } from "@/stores/general"
 
 export default function Template2Slide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isBgUploading, setIsBgUploading] = useState(false);
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const renderCount = useRef(0);
 
   const title = useTemplate2Store((state) => state.slides[slideId]?.title || '');
@@ -22,15 +25,31 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
   const bgImage = useTemplate2Store((state) => state.slides[slideId]?.bgImage || '');
   const backgroundColor = useTemplate2Store((state) => state.slides[slideId]?.backgroundColor || '#305fff');
   const textColor = useTemplate2Store((state) => state.slides[slideId]?.textColor || '#ffffff');
+  const titleColor = useTemplate2Store((state) => state.slides[slideId]?.titleColor || '#ffffff');
+  const logoImage = useTemplate2Store((state) => state.slides[slideId]?.logoImage || '');
 
   const setBgImage = useTemplate2Store((state) => state.setBgImage);
   const setBackgroundColor = useTemplate2Store((state) => state.setBackgroundColor);
   const setTextColor = useTemplate2Store((state) => state.setTextColor);
+  const setTitleColor = useTemplate2Store((state) => state.setTitleColor);
+  const setLogoImage = useTemplate2Store((state) => state.setLogoImage);
 
   const leftContentSize = useTemplate2Store((state) => state.slides[slideId]?.leftContentSize || '');
   const setLeftContentSize = useTemplate2Store((state) => state.setLeftContentSize);
   const rightContentSize = useTemplate2Store((state) => state.slides[slideId]?.rightContentSize || '');
   const setRightContentSize = useTemplate2Store((state) => state.setRightContentSize);
+
+  const imageWidth = useTemplate2Store((state) => state.slides[slideId]?.imageWidth || 400);
+  const setImageWidth = useTemplate2Store((state) => state.setImageWidth);
+  const imageHeight = useTemplate2Store((state) => state.slides[slideId]?.imageHeight || 280);
+  const setImageHeight = useTemplate2Store((state) => state.setImageHeight);
+  const imageObjectFit = useTemplate2Store((state) => state.slides[slideId]?.imageObjectFit || 'contain');
+  const setImageObjectFit = useTemplate2Store((state) => state.setImageObjectFit);
+
+  const titleTextSize = useTemplate2Store((state) => state.slides[slideId]?.titleTextSize || 5);
+  const setTitleTextSize = useTemplate2Store((state) => state.setTitleTextSize);
+  const contentTextSize = useTemplate2Store((state) => state.slides[slideId]?.contentTextSize || 5);
+  const setContentTextSize = useTemplate2Store((state) => state.setContentTextSize);
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
@@ -56,39 +75,52 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, text, image, backgroundColor, textColor, leftContentSize, rightContentSize, bgImage]);
+  }, [title, text, image, backgroundColor, textColor, titleColor, leftContentSize, rightContentSize, bgImage, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (fileInputRef.current) {
+    if (target === 'bg' && fileInputRef.current) {
       fileInputRef.current.value = '';
+    } else if (target === 'logo' && logoInputRef.current) {
+      logoInputRef.current.value = '';
     }
 
+    const currentImage = target === 'bg' ? bgImage : logoImage;
+    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
+    const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
+
+    setLoadingFn(true);
     uploadImage(shortcode, file).then((data) => {
-      if (bgImage) {
-        deleteImage(bgImage).then(() => {
+      if (currentImage) {
+        deleteImage(currentImage).then(() => {
 
         }).catch((err) => {
           console.error('Failed to delete previous image:', err);
         });
       }
-      setBgImage(slideId, data.url);
+      setImageFn(slideId, data.url);
     }
     ).catch((err) => {
       console.error('Image upload failed:', err);
+    }).finally(() => {
+      setLoadingFn(false);
     });
 
   };
 
-  const handleRemoveImage = () => {
-    if (bgImage) {
-      deleteImage(bgImage).then(() => {
+  const handleRemoveImage = (target: 'bg' | 'logo') => {
+    const currentImage = target === 'bg' ? bgImage : logoImage;
+    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
+    const inputRef = target === 'bg' ? fileInputRef : logoInputRef;
 
-        setBgImage(slideId, '');
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+    if (currentImage) {
+      deleteImage(currentImage).then(() => {
+
+        setImageFn(slideId, '');
+        if (inputRef.current) {
+          inputRef.current.value = '';
         }
       }).catch((err) => {
         console.error('Failed to delete image:', err);
@@ -178,6 +210,71 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
             </div>
           </div>
 
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Color</label>
+            <div className="flex items-center gap-2">
+              <div className="colorContainer">
+                <input
+                  type="color"
+                  value={titleColor}
+                  onChange={(e) => setTitleColor(slideId, e.target.value)}
+                  className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                />
+              </div>
+              <Input value={titleColor} className="flex-1 text-xs" onChange={(e) => setTitleColor(slideId, e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Size</label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
+                disabled={titleTextSize <= 1}
+              >
+                −
+              </Button>
+              <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
+                disabled={titleTextSize >= 10}
+              >
+                +
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Content Text Size</label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setContentTextSize(slideId, Math.max(1, contentTextSize - 1))}
+                disabled={contentTextSize <= 1}
+              >
+                −
+              </Button>
+              <span className="w-6 text-center text-sm font-medium">{contentTextSize}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setContentTextSize(slideId, Math.min(10, contentTextSize + 1))}
+                disabled={contentTextSize >= 10}
+              >
+                +
+              </Button>
+            </div>
+          </div>
+
           {/* <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Image Background Color</label>
             <div className="flex items-center gap-2">
@@ -198,7 +295,9 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                {bgImage ? (
+                {isBgUploading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                ) : bgImage ? (
                   <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
@@ -210,7 +309,7 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
                   type="file"
                   accept="image/*"
                   ref={fileInputRef}
-                  onChange={handleImageUpload}
+                  onChange={(e) => handleImageUpload(e, 'bg')}
                   className="hidden"
                 />
                 <Button
@@ -226,7 +325,49 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
                     variant="outline"
                     size="sm"
                     className="text-xs bg-transparent px-2 py-1"
-                    onClick={handleRemoveImage}
+                    onClick={() => handleRemoveImage('bg')}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Logo Image</label>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
+                {isLogoUploading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                ) : logoImage ? (
+                  <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
+                )}
+              </div>
+              <div className="flex gap-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={logoInputRef}
+                  onChange={(e) => handleImageUpload(e, 'logo')}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs bg-transparent px-2 py-1"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  Change
+                </Button>
+                {logoImage && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs bg-transparent px-2 py-1"
+                    onClick={() => handleRemoveImage('logo')}
                   >
                     Remove
                   </Button>
@@ -243,6 +384,48 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Right Content Box Size</label>
             <Input placeholder="40%" value={rightContentSize} className="text-xs" onChange={(e) => { setRightContentSize(slideId, e.target.value) }} />
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Image Width (px)</label>
+            <Input
+              type="number"
+              min="10"
+              max="2000"
+              step="1"
+              value={imageWidth}
+              onChange={(e) => setImageWidth(slideId, Math.round(Number(e.target.value)))}
+              className="text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Image Height (px)</label>
+            <Input
+              type="number"
+              min="10"
+              max="2000"
+              step="1"
+              value={imageHeight}
+              onChange={(e) => setImageHeight(slideId, Math.round(Number(e.target.value)))}
+              className="text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Image Fit</label>
+            <Select value={imageObjectFit} onValueChange={(value) => setImageObjectFit(slideId, value as any)}>
+              <SelectTrigger className="text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="contain">Contain</SelectItem>
+                <SelectItem value="cover">Cover</SelectItem>
+                <SelectItem value="fill">Fill</SelectItem>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="scale-down">Scale Down</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

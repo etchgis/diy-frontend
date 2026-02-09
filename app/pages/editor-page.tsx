@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Upload, Settings } from "lucide-react"
+import { HelpCircle, ChevronRight, Upload, Settings, Edit } from "lucide-react"
 import QRSlide from "@/components/slides/qr"
 import TransitDestinationSlide from "@/components/slides/transit-destination"
 import { useEffect, useRef, useState } from "react"
@@ -22,6 +22,13 @@ import Template2Slide from "@/components/slides/template-2"
 import Template2Preview from "@/components/slide-previews/template-2-preview"
 import Template3Slide from "@/components/slides/template-3"
 import Template3Preview from "@/components/slide-previews/template-3-preview"
+import ImageOnlySlide from "@/components/slides/image-only"
+import ImageOnlyPreview from "@/components/slide-previews/image-only-preview"
+import WeatherSlide from "@/components/slides/weather"
+import WeatherPreview from "@/components/slide-previews/weather-preview"
+import CitibikeSlide from "@/components/slides/citibike"
+import CitibikePreview from "@/components/slide-previews/citibike-preview"
+import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faTimesCircle, faGear } from '@fortawesome/free-solid-svg-icons';
@@ -57,6 +64,7 @@ export default function EditorPage() {
   const [showModal, setShowModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [modalSlideIndex, setModalSlideIndex] = useState(0);
+  const [isEditingFooter, setIsEditingFooter] = useState(false);
 
   const [publishing, setPublishing] = useState(false);
   const [publishStatus, setPublishStatus] = useState<'success' | 'error' | null>(null);
@@ -180,6 +188,30 @@ export default function EditorPage() {
     setShowModal(true);
   }
 
+  const handleEditFooter = () => {
+    setIsEditingFooter(true);
+    setActiveSlide(null);
+    setActiveSlideId('');
+  };
+
+  const handleCancelFooterEdit = () => {
+    setIsEditingFooter(false);
+    // Return to first slide if slides exist
+    if (slides.length > 0) {
+      setActiveSlide(slides[0]);
+      setActiveSlideId(slides[0].id);
+    }
+  };
+
+  const handleSaveFooterEdit = () => {
+    setIsEditingFooter(false);
+    // Return to first slide if slides exist
+    if (slides.length > 0) {
+      setActiveSlide(slides[0]);
+      setActiveSlideId(slides[0].id);
+    }
+  };
+
   const handleEdit = () => {
     hasFetchedDestinations.current = false;
     const shortcode = url.split('/').pop();
@@ -270,6 +302,12 @@ export default function EditorPage() {
         return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "template-3":
         return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "image-only":
+        return <ImageOnlySlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "weather":
+        return <WeatherSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "citibike":
+        return <CitibikeSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       default:
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
@@ -295,6 +333,12 @@ export default function EditorPage() {
           return <Template2Preview slideId={slideId} previewMode={showModal} />;
         case "template-3":
           return <Template3Preview slideId={slideId} previewMode={showModal} />;
+        case "image-only":
+          return <ImageOnlyPreview slideId={slideId} previewMode={showModal} />;
+        case "weather":
+          return <WeatherPreview slideId={slideId} previewMode={showModal} />;
+        case "citibike":
+          return <CitibikePreview slideId={slideId} previewMode={showModal} />;
         default:
           return null;
       }
@@ -388,9 +432,14 @@ export default function EditorPage() {
                     QR Code Page
                   </div>
                 </SelectItem>
-                <SelectItem value="template-3">
+                <SelectItem value="image-only">
                   <div className="flex items-center gap-2 text-xs">
                     Image Only Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="template-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    Image and Title Page
                   </div>
                 </SelectItem>
                 <SelectItem value="template-1">
@@ -401,6 +450,16 @@ export default function EditorPage() {
                 <SelectItem value="template-2">
                   <div className="flex items-center gap- text-xs">
                     Right Content/Left Image Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="weather">
+                  <div className="flex items-center gap-2 text-xs">
+                    Weather Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="citibike">
+                  <div className="flex items-center gap-2 text-xs">
+                    Citibike Page
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -416,6 +475,17 @@ export default function EditorPage() {
           >
             <Upload className="w-4 h-4 mr-2 border-none" />
             Add Slide
+          </Button>
+
+          <Button
+            variant="outline"
+            className="w-full text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90 mb-2"
+            onClick={() => {
+              handleEditFooter();
+            }}
+          >
+            <Edit className="w-4 h-4 mr-2 border-none" />
+            Edit Footer
           </Button>
 
           <Button
@@ -457,7 +527,14 @@ export default function EditorPage() {
         </header>
 
 
-        {activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)}
+        {isEditingFooter ? (
+          <EditFooter
+            handleCancel={handleCancelFooterEdit}
+            handleSave={handleSaveFooterEdit}
+          />
+        ) : (
+          activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)
+        )}
 
 
       </div>
@@ -622,7 +699,7 @@ export default function EditorPage() {
                 </h2>
                 <p>{publishMessage}</p>
                 <a
-                  href={publishUrl}
+                  href={publishUrl + '?mode=tv'}
                   target="_blank"
                   className="text-blue-600 underline break-words"
                 >

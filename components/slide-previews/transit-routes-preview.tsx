@@ -5,6 +5,7 @@ import { useGeneralStore } from "@/stores/general";
 import { useTransitRouteStore } from "@/stores/transitRoutes";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { usePathname } from "next/navigation";
+import Footer from "../shared-components/footer";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
@@ -491,19 +492,8 @@ export default function TransitRoutesPreview({
         )}
       </div>
 
-      {/* Custom Footer */}
-      <div className="w-full bg-[#F4F4F4] p-3 flex items-center justify-between rounded-b-lg flex-shrink-0 z-20">
-        <img
-          src="/images/statewide-mobility-services.png"
-          alt="Statewide Mobility Services"
-          className="h-[25px] w-[246px]"
-        />
-        <img
-          src="/images/nysdot-footer-logo.png"
-          alt="NYSDOT"
-          className="h-8"
-        />
-      </div>
+
+      <Footer />
     </div>
   );
 }

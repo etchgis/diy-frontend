@@ -8,8 +8,15 @@ interface Template1SlideData {
   bgImage?: string;
   backgroundColor?: string;
   textColor?: string;
+  titleColor?: string;
+  logoImage?: string;
   leftContentSize: string;
   rightContentSize: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageObjectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+  titleTextSize?: number;
+  contentTextSize?: number;
 }
 
 interface SlideStore {
@@ -20,8 +27,15 @@ interface SlideStore {
   setBgImage: (slideId: string, bgImage: string) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
   setTextColor: (slideId: string, color: string) => void;
+  setTitleColor: (slideId: string, color: string) => void;
+  setLogoImage: (slideId: string, logoImage: string) => void;
   setLeftContentSize: (slideId: string, size: string) => void;
   setRightContentSize: (slideId: string, size: string) => void;
+  setImageWidth: (slideId: string, width: number) => void;
+  setImageHeight: (slideId: string, height: number) => void;
+  setImageObjectFit: (slideId: string, objectFit: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down') => void;
+  setTitleTextSize: (slideId: string, size: number) => void;
+  setContentTextSize: (slideId: string, size: number) => void;
 }
 
 export const useTemplate1Store = create<SlideStore>()(
@@ -92,6 +106,28 @@ export const useTemplate1Store = create<SlideStore>()(
           },
         })),
 
+      setTitleColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              titleColor: color,
+            },
+          },
+        })),
+
+      setLogoImage: (slideId, logoImage) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              logoImage,
+            },
+          },
+        })),
+
       setLeftContentSize: (slideId, size) =>
         set((state) => ({
           slides: {
@@ -110,6 +146,61 @@ export const useTemplate1Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               rightContentSize: size,
+            },
+          },
+        })),
+
+      setImageWidth: (slideId, width) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageWidth: width,
+            },
+          },
+        })),
+
+      setImageHeight: (slideId, height) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageHeight: height,
+            },
+          },
+        })),
+
+      setImageObjectFit: (slideId, objectFit) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageObjectFit: objectFit,
+            },
+          },
+        })),
+
+      setTitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              titleTextSize: size,
+            },
+          },
+        })),
+
+      setContentTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              contentTextSize: size,
             },
           },
         })),

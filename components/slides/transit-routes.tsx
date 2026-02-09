@@ -13,9 +13,11 @@ import { useTransitRouteStore } from "@/stores/transitRoutes";
 import { useGeneralStore } from "@/stores/general";
 import { useEffect, useRef, useState } from "react";
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData";
+import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData";
 import { formatTime, formatDuration } from "@/utils/formats";
 
 const MAX_DESTINATIONS = 6;
+const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
 
 export default function TransitRoutesSlide({
   slideId,
@@ -177,22 +179,69 @@ export default function TransitRoutesSlide({
       },
     };
 
-    const origin = `${coordinates.lat},${coordinates.lng}`;
-    const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
-
     try {
       setIsLoading(slideId, true);
-      const result = await fetchTransitData(origin, destination);
+      let enrichedRoute;
 
-      const enrichedRoute = {
-        name: newDestination.name,
-        route: result.route || null,
-        departure: result.startTime ? formatTime(result.startTime) : null,
-        arrival: result.endTime ? formatTime(result.endTime) : null,
-        travel: result.duration ? formatDuration(result.duration) : null,
-        legs: result.legs || null,
-        coordinates: newDestination.coordinates,
-      };
+      // Try SKIDS first if enabled
+      if (USE_SKIDS) {
+        try {
+          console.log('[SKIDS] Attempting to fetch transit data via SKIDS...');
+          const skidsResults = await fetchSkidsTransitData(
+            { lat: coordinates.lat, lng: coordinates.lng },
+            [newDestination]
+          );
+
+          if (skidsResults && skidsResults.length > 0) {
+            const skidsData = skidsResults[0];
+            enrichedRoute = {
+              name: newDestination.name,
+              route: skidsData.route || null,
+              departure: skidsData.departure,
+              arrival: skidsData.arrival,
+              travel: skidsData.travel,
+              legs: skidsData.legs || null,
+              coordinates: newDestination.coordinates,
+            };
+            console.log('[SKIDS] Successfully fetched data via SKIDS');
+          } else {
+            throw new Error('SKIDS returned no results');
+          }
+        } catch (skidsError) {
+          console.error('[SKIDS] SKIDS fetch failed, falling back to OTP:', skidsError);
+          // Fall back to OTP
+          const origin = `${coordinates.lat},${coordinates.lng}`;
+          const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+          const result = await fetchTransitData(origin, destination);
+
+          enrichedRoute = {
+            name: newDestination.name,
+            route: result.route || null,
+            departure: result.startTime ? formatTime(result.startTime) : null,
+            arrival: result.endTime ? formatTime(result.endTime) : null,
+            travel: result.duration ? formatDuration(result.duration) : null,
+            legs: result.legs || null,
+            coordinates: newDestination.coordinates,
+          };
+          console.log('[OTP] Successfully fetched data via OTP fallback');
+        }
+      } else {
+        // Use OTP directly if SKIDS is disabled
+        console.log('[OTP] Using OTP (SKIDS disabled)');
+        const origin = `${coordinates.lat},${coordinates.lng}`;
+        const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+        const result = await fetchTransitData(origin, destination);
+
+        enrichedRoute = {
+          name: newDestination.name,
+          route: result.route || null,
+          departure: result.startTime ? formatTime(result.startTime) : null,
+          arrival: result.endTime ? formatTime(result.endTime) : null,
+          travel: result.duration ? formatDuration(result.duration) : null,
+          legs: result.legs || null,
+          coordinates: newDestination.coordinates,
+        };
+      }
 
       setRoutes(slideId, [...routes, enrichedRoute]);
     } catch (error: any) {

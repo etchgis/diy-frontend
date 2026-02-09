@@ -7,6 +7,11 @@ import Template3Preview from '@/components/slide-previews/template-3-preview';
 import TransitDestinationPreview from '@/components/slide-previews/transit-destination-preview';
 import TransitRoutesPreview from '@/components/slide-previews/transit-routes-preview';
 import RouteTimesPreview from '@/components/slide-previews/route-times-preview';
+import ImageOnlyPreview from '@/components/slide-previews/image-only-preview';
+import WeatherPreview from '@/components/slide-previews/weather-preview';
+import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
+import CitibikePreview from '@/components/slide-previews/citibike-preview';
+import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
 import { fetchStopData } from '@/services/data-gathering/fetchStopData';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
@@ -222,6 +227,46 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   };
 
+  const getWeatherData = async () => {
+    console.log('[DATA UPDATE] Fetching weather data...', new Date().toLocaleTimeString());
+    const currentSlides = useGeneralStore.getState().slides;
+    const weatherSlides = currentSlides.filter((slide: any) => slide.type === 'weather');
+
+    if (!weatherSlides.length) {
+      console.log('[DATA UPDATE] No weather slides found');
+      return;
+    }
+
+    for (const slide of weatherSlides) {
+      try {
+        await fetchWeatherData(slide.id);
+        console.log(`[DATA UPDATE] Weather data updated for slide ${slide.id}`);
+      } catch (error) {
+        console.error(`[DATA UPDATE] Error fetching weather data for slide ${slide.id}:`, error);
+      }
+    }
+  };
+
+  const getCitibikeData = async () => {
+    console.log('[DATA UPDATE] Fetching citibike data...', new Date().toLocaleTimeString());
+    const currentSlides = useGeneralStore.getState().slides;
+    const citibikeSlides = currentSlides.filter((slide: any) => slide.type === 'citibike');
+
+    if (!citibikeSlides.length) {
+      console.log('[DATA UPDATE] No citibike slides found');
+      return;
+    }
+
+    for (const slide of citibikeSlides) {
+      try {
+        await fetchCitibikeData(slide.id);
+        console.log(`[DATA UPDATE] Citibike data updated for slide ${slide.id}`);
+      } catch (error) {
+        console.error(`[DATA UPDATE] Error fetching citibike data for slide ${slide.id}:`, error);
+      }
+    }
+  };
+
   const hasFetchedDestinations = useRef(false);
 
   useEffect(() => {
@@ -235,6 +280,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       getFixedRouteData();
       getTransitRoutesData();
       getRouteTimesData();
+      getWeatherData();
+      getCitibikeData();
     }
 
     // Only set up interval if it doesn't exist
@@ -245,6 +292,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         getFixedRouteData();
         getTransitRoutesData();
         getRouteTimesData();
+        getWeatherData();
+        getCitibikeData();
       }, 60000);
       console.log('[DATA UPDATE] Auto-refresh interval started (60 seconds)');
     }
@@ -280,6 +329,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         return <Template2Preview slideId={slideId} />;
       case 'template-3':
         return <Template3Preview slideId={slideId} />;
+      case 'image-only':
+        return <ImageOnlyPreview slideId={slideId} />;
+      case 'weather':
+        return <WeatherPreview slideId={slideId} />;
+      case 'citibike':
+        return <CitibikePreview slideId={slideId} />;
       case 'transit-routes':
         return <TransitRoutesPreview slideId={slideId} noMapScroll={!isTvMode}/>;
       case 'route-times':

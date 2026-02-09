@@ -7,6 +7,7 @@ interface Route {
   route_long_name: string;
   route_color: string;
   route_text_color: string;
+  route_type: string;
   agency_name?: string;
   services: Array<{
     organization_guid: string;
@@ -38,11 +39,14 @@ interface RouteTimesSlide {
   tableColor: string;
   tableTextColor: string;
   bgImage: string;
+  logoImage: string;
   routeData: RouteScheduleData[];
   patternData?: any;
   isLoading: boolean;
   isShowingNextDay?: boolean;
   isShowingLaterToday?: boolean;
+  titleTextSize?: number;
+  contentTextSize?: number;
 }
 
 interface RouteTimesStore {
@@ -58,10 +62,13 @@ interface RouteTimesStore {
   setTableColor: (slideId: string, color: string) => void;
   setTableTextColor: (slideId: string, color: string) => void;
   setBgImage: (slideId: string, image: string) => void;
+  setLogoImage: (slideId: string, image: string) => void;
   setRouteData: (slideId: string, data: RouteScheduleData[], isNextDay?: boolean, isLaterToday?: boolean) => void;
   setPatternData: (slideId: string, data: any) => void;
   setIsLoading: (slideId: string, loading: boolean) => void;
   clearSlide: (slideId: string) => void;
+  setTitleTextSize: (slideId: string, size: number) => void;
+  setContentTextSize: (slideId: string, size: number) => void;
 }
 
 const getDefaultSlide = (): RouteTimesSlide => ({
@@ -74,11 +81,14 @@ const getDefaultSlide = (): RouteTimesSlide => ({
   tableColor: '#FFFFFF',
   tableTextColor: '#000000',
   bgImage: '',
+  logoImage: '',
   routeData: [],
   patternData: undefined,
   isLoading: false,
   isShowingNextDay: false,
   isShowingLaterToday: false,
+  titleTextSize: 5,
+  contentTextSize: 5,
 });
 
 export const useRouteTimesStore = create<RouteTimesStore>()(
@@ -196,6 +206,18 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
           },
         })),
 
+      setLogoImage: (slideId, image) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              logoImage: image,
+            },
+          },
+        })),
+
       setRouteData: (slideId, data, isNextDay = false, isLaterToday = false) =>
         set((state) => ({
           slides: {
@@ -241,6 +263,30 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
           );
           return { slides: remainingSlides };
         }),
+
+      setTitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              titleTextSize: size,
+            },
+          },
+        })),
+
+      setContentTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              contentTextSize: size,
+            },
+          },
+        })),
     }),
     {
       name: 'route-times-store',
