@@ -15,6 +15,8 @@ interface Template1SlideData {
   imageWidth?: number;
   imageHeight?: number;
   imageObjectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+  titleTextSize?: number;
+  contentTextSize?: number;
 }
 
 interface SlideStore {
@@ -32,6 +34,8 @@ interface SlideStore {
   setImageWidth: (slideId: string, width: number) => void;
   setImageHeight: (slideId: string, height: number) => void;
   setImageObjectFit: (slideId: string, objectFit: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down') => void;
+  setTitleTextSize: (slideId: string, size: number) => void;
+  setContentTextSize: (slideId: string, size: number) => void;
 }
 
 export const useTemplate1Store = create<SlideStore>()(
@@ -175,6 +179,28 @@ export const useTemplate1Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               imageObjectFit: objectFit,
+            },
+          },
+        })),
+
+      setTitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              titleTextSize: size,
+            },
+          },
+        })),
+
+      setContentTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              contentTextSize: size,
             },
           },
         })),

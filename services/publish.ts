@@ -156,7 +156,8 @@ export async function publish() {
           backgroundColor,
           bgImage,
           logoImage,
-          qrSize
+          qrSize,
+          textSize
         } = slideData;
 
         screenObj.data.text = text;
@@ -165,6 +166,7 @@ export async function publish() {
         screenObj.data.bgImage = bgImage;
         screenObj.data.logoImage = logoImage;
         screenObj.data.qrSize = qrSize;
+        screenObj.data.textSize = textSize;
       } else {
       }
 
@@ -181,7 +183,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit } = slideData;
+        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -196,6 +198,8 @@ export async function publish() {
         screenObj.data.imageWidth = imageWidth;
         screenObj.data.imageHeight = imageHeight;
         screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
 
       } else {
       }
@@ -212,7 +216,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit } = slideData;
+        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -227,6 +231,8 @@ export async function publish() {
         screenObj.data.imageWidth = imageWidth;
         screenObj.data.imageHeight = imageHeight;
         screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       } else {
       }
     }

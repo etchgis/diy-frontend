@@ -189,7 +189,8 @@ async function importData(setup: any) {
         setBackgroundColor,
         setQRSize,
         setBgImage,
-        setLogoImage
+        setLogoImage,
+        setTextSize
       } = useQRStore.getState();
 
       setText(slide.id, slide.data.text || '');
@@ -198,6 +199,7 @@ async function importData(setup: any) {
       setQRSize(slide.id, slide.data.qrSize || 5);
       setBgImage(slide.id, slide.data.bgImage || '');
       setLogoImage(slide.id, slide.data.logoImage || '');
+      setTextSize(slide.id, slide.data.textSize || 5);
     }
 
     if (slide.type === 'template-1') {
@@ -214,7 +216,9 @@ async function importData(setup: any) {
         setLogoImage,
         setImageWidth,
         setImageHeight,
-        setImageObjectFit
+        setImageObjectFit,
+        setTitleTextSize,
+        setContentTextSize
       } = useTemplate1Store.getState();
 
       setText(slide.id, slide.data.text || '');
@@ -230,6 +234,8 @@ async function importData(setup: any) {
       setImageWidth(slide.id, slide.data.imageWidth || 400);
       setImageHeight(slide.id, slide.data.imageHeight || 280);
       setImageObjectFit(slide.id, slide.data.imageObjectFit || 'contain');
+      setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
+      setContentTextSize(slide.id, slide.data.contentTextSize || 5);
     }
 
     if (slide.type === 'template-2') {
@@ -246,7 +252,9 @@ async function importData(setup: any) {
         setLogoImage,
         setImageWidth,
         setImageHeight,
-        setImageObjectFit
+        setImageObjectFit,
+        setTitleTextSize,
+        setContentTextSize
       } = useTemplate2Store.getState();
 
       setText(slide.id, slide.data.text || '');
@@ -262,6 +270,8 @@ async function importData(setup: any) {
       setImageWidth(slide.id, slide.data.imageWidth || 400);
       setImageHeight(slide.id, slide.data.imageHeight || 280);
       setImageObjectFit(slide.id, slide.data.imageObjectFit || 'contain');
+      setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
+      setContentTextSize(slide.id, slide.data.contentTextSize || 5);
 
     }
 

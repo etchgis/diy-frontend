@@ -70,6 +70,17 @@ export default function Template2Preview({
   const setImageWidth = useTemplate2Store((state) => state.setImageWidth);
   const setImageHeight = useTemplate2Store((state) => state.setImageHeight);
 
+  const titleTextSize = useTemplate2Store(
+    (state) => state.slides[slideId]?.titleTextSize || 5
+  );
+  const contentTextSize = useTemplate2Store(
+    (state) => state.slides[slideId]?.contentTextSize || 5
+  );
+
+  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
+
   const shortcode = useGeneralStore((state) => state.shortcode || "");
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -129,15 +140,15 @@ export default function Template2Preview({
               value={title}
               onChange={(e) => setTitle(slideId, e.target.value)}
               placeholder="Type title here"
-              className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
-              style={{ color: titleColor }}
+              className="w-full bg-transparent outline-none font-light placeholder-white/50"
+              style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
             />
           ) : (
             <div
               className="w-full bg-transparent font-light"
               style={{
                 color: titleColor,
-                fontSize: "clamp(1.5rem, 8vh, 11rem)",
+                fontSize: `clamp(1rem, ${8 * titleSizeMultiplier}vh, 11rem)`,
                 lineHeight: "1.2"
               }}
             >
@@ -228,14 +239,14 @@ export default function Template2Preview({
                 value={content}
                 onChange={(e) => setContent(slideId, e.target.value)}
                 placeholder="Type text here"
-                className="w-full h-full bg-transparent outline-none resize-none text-2xl font-light placeholder-white/50"
-                style={{ color: textColor }}
+                className="w-full h-full bg-transparent outline-none resize-none font-light placeholder-white/50"
+                style={{ color: textColor, fontSize: `${24 * contentSizeMultiplier}px` }}
               />
             ) : (
               <AutoFitText
                 text={content || ""}
                 color={textColor}
-                maxFontSize={48}
+                maxFontSize={Math.round(48 * contentSizeMultiplier)}
                 minFontSize={4}
                 lineHeight={1.3}
               />
