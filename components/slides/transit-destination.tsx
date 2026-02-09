@@ -35,6 +35,12 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const alternateRowTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowTextColor || '#ffffff');
   const setAlternateRowTextColor = useTransitDestinationsStore((state) => state.setAlternateRowTextColor);
 
+  const titleTextSize = useTransitDestinationsStore((state) => state.slides[slideId]?.titleTextSize || 5);
+  const setTitleTextSize = useTransitDestinationsStore((state) => state.setTitleTextSize);
+
+  const contentTextSize = useTransitDestinationsStore((state) => state.slides[slideId]?.contentTextSize || 5);
+  const setContentTextSize = useTransitDestinationsStore((state) => state.setContentTextSize);
+
   const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '#ffffff');
   const setTableHeaderTextColor = useTransitDestinationsStore((state) => state.setTableHeaderTextColor);
 
@@ -90,7 +96,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [backgroundColor, rowColor, alternateRowColor, tableHeaderTextColor, tableTextColor]);
+  }, [backgroundColor, rowColor, alternateRowColor, tableHeaderTextColor, tableTextColor, titleTextSize, contentTextSize]);
 
 
 
@@ -504,6 +510,55 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               </div>
             </div>
 
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Header Text Size</label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
+                  disabled={titleTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
+                  disabled={titleTextSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Content Text Size</label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setContentTextSize(slideId, Math.max(1, contentTextSize - 1))}
+                  disabled={contentTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{contentTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setContentTextSize(slideId, Math.min(10, contentTextSize + 1))}
+                  disabled={contentTextSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
 
           </div>
 

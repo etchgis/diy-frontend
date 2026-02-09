@@ -45,8 +45,18 @@ export default function WeatherPreview({
   const dataError = useWeatherStore(
     (state) => state.slides[slideId]?.dataError || false
   );
+  const titleTextSize = useWeatherStore(
+    (state) => state.slides[slideId]?.titleTextSize || 5
+  );
+  const contentTextSize = useWeatherStore(
+    (state) => state.slides[slideId]?.contentTextSize || 5
+  );
 
   const coordinates = useGeneralStore((state) => state.coordinates);
+
+  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
   // Fetch weather data on mount in editor mode
   useEffect(() => {
@@ -80,15 +90,15 @@ export default function WeatherPreview({
               value={title}
               onChange={(e) => setTitle(slideId, e.target.value)}
               placeholder="Type title here"
-              className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
-              style={{ color: titleColor }}
+              className="w-full bg-transparent outline-none font-light placeholder-white/50"
+              style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
             />
           ) : (
             <div
               className="w-full bg-transparent font-light"
               style={{
                 color: titleColor,
-                fontSize: "clamp(1.5rem, 6vh, 8rem)",
+                fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
                 lineHeight: "1.2",
               }}
             >
@@ -109,13 +119,13 @@ export default function WeatherPreview({
       <div className="flex-1 min-h-0 p-6 flex" style={{ gap: isEditor ? "8px" : "1vh" }}>
         {dataError ? (
           <div className="w-full flex items-center justify-center">
-            <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? "1rem" : "3vh" }}>
+            <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh` }}>
               Unable to load weather data. Please check your location settings.
             </p>
           </div>
         ) : !weatherData ? (
           <div className="w-full flex items-center justify-center">
-            <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? "1rem" : "3vh" }}>
+            <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh` }}>
               Loading weather data...
             </p>
           </div>
@@ -132,7 +142,7 @@ export default function WeatherPreview({
             >
               <div
                 style={{
-                  fontSize: isEditor ? "1.1rem" : "3.5vh",
+                  fontSize: isEditor ? `${17.6 * contentSizeMultiplier}px` : `${3.5 * contentSizeMultiplier}vh`,
                   opacity: 0.8,
                   marginBottom: isEditor ? "8px" : "1vh",
                 }}
@@ -141,12 +151,12 @@ export default function WeatherPreview({
               </div>
 
               <div style={{ lineHeight: 1 }}>
-                <WeatherIcon code={weatherData.current.code} size={isEditor ? "5rem" : "18vh"} />
+                <WeatherIcon code={weatherData.current.code} size={isEditor ? `${80 * contentSizeMultiplier}px` : `${18 * contentSizeMultiplier}vh`} />
               </div>
 
               <div
                 style={{
-                  fontSize: isEditor ? "4.5rem" : "15vh",
+                  fontSize: isEditor ? `${72 * contentSizeMultiplier}px` : `${15 * contentSizeMultiplier}vh`,
                   fontWeight: 200,
                   lineHeight: 1,
                   marginTop: isEditor ? "8px" : "1vh",
@@ -157,7 +167,7 @@ export default function WeatherPreview({
 
               <div
                 style={{
-                  fontSize: isEditor ? "1.5rem" : "5vh",
+                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${5 * contentSizeMultiplier}vh`,
                   fontWeight: 300,
                   marginTop: isEditor ? "4px" : "0.5vh",
                 }}
@@ -168,7 +178,7 @@ export default function WeatherPreview({
               <div
                 className="flex gap-4 mt-2"
                 style={{
-                  fontSize: isEditor ? "1rem" : "3vh",
+                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh`,
                   opacity: 0.7,
                 }}
               >
@@ -189,7 +199,7 @@ export default function WeatherPreview({
               <div
                 className="font-medium mb-2"
                 style={{
-                  fontSize: isEditor ? "1.3rem" : "4vh",
+                  fontSize: isEditor ? `${20.8 * contentSizeMultiplier}px` : `${4 * contentSizeMultiplier}vh`,
                   borderBottom: "1px solid rgba(255,255,255,0.2)",
                   paddingBottom: isEditor ? "4px" : "0.5vh",
                 }}
@@ -208,18 +218,18 @@ export default function WeatherPreview({
                         i < weatherData.daily.length - 1
                           ? "1px solid rgba(255,255,255,0.1)"
                           : "none",
-                      fontSize: isEditor ? "1.1rem" : "3.8vh",
+                      fontSize: isEditor ? `${17.6 * contentSizeMultiplier}px` : `${3.8 * contentSizeMultiplier}vh`,
                       gap: isEditor ? "12px" : "1.5vh",
                     }}
                   >
-                    <span className="font-medium" style={{ minWidth: isEditor ? "120px" : "22vh" }}>
+                    <span className="font-medium" style={{ minWidth: isEditor ? `${120 * contentSizeMultiplier}px` : `${22 * contentSizeMultiplier}vh` }}>
                       {day.dayName} {dayOfMonth}
                     </span>
-                    <span style={{ minWidth: isEditor ? "70px" : "10vh", marginLeft: isEditor ? "30px" : "40px"}}>
+                    <span style={{ minWidth: isEditor ? `${70 * contentSizeMultiplier}px` : `${10 * contentSizeMultiplier}vh`, marginLeft: isEditor ? "30px" : "40px"}}>
                       {day.high}°/{day.low}°
                     </span>
                     <span className="flex items-center gap-2" style={{ marginLeft: "auto" }}>
-                      <WeatherIcon code={day.code} size={isEditor ? "1.5rem" : "4.5vh"} />
+                      <WeatherIcon code={day.code} size={isEditor ? `${24 * contentSizeMultiplier}px` : `${4.5 * contentSizeMultiplier}vh`} />
                       <span style={{ opacity: 0.8 }}>{day.condition}</span>
                     </span>
                   </div>

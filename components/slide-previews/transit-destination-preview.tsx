@@ -32,6 +32,14 @@ export default function TransitDestinationPreview({
   const alternateRowTextColor = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.alternateRowTextColor || "#ffffff"
   );
+  const titleTextSize = useTransitDestinationsStore(
+    (state) => state.slides[slideId]?.titleTextSize || 5
+  );
+  const contentTextSize = useTransitDestinationsStore(
+    (state) => state.slides[slideId]?.contentTextSize || 5
+  );
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
   const dataError = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.dataError || false
   );
@@ -53,13 +61,15 @@ export default function TransitDestinationPreview({
 
   // Dynamic styling based on editor mode
   const getHeaderStyles = () => {
-    if (mobileMode) return "text-sm p-2";
-    return isEditor ? "text-lg p-4" : "text-[3.0vh] p-[2.5vh]";
+    if (mobileMode) return { className: "p-2", fontSize: `${14 * titleSizeMultiplier}px` };
+    if (isEditor) return { className: "p-4", fontSize: `${18 * titleSizeMultiplier}px` };
+    return { className: "p-[2.5vh]", fontSize: `clamp(1rem, ${3.0 * titleSizeMultiplier}vh, 4rem)` };
   };
 
   const getRowStyles = () => {
-    if (mobileMode) return "text-sm";
-    return isEditor ? "text-base" : "text-[2.8vh]";
+    if (mobileMode) return { className: "", fontSize: `${14 * contentSizeMultiplier}px` };
+    if (isEditor) return { className: "", fontSize: `${16 * contentSizeMultiplier}px` };
+    return { className: "", fontSize: `clamp(0.8rem, ${2.8 * contentSizeMultiplier}vh, 3.5rem)` };
   };
 
   const getGridGap = () => {
@@ -178,8 +188,8 @@ export default function TransitDestinationPreview({
     >
       {/* Header - Fixed height */}
       <div
-        className={`text-white flex-shrink-0 ${getHeaderStyles()}`}
-        style={{ backgroundColor, color: tableHeaderTextColor }}
+        className={`text-white flex-shrink-0 ${getHeaderStyles().className}`}
+        style={{ backgroundColor, color: tableHeaderTextColor, fontSize: getHeaderStyles().fontSize }}
       >
         <div
           className={`grid ${
@@ -205,10 +215,11 @@ export default function TransitDestinationPreview({
               mobileMode
                 ? "grid-cols-[1.5fr_1.5fr_1fr_1fr_1fr]"
                 : "grid-cols-[1.5fr_2fr_1fr_1fr_1fr]"
-            } ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
+            } ${getGridGap()} ${getRowPadding()} ${getRowStyles().className} w-full min-w-0 items-center`}
             style={{
               backgroundColor: rowColor,
               color: tableTextColor,
+              fontSize: getRowStyles().fontSize,
             }}
           >
             <div className="col-span-5 flex items-center justify-center">
@@ -238,7 +249,7 @@ export default function TransitDestinationPreview({
                       mobileMode
                         ? "grid-cols-[1fr_1.5fr_1fr_1fr_1fr]"
                         : "grid-cols-[1.5fr_2fr_1fr_1fr_1fr]"
-                    } ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
+                    } ${getGridGap()} ${getRowPadding()} ${getRowStyles().className} w-full min-w-0 items-center`}
                     style={{
                       backgroundColor:
                         index % 2 === 0 ? rowColor : alternateRowColor,
@@ -246,6 +257,7 @@ export default function TransitDestinationPreview({
                         index % 2 === 0
                           ? tableTextColor
                           : alternateRowTextColor,
+                      fontSize: getRowStyles().fontSize,
                     }}
                   >
                     <div className="flex items-center gap-2 truncate">
@@ -498,7 +510,7 @@ export default function TransitDestinationPreview({
                   mobileMode
                     ? "grid-cols-[1fr_1.5fr_1fr_1fr_1fr]"
                     : "grid-cols-[1.5fr_2fr_1fr_1fr_1fr]"
-                } ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
+                } ${getGridGap()} ${getRowPadding()} ${getRowStyles().className} w-full min-w-0 items-center`}
                 style={{
                   backgroundColor:
                     (destinationData.length + index) % 2 === 0
@@ -506,6 +518,7 @@ export default function TransitDestinationPreview({
                       : alternateRowColor,
                   color:
                     index % 2 === 0 ? tableTextColor : alternateRowTextColor,
+                  fontSize: getRowStyles().fontSize,
                 }}
               >
                 <div className="flex items-center gap-2">

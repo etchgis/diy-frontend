@@ -101,6 +101,16 @@ export default function StopArrivalsSlide({
   );
   const setLogoImage = useFixedRouteStore((state) => state.setLogoImage);
 
+  const titleTextSize = useFixedRouteStore(
+    (state) => state.slides[slideId]?.titleTextSize || 5
+  );
+  const setTitleTextSize = useFixedRouteStore((state) => state.setTitleTextSize);
+
+  const contentTextSize = useFixedRouteStore(
+    (state) => state.slides[slideId]?.contentTextSize || 5
+  );
+  const setContentTextSize = useFixedRouteStore((state) => state.setContentTextSize);
+
   const setIsLoading = useFixedRouteStore((state) => state.setIsLoading);
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
@@ -293,6 +303,8 @@ export default function StopArrivalsSlide({
     titleColor,
     tableColor,
     tableTextColor,
+    titleTextSize,
+    contentTextSize,
   ]);
 
   type ImageTarget = "bg" | "logo";
@@ -708,6 +720,60 @@ export default function StopArrivalsSlide({
                     </Button>
                   )}
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Title Text Size
+              </label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
+                  disabled={titleTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
+                  disabled={titleTextSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Content Text Size
+              </label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setContentTextSize(slideId, Math.max(1, contentTextSize - 1))}
+                  disabled={contentTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{contentTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setContentTextSize(slideId, Math.min(10, contentTextSize + 1))}
+                  disabled={contentTextSize >= 10}
+                >
+                  +
+                </Button>
               </div>
             </div>
 
