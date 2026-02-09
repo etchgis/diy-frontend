@@ -104,31 +104,16 @@ async function testOpenMeteo() {
   return `Temp: ${Math.round(data.current.temperature_2m)}°F, ${data.daily.time.length}-day forecast`;
 }
 
-// ── 2. Citibike GBFS Station Information ───────────────────────────────
-let stationInfoCount = 0;
-async function testCitibikeInfo() {
-  const data = await fetchJSON(
-    "https://gbfs.citibikenyc.com/gbfs/en/station_information.json"
-  );
-  if (!data.data?.stations || data.data.stations.length === 0) {
-    throw new Error("No stations returned");
+// ── 2. SKIDS GBFS Nearby Stations (Citibike via backend) ───────────────
+const CITIBIKE_SEARCH_RADIUS = 0.5; // miles
+async function testSkidsGbfsNearby() {
+  const url = `${SKIDS_URL}/api/gbfs/stations/nearby?lat=${ORIGIN.lat}&lon=${ORIGIN.lng}&radius=${CITIBIKE_SEARCH_RADIUS}&system=citibike-nyc`;
+  const data = await fetchJSON(url);
+  if (!data.stations || data.stations.length === 0) {
+    throw new Error("No nearby stations returned");
   }
-  stationInfoCount = data.data.stations.length;
-  return `${stationInfoCount} stations returned`;
-}
-
-// ── 3. Citibike GBFS Station Status ────────────────────────────────────
-async function testCitibikeStatus() {
-  const data = await fetchJSON(
-    "https://gbfs.citibikenyc.com/gbfs/en/station_status.json"
-  );
-  if (!data.data?.stations || data.data.stations.length === 0) {
-    throw new Error("No station statuses returned");
-  }
-  const withBikes = data.data.stations.filter(
-    (s) => s.num_bikes_available > 0
-  ).length;
-  return `${data.data.stations.length} statuses, ${withBikes} with available bikes`;
+  const withBikes = data.stations.filter((s) => s.bikesAvailable > 0).length;
+  return `${data.stations.length} stations within ${CITIBIKE_SEARCH_RADIUS} mi, ${withBikes} with available bikes`;
 }
 
 // ── 4. NYSDOT Nearby Stops ─────────────────────────────────────────────
@@ -346,8 +331,7 @@ async function main() {
   // Public / third-party feeds
   separator("PUBLIC FEEDS");
   await testEndpoint("Open-Meteo Weather Forecast", testOpenMeteo);
-  await testEndpoint("Citibike GBFS - Station Information", testCitibikeInfo);
-  await testEndpoint("Citibike GBFS - Station Status", testCitibikeStatus);
+  await testEndpoint("SKIDS GBFS Nearby Stations (Citibike)", testSkidsGbfsNearby);
 
   // NYSDOT stops/routes (these also discover IDs for SKIDS tests)
   separator("NYSDOT ENDPOINTS");
