@@ -54,8 +54,14 @@ export default function Template3Preview({
   const imageObjectFit = useTemplate3Store(
     (state) => state.slides[slideId]?.imageObjectFit || "contain"
   );
+  const titleTextSize = useTemplate3Store(
+    (state) => state.slides[slideId]?.titleTextSize || 5
+  );
   const setImageWidth = useTemplate3Store((state) => state.setImageWidth);
   const setImageHeight = useTemplate3Store((state) => state.setImageHeight);
+
+  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
 
@@ -118,15 +124,15 @@ export default function Template3Preview({
                 value={title}
                 onChange={(e) => setTitle(slideId, e.target.value)}
                 placeholder="Type title here"
-                className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
-                style={{ color: titleColor }}
+                className="w-full bg-transparent outline-none font-light placeholder-white/50"
+                style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
               />
             ) : (
               <div
                 className="w-full bg-transparent font-light"
                 style={{
                   color: titleColor,
-                  fontSize: "clamp(1.5rem, 8vh, 11rem)",
+                  fontSize: `clamp(1.5rem, ${8 * titleSizeMultiplier}vh, 11rem)`,
                   lineHeight: "1.2"
                 }}
               >

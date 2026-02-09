@@ -16,11 +16,16 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || "");
   const logoImage = useQRStore(
     (state) => state.slides[slideId]?.logoImage || ""
-
   );
+  const textSize = useQRStore(
+    (state) => state.slides[slideId]?.textSize || 5
+  );
+
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor");
 
+  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
+  const textSizeMultiplier = 0.5 + textSize * 0.1;
 
   const containerSize = isEditor ? `${2 * qrSize}rem` : `${qrSize * 8}vh`;
   const qrPixelSize = 32 * qrSize;
@@ -66,7 +71,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
           className="font-medium text-center"
           style={{
             color: textColor,
-            fontSize: isEditor ? "1.125rem" : "4vh",
+            fontSize: isEditor ? `${18 * textSizeMultiplier}px` : `${4 * textSizeMultiplier}vh`,
           }}
         >
           {text}

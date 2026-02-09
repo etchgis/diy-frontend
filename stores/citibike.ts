@@ -22,6 +22,8 @@ interface CitibikeSlideData {
   searchRadius: number;
   stationData: CitibikeStation[];
   dataError: boolean;
+  titleTextSize?: number;
+  contentTextSize?: number;
 }
 
 interface CitibikeStore {
@@ -35,6 +37,8 @@ interface CitibikeStore {
   setSearchRadius: (slideId: string, radius: number) => void;
   setStationData: (slideId: string, data: CitibikeStation[]) => void;
   setDataError: (slideId: string, error: boolean) => void;
+  setTitleTextSize: (slideId: string, size: number) => void;
+  setContentTextSize: (slideId: string, size: number) => void;
 }
 
 export const useCitibikeStore = create<CitibikeStore>()(
@@ -111,6 +115,22 @@ export const useCitibikeStore = create<CitibikeStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), dataError: error },
+          },
+        })),
+
+      setTitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), titleTextSize: size },
+          },
+        })),
+
+      setContentTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), contentTextSize: size },
           },
         })),
     }),

@@ -67,7 +67,9 @@ export async function publish() {
           tableHeaderTextColor,
           tableTextColor,
           destinations,
-          alternateRowTextColor
+          alternateRowTextColor,
+          titleTextSize,
+          contentTextSize
         } = slideData;
 
         // Use the slide data as needed
@@ -81,6 +83,8 @@ export async function publish() {
           name: destination.name,
           coordinates: destination.coordinates,
         })) || [];
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
 
       } else {
       }
@@ -105,7 +109,9 @@ export async function publish() {
           tableTextColor,
           bgImage,
           logoImage,
-          selectedStop
+          selectedStop,
+          titleTextSize,
+          contentTextSize
         } = slideData;
 
 
@@ -118,6 +124,8 @@ export async function publish() {
         screenObj.data.bgImage = bgImage;
         screenObj.data.logoImage = logoImage;
         screenObj.data.selectedStop = selectedStop;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       } else {
       }
     }
@@ -156,7 +164,8 @@ export async function publish() {
           backgroundColor,
           bgImage,
           logoImage,
-          qrSize
+          qrSize,
+          textSize
         } = slideData;
 
         screenObj.data.text = text;
@@ -165,6 +174,7 @@ export async function publish() {
         screenObj.data.bgImage = bgImage;
         screenObj.data.logoImage = logoImage;
         screenObj.data.qrSize = qrSize;
+        screenObj.data.textSize = textSize;
       } else {
       }
 
@@ -181,7 +191,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit } = slideData;
+        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -196,6 +206,8 @@ export async function publish() {
         screenObj.data.imageWidth = imageWidth;
         screenObj.data.imageHeight = imageHeight;
         screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
 
       } else {
       }
@@ -212,7 +224,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit } = slideData;
+        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -227,6 +239,8 @@ export async function publish() {
         screenObj.data.imageWidth = imageWidth;
         screenObj.data.imageHeight = imageHeight;
         screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       } else {
       }
     }
@@ -241,7 +255,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { title, image, backgroundColor, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit } = slideData;
+        const { title, image, backgroundColor, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.image = image;
@@ -253,6 +267,7 @@ export async function publish() {
         screenObj.data.imageWidth = imageWidth;
         screenObj.data.imageHeight = imageHeight;
         screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.titleTextSize = titleTextSize;
       } else {
       }
     }
@@ -286,7 +301,7 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        const { title, backgroundColor, contentBackgroundColor, bgImage, titleColor, textColor, logoImage } = slideData;
+        const { title, backgroundColor, contentBackgroundColor, bgImage, titleColor, textColor, logoImage, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.backgroundColor = backgroundColor;
@@ -295,6 +310,8 @@ export async function publish() {
         screenObj.data.titleColor = titleColor;
         screenObj.data.textColor = textColor;
         screenObj.data.logoImage = logoImage;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       }
     }
 
@@ -307,7 +324,7 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        const { title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius } = slideData;
+        const { title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.backgroundColor = backgroundColor;
@@ -316,6 +333,8 @@ export async function publish() {
         screenObj.data.textColor = textColor;
         screenObj.data.logoImage = logoImage;
         screenObj.data.searchRadius = searchRadius;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       }
     }
 
@@ -338,7 +357,9 @@ export async function publish() {
           tableColor,
           tableTextColor,
           bgImage,
-          logoImage
+          logoImage,
+          titleTextSize,
+          contentTextSize
         } = slideData;
 
         screenObj.data.routeName = routeName;
@@ -351,6 +372,8 @@ export async function publish() {
         screenObj.data.tableTextColor = tableTextColor;
         screenObj.data.bgImage = bgImage;
         screenObj.data.logoImage = logoImage;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       } else {
       }
     }

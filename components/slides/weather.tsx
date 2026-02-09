@@ -31,6 +31,12 @@ export default function WeatherSlide({ slideId, handleDelete, handlePreview, han
   const logoImage = useWeatherStore((state) => state.slides[slideId]?.logoImage || '');
   const setLogoImage = useWeatherStore((state) => state.setLogoImage);
 
+  const titleTextSize = useWeatherStore((state) => state.slides[slideId]?.titleTextSize || 5);
+  const setTitleTextSize = useWeatherStore((state) => state.setTitleTextSize);
+
+  const contentTextSize = useWeatherStore((state) => state.slides[slideId]?.contentTextSize || 5);
+  const setContentTextSize = useWeatherStore((state) => state.setContentTextSize);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   useEffect(() => {
@@ -50,7 +56,7 @@ export default function WeatherSlide({ slideId, handleDelete, handlePreview, han
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => setSaveStatus('saved'), 600);
-  }, [title, backgroundColor, contentBackgroundColor, bgImage, titleColor, textColor, logoImage]);
+  }, [title, backgroundColor, contentBackgroundColor, bgImage, titleColor, textColor, logoImage, titleTextSize, contentTextSize]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
     const file = e.target.files?.[0];
@@ -250,6 +256,56 @@ export default function WeatherSlide({ slideId, handleDelete, handlePreview, han
                   </Button>
                 )}
               </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Size</label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
+                disabled={titleTextSize <= 1}
+              >
+                −
+              </Button>
+              <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
+                disabled={titleTextSize >= 10}
+              >
+                +
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Content Text Size</label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setContentTextSize(slideId, Math.max(1, contentTextSize - 1))}
+                disabled={contentTextSize <= 1}
+              >
+                −
+              </Button>
+              <span className="w-6 text-center text-sm font-medium">{contentTextSize}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setContentTextSize(slideId, Math.min(10, contentTextSize + 1))}
+                disabled={contentTextSize >= 10}
+              >
+                +
+              </Button>
             </div>
           </div>
         </div>

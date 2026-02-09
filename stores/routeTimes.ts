@@ -45,6 +45,8 @@ interface RouteTimesSlide {
   isLoading: boolean;
   isShowingNextDay?: boolean;
   isShowingLaterToday?: boolean;
+  titleTextSize?: number;
+  contentTextSize?: number;
 }
 
 interface RouteTimesStore {
@@ -65,6 +67,8 @@ interface RouteTimesStore {
   setPatternData: (slideId: string, data: any) => void;
   setIsLoading: (slideId: string, loading: boolean) => void;
   clearSlide: (slideId: string) => void;
+  setTitleTextSize: (slideId: string, size: number) => void;
+  setContentTextSize: (slideId: string, size: number) => void;
 }
 
 const getDefaultSlide = (): RouteTimesSlide => ({
@@ -83,6 +87,8 @@ const getDefaultSlide = (): RouteTimesSlide => ({
   isLoading: false,
   isShowingNextDay: false,
   isShowingLaterToday: false,
+  titleTextSize: 5,
+  contentTextSize: 5,
 });
 
 export const useRouteTimesStore = create<RouteTimesStore>()(
@@ -257,6 +263,30 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
           );
           return { slides: remainingSlides };
         }),
+
+      setTitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              titleTextSize: size,
+            },
+          },
+        })),
+
+      setContentTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              contentTextSize: size,
+            },
+          },
+        })),
     }),
     {
       name: 'route-times-store',

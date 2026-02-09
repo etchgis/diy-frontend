@@ -27,6 +27,12 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const isLoading = slideData?.isLoading || false;
   const isShowingNextDay = slideData?.isShowingNextDay || false;
   const isShowingLaterToday = slideData?.isShowingLaterToday || false;
+  const titleTextSize = slideData?.titleTextSize || 5;
+  const contentTextSize = slideData?.contentTextSize || 5;
+
+  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -301,7 +307,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
         {/* Left Panel - Stop Times */}
         <div className="w-[30%] border-r border-gray-200 overflow-y-auto" style={{ backgroundColor: tableColor }}>
           <div className="p-4">
-            <h3 className="font-semibold mb-3" style={{ color: tableTextColor }}>Stop Times</h3>
+            <h3 className="font-semibold mb-3" style={{ color: tableTextColor, fontSize: `${16 * contentSizeMultiplier}px` }}>Stop Times</h3>
             <div className="space-y-3">
               {stops.map((stop: PatternStop, index: number) => {
                 // Find departures for this stop - check both stop.id and stop.stopId
@@ -534,8 +540,8 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       <div className="p-4 z-10 flex items-center">
         <div className="flex-1">
           <h1
-            className="text-2xl font-bold flex items-center gap-3"
-            style={{ color: titleColor }}
+            className="font-bold flex items-center gap-3"
+            style={{ color: titleColor, fontSize: `${24 * titleSizeMultiplier}px` }}
           >
             {selectedRoute ? (
               <>
@@ -564,7 +570,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
             )}
           </h1>
           {description && (
-            <p className="mt-2 text-sm" style={{ color: titleColor, opacity: 0.9 }}>
+            <p className="mt-2" style={{ color: titleColor, opacity: 0.9, fontSize: `${14 * titleSizeMultiplier}px` }}>
               {description}
             </p>
           )}

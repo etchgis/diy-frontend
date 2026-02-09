@@ -47,6 +47,9 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
   const imageObjectFit = useTemplate3Store((state) => state.slides[slideId]?.imageObjectFit || 'contain');
   const setImageObjectFit = useTemplate3Store((state) => state.setImageObjectFit);
 
+  const titleTextSize = useTemplate3Store((state) => state.slides[slideId]?.titleTextSize || 5);
+  const setTitleTextSize = useTemplate3Store((state) => state.setTitleTextSize);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   useEffect(() => {
@@ -71,7 +74,7 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, image, backgroundColor, textColor, titleColor, bgImage, logoImage, imageWidth, imageHeight, imageObjectFit]);
+  }, [title, image, backgroundColor, textColor, titleColor, bgImage, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
     const file = e.target.files?.[0];
@@ -329,6 +332,31 @@ export default function Template3Slide({ slideId, handleDelete, handlePreview, h
                 <SelectItem value="scale-down">Scale Down</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Size</label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
+                disabled={titleTextSize <= 1}
+              >
+                −
+              </Button>
+              <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
+                disabled={titleTextSize >= 10}
+              >
+                +
+              </Button>
+            </div>
           </div>
         </div>
 

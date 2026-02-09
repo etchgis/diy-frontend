@@ -32,6 +32,12 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
   const searchRadius = useCitibikeStore((state) => state.slides[slideId]?.searchRadius || 0.5);
   const setSearchRadius = useCitibikeStore((state) => state.setSearchRadius);
 
+  const titleTextSize = useCitibikeStore((state) => state.slides[slideId]?.titleTextSize || 5);
+  const setTitleTextSize = useCitibikeStore((state) => state.setTitleTextSize);
+
+  const contentTextSize = useCitibikeStore((state) => state.slides[slideId]?.contentTextSize || 5);
+  const setContentTextSize = useCitibikeStore((state) => state.setContentTextSize);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   useEffect(() => {
@@ -51,7 +57,7 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => setSaveStatus('saved'), 600);
-  }, [title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius]);
+  }, [title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius, titleTextSize, contentTextSize]);
 
   // Re-fetch when search radius changes
   const radiusChangeRef = useRef(false);
@@ -257,6 +263,56 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
                   </Button>
                 )}
               </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Size</label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
+                disabled={titleTextSize <= 1}
+              >
+                −
+              </Button>
+              <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
+                disabled={titleTextSize >= 10}
+              >
+                +
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Content Text Size</label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setContentTextSize(slideId, Math.max(1, contentTextSize - 1))}
+                disabled={contentTextSize <= 1}
+              >
+                −
+              </Button>
+              <span className="w-6 text-center text-sm font-medium">{contentTextSize}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0 text-lg"
+                onClick={() => setContentTextSize(slideId, Math.min(10, contentTextSize + 1))}
+                disabled={contentTextSize >= 10}
+              >
+                +
+              </Button>
             </div>
           </div>
         </div>

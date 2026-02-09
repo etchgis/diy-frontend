@@ -50,8 +50,18 @@ export default function CitibikePreview({
   const dataError = useCitibikeStore(
     (state) => state.slides[slideId]?.dataError || false
   );
+  const titleTextSize = useCitibikeStore(
+    (state) => state.slides[slideId]?.titleTextSize || 5
+  );
+  const contentTextSize = useCitibikeStore(
+    (state) => state.slides[slideId]?.contentTextSize || 5
+  );
 
   const coordinates = useGeneralStore((state) => state.coordinates);
+
+  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
   // Fetch data on mount in editor mode
   useEffect(() => {
@@ -228,15 +238,15 @@ export default function CitibikePreview({
               value={title}
               onChange={(e) => setTitle(slideId, e.target.value)}
               placeholder="Type title here"
-              className="w-full bg-transparent outline-none text-4xl font-light placeholder-white/50"
-              style={{ color: titleColor }}
+              className="w-full bg-transparent outline-none font-light placeholder-white/50"
+              style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
             />
           ) : (
             <div
               className="w-full bg-transparent font-light"
               style={{
                 color: titleColor,
-                fontSize: "clamp(1.5rem, 6vh, 8rem)",
+                fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
                 lineHeight: "1.2",
               }}
             >
@@ -262,7 +272,7 @@ export default function CitibikePreview({
                 style={{
                   color: textColor,
                   opacity: 0.7,
-                  fontSize: isEditor ? "1rem" : "3vh",
+                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh`,
                 }}
               >
                 Unable to load Citibike data. Please check your location.
@@ -289,7 +299,7 @@ export default function CitibikePreview({
               className="p-3 text-center"
               style={{
                 opacity: 0.7,
-                fontSize: isEditor ? "0.8rem" : "1.8vh",
+                fontSize: isEditor ? `${12.8 * contentSizeMultiplier}px` : `${1.8 * contentSizeMultiplier}vh`,
               }}
             >
               {coordinates ? "Loading stations..." : "No location set"}
@@ -299,7 +309,7 @@ export default function CitibikePreview({
               <div
                 className="font-medium mb-2 pb-1"
                 style={{
-                  fontSize: isEditor ? "1.5rem" : "3vh",
+                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh`,
                   borderBottom: "1px solid rgba(255,255,255,0.2)",
                 }}
               >
@@ -315,14 +325,14 @@ export default function CitibikePreview({
                 >
                   <div
                     className="font-medium"
-                    style={{ fontSize: isEditor ? "0.85rem" : "2vh" }}
+                    style={{ fontSize: isEditor ? `${13.6 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}vh` }}
                   >
                     {station.name}
                   </div>
                   <div
                     className="flex justify-between mt-1"
                     style={{
-                      fontSize: isEditor ? "0.70rem" : "1.7vh",
+                      fontSize: isEditor ? `${11.2 * contentSizeMultiplier}px` : `${1.7 * contentSizeMultiplier}vh`,
                       opacity: 0.8,
                     }}
                   >

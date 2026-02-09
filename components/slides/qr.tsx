@@ -41,6 +41,9 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
   const logoImage = useQRStore((state) => state.slides[slideId]?.logoImage || '');
   const setLogoImage = useQRStore((state) => state.setLogoImage);
 
+  const textSize = useQRStore((state) => state.slides[slideId]?.textSize || 5);
+  const setTextSize = useQRStore((state) => state.setTextSize);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   const [tempQR, setTempQR] = useState(url);
@@ -74,7 +77,7 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [backgroundColor, textColor, text, url, logoImage]);
+  }, [backgroundColor, textColor, text, url, logoImage, textSize]);
 
   const handleGenerateQR = () => {
     if (!tempQR.trim()) return;
@@ -305,6 +308,31 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
                 onChange={(e) => setQrSize(slideId, Number(e.target.value))}
                 className="text-xs border border-gray-300 rounded px-2.5 py-2.5 w-28"
               />
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Text Size</label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTextSize(slideId, Math.max(1, textSize - 1))}
+                  disabled={textSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{textSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTextSize(slideId, Math.min(10, textSize + 1))}
+                  disabled={textSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
             </div>
 
             <div>
