@@ -9,6 +9,12 @@ interface Screen {
   url: string;
   lastModified: string;
   size: number;
+  address?: string;
+  firstScreen?: {
+    data?: {
+      title?: string;
+    };
+  };
 }
 
 export default function AdminPage() {
@@ -191,6 +197,14 @@ export default function AdminPage() {
                             <p className="text-xs text-[#9ca3af]">
                               Last Modified: {new Date(screen.lastModified).toLocaleDateString()} {new Date(screen.lastModified).toLocaleTimeString()}
                             </p>
+                            <p className="text-xs text-[#9ca3af]">
+                              Address: {screen.address || 'N/A'}
+                            </p>
+                            {screen.firstScreen?.data?.title && (
+                              <p className="text-xs text-[#9ca3af]">
+                                First Screen Title: {screen.firstScreen.data.title}
+                              </p>
+                            )}
                           </div>
                           <div className="ml-4">
                             <Button

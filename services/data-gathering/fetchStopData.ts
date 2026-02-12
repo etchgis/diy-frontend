@@ -33,6 +33,7 @@ async function fetchTrainDetails(arrivals: any[], serviceId: string, organizatio
       const headers = {
         'Content-Type': 'application/json',
         'X-Organization-Id': organizationId,
+        'X-Skids-Route-Key': serviceId,
       };
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -86,6 +87,7 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     const headers = {
       'Content-Type': 'application/json',
       'X-Organization-Id': `${organizationId}`,
+      'X-Skids-Route-Key': serviceId,
     };
     const response = await fetch(endpoint, {
       method: 'GET',
