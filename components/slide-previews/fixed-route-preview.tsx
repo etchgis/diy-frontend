@@ -76,10 +76,13 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     const orgName = selectedStop?.services?.[0]?.agency_name || selectedStop?.agency_name || '';
     const combined = `${orgId} ${orgName}`.toLowerCase();
 
+    console.log(combined);
+
     if (combined.includes('lirr') || combined.includes('long island')) {
       return '/images/lirr-rail-icon.png';
     }
     if (combined.includes('mnr') || combined.includes('metro-north') || combined.includes('metronorth') || combined.includes('metro north')) {
+      console.log('yes');
       return '/images/mn-rail-icon.png';
     }
     if (combined.includes('amtrak') || combined.includes('amtk')) {
@@ -91,8 +94,10 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   // Determine the correct icon based on routeType from schedule data
   const getModeIcon = (): string => {
     // Get routeType from first arrival in scheduleData
+    console.log(scheduleData);
     const routeTypeRaw = scheduleData?.[0]?.routeType;
     const routeType = routeTypeRaw !== undefined ? Number(routeTypeRaw) : undefined;
+
 
     // GTFS route types: 0=tram/light rail, 1=subway, 2=rail, 3=bus
     switch (routeType) {
@@ -103,8 +108,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
       case 1: // Subway/Metro
         return '/images/subway-icon.png';
       case 3: // Bus
-      default:
         return '/images/bus-icon.png';
+      default:
+        return getRailIcon();;
     }
   };
 
