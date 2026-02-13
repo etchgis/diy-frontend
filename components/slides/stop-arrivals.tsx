@@ -254,7 +254,7 @@ export default function StopArrivalsSlide({
           useFixedRouteStore.getState().setDataError(slideId, error)
       );
       const arr: any = [];
-      data?.trains.forEach((item: any) => {
+      data?.trains.slice(0, 6).forEach((item: any) => {
         arr.push({
           destination: item.destination,
           route: item.details.id,
