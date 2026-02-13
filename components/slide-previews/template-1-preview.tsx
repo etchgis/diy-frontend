@@ -19,6 +19,7 @@ export default function Template1Preview({
   const [isEditor, setIsEditor] = useState(pathname.includes("/editor"));
   const [isUploading, setIsUploading] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (previewMode) {
@@ -55,6 +56,9 @@ export default function Template1Preview({
   const titleColor = useTemplate1Store(
     (state) => state.slides[slideId]?.titleColor || "#ffffff"
   );
+  const showTitle = useTemplate1Store(
+    (state) => state.slides[slideId]?.showTitle !== false
+  );
   const logoImage = useTemplate1Store(
     (state) => state.slides[slideId]?.logoImage || ""
   );
@@ -90,6 +94,7 @@ export default function Template1Preview({
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     if (!isEditor) return;
@@ -124,6 +129,37 @@ export default function Template1Preview({
     e.preventDefault();
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isEditor) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    uploadImage(shortcode, file)
+      .then((data) => {
+        if (image) {
+          deleteImage(image)
+            .then(() => {})
+            .catch((err) => {
+              console.error("Failed to delete previous image:", err);
+            });
+        }
+        setImage(slideId, data.url);
+      })
+      .catch((err) => {
+        console.error("Image upload failed:", err);
+      })
+      .finally(() => {
+        setIsUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      });
+  };
+
+  const handleClickUpload = () => {
+    if (!isEditor) return;
+    fileInputRef.current?.click();
+  };
+
   return (
     <div
       className="w-full h-full flex flex-col overflow-hidden mb-6 relative"
@@ -133,45 +169,48 @@ export default function Template1Preview({
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: textColor,
+        fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
       }}
     >
       {/* Title + Logo */}
-      <div className="p-3 border-b border-white/20 flex items-center">
-        <div
-          className={`flex-1 rounded px-4 ${
-            isEditor ? "border-2 border-[#11d1f7] py-2" : ""
-          }`}
-        >
-          {isEditor ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(slideId, e.target.value)}
-              placeholder="Type title here"
-              className="w-full bg-transparent outline-none font-light placeholder-white/50"
-              style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+      {showTitle && (
+        <div className="p-3 border-b border-white/20 flex items-center">
+          <div
+            className={`flex-1 rounded px-4 ${
+              isEditor ? "border-2 border-[#11d1f7] py-2" : ""
+            }`}
+          >
+            {isEditor ? (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(slideId, e.target.value)}
+                placeholder="Type title here"
+                className="w-full bg-transparent outline-none font-light placeholder-white/50"
+                style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+              />
+            ) : (
+              <div
+                className="w-full bg-transparent font-light"
+                style={{
+                  color: titleColor,
+                  fontSize: `clamp(1rem, ${8 * titleSizeMultiplier}vh, 11rem)`,
+                  lineHeight: "1.2"
+                }}
+              >
+                {title || ""}
+              </div>
+            )}
+          </div>
+          {logoImage && (
+            <img
+              src={logoImage}
+              alt="Logo"
+              className="max-h-16 object-contain ml-4 flex-shrink-0"
             />
-          ) : (
-            <div
-              className="w-full bg-transparent font-light"
-              style={{
-                color: titleColor,
-                fontSize: `clamp(1rem, ${8 * titleSizeMultiplier}vh, 11rem)`,
-                lineHeight: "1.2"
-              }}
-            >
-              {title || ""}
-            </div>
           )}
         </div>
-        {logoImage && (
-          <img
-            src={logoImage}
-            alt="Logo"
-            className="max-h-16 object-contain ml-4 flex-shrink-0"
-          />
-        )}
-      </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 p-6 flex gap-4">
@@ -204,13 +243,21 @@ export default function Template1Preview({
 
         {/* Right Box - Image Content */}
         <div className="h-full" style={{ width: rightContentSize }}>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+          />
           <div
             ref={imageContainerRef}
             className={`h-full w-full rounded-lg flex items-center justify-center p-6 ${
-              isEditor ? "border-2 border-[#11d1f7] bg-[#11d1f7]/10" : ""
+              isEditor ? "border-2 border-[#11d1f7] bg-[#11d1f7]/10 cursor-pointer" : ""
             }`}
             onDrop={isEditor ? handleDrop : undefined}
             onDragOver={isEditor ? handleDragOver : undefined}
+            onClick={isEditor && !image ? handleClickUpload : undefined}
           >
             {isUploading ? (
               <div className="flex flex-col items-center justify-center">
@@ -239,8 +286,14 @@ export default function Template1Preview({
                       Drag and Drop Image Here
                     </div>
                     <div
-                      className="text-sm mb-6"
+                      className="text-sm mb-2"
                       style={{ color: textColor, opacity: 0.8 }}
+                    >
+                      or click to browse
+                    </div>
+                    <div
+                      className="text-sm mb-6"
+                      style={{ color: textColor, opacity: 0.6 }}
                     >
                       accepted files: .png, .jpg, .gif
                     </div>

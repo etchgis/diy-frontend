@@ -63,6 +63,7 @@ export default function TransitRoutesPreview({
   const coordinates = useGeneralStore(
     (state) => state.coordinates ?? DEFAULT_COORDINATES
   );
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   const mockRoutes: any = [];
   const routes = useTransitRouteStore(
@@ -432,7 +433,7 @@ export default function TransitRoutesPreview({
   }, []);
 
   return (
-    <div className="w-full h-full bg-[#f7fafc] rounded-lg relative flex flex-col">
+    <div className="w-full h-full bg-[#f7fafc] rounded-lg relative flex flex-col" style={{ fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined }}>
       {/* Map container */}
       <div className="flex-1 w-full relative overflow-hidden rounded-t-lg">
         <div

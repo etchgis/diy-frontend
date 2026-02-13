@@ -45,6 +45,7 @@ export default function ImageOnlyPreview({
   const setImageHeight = useImageOnlyStore((state) => state.setImageHeight);
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     if (!isEditor) return;
@@ -82,7 +83,7 @@ export default function ImageOnlyPreview({
       className="w-full h-full overflow-hidden"
       onDrop={isEditor ? handleDrop : undefined}
       onDragOver={isEditor ? handleDragOver : undefined}
-      style={{ backgroundColor }}
+      style={{ backgroundColor, fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined }}
     >
       {isUploading ? (
         <div className="w-full h-full flex flex-col items-center justify-center">

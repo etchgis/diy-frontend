@@ -63,6 +63,7 @@ async function formatBusData(data: any, serviceId: string, organizationId: strin
     trains: futureArrivals.map((train: any) => ({
       destination: train.headsign,
       routeId: train.routeId,
+      routeType: train.routeType,
       arrivalTime: formatTime(Math.round((train.arrive))),
       arrival: formatDuration(Math.round((train.arriveScheduled - currentTime) / 1000)),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),

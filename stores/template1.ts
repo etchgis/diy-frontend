@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 interface Template1SlideData {
   text: string;
   title: string;
+  showTitle?: boolean;
   image: string | null;
   bgImage?: string;
   backgroundColor?: string;
@@ -23,6 +24,7 @@ interface SlideStore {
   slides: Record<string, Template1SlideData>;
   setText: (slideId: string, name: string) => void;
   setTitle: (slideId: string, name: string) => void;
+  setShowTitle: (slideId: string, show: boolean) => void;
   setImage: (slideId: string, name: string) => void;
   setBgImage: (slideId: string, bgImage: string) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
@@ -59,6 +61,16 @@ export const useTemplate1Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               title,
+            },
+          },
+        })),
+      setShowTitle: (slideId, show) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              showTitle: show,
             },
           },
         })),

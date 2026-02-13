@@ -1,4 +1,5 @@
 import { useRouteTimesStore } from '@/stores/routeTimes';
+import { useGeneralStore } from '@/stores/general';
 import { useEffect, useState, useRef } from 'react';
 import { formatDepartureTime } from '@/services/data-gathering/fetchRouteData';
 import { formatTime12Hour } from '@/utils/timeFormatters';
@@ -19,6 +20,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const bgImage = slideData?.bgImage || '';
   const logoImage = slideData?.logoImage || '';
   const routeName = slideData?.routeName || '';
+  const showTitle = slideData?.showTitle !== false;
   const description = slideData?.description || '';
   const selectedRoute = slideData?.selectedRoute;
   const viewMode = slideData?.viewMode || 'map';
@@ -29,6 +31,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const isShowingLaterToday = slideData?.isShowingLaterToday || false;
   const titleTextSize = slideData?.titleTextSize || 5;
   const contentTextSize = slideData?.contentTextSize || 5;
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
@@ -265,6 +268,34 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     return [];
   };
 
+  /**
+   * Get the appropriate rail icon based on agency name
+   * Returns specific icons for LIRR, Metro-North, and Amtrak
+   * Falls back to default rail icon for other rail services
+   */
+  const getRailIcon = (): string => {
+    const agencyName = selectedRoute?.agency_name || selectedRoute?.services?.[0]?.agency_name || '';
+    const agency = agencyName.toLowerCase();
+
+    // LIRR (Long Island Rail Road)
+    if (agency.includes('lirr') || agency.includes('long island')) {
+      return 'images/lirr-rail-icon.png';
+    }
+
+    // Metro-North
+    if (agency.includes('mnr') || agency.includes('metro-north') || agency.includes('metronorth') || agency.includes('metro north')) {
+      return 'images/mn-rail-icon.png';
+    }
+
+    // Amtrak
+    if (agency.includes('amtrak') || agency.includes('amtk')) {
+      return 'images/amtrack-rail-icon.png';
+    }
+
+    // Default rail icon
+    return 'images/rail-icon.png';
+  };
+
   const getModeIcon = (type: string) => {
     // Use CSS mask to apply titleColor to the icon
     const iconStyle: React.CSSProperties = {
@@ -280,17 +311,14 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       maskPosition: 'center',
     };
 
-    if(type == '0'){
+    if(type == '0' || type == '2'){
+      const railIcon = getRailIcon();
       return (
-        <div style={{...iconStyle, WebkitMaskImage: 'url(images/rail-icon.png)', maskImage: 'url(images/rail-icon.png)'}}></div>
+        <div style={{...iconStyle, WebkitMaskImage: `url(${railIcon})`, maskImage: `url(${railIcon})`}}></div>
       )
     } else if(type == '1') {
       return (
         <div style={{...iconStyle, WebkitMaskImage: 'url(images/subway-icon.png)', maskImage: 'url(images/subway-icon.png)'}}></div>
-      )
-    } else if(type == '2') {
-      return (
-        <div style={{...iconStyle, WebkitMaskImage: 'url(images/train-icon.png)', maskImage: 'url(images/train-icon.png)'}}></div>
       )
     } else if(type == '3') {
       return (
@@ -533,56 +561,59 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
         backgroundImage: bgImage ? `url(${bgImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
       }}
     >
 
       {/* Header */}
-      <div className="p-4 z-10 flex items-center">
-        <div className="flex-1">
-          <h1
-            className="font-bold flex items-center gap-3"
-            style={{ color: titleColor, fontSize: `${24 * titleSizeMultiplier}px` }}
-          >
-            {selectedRoute ? (
-              <>
-                {getModeIcon(selectedRoute.route_type)}
+      {showTitle && (
+        <div className="p-4 z-10 flex items-center">
+          <div className="flex-1">
+            <h1
+              className="font-bold flex items-center gap-3"
+              style={{ color: titleColor, fontSize: `${24 * titleSizeMultiplier}px` }}
+            >
+              {selectedRoute ? (
+                <>
+                  {getModeIcon(selectedRoute.route_type)}
 
-                {selectedRoute.route_short_name && (
-                  <span
-                    className="inline-block px-3 py-1 rounded"
-                    style={{
-                      backgroundColor: selectedRoute.route_color
-                        ? `#${selectedRoute.route_color}`
-                        : '#0074D9',
-                      color: selectedRoute.route_text_color
-                        ? `#${selectedRoute.route_text_color}`
-                        : '#FFFFFF',
-                    }}
-                  >
-                    {selectedRoute.route_short_name}
-                  </span>
-                )}
+                  {selectedRoute.route_short_name && (
+                    <span
+                      className="inline-block px-3 py-1 rounded"
+                      style={{
+                        backgroundColor: selectedRoute.route_color
+                          ? `#${selectedRoute.route_color}`
+                          : '#0074D9',
+                        color: selectedRoute.route_text_color
+                          ? `#${selectedRoute.route_text_color}`
+                          : '#FFFFFF',
+                      }}
+                    >
+                      {selectedRoute.route_short_name}
+                    </span>
+                  )}
 
-                <span>{selectedRoute.route_long_name || routeName}</span>
-              </>
-            ) : (
-              routeName || 'Select a Route'
+                  <span>{selectedRoute.route_long_name || routeName}</span>
+                </>
+              ) : (
+                routeName || 'Select a Route'
+              )}
+            </h1>
+            {description && (
+              <p className="mt-2" style={{ color: titleColor, opacity: 0.9, fontSize: `${14 * titleSizeMultiplier}px` }}>
+                {description}
+              </p>
             )}
-          </h1>
-          {description && (
-            <p className="mt-2" style={{ color: titleColor, opacity: 0.9, fontSize: `${14 * titleSizeMultiplier}px` }}>
-              {description}
-            </p>
+          </div>
+          {logoImage && (
+            <img
+              src={logoImage}
+              alt="Logo"
+              className="max-h-12 object-contain ml-4 flex-shrink-0"
+            />
           )}
         </div>
-        {logoImage && (
-          <img
-            src={logoImage}
-            alt="Logo"
-            className="max-h-12 object-contain ml-4 flex-shrink-0"
-          />
-        )}
-      </div>
+      )}
 
       {/* Content Area */}
       <div className="flex-1 relative z-10 overflow-hidden">

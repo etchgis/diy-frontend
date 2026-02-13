@@ -26,6 +26,7 @@ interface WeatherData {
 
 interface WeatherSlideData {
   title: string;
+  showTitle?: boolean;
   backgroundColor: string;
   contentBackgroundColor: string;
   bgImage: string;
@@ -41,6 +42,7 @@ interface WeatherSlideData {
 interface WeatherStore {
   slides: Record<string, WeatherSlideData>;
   setTitle: (slideId: string, title: string) => void;
+  setShowTitle: (slideId: string, show: boolean) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
   setContentBackgroundColor: (slideId: string, color: string) => void;
   setBgImage: (slideId: string, bgImage: string) => void;
@@ -63,6 +65,14 @@ export const useWeatherStore = create<WeatherStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), title },
+          },
+        })),
+
+      setShowTitle: (slideId, show) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), showTitle: show },
           },
         })),
 
