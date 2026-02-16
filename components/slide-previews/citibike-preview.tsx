@@ -179,7 +179,7 @@ export default function CitibikePreview({
 
     // Station markers
     for (const station of stationData) {
-      const totalBikes = station.bikesAvailable + station.ebikesAvailable;
+      const totalBikes = station.bikesAvailable;
       const color = getMarkerColor(totalBikes);
       const el = document.createElement("div");
       el.style.cssText = `
@@ -324,7 +324,8 @@ export default function CitibikePreview({
                 Citibike
               </div>
               {stationData.map((station) => {
-                const totalBikes = station.bikesAvailable + station.ebikesAvailable;
+                const totalBikes = station.bikesAvailable;
+                const regularBikes = station.bikesAvailable - station.ebikesAvailable;
                 return (
                   <div
                     key={station.stationId}
@@ -347,7 +348,7 @@ export default function CitibikePreview({
                       }}
                     >
                       <div className="flex justify-between">
-                        <span>Bikes: {station.bikesAvailable} | E-Bikes: {station.ebikesAvailable}</span>
+                        <span>Bikes: {regularBikes} | E-Bikes: {station.ebikesAvailable}</span>
                         <span>{station.distance} mi</span>
                       </div>
                       <div
