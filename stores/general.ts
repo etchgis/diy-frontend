@@ -34,6 +34,8 @@ interface Store {
   defaultTitleColor?: string;
   defaultTextColor?: string;
   defaultFontFamily?: string;
+  defaultTitleTextSize?: number;
+  defaultContentTextSize?: number;
   // Theme settings
   theme: Theme;
   setThemePrimaryBackground: (color: string) => void;
@@ -54,6 +56,8 @@ interface Store {
   setDefaultTitleColor: (color: string) => void;
   setDefaultTextColor: (color: string) => void;
   setDefaultFontFamily: (font: string) => void;
+  setDefaultTitleTextSize: (size: number) => void;
+  setDefaultContentTextSize: (size: number) => void;
 }
 
 export const useGeneralStore = create<Store>()(
@@ -115,6 +119,12 @@ export const useGeneralStore = create<Store>()(
       })),
       setDefaultFontFamily: (font) => set(() => ({
         defaultFontFamily: font,
+      })),
+      setDefaultTitleTextSize: (size) => set(() => ({
+        defaultTitleTextSize: size,
+      })),
+      setDefaultContentTextSize: (size) => set(() => ({
+        defaultContentTextSize: size,
       })),
       setThemePrimaryBackground: (color) => {
         set((state) => ({

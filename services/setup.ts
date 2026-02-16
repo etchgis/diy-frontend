@@ -58,7 +58,9 @@ async function importData(setup: any) {
     setDefaultBackgroundColor,
     setDefaultTitleColor,
     setDefaultTextColor,
-    setDefaultFontFamily
+    setDefaultFontFamily,
+    setDefaultTitleTextSize,
+    setDefaultContentTextSize
   } = useGeneralStore.getState();
 
   setCoordinates({ lat: setup.coordinates.lat, lng: setup.coordinates.lng });
@@ -79,6 +81,12 @@ async function importData(setup: any) {
   }
   if (setup.defaultFontFamily) {
     setDefaultFontFamily(setup.defaultFontFamily);
+  }
+  if (setup.defaultTitleTextSize) {
+    setDefaultTitleTextSize(setup.defaultTitleTextSize);
+  }
+  if (setup.defaultContentTextSize) {
+    setDefaultContentTextSize(setup.defaultContentTextSize);
   }
 
   if (setup.theme) {

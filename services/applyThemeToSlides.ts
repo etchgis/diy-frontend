@@ -11,10 +11,12 @@ import { useImageOnlyStore } from '@/stores/imageOnly';
 import { useTransitRouteStore } from '@/stores/transitRoutes';
 
 type ThemeColorType = 'primaryBackground' | 'secondaryAccent' | 'titleText' | 'bodyText';
+type FontSizeType = 'titleTextSize' | 'contentTextSize';
 
 interface StoreMapping {
   store: any;
   colorMappings: Record<ThemeColorType, string[]>;
+  fontSizeMappings?: Record<FontSizeType, string[]>;
 }
 
 const storeConfigs: StoreMapping[] = [
@@ -26,6 +28,10 @@ const storeConfigs: StoreMapping[] = [
       titleText: ['titleColor'],
       bodyText: ['textColor'],
     },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: ['contentTextSize'],
+    },
   },
   {
     store: useTemplate1Store,
@@ -34,6 +40,10 @@ const storeConfigs: StoreMapping[] = [
       secondaryAccent: [],
       titleText: ['titleColor'],
       bodyText: ['textColor'],
+    },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: ['contentTextSize'],
     },
   },
   {
@@ -44,6 +54,10 @@ const storeConfigs: StoreMapping[] = [
       titleText: ['titleColor'],
       bodyText: ['textColor'],
     },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: ['contentTextSize'],
+    },
   },
   {
     store: useTemplate3Store,
@@ -52,6 +66,10 @@ const storeConfigs: StoreMapping[] = [
       secondaryAccent: [],
       titleText: ['titleColor'],
       bodyText: ['textColor'],
+    },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: [],
     },
   },
   {
@@ -62,6 +80,10 @@ const storeConfigs: StoreMapping[] = [
       titleText: ['titleColor'],
       bodyText: ['textColor'],
     },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: ['contentTextSize'],
+    },
   },
   {
     store: useTransitDestinationsStore,
@@ -70,6 +92,10 @@ const storeConfigs: StoreMapping[] = [
       secondaryAccent: ['rowColor'],
       titleText: ['tableHeaderTextColor'],
       bodyText: ['tableTextColor', 'alternateRowTextColor'],
+    },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: ['contentTextSize'],
     },
   },
   {
@@ -80,6 +106,10 @@ const storeConfigs: StoreMapping[] = [
       titleText: ['titleColor'],
       bodyText: ['tableTextColor'],
     },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: ['contentTextSize'],
+    },
   },
   {
     store: useRouteTimesStore,
@@ -88,6 +118,10 @@ const storeConfigs: StoreMapping[] = [
       secondaryAccent: ['tableColor'],
       titleText: ['titleColor'],
       bodyText: ['tableTextColor'],
+    },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: ['contentTextSize'],
     },
   },
   {
@@ -98,6 +132,10 @@ const storeConfigs: StoreMapping[] = [
       titleText: [],
       bodyText: ['textColor'],
     },
+    fontSizeMappings: {
+      titleTextSize: [],
+      contentTextSize: ['textSize'],
+    },
   },
   {
     store: useImageOnlyStore,
@@ -107,6 +145,10 @@ const storeConfigs: StoreMapping[] = [
       titleText: [],
       bodyText: [],
     },
+    fontSizeMappings: {
+      titleTextSize: [],
+      contentTextSize: [],
+    },
   },
   {
     store: useTransitRouteStore,
@@ -115,6 +157,10 @@ const storeConfigs: StoreMapping[] = [
       secondaryAccent: [],
       titleText: [],
       bodyText: [],
+    },
+    fontSizeMappings: {
+      titleTextSize: [],
+      contentTextSize: [],
     },
   },
 ];
@@ -152,4 +198,23 @@ export function applyFullThemeToAllSlides(theme: {
   applyThemeColorToAllSlides('secondaryAccent', theme.secondaryAccent);
   applyThemeColorToAllSlides('titleText', theme.titleText);
   applyThemeColorToAllSlides('bodyText', theme.bodyText);
+}
+
+export function applyFontSizeToAllSlides(sizeType: FontSizeType, size: number): void {
+  for (const config of storeConfigs) {
+    const state = config.store.getState();
+    const propsToUpdate = config.fontSizeMappings?.[sizeType] || [];
+
+    if (propsToUpdate.length === 0) continue;
+    if (!state.slides) continue;
+
+    for (const slideId of Object.keys(state.slides)) {
+      for (const prop of propsToUpdate) {
+        const setterName = `set${capitalizeFirst(prop)}`;
+        if (typeof state[setterName] === 'function') {
+          state[setterName](slideId, size);
+        }
+      }
+    }
+  }
 }
