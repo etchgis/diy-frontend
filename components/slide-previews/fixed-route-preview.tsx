@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useFixedRouteStore } from "@/stores/fixedRoute";
+import { useGeneralStore } from "@/stores/general";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Footer from "../shared-components/footer";
@@ -47,9 +48,13 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const dataError = useFixedRouteStore(
     (state) => state.slides[slideId]?.dataError || null
   );
+  const showTitle = useFixedRouteStore(
+    (state) => state.slides[slideId]?.showTitle !== false
+  );
 
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor");
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   const isLoading = useFixedRouteStore(
     (state) => state.slides[slideId]?.isLoading
@@ -65,18 +70,48 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
-  // CSS mask style to apply titleColor to the bus icon
-  const busIconStyle: React.CSSProperties = {
-    backgroundColor: titleColor,
-    WebkitMaskImage: 'url(images/bus-icon.png)',
-    maskImage: 'url(images/bus-icon.png)',
-    WebkitMaskSize: 'contain',
-    maskSize: 'contain',
-    WebkitMaskRepeat: 'no-repeat',
-    maskRepeat: 'no-repeat',
-    WebkitMaskPosition: 'center',
-    maskPosition: 'center',
+  // Get rail icon based on organization/agency name
+  const getRailIcon = (): string => {
+    const orgId = selectedStop?.services?.[0]?.organization_guid || selectedStop?.organization_guid || '';
+    const orgName = selectedStop?.services?.[0]?.agency_name || selectedStop?.agency_name || '';
+    const combined = `${orgId} ${orgName}`.toLowerCase();
+
+    if (combined.includes('lirr') || combined.includes('long island')) {
+      return '/images/lirr-rail-icon.png';
+    }
+    if (combined.includes('mnr') || combined.includes('metro-north') || combined.includes('metronorth') || combined.includes('metro north')) {
+      return '/images/mn-rail-icon.png';
+    }
+    if (combined.includes('amtrak') || combined.includes('amtk')) {
+      return '/images/amtrack-rail-icon.png';
+    }
+    return '/images/rail-icon.png';
   };
+
+  // Determine the correct icon based on routeType from schedule data
+  const getModeIcon = (): string => {
+    // Get routeType from first arrival in scheduleData
+    const routeTypeRaw = scheduleData?.[0]?.routeType;
+    const routeType = routeTypeRaw !== undefined ? Number(routeTypeRaw) : undefined;
+
+
+    // GTFS route types: 0=tram/light rail, 1=subway, 2=rail, 3=bus
+    switch (routeType) {
+      case 0: // Tram/Light Rail
+      case 2: // Rail (LIRR, Metro-North, Amtrak, etc.)
+        const railIcon = getRailIcon();
+        return railIcon;
+      case 1: // Subway/Metro
+        return '/images/subway-icon.png';
+      case 3: // Bus
+        return '/images/bus-icon.png';
+      default:
+        return getRailIcon();;
+    }
+  };
+
+  const modeIcon = getModeIcon();
+
 
   // Loading Spinner Component
   const LoadingSpinner = () => (
@@ -102,73 +137,76 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
             backgroundSize: "cover",
             backgroundPosition: "center",
             color: titleColor || "#ffffff",
+            fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
           }}
         >
           {/* Schedule Header */}
-          {isEditor ? (
-            <div className="p-6 flex items-center">
-              <div className="flex-1">
-                <div className="mb-2" style={{display: 'flex', alignItems: 'center', fontSize: `${18 * titleSizeMultiplier}px`}}>
-                  <div style={{...busIconStyle, height: `${25 * titleSizeMultiplier}px`, width: `${25 * titleSizeMultiplier}px`, marginRight: '5px'}}></div>
-                  <p>Stop #{selectedStop?.stop_id} arrival times</p>
+          {showTitle && (
+            isEditor ? (
+              <div className="p-6 flex items-center">
+                <div className="flex-1">
+                  <div className="mb-2" style={{display: 'flex', alignItems: 'center', fontSize: `${18 * titleSizeMultiplier}px`}}>
+                    <img src={modeIcon} style={{height: `${25 * titleSizeMultiplier}px`, width: `${25 * titleSizeMultiplier}px`, marginRight: '5px', objectFit: 'contain'}} alt="" />
+                    <p>Stop #{selectedStop?.stop_id} arrival times</p>
+                  </div>
+
+                  <h2 className="font-bold mb-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
+                    {selectedStop?.stop_name?.toString().toUpperCase() ||
+                      "UNKNOWN STOP"}
+                  </h2>
+
+                  <p style={{ fontSize: `${16 * titleSizeMultiplier}px` }}>{description}</p>
                 </div>
-
-                <h2 className="font-bold mb-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
-                  {selectedStop?.stop_name?.toString().toUpperCase() ||
-                    "UNKNOWN STOP"}
-                </h2>
-
-                <p style={{ fontSize: `${16 * titleSizeMultiplier}px` }}>{description}</p>
+                {logoImage && (
+                  <img
+                    src={logoImage}
+                    alt="Logo"
+                    className="max-h-16 object-contain ml-4 flex-shrink-0"
+                  />
+                )}
               </div>
-              {logoImage && (
-                <img
-                  src={logoImage}
-                  alt="Logo"
-                  className="max-h-16 object-contain ml-4 flex-shrink-0"
-                />
-              )}
-            </div>
-          ) : (
-            <div
-              className="p-2 sm:p-4 lg:p-6 xl:p-8 flex items-center"
-              style={{ padding: "clamp(0.5rem, 2vw, 2rem)" }}
-            >
-              <div className="flex-1">
-                <div
-                  className="mb-1 sm:mb-2"
-                  style={{
-                    fontSize: `clamp(0.75rem, ${2.5 * titleSizeMultiplier}vh, 3rem)`,
-                    marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
-                >
-                  <div style={{...busIconStyle, height: `clamp(16px, ${3 * titleSizeMultiplier}vh, 4rem)`, width: `clamp(16px, ${3 * titleSizeMultiplier}vh, 4rem)`, marginRight: '5px'}}></div>
-                  Stop #{selectedStop?.stop_id} arrival times
+            ) : (
+              <div
+                className="p-2 sm:p-4 lg:p-6 xl:p-8 flex items-center flex-shrink-0 overflow-hidden"
+                style={{ padding: "clamp(0.5rem, 2vw, 2rem)", maxHeight: "25%" }}
+              >
+                <div className="flex-1 overflow-hidden">
+                  <div
+                    className="mb-1 sm:mb-2 overflow-hidden"
+                    style={{
+                      fontSize: `clamp(0.75rem, ${2.5 * titleSizeMultiplier}vh, 3rem)`,
+                      marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <img src={modeIcon} style={{height: `clamp(16px, ${3 * titleSizeMultiplier}vh, 4rem)`, width: `clamp(16px, ${3 * titleSizeMultiplier}vh, 4rem)`, marginRight: '5px', objectFit: 'contain'}} alt="" />
+                    <span className="truncate">Stop #{selectedStop?.stop_id} arrival times</span>
+                  </div>
+
+                  <h2
+                    className="font-bold mb-1 sm:mb-2 truncate"
+                    style={{
+                      fontSize: `clamp(1.25rem, ${6 * titleSizeMultiplier}vh, 6rem)`,
+                      marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
+                    }}
+                  >
+                    {stopName?.toString().toUpperCase() || "UNKNOWN STOP"}
+                  </h2>
+
+                  <p className="truncate" style={{ fontSize: `clamp(0.625rem, ${2 * titleSizeMultiplier}vh, 2.5rem)` }}>
+                    {description}
+                  </p>
                 </div>
-
-                <h2
-                  className="font-bold mb-1 sm:mb-2"
-                  style={{
-                    fontSize: `clamp(1.25rem, ${6 * titleSizeMultiplier}vh, 6rem)`,
-                    marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
-                  }}
-                >
-                  {stopName?.toString().toUpperCase() || "UNKNOWN STOP"}
-                </h2>
-
-                <p style={{ fontSize: `clamp(0.625rem, ${2 * titleSizeMultiplier}vh, 2.5rem)` }}>
-                  {description}
-                </p>
+                {logoImage && (
+                  <img
+                    src={logoImage}
+                    alt="Logo"
+                    className="max-h-16 object-contain ml-4 flex-shrink-0"
+                  />
+                )}
               </div>
-              {logoImage && (
-                <img
-                  src={logoImage}
-                  alt="Logo"
-                  className="max-h-16 object-contain ml-4 flex-shrink-0"
-                />
-              )}
-            </div>
+            )
           )}
 
           {/* Schedule Table or Loading Spinner */}
@@ -249,15 +287,17 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 </div>
               ) : (
                 <div
-                  className="text-black flex flex-col"
-                  style={{ height: "80%" }}
+                  className="text-black flex flex-col overflow-hidden"
+                  style={{ flex: "1 1 0", minHeight: 0 }}
                 >
                   {scheduleData &&
                     scheduleData.map((item: any, index: number) => (
                       <div
                         key={index}
-                        className="flex-1 flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0"
+                        className="flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
                         style={{
+                          flex: "1 1 0",
+                          minHeight: 0,
                           backgroundColor: !bgImage
                             ? tableColor
                             : "transparent",
@@ -267,9 +307,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           })`,
                         }}
                       >
-                        <div className="flex-1">
+                        <div className="flex-1 overflow-hidden">
                           <span
-                            className="font-medium"
+                            className="font-medium block truncate"
                             style={{
                               fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
                             }}
@@ -278,7 +318,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           </span>
                         </div>
                         <div
-                          className="flex items-center"
+                          className="flex items-center flex-shrink-0"
                           style={{ gap: "clamp(0.5rem, 1vw, 1rem)" }}
                         >
                           <div

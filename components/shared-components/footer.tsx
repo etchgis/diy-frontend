@@ -53,7 +53,7 @@ export default function Footer() {
         </div>
       );
     } else if (image) {
-      return <img src={image} alt={altText} className={imageClass} />;
+      return <img src={image} alt={altText} className={`${imageClass} object-contain`} />;
     } else {
       return <div className={placeholderClass} />;
     }

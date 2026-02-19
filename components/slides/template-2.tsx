@@ -51,6 +51,9 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
   const contentTextSize = useTemplate2Store((state) => state.slides[slideId]?.contentTextSize || 5);
   const setContentTextSize = useTemplate2Store((state) => state.setContentTextSize);
 
+  const showTitle = useTemplate2Store((state) => state.slides[slideId]?.showTitle !== false);
+  const setShowTitle = useTemplate2Store((state) => state.setShowTitle);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
 
   useEffect(() => {
@@ -75,7 +78,7 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [title, text, image, backgroundColor, textColor, titleColor, leftContentSize, rightContentSize, bgImage, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize]);
+  }, [title, text, image, backgroundColor, textColor, titleColor, leftContentSize, rightContentSize, bgImage, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize, showTitle]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
     const file = e.target.files?.[0];
@@ -180,6 +183,18 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
       <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
         {/* Color Customization */}
         <div className="space-y-3 mb-4">
+          <div>
+            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showTitle}
+                onChange={(e) => setShowTitle(slideId, e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              Show Title
+            </label>
+          </div>
+
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
             <div className="flex items-center gap-2">

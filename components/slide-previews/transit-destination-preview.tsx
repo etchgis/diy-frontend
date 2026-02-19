@@ -1,5 +1,5 @@
-import { useGeneralStore } from "@/stores/general";
 import { useTransitDestinationsStore } from "@/stores/transitDestinations";
+import { useGeneralStore } from "@/stores/general";
 import { formatDuration, formatTime } from "@/utils/formats";
 import { usePathname } from "next/navigation";
 import { use, useEffect } from "react";
@@ -43,6 +43,7 @@ export default function TransitDestinationPreview({
   const dataError = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.dataError || false
   );
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   const mockDestinations: any = [];
   const destinationData = useTransitDestinationsStore(
@@ -138,6 +139,35 @@ export default function TransitDestinationPreview({
     return "text-[2.4vh]";
   };
 
+  /**
+   * Get the appropriate rail icon based on agency ID
+   * Returns specific icons for LIRR, Metro-North, and Amtrak
+   * Falls back to default rail icon for other rail services
+   */
+  const getRailIcon = (agencyId: string | undefined): string => {
+    if (!agencyId) return "/images/rail-icon.png";
+
+    const agency = agencyId.toLowerCase();
+
+    // LIRR (Long Island Rail Road)
+    if (agency.includes("lirr") || agency.includes("long island")) {
+      return "/images/lirr-rail-icon.png";
+    }
+
+    // Metro-North
+    if (agency.includes("mnr") || agency.includes("metro-north") || agency.includes("metronorth") || agency.includes("metro north")) {
+      return "/images/mn-rail-icon.png";
+    }
+
+    // Amtrak
+    if (agency.includes("amtrak") || agency.includes("amtk")) {
+      return "/images/amtrack-rail-icon.png";
+    }
+
+    // Default rail icon
+    return "/images/rail-icon.png";
+  };
+
   const getArrowSize = (hasMany: boolean) => {
     if (mobileMode || hasMany) return { width: "18px", height: "18px" };
     if (isEditor) return { width: "25px", height: "25px" };
@@ -184,7 +214,7 @@ export default function TransitDestinationPreview({
       className={`w-full h-full flex flex-col text-white overflow-hidden ${
         mobileMode ? "mb-4" : "mb-6"
       }`}
-      style={{ backgroundColor }}
+      style={{ backgroundColor, fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined }}
     >
       {/* Header - Fixed height */}
       <div
@@ -386,9 +416,10 @@ export default function TransitDestinationPreview({
                                       <div className="rail-leg flex items-center gap-0.5">
                                         <img
                                           className="train-icon"
-                                          src="/images/train-icon.png"
+                                          src={getRailIcon(leg.agencyId)}
                                           style={getIconSizeForManyLegs(
-                                            hasMany
+                                            hasMany,
+                                            "RAIL"
                                           )}
                                           alt=""
                                         />
@@ -542,15 +573,7 @@ export default function TransitDestinationPreview({
               }}
             >
               <div className={`flex items-center ${mobileMode ? "gap-3" : isEditor ? "gap-6" : "gap-[4vh]"} flex-wrap justify-center`}>
-                {/* Bus */}
-                <div className="flex items-center gap-1">
-                  <img
-                    src="/images/bus-icon.png"
-                    alt="Bus"
-                    style={getLegendIconSize()}
-                  />
-                  <span className={getLegendTextSize()}>Bus</span>
-                </div>
+                
                 {/* Walk */}
                 <div className="flex items-center gap-1">
                   <img
@@ -560,24 +583,14 @@ export default function TransitDestinationPreview({
                   />
                   <span className={getLegendTextSize()}>Walk</span>
                 </div>
-                {/* Train */}
+                {/* Bus */}
                 <div className="flex items-center gap-1">
                   <img
-                    className="train-icon"
-                    src="/images/train-icon.png"
-                    alt="Train"
+                    src="/images/bus-icon.png"
+                    alt="Bus"
                     style={getLegendIconSize()}
                   />
-                  <span className={getLegendTextSize()}>Train</span>
-                </div>
-                {/* Light Rail */}
-                <div className="flex items-center gap-1">
-                  <img
-                    src="/images/rail-icon.png"
-                    alt="Light Rail"
-                    style={getLegendIconSize()}
-                  />
-                  <span className={getLegendTextSize()}>Light Rail</span>
+                  <span className={getLegendTextSize()}>Bus</span>
                 </div>
                 {/* Subway */}
                 <div className="flex items-center gap-1">
@@ -588,6 +601,36 @@ export default function TransitDestinationPreview({
                   />
                   <span className={getLegendTextSize()}>Subway</span>
                 </div>
+                {/* LIRR Light Rail */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/lirr-rail-icon.png"
+                    alt="Light Rail"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>LIRR</span>
+                </div>
+
+                {/* Metro North Light Rail */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/mn-rail-icon.png"
+                    alt="Light Rail"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>MetroNorth</span>
+                </div>
+
+                {/* Amtrack Light Rail */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/amtrack-rail-icon.png"
+                    alt="Light Rail"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>Amtrack</span>
+                </div>
+                
               </div>
             </div>
           </>

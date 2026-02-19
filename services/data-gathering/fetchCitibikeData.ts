@@ -25,6 +25,8 @@ export async function fetchCitibikeData(slideId: string) {
 
     const data = await response.json();
 
+    console.log(data);
+
     // Response already matches CitibikeStation interface, sorted by distance
     useCitibikeStore.getState().setStationData(slideId, data.stations);
     useCitibikeStore.getState().setDataError(slideId, false);

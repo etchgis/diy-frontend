@@ -54,7 +54,13 @@ async function importData(setup: any) {
     setSlides,
     setShortcode,
     setRotationInterval,
-    setPublishPassword
+    setPublishPassword,
+    setDefaultBackgroundColor,
+    setDefaultTitleColor,
+    setDefaultTextColor,
+    setDefaultFontFamily,
+    setDefaultTitleTextSize,
+    setDefaultContentTextSize
   } = useGeneralStore.getState();
 
   setCoordinates({ lat: setup.coordinates.lat, lng: setup.coordinates.lng });
@@ -62,6 +68,39 @@ async function importData(setup: any) {
   setShortcode(setup.shortcode || '');
   setRotationInterval(setup.rotationInterval || 20);
   setPublishPassword(setup.publishPassword || '');
+
+  // Restore default styling settings
+  if (setup.defaultBackgroundColor) {
+    setDefaultBackgroundColor(setup.defaultBackgroundColor);
+  }
+  if (setup.defaultTitleColor) {
+    setDefaultTitleColor(setup.defaultTitleColor);
+  }
+  if (setup.defaultTextColor) {
+    setDefaultTextColor(setup.defaultTextColor);
+  }
+  if (setup.defaultFontFamily) {
+    setDefaultFontFamily(setup.defaultFontFamily);
+  }
+  if (setup.defaultTitleTextSize) {
+    setDefaultTitleTextSize(setup.defaultTitleTextSize);
+  }
+  if (setup.defaultContentTextSize) {
+    setDefaultContentTextSize(setup.defaultContentTextSize);
+  }
+
+  if (setup.theme) {
+    const generalState = useGeneralStore.getState();
+    // Directly set theme state without triggering applyThemeColorToAllSlides
+    useGeneralStore.setState({
+      theme: {
+        primaryBackground: setup.theme.primaryBackground || '#192F51',
+        secondaryAccent: setup.theme.secondaryAccent || '#78B1DD',
+        titleText: setup.theme.titleText || '#ffffff',
+        bodyText: setup.theme.bodyText || '#ffffff',
+      }
+    });
+  }
 
   // Restore footer data - always set them to override localStorage defaults
   const {

@@ -111,6 +111,11 @@ export default function StopArrivalsSlide({
   );
   const setContentTextSize = useFixedRouteStore((state) => state.setContentTextSize);
 
+  const showTitle = useFixedRouteStore(
+    (state) => state.slides[slideId]?.showTitle !== false
+  );
+  const setShowTitle = useFixedRouteStore((state) => state.setShowTitle);
+
   const setIsLoading = useFixedRouteStore((state) => state.setIsLoading);
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
@@ -249,11 +254,12 @@ export default function StopArrivalsSlide({
           useFixedRouteStore.getState().setDataError(slideId, error)
       );
       const arr: any = [];
-      data?.trains.forEach((item: any) => {
+      data?.trains.slice(0, 6).forEach((item: any) => {
         arr.push({
           destination: item.destination,
           route: item.details.id,
           routeId: item.routeId,
+          routeType: item.routeType,
           routeColor: item.details.color,
           routeTextColor: item.details.textColor,
           time: item.arrivalTime,
@@ -536,6 +542,18 @@ export default function StopArrivalsSlide({
         <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
           {/* Color Customization */}
           <div className="space-y-3 mb-4">
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showTitle}
+                  onChange={(e) => setShowTitle(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Show Title
+              </label>
+            </div>
+
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">
                 Background Color

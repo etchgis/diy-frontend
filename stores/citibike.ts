@@ -14,6 +14,7 @@ export interface CitibikeStation {
 
 interface CitibikeSlideData {
   title: string;
+  showTitle?: boolean;
   backgroundColor: string;
   bgImage: string;
   titleColor: string;
@@ -29,6 +30,7 @@ interface CitibikeSlideData {
 interface CitibikeStore {
   slides: Record<string, CitibikeSlideData>;
   setTitle: (slideId: string, title: string) => void;
+  setShowTitle: (slideId: string, show: boolean) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
   setBgImage: (slideId: string, bgImage: string) => void;
   setTitleColor: (slideId: string, color: string) => void;
@@ -51,6 +53,14 @@ export const useCitibikeStore = create<CitibikeStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), title },
+          },
+        })),
+
+      setShowTitle: (slideId, show) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), showTitle: show },
           },
         })),
 

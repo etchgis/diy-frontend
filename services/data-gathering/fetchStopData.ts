@@ -33,6 +33,7 @@ async function fetchTrainDetails(arrivals: any[], serviceId: string, organizatio
       const headers = {
         'Content-Type': 'application/json',
         'X-Organization-Id': organizationId,
+        'X-Skids-Route-Key': serviceId,
       };
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -62,6 +63,7 @@ async function formatBusData(data: any, serviceId: string, organizationId: strin
     trains: futureArrivals.map((train: any) => ({
       destination: train.headsign,
       routeId: train.routeId,
+      routeType: train.routeType,
       arrivalTime: formatTime(Math.round((train.arrive))),
       arrival: formatDuration(Math.round((train.arriveScheduled - currentTime) / 1000)),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),
@@ -86,6 +88,7 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     const headers = {
       'Content-Type': 'application/json',
       'X-Organization-Id': `${organizationId}`,
+      'X-Skids-Route-Key': serviceId,
     };
     const response = await fetch(endpoint, {
       method: 'GET',

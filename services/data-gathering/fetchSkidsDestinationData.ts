@@ -157,6 +157,8 @@ export function transformSkidsResponse(
   destinations: { name: string; coordinates: { lat: number; lng: number } }[]
 ): TransformedDestination[] {
   return response.results.map((result, index) => {
+    const destCoord = destinations[index]?.coordinates;
+
     if (!result.reachable) {
       return {
         name: result.destinationName,
@@ -165,7 +167,7 @@ export function transformSkidsResponse(
         arrival: null,
         travel: null,
         legs: [],
-        coordinates: destinations[index]?.coordinates,
+        coordinates: destCoord,
         dark: index % 2 === 0,
       };
     }
@@ -206,7 +208,7 @@ export function transformSkidsResponse(
       arrival,
       travel,
       legs: displayLegs,
-      coordinates: destinations[index]?.coordinates,
+      coordinates: destCoord,
       dark: index % 2 === 0,
       originStop: response.origin?.candidateStops?.[0] || null,
     };

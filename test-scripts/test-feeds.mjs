@@ -17,6 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Base URLs (from .env) ──────────────────────────────────────────────
 const SKIDS_URL = "https://api.etch.app/skids";
+const SKIDS_STAGE_URL = "https://api-stage.etch.app/skids";
 const NYSDOT_STOPS_URL = "https://api.etch.app/nysdot-stops";
 const OTP_URL =
   "https://511ny.etch.app/opentripplanner/otp/routers/default/plan";
@@ -107,7 +108,7 @@ async function testOpenMeteo() {
 // ── 2. SKIDS GBFS Nearby Stations (Citibike via backend) ───────────────
 const CITIBIKE_SEARCH_RADIUS = 0.5; // miles
 async function testSkidsGbfsNearby() {
-  const url = `${SKIDS_URL}/api/gbfs/stations/nearby?lat=${ORIGIN.lat}&lon=${ORIGIN.lng}&radius=${CITIBIKE_SEARCH_RADIUS}&system=citibike-nyc`;
+  const url = `${SKIDS_STAGE_URL}/api/gbfs/stations/nearby?lat=${ORIGIN.lat}&lon=${ORIGIN.lng}&radius=${CITIBIKE_SEARCH_RADIUS}&system=citibike-nyc`;
   const data = await fetchJSON(url);
   if (!data.stations || data.stations.length === 0) {
     throw new Error("No nearby stations returned");
@@ -174,6 +175,7 @@ async function testSkidsRouteData() {
     headers: {
       "Content-Type": "application/json",
       "X-Organization-Id": discoveredOrgId,
+      "X-Skids-Route-Key": discoveredServiceId,
     },
   });
 
@@ -212,6 +214,7 @@ async function testSkidsStopArrivals() {
     headers: {
       "Content-Type": "application/json",
       "X-Organization-Id": discoveredOrgId,
+      "X-Skids-Route-Key": discoveredServiceId,
     },
   });
 
@@ -238,6 +241,7 @@ async function testSkidsRouteTimetable() {
     headers: {
       "Content-Type": "application/json",
       "X-Organization-Id": discoveredOrgId,
+      "X-Skids-Route-Key": discoveredServiceId,
     },
   });
 
@@ -255,6 +259,7 @@ async function testSkidsPatternDetails() {
     headers: {
       "Content-Type": "application/json",
       "X-Organization-Id": discoveredOrgId,
+      "X-Skids-Route-Key": discoveredServiceId,
     },
   });
 

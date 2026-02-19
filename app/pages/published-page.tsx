@@ -32,6 +32,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+
+  const fontFamilyStyle = defaultFontFamily && defaultFontFamily !== 'System Default'
+    ? { fontFamily: defaultFontFamily }
+    : {};
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [screens, setScreens] = useState<any[]>([]);
@@ -152,6 +157,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           destination: item.destination,
           route: item.details.id,
           routeId: item.routeId,
+          routeType: item.routeType,
           routeColor: item.details.color,
           routeTextColor: item.details.textColor,
           time: item.arrivalTime,
@@ -347,7 +353,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   // Scrollable mode - show all slides vertically
   if (!isTvMode) {
     return (
-      <div className="w-full min-h-screen bg-gray-100">
+      <div className="w-full min-h-screen bg-gray-100" style={fontFamilyStyle}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center w-full h-screen">
             <h1 className="text-2xl font-bold">Loading slides...</h1>
@@ -374,7 +380,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   // TV mode - slideshow with rotation
   return (
-    <div className="w-screen h-screen overflow-hidden bg-white relative">
+    <div className="w-screen h-screen overflow-hidden bg-white relative" style={fontFamilyStyle}>
       {/* Persistent TransitRoutesPreview */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'

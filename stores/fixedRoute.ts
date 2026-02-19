@@ -4,6 +4,7 @@ import { StateStorage, PersistOptions } from 'zustand/middleware';
 
 interface FixedRouteSlideData {
   stopName: string;
+  showTitle?: boolean;
   description: string;
   backgroundColor: string;
   titleColor: string;
@@ -22,6 +23,7 @@ interface FixedRouteSlideData {
 interface SlideStore {
   slides: Record<string, FixedRouteSlideData>;
   setStopName: (slideId: string, name: string) => void;
+  setShowTitle: (slideId: string, show: boolean) => void;
   setDescription: (slideId: string, description: string) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
   setTitleColor: (slideId: string, color: string) => void;
@@ -49,6 +51,17 @@ export const useFixedRouteStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               stopName: name,
+            },
+          },
+        })),
+
+      setShowTitle: (slideId, show) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              showTitle: show,
             },
           },
         })),

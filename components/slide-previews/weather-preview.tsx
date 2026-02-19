@@ -45,6 +45,9 @@ export default function WeatherPreview({
   const dataError = useWeatherStore(
     (state) => state.slides[slideId]?.dataError || false
   );
+  const showTitle = useWeatherStore(
+    (state) => state.slides[slideId]?.showTitle !== false
+  );
   const titleTextSize = useWeatherStore(
     (state) => state.slides[slideId]?.titleTextSize || 5
   );
@@ -53,6 +56,7 @@ export default function WeatherPreview({
   );
 
   const coordinates = useGeneralStore((state) => state.coordinates);
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
@@ -75,45 +79,48 @@ export default function WeatherPreview({
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: textColor,
+        fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
       }}
     >
       {/* Title + Logo */}
-      <div className="p-3 border-b border-white/20 flex-shrink-0 flex items-center">
-        <div
-          className={`flex-1 rounded px-4 ${
-            isEditor ? "border-2 border-[#11d1f7] py-2" : ""
-          }`}
-        >
-          {isEditor ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(slideId, e.target.value)}
-              placeholder="Type title here"
-              className="w-full bg-transparent outline-none font-light placeholder-white/50"
-              style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+      {showTitle && (
+        <div className="p-3 border-b border-white/20 flex-shrink-0 flex items-center">
+          <div
+            className={`flex-1 rounded px-4 ${
+              isEditor ? "border-2 border-[#11d1f7] py-2" : ""
+            }`}
+          >
+            {isEditor ? (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(slideId, e.target.value)}
+                placeholder="Type title here"
+                className="w-full bg-transparent outline-none font-light placeholder-white/50"
+                style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+              />
+            ) : (
+              <div
+                className="w-full bg-transparent font-light"
+                style={{
+                  color: titleColor,
+                  fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
+                  lineHeight: "1.2",
+                }}
+              >
+                {title || ""}
+              </div>
+            )}
+          </div>
+          {logoImage && (
+            <img
+              src={logoImage}
+              alt="Logo"
+              className="max-h-16 object-contain ml-4 flex-shrink-0"
             />
-          ) : (
-            <div
-              className="w-full bg-transparent font-light"
-              style={{
-                color: titleColor,
-                fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
-                lineHeight: "1.2",
-              }}
-            >
-              {title || ""}
-            </div>
           )}
         </div>
-        {logoImage && (
-          <img
-            src={logoImage}
-            alt="Logo"
-            className="max-h-16 object-contain ml-4 flex-shrink-0"
-          />
-        )}
-      </div>
+      )}
 
       {/* Weather Content */}
       <div className="flex-1 min-h-0 p-6 flex" style={{ gap: isEditor ? "8px" : "1vh" }}>

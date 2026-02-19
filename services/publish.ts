@@ -13,7 +13,7 @@ import { useCitibikeStore } from '@/stores/citibike';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
-  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword} = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme } = useGeneralStore.getState();
   const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
 
   console.log('[PUBLISH] Footer data being published:', {
@@ -35,6 +35,13 @@ export async function publish() {
     rotationInterval: rotationInterval,
     url: url,
     publishPassword: publishPassword,
+    defaultBackgroundColor: defaultBackgroundColor,
+    defaultTitleColor: defaultTitleColor,
+    defaultTextColor: defaultTextColor,
+    defaultFontFamily: defaultFontFamily,
+    defaultTitleTextSize: defaultTitleTextSize,
+    defaultContentTextSize: defaultContentTextSize,
+    theme: theme,
     footer: {
       leftImage: leftImage,
       middleImage: middleImage,

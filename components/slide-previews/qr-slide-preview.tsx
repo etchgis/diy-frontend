@@ -1,4 +1,5 @@
 import { useQRStore } from "@/stores/qr";
+import { useGeneralStore } from "@/stores/general";
 import QRCode from "react-qr-code";
 import Footer from "../shared-components/footer";
 import { usePathname } from "next/navigation";
@@ -23,6 +24,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
 
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor");
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const textSizeMultiplier = 0.5 + textSize * 0.1;
@@ -39,6 +41,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: textColor,
+        fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
       }}
     >
       {/* Logo (only if present) */}

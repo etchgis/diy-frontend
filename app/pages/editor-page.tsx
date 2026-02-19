@@ -51,6 +51,16 @@ import { SetupSlides } from "@/services/setup"
 import { publish } from "@/services/publish"
 import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { getDestinationData } from "@/services/data-gathering/getDestinationData"
+import { useQRStore } from "@/stores/qr"
+import { useTemplate1Store } from "@/stores/template1"
+import { useTemplate2Store } from "@/stores/template2"
+import { useTemplate3Store } from "@/stores/template3"
+import { useImageOnlyStore } from "@/stores/imageOnly"
+import { useWeatherStore } from "@/stores/weather"
+import { useCitibikeStore } from "@/stores/citibike"
+import { useRouteTimesStore } from "@/stores/routeTimes"
+import { useFixedRouteStore } from "@/stores/fixedRoute"
+import { applyFontSizeToAllSlides } from "@/services/applyThemeToSlides"
 
 
 interface Slide {
@@ -91,7 +101,46 @@ export default function EditorPage() {
   const publishPassword = useGeneralStore((state) => state.publishPassword || '');
   const setPublishPassword = useGeneralStore((state) => state.setPublishPassword);
 
+  const defaultBackgroundColor = useGeneralStore((state) => state.defaultBackgroundColor || '#192F51');
+  const setDefaultBackgroundColor = useGeneralStore((state) => state.setDefaultBackgroundColor);
+  const defaultTitleColor = useGeneralStore((state) => state.defaultTitleColor || '#FFFFFF');
+  const setDefaultTitleColor = useGeneralStore((state) => state.setDefaultTitleColor);
+  const defaultTextColor = useGeneralStore((state) => state.defaultTextColor || '#FFFFFF');
+  const setDefaultTextColor = useGeneralStore((state) => state.setDefaultTextColor);
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily || 'System Default');
+  const setDefaultFontFamily = useGeneralStore((state) => state.setDefaultFontFamily);
+
+  // Theme state
+  const theme = useGeneralStore((state) => state.theme);
+  const setThemePrimaryBackground = useGeneralStore((state) => state.setThemePrimaryBackground);
+  const setThemeSecondaryAccent = useGeneralStore((state) => state.setThemeSecondaryAccent);
+  const setThemeTitleText = useGeneralStore((state) => state.setThemeTitleText);
+  const setThemeBodyText = useGeneralStore((state) => state.setThemeBodyText);
+
   const [tempRotationInterval, setTempRotationInterval] = useState(rotationInterval);
+  const [tempDefaultBackgroundColor, setTempDefaultBackgroundColor] = useState(defaultBackgroundColor);
+  const [tempDefaultTitleColor, setTempDefaultTitleColor] = useState(defaultTitleColor);
+  const [tempDefaultTextColor, setTempDefaultTextColor] = useState(defaultTextColor);
+  const [tempDefaultFontFamily, setTempDefaultFontFamily] = useState(defaultFontFamily);
+
+  // Font size defaults
+  const defaultTitleTextSize = useGeneralStore((state) => state.defaultTitleTextSize || 5);
+  const setDefaultTitleTextSize = useGeneralStore((state) => state.setDefaultTitleTextSize);
+  const defaultContentTextSize = useGeneralStore((state) => state.defaultContentTextSize || 5);
+  const setDefaultContentTextSize = useGeneralStore((state) => state.setDefaultContentTextSize);
+
+  // Theme temp state
+  const [tempThemePrimaryBackground, setTempThemePrimaryBackground] = useState(theme?.primaryBackground || '#192F51');
+  const [tempThemeSecondaryAccent, setTempThemeSecondaryAccent] = useState(theme?.secondaryAccent || '#78B1DD');
+  const [tempThemeTitleText, setTempThemeTitleText] = useState(theme?.titleText || '#ffffff');
+  const [tempThemeBodyText, setTempThemeBodyText] = useState(theme?.bodyText || '#ffffff');
+  const [tempDefaultTitleTextSize, setTempDefaultTitleTextSize] = useState(defaultTitleTextSize);
+  const [tempDefaultContentTextSize, setTempDefaultContentTextSize] = useState(defaultContentTextSize);
+
+  // Compute font family style for preview consistency with published page
+  const fontFamilyStyle = defaultFontFamily && defaultFontFamily !== 'System Default'
+    ? { fontFamily: defaultFontFamily }
+    : {};
 
   const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
   const setDataError = useTransitDestinationsStore((state) => state.setDataError);
@@ -108,14 +157,104 @@ export default function EditorPage() {
   );
   const router = useRouter();
 
+  // Helper function to initialize default colors for a new slide
+  const initializeSlideDefaults = (slideId: string, slideType: string) => {
+    // Read theme colors directly from store to apply to new slides
+    const { theme, defaultTitleTextSize, defaultContentTextSize } = useGeneralStore.getState();
+    const primaryBg = theme?.primaryBackground || '#192F51';
+    const secondaryAccent = theme?.secondaryAccent || '#78B1DD';
+    const titleText = theme?.titleText || '#ffffff';
+    const bodyText = theme?.bodyText || '#ffffff';
+    const titleSize = defaultTitleTextSize || 5;
+    const contentSize = defaultContentTextSize || 5;
+
+    switch (slideType) {
+      case 'qr':
+        useQRStore.getState().setBackgroundColor(slideId, primaryBg);
+        useQRStore.getState().setTextColor(slideId, bodyText);
+        useQRStore.getState().setTextSize(slideId, contentSize);
+        break;
+      case 'transit-destinations':
+        useTransitDestinationsStore.getState().setBackgroundColor(slideId, primaryBg);
+        useTransitDestinationsStore.getState().setRowColor(slideId, secondaryAccent);
+        useTransitDestinationsStore.getState().setAlternateRowColor(slideId, primaryBg);
+        useTransitDestinationsStore.getState().setTableHeaderTextColor(slideId, titleText);
+        useTransitDestinationsStore.getState().setTableTextColor(slideId, bodyText);
+        useTransitDestinationsStore.getState().setAlternateRowTextColor(slideId, bodyText);
+        useTransitDestinationsStore.getState().setTitleTextSize(slideId, titleSize);
+        useTransitDestinationsStore.getState().setContentTextSize(slideId, contentSize);
+        break;
+      case 'template-1':
+        useTemplate1Store.getState().setBackgroundColor(slideId, primaryBg);
+        useTemplate1Store.getState().setTitleColor(slideId, titleText);
+        useTemplate1Store.getState().setTextColor(slideId, bodyText);
+        useTemplate1Store.getState().setTitleTextSize(slideId, titleSize);
+        useTemplate1Store.getState().setContentTextSize(slideId, contentSize);
+        break;
+      case 'template-2':
+        useTemplate2Store.getState().setBackgroundColor(slideId, primaryBg);
+        useTemplate2Store.getState().setTitleColor(slideId, titleText);
+        useTemplate2Store.getState().setTextColor(slideId, bodyText);
+        useTemplate2Store.getState().setTitleTextSize(slideId, titleSize);
+        useTemplate2Store.getState().setContentTextSize(slideId, contentSize);
+        break;
+      case 'template-3':
+        useTemplate3Store.getState().setBackgroundColor(slideId, primaryBg);
+        useTemplate3Store.getState().setTitleColor(slideId, titleText);
+        useTemplate3Store.getState().setTextColor(slideId, bodyText);
+        useTemplate3Store.getState().setTitleTextSize(slideId, titleSize);
+        break;
+      case 'image-only':
+        useImageOnlyStore.getState().setBackgroundColor(slideId, primaryBg);
+        break;
+      case 'weather':
+        useWeatherStore.getState().setBackgroundColor(slideId, primaryBg);
+        useWeatherStore.getState().setContentBackgroundColor(slideId, secondaryAccent);
+        useWeatherStore.getState().setTitleColor(slideId, titleText);
+        useWeatherStore.getState().setTextColor(slideId, bodyText);
+        useWeatherStore.getState().setTitleTextSize(slideId, titleSize);
+        useWeatherStore.getState().setContentTextSize(slideId, contentSize);
+        break;
+      case 'citibike':
+        useCitibikeStore.getState().setBackgroundColor(slideId, primaryBg);
+        useCitibikeStore.getState().setTitleColor(slideId, titleText);
+        useCitibikeStore.getState().setTextColor(slideId, bodyText);
+        useCitibikeStore.getState().setTitleTextSize(slideId, titleSize);
+        useCitibikeStore.getState().setContentTextSize(slideId, contentSize);
+        break;
+      case 'route-times':
+        useRouteTimesStore.getState().setBackgroundColor(slideId, primaryBg);
+        useRouteTimesStore.getState().setTitleColor(slideId, titleText);
+        useRouteTimesStore.getState().setTableColor(slideId, secondaryAccent);
+        useRouteTimesStore.getState().setTableTextColor(slideId, bodyText);
+        useRouteTimesStore.getState().setTitleTextSize(slideId, titleSize);
+        useRouteTimesStore.getState().setContentTextSize(slideId, contentSize);
+        break;
+      case 'stop-arrivals':
+        useFixedRouteStore.getState().setBackgroundColor(slideId, primaryBg);
+        useFixedRouteStore.getState().setTitleColor(slideId, titleText);
+        useFixedRouteStore.getState().setTableColor(slideId, secondaryAccent);
+        useFixedRouteStore.getState().setTableTextColor(slideId, bodyText);
+        useFixedRouteStore.getState().setTitleTextSize(slideId, titleSize);
+        useFixedRouteStore.getState().setContentTextSize(slideId, contentSize);
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleAddSlide = () => {
     if (!template) {
       alert("Please select a template before adding a slide.");
       return;
     }
     const newSlide: Slide = { id: uuidv4(), type: template };
-    setSlides([...slides, newSlide]);
 
+    // Initialize the new slide with default colors BEFORE adding to slides array
+    // This ensures the store values are set before the component renders
+    initializeSlideDefaults(newSlide.id, template);
+
+    setSlides([...slides, newSlide]);
     setActiveSlideId(newSlide.id);
   }
 
@@ -313,7 +452,11 @@ export default function EditorPage() {
     }
   };
 
-  const renderSlidePreview = (type: string, slideId: string, noSizingDiv?: boolean) => {
+  const renderSlidePreview = (type: string, slideId: string, noSizingDiv?: boolean, isFullPreview?: boolean) => {
+    // If noSizingDiv is not set, we're rendering in the sidebar thumbnail - always use preview mode
+    // If isFullPreview is true, we're in the modal preview - use preview mode
+    const shouldUsePreviewMode = !noSizingDiv || isFullPreview;
+
     const content = (() => {
       switch (type) {
         case "qr":
@@ -328,27 +471,27 @@ export default function EditorPage() {
         case "route-times":
           return <RouteTimesPreview slideId={slideId} />;
         case "template-1":
-          return <Template1Preview slideId={slideId} previewMode={showModal} />;
+          return <Template1Preview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "template-2":
-          return <Template2Preview slideId={slideId} previewMode={showModal} />;
+          return <Template2Preview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "template-3":
-          return <Template3Preview slideId={slideId} previewMode={showModal} />;
+          return <Template3Preview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "image-only":
-          return <ImageOnlyPreview slideId={slideId} previewMode={showModal} />;
+          return <ImageOnlyPreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "weather":
-          return <WeatherPreview slideId={slideId} previewMode={showModal} />;
+          return <WeatherPreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "citibike":
-          return <CitibikePreview slideId={slideId} previewMode={showModal} />;
+          return <CitibikePreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         default:
           return null;
       }
     })();
 
     if (noSizingDiv) {
-      return content;
+      return <div style={fontFamilyStyle} className="h-full">{content}</div>;
     }
 
-    return <div className="h-[550px] rounded-lg">{content}</div>;
+    return <div className="h-[550px] rounded-lg" style={fontFamilyStyle}>{content}</div>;
   };
 
 
@@ -552,7 +695,7 @@ export default function EditorPage() {
 
             {/* Slide Preview */}
             <div className="h-[550px] z-10">
-              {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true)}
+              {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true, true)}
             </div>
 
             {/* Controls */}
@@ -581,7 +724,22 @@ export default function EditorPage() {
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative">
             <button
-              onClick={() => { setShowSettings(false); setTempRotationInterval(rotationInterval); }}
+              onClick={() => {
+                setShowSettings(false);
+                setTempRotationInterval(rotationInterval);
+                setTempDefaultBackgroundColor(defaultBackgroundColor);
+                setTempDefaultTitleColor(defaultTitleColor);
+                setTempDefaultTextColor(defaultTextColor);
+                setTempDefaultFontFamily(defaultFontFamily);
+                // Reset theme temp values
+                setTempThemePrimaryBackground(theme?.primaryBackground || '#192F51');
+                setTempThemeSecondaryAccent(theme?.secondaryAccent || '#78B1DD');
+                setTempThemeTitleText(theme?.titleText || '#ffffff');
+                setTempThemeBodyText(theme?.bodyText || '#ffffff');
+                // Reset font size temp values
+                setTempDefaultTitleTextSize(defaultTitleTextSize);
+                setTempDefaultContentTextSize(defaultContentTextSize);
+              }}
               className="absolute top-2 right-3 text-gray-400 hover:text-black text-2xl"
             >
               ×
@@ -602,10 +760,133 @@ export default function EditorPage() {
                   }}
                 />
               </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Theme</h3>
+                <p className="text-xs text-gray-500 mb-3">Changes apply to all existing and new slides.</p>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Primary Background</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={tempThemePrimaryBackground}
+                        onChange={(e) => setTempThemePrimaryBackground(e.target.value)}
+                        className="w-8 h-8 p-0 border-none rounded cursor-pointer appearance-none"
+                      />
+                      <span className="text-xs text-gray-500 w-16">{tempThemePrimaryBackground}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Secondary/Accent</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={tempThemeSecondaryAccent}
+                        onChange={(e) => setTempThemeSecondaryAccent(e.target.value)}
+                        className="w-8 h-8 p-0 border-none rounded cursor-pointer appearance-none"
+                      />
+                      <span className="text-xs text-gray-500 w-16">{tempThemeSecondaryAccent}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Title Text</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={tempThemeTitleText}
+                        onChange={(e) => setTempThemeTitleText(e.target.value)}
+                        className="w-8 h-8 p-0 border-none rounded cursor-pointer appearance-none"
+                      />
+                      <span className="text-xs text-gray-500 w-16">{tempThemeTitleText}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Body Text</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={tempThemeBodyText}
+                        onChange={(e) => setTempThemeBodyText(e.target.value)}
+                        className="w-8 h-8 p-0 border-none rounded cursor-pointer appearance-none"
+                      />
+                      <span className="text-xs text-gray-500 w-16">{tempThemeBodyText}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Typography</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Font Family</label>
+                    <select
+                      value={tempDefaultFontFamily}
+                      onChange={(e) => setTempDefaultFontFamily(e.target.value)}
+                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                    >
+                      <option value="System Default">System Default</option>
+                      <option value="Arial">Arial</option>
+                      <option value="Helvetica">Helvetica</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Verdana">Verdana</option>
+                      <option value="Trebuchet MS">Trebuchet MS</option>
+                      <option value="Roboto">Roboto</option>
+                      <option value="Open Sans">Open Sans</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Title Font Size</label>
+                    <select
+                      value={tempDefaultTitleTextSize}
+                      onChange={(e) => setTempDefaultTitleTextSize(Number(e.target.value))}
+                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((size) => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Content Font Size</label>
+                    <select
+                      value={tempDefaultContentTextSize}
+                      onChange={(e) => setTempDefaultContentTextSize(Number(e.target.value))}
+                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((size) => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-2 flex justify-end">
                 <Button
                   onClick={() => {
                     setRotationInterval(tempRotationInterval);
+                    // Apply theme to all slides
+                    setThemePrimaryBackground(tempThemePrimaryBackground);
+                    setThemeSecondaryAccent(tempThemeSecondaryAccent);
+                    setThemeTitleText(tempThemeTitleText);
+                    setThemeBodyText(tempThemeBodyText);
+                    // Also update default colors for new slides
+                    setDefaultBackgroundColor(tempThemePrimaryBackground);
+                    setDefaultTitleColor(tempThemeTitleText);
+                    setDefaultTextColor(tempThemeBodyText);
+                    setDefaultFontFamily(tempDefaultFontFamily);
+                    // Save font sizes and apply to all slides
+                    setDefaultTitleTextSize(tempDefaultTitleTextSize);
+                    setDefaultContentTextSize(tempDefaultContentTextSize);
+                    applyFontSizeToAllSlides('titleTextSize', tempDefaultTitleTextSize);
+                    applyFontSizeToAllSlides('contentTextSize', tempDefaultContentTextSize);
                     setShowSettings(false);
                   }}
                   className="px-4 py-2 text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90"

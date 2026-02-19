@@ -50,6 +50,9 @@ export default function CitibikePreview({
   const dataError = useCitibikeStore(
     (state) => state.slides[slideId]?.dataError || false
   );
+  const showTitle = useCitibikeStore(
+    (state) => state.slides[slideId]?.showTitle !== false
+  );
   const titleTextSize = useCitibikeStore(
     (state) => state.slides[slideId]?.titleTextSize || 5
   );
@@ -58,6 +61,7 @@ export default function CitibikePreview({
   );
 
   const coordinates = useGeneralStore((state) => state.coordinates);
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
@@ -175,7 +179,8 @@ export default function CitibikePreview({
 
     // Station markers
     for (const station of stationData) {
-      const color = getMarkerColor(station.bikesAvailable);
+      const totalBikes = station.bikesAvailable;
+      const color = getMarkerColor(totalBikes);
       const el = document.createElement("div");
       el.style.cssText = `
         width: 28px;
@@ -192,7 +197,7 @@ export default function CitibikePreview({
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         cursor: default;
       `;
-      el.textContent = String(station.bikesAvailable);
+      el.textContent = String(totalBikes);
 
       const marker = new mapboxgl.Marker({
         element: el,
@@ -223,45 +228,48 @@ export default function CitibikePreview({
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: textColor,
+        fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
       }}
     >
       {/* Title + Logo */}
-      <div className="p-3 border-b border-white/20 flex-shrink-0 flex items-center">
-        <div
-          className={`flex-1 rounded px-4 ${
-            isEditor ? "border-2 border-[#11d1f7] py-2" : ""
-          }`}
-        >
-          {isEditor ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(slideId, e.target.value)}
-              placeholder="Type title here"
-              className="w-full bg-transparent outline-none font-light placeholder-white/50"
-              style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+      {showTitle && (
+        <div className="p-3 border-b border-white/20 flex-shrink-0 flex items-center">
+          <div
+            className={`flex-1 rounded px-4 ${
+              isEditor ? "border-2 border-[#11d1f7] py-2" : ""
+            }`}
+          >
+            {isEditor ? (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(slideId, e.target.value)}
+                placeholder="Type title here"
+                className="w-full bg-transparent outline-none font-light placeholder-white/50"
+                style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+              />
+            ) : (
+              <div
+                className="w-full bg-transparent font-light"
+                style={{
+                  color: titleColor,
+                  fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
+                  lineHeight: "1.2",
+                }}
+              >
+                {title || ""}
+              </div>
+            )}
+          </div>
+          {logoImage && (
+            <img
+              src={logoImage}
+              alt="Logo"
+              className="max-h-16 object-contain ml-4 flex-shrink-0"
             />
-          ) : (
-            <div
-              className="w-full bg-transparent font-light"
-              style={{
-                color: titleColor,
-                fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
-                lineHeight: "1.2",
-              }}
-            >
-              {title || ""}
-            </div>
           )}
         </div>
-        {logoImage && (
-          <img
-            src={logoImage}
-            alt="Logo"
-            className="max-h-16 object-contain ml-4 flex-shrink-0"
-          />
-        )}
-      </div>
+      )}
 
       {/* Content: Map + Station List */}
       <div className="flex-1 min-h-0 flex">
@@ -315,44 +323,52 @@ export default function CitibikePreview({
               >
                 Citibike
               </div>
-              {stationData.map((station) => (
-                <div
-                  key={station.stationId}
-                  className="mb-2 pb-2"
-                  style={{
-                    borderBottom: "1px solid rgba(255,255,255,0.1)",
-                  }}
-                >
+              {stationData.map((station) => {
+                const totalBikes = station.bikesAvailable;
+                const regularBikes = station.bikesAvailable - station.ebikesAvailable;
+                return (
                   <div
-                    className="font-medium"
-                    style={{ fontSize: isEditor ? `${13.6 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}vh` }}
-                  >
-                    {station.name}
-                  </div>
-                  <div
-                    className="flex justify-between mt-1"
+                    key={station.stationId}
+                    className="mb-2 pb-2"
                     style={{
-                      fontSize: isEditor ? `${11.2 * contentSizeMultiplier}px` : `${1.7 * contentSizeMultiplier}vh`,
-                      opacity: 0.8,
+                      borderBottom: "1px solid rgba(255,255,255,0.1)",
                     }}
                   >
-                    <span
+                    <div
+                      className="font-medium"
+                      style={{ fontSize: isEditor ? `${13.6 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}vh` }}
+                    >
+                      {station.name}
+                    </div>
+                    <div
+                      className="mt-1"
                       style={{
-                        color:
-                          station.bikesAvailable === 0
-                            ? "#EF4444"
-                            : station.bikesAvailable <= 5
-                            ? "#EAB308"
-                            : "#22C55E",
-                        fontWeight: 600,
+                        fontSize: isEditor ? `${11.2 * contentSizeMultiplier}px` : `${1.7 * contentSizeMultiplier}vh`,
+                        opacity: 0.8,
                       }}
                     >
-                      {station.bikesAvailable} bikes
-                    </span>
-                    <span>{station.distance} mi</span>
+                      <div className="flex justify-between">
+                        <span>Bikes: {regularBikes} | E-Bikes: {station.ebikesAvailable}</span>
+                        <span>{station.distance} mi</span>
+                      </div>
+                      <div
+                        style={{
+                          color:
+                            totalBikes === 0
+                              ? "#EF4444"
+                              : totalBikes <= 5
+                              ? "#EAB308"
+                              : "#22C55E",
+                          fontWeight: 600,
+                          marginTop: "2px",
+                        }}
+                      >
+                        Total: {totalBikes}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -92,11 +92,15 @@ export async function fetchRouteData(
       url += `&serviceIds=${serviceIds.join(',')}`;
     }
 
+    // Use first serviceId as the route key for SKIDS routing
+    const routeKey = serviceIds && serviceIds.length > 0 ? serviceIds[0] : organizationId;
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'X-Organization-Id': organizationId,
+        'X-Skids-Route-Key': routeKey,
       },
     });
 
@@ -143,6 +147,7 @@ export async function fetchPatternDetails(
       headers: {
         'Content-Type': 'application/json',
         'X-Organization-Id': organizationId,
+        'X-Skids-Route-Key': serviceId,
       },
     });
 
@@ -278,6 +283,7 @@ export async function fetchRouteTimetable(
       headers: {
         'Content-Type': 'application/json',
         'X-Organization-Id': organizationId,
+        'X-Skids-Route-Key': serviceId,
       },
     });
 
