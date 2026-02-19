@@ -136,6 +136,21 @@ export default function EditorPage() {
   const [tempThemeBodyText, setTempThemeBodyText] = useState(theme?.bodyText || '#ffffff');
   const [tempDefaultTitleTextSize, setTempDefaultTitleTextSize] = useState(defaultTitleTextSize);
   const [tempDefaultContentTextSize, setTempDefaultContentTextSize] = useState(defaultContentTextSize);
+  useEffect(() => {
+    if (showSettings) {
+      setTempRotationInterval(rotationInterval);
+      setTempDefaultBackgroundColor(defaultBackgroundColor);
+      setTempDefaultTitleColor(defaultTitleColor);
+      setTempDefaultTextColor(defaultTextColor);
+      setTempDefaultFontFamily(defaultFontFamily);
+      setTempThemePrimaryBackground(theme?.primaryBackground || '#192F51');
+      setTempThemeSecondaryAccent(theme?.secondaryAccent || '#78B1DD');
+      setTempThemeTitleText(theme?.titleText || '#ffffff');
+      setTempThemeBodyText(theme?.bodyText || '#ffffff');
+      setTempDefaultTitleTextSize(defaultTitleTextSize);
+      setTempDefaultContentTextSize(defaultContentTextSize);
+    }
+  }, [showSettings]);
 
   // Compute font family style for preview consistency with published page
   const fontFamilyStyle = defaultFontFamily && defaultFontFamily !== 'System Default'
