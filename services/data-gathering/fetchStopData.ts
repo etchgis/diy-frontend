@@ -51,12 +51,18 @@ async function fetchTrainDetails(arrivals: any[], serviceId: string, organizatio
 }
 
 async function formatBusData(data: any, serviceId: string, organizationId: string) {
-  // Filter out arrivals that are in the past (negative duration)
   const currentTime = Date.now();
+  const stationName = (data.name || '').toLowerCase().trim();
+
   const futureArrivals = data.arrivals.filter((train: any) => {
+    // Filter out arrivals in the past
     const durationSeconds = Math.round((train.arriveScheduled - currentTime) / 1000);
-    return durationSeconds >= 0;
-  });
+    if (durationSeconds < 0) return false;
+    // Filter out trains terminating at this station (headsign matches station name)
+    const headsign = (train.headsign || '').toLowerCase().trim();
+    if (headsign === stationName || stationName.includes(headsign) || headsign.includes(stationName)) return false;
+    return true;
+  }).slice(0, 6);
 
   const formattedData = {
     station: data.name,
@@ -84,7 +90,7 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     console.log(serviceId, organizationId);
 
 
-    const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=7&nysdot=true`;
+    const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=20&nysdot=true`;
     const headers = {
       'Content-Type': 'application/json',
       'X-Organization-Id': `${organizationId}`,
