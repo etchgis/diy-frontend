@@ -60,7 +60,7 @@ async function formatBusData(data: any, serviceId: string, organizationId: strin
     if (durationSeconds < 0) return false;
     // Filter out trains terminating at this station (headsign matches station name)
     const headsign = (train.headsign || '').toLowerCase().trim();
-    if (headsign === stationName || stationName.includes(headsign) || headsign.includes(stationName)) return false;
+    if (headsign && (headsign === stationName || stationName.includes(headsign) || headsign.includes(stationName))) return false;
     return true;
   }).slice(0, 6);
 
