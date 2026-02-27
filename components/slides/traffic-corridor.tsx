@@ -3,10 +3,13 @@ import { Input } from "@/components/ui/input"
 import { ChevronRight } from "lucide-react"
 import TrafficCorridorPreview from "../slide-previews/traffic-corridor-preview"
 import { useEffect, useRef, useState } from "react"
-import { useTrafficCorridorStore } from "@/stores/trafficCorridor"
+import { useTrafficCorridorStore, type Corridor } from "@/stores/trafficCorridor"
 import { useGeneralStore } from "@/stores/general"
 import { deleteImage } from "@/services/deleteImage"
 import { uploadImage } from "@/services/uploadImage"
+import { fetchTrafficData } from "@/services/data-gathering/fetchTrafficData"
+
+const DEFAULT_TABLES = [{ destination: '', corridors: [] }, { destination: '', corridors: [] }];
 
 export default function TrafficCorridorSlide({
   slideId,
@@ -60,14 +63,15 @@ export default function TrafficCorridorSlide({
   const contentTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.contentTextSize || 5);
   const setContentTextSize = useTrafficCorridorStore((state) => state.setContentTextSize);
 
-  const tables = useTrafficCorridorStore((state) => state.slides[slideId]?.tables || [{ destination: '', corridors: [] }, { destination: '', corridors: [] }]);
+  const tables = useTrafficCorridorStore((state) => state.slides[slideId]?.tables || DEFAULT_TABLES);
   const setTables = useTrafficCorridorStore((state) => state.setTables);
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
+  const coordinates = useGeneralStore((state) => state.coordinates || { lat: 0, lng: 0 });
 
-  const [query1, setQuery1] = useState(tables[0]?.destination || '');
+  const [query1, setQuery1] = useState('');
   const [suggestions1, setSuggestions1] = useState<any[]>([]);
-  const [query2, setQuery2] = useState(tables[1]?.destination || '');
+  const [query2, setQuery2] = useState('');
   const [suggestions2, setSuggestions2] = useState<any[]>([]);
   const justSelected1 = useRef(false);
   const justSelected2 = useRef(false);
@@ -116,11 +120,41 @@ export default function TrafficCorridorSlide({
     setTables(slideId, newTables);
   };
 
-  const handleSelect = (tableIndex: number, feature: any) => {
+  const handleSelect = async (tableIndex: number, feature: any) => {
     const name = feature.place_name || `${feature.properties?.name}, ${feature.properties?.full_address}`;
-    updateDestination(tableIndex, name);
+    const coords: [number, number] | undefined = feature.geometry?.coordinates ?? feature.center;
+
     if (tableIndex === 0) { justSelected1.current = true; setQuery1(name); setSuggestions1([]); }
     else { justSelected2.current = true; setQuery2(name); setSuggestions2([]); }
+
+    // Store destination + coordinates, clear corridors while fetching
+    const tablesWithDest = tables.map((t, i) =>
+      i === tableIndex ? { ...t, destination: name, coordinates: coords, corridors: [] } : t
+    );
+    setTables(slideId, tablesWithDest);
+
+    // Fetch live corridor data from the traffic API
+    if (coords && coordinates.lat && coordinates.lng) {
+      try {
+        const origin: [number, number] = [coordinates.lng, coordinates.lat];
+        const results = await fetchTrafficData(origin, [coords]);
+        const alternatives = results[0]?.alternatives ?? [];
+        const seen = new Set<string>();
+        const corridors: Corridor[] = alternatives
+          .filter((alt) => {
+            if (seen.has(alt.label)) return false;
+            seen.add(alt.label);
+            return true;
+          })
+          .slice(0, 3)
+          .map((alt) => ({ name: alt.label, time: `${alt.minutes} min` }));
+        // Read fresh tables from store to avoid stale closure
+        const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tablesWithDest;
+        setTables(slideId, freshTables.map((t, i) => i === tableIndex ? { ...t, corridors } : t));
+      } catch (err) {
+        console.error('Failed to fetch traffic data:', err);
+      }
+    }
   };
 
   useEffect(() => {

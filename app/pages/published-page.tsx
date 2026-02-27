@@ -13,6 +13,9 @@ import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
 import CitibikePreview from '@/components/slide-previews/citibike-preview';
 import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
 import { fetchStopData } from '@/services/data-gathering/fetchStopData';
+import TrafficCorridorPreview from '@/components/slide-previews/traffic-corridor-preview';
+import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
+import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
 import { useFixedRouteStore } from '@/stores/fixedRoute';
@@ -152,6 +155,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       if(!fixedRouteData?.stop_id || !fixedRouteData?.services?.length) {continue;}
       const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid, slide.id, setFixedRouteDataError);
       const arr: any = [];
+      
       data?.trains.forEach((item: any) => {
         arr.push({
           destination: item.destination,
@@ -273,6 +277,55 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   };
 
+  const getTrafficCorridorData = async () => {
+    console.log('[DATA UPDATE] Fetching traffic corridor data...', new Date().toLocaleTimeString());
+    const currentSlides = useGeneralStore.getState().slides;
+    const corridorSlides = currentSlides.filter((slide: any) => slide.type === 'traffic-corridor');
+
+    if (!corridorSlides.length) {
+      console.log('[DATA UPDATE] No traffic corridor slides found');
+      return;
+    }
+
+    const generalState = useGeneralStore.getState();
+    const origin = generalState.coordinates;
+    if (!origin?.lat || !origin?.lng) return;
+    const originCoords: [number, number] = [origin.lng, origin.lat];
+
+    for (const slide of corridorSlides) {
+      const slideState = useTrafficCorridorStore.getState().slides[slide.id];
+      if (!slideState?.tables) continue;
+
+      const tables = slideState.tables;
+      const destinations = tables
+        .map((t: any) => t.coordinates)
+        .filter((c: any): c is [number, number] => Array.isArray(c));
+
+      if (!destinations.length) continue;
+
+      try {
+        const results = await fetchTrafficData(originCoords, destinations);
+        const newTables = tables.map((table: any, i: number) => {
+          const alternatives = results[i]?.alternatives ?? [];
+          const seen = new Set<string>();
+          const corridors = alternatives
+            .filter((alt: any) => {
+              if (seen.has(alt.label)) return false;
+              seen.add(alt.label);
+              return true;
+            })
+            .slice(0, 3)
+            .map((alt: any) => ({ name: alt.label, time: `${alt.minutes} min` }));
+          return { ...table, corridors };
+        });
+        useTrafficCorridorStore.getState().setTables(slide.id, newTables);
+        console.log(`[DATA UPDATE] Traffic corridor updated for slide ${slide.id}`);
+      } catch (error) {
+        console.error(`[DATA UPDATE] Error fetching traffic corridor data for slide ${slide.id}:`, error);
+      }
+    }
+  };
+
   const hasFetchedDestinations = useRef(false);
 
   useEffect(() => {
@@ -288,6 +341,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       getRouteTimesData();
       getWeatherData();
       getCitibikeData();
+      getTrafficCorridorData();
     }
 
     // Only set up interval if it doesn't exist
@@ -300,6 +354,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         getRouteTimesData();
         getWeatherData();
         getCitibikeData();
+        getTrafficCorridorData();
       }, 60000);
       console.log('[DATA UPDATE] Auto-refresh interval started (60 seconds)');
     }
@@ -345,6 +400,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         return <TransitRoutesPreview slideId={slideId} noMapScroll={!isTvMode}/>;
       case 'route-times':
         return <RouteTimesPreview slideId={slideId} />;
+      case 'traffic-corridor':
+        return <TrafficCorridorPreview slideId={slideId} />;
       default:
         return null;
     }

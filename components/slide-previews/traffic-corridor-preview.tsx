@@ -1,16 +1,10 @@
-import { useTrafficCorridorStore, type Corridor, type DestinationTable } from "@/stores/trafficCorridor";
+import { useTrafficCorridorStore, type DestinationTable } from "@/stores/trafficCorridor";
 import { useGeneralStore } from "@/stores/general";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
 import Footer from "../shared-components/footer";
 
 const DEFAULT_TABLE: DestinationTable = { destination: '', corridors: [] };
-
-const MOCK_CORRIDORS: Corridor[] = [
-  { name: 'via Long Island Expwy (I-495)', time: '-- min' },
-  { name: 'via Grand Central Pkwy', time: '-- min' },
-  { name: 'via Northern State Pkwy', time: '-- min' },
-];
+const DEFAULT_TABLES: DestinationTable[] = [DEFAULT_TABLE, DEFAULT_TABLE];
 
 export default function TrafficCorridorPreview({
   slideId,
@@ -32,7 +26,7 @@ export default function TrafficCorridorPreview({
   const textColor = useTrafficCorridorStore((state) => state.slides[slideId]?.textColor || "#ffffff");
   const tableHeaderColor = useTrafficCorridorStore((state) => state.slides[slideId]?.tableHeaderColor || "#78B1DD");
   const rowColor = useTrafficCorridorStore((state) => state.slides[slideId]?.rowColor || "#192F51");
-  const tables = useTrafficCorridorStore((state) => state.slides[slideId]?.tables || [DEFAULT_TABLE, DEFAULT_TABLE]);
+  const tables = useTrafficCorridorStore((state) => state.slides[slideId]?.tables || DEFAULT_TABLES);
   const setTables = useTrafficCorridorStore((state) => state.setTables);
   const showSecondTable = useTrafficCorridorStore((state) => state.slides[slideId]?.showSecondTable ?? false);
   const titleTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.titleTextSize || 5);
@@ -45,21 +39,7 @@ export default function TrafficCorridorPreview({
   const table0 = tables[0] ?? DEFAULT_TABLE;
   const table1 = tables[1] ?? DEFAULT_TABLE;
 
-  // Auto-fill mock corridors when destination is entered and corridors are empty
-  useEffect(() => {
-    if (!isEditor) return;
-    let changed = false;
-    const newTables = tables.map((table) => {
-      if (table.destination.trim() && table.corridors.length === 0) {
-        changed = true;
-        return { ...table, corridors: MOCK_CORRIDORS.map((c) => ({ ...c })) };
-      }
-      return table;
-    });
-    if (changed) setTables(slideId, newTables);
-  }, [table0.destination, table1.destination]);
-
-  const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name' | 'time', value: string) => {
+const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name' | 'time', value: string) => {
     const newTables = tables.map((t, i) => {
       if (i !== tableIndex) return t;
       return {
@@ -91,15 +71,18 @@ export default function TrafficCorridorPreview({
 
   const headerFontSize = isEditor
     ? `${20 * contentSizeMultiplier}px`
-    : `clamp(1rem, ${3.2 * contentSizeMultiplier}vh, 4rem)`;
+    : `clamp(1.2rem, ${5 * contentSizeMultiplier}vh, 6rem)`;
 
   const rowFontSize = isEditor
     ? `${15 * contentSizeMultiplier}px`
-    : `clamp(0.85rem, ${2.6 * contentSizeMultiplier}vh, 3.5rem)`;
+    : `clamp(1rem, ${4 * contentSizeMultiplier}vh, 5rem)`;
 
   const timeFontSize = isEditor
     ? `${15 * contentSizeMultiplier}px`
-    : `clamp(0.85rem, ${2.6 * contentSizeMultiplier}vh, 3.5rem)`;
+    : `clamp(1rem, ${4 * contentSizeMultiplier}vh, 5rem)`;
+
+  const headerPadding = isEditor ? undefined : `${1.8 * contentSizeMultiplier}vh 2vw`;
+  const rowPadding = isEditor ? undefined : `${1.5 * contentSizeMultiplier}vh 2vw`;
 
   const renderTable = (tableData: DestinationTable, tableIndex: number) => (
     <div
@@ -109,12 +92,13 @@ export default function TrafficCorridorPreview({
     >
       {/* Destination Header */}
       <div
-        className="px-3 py-2 font-semibold flex items-center"
+        className={isEditor ? 'px-3 py-2 font-semibold flex items-center' : 'font-semibold flex items-center'}
         style={{
           backgroundColor: tableHeaderColor,
           color: textColor,
           fontSize: headerFontSize,
           minHeight: isEditor ? '40px' : undefined,
+          padding: headerPadding,
         }}
       >
         <span style={{ opacity: tableData.destination ? 1 : 0.45 }}>
@@ -126,12 +110,13 @@ export default function TrafficCorridorPreview({
       {tableData.corridors.map((corridor, corridorIndex) => (
         <div
           key={corridorIndex}
-          className="flex items-center px-3 py-2"
+          className={isEditor ? 'flex items-center px-3 py-2' : 'flex items-center'}
           style={{
             backgroundColor: corridorIndex % 2 === 0 ? rowColor : `${rowColor}cc`,
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
             minHeight: isEditor ? '36px' : undefined,
+            padding: rowPadding,
           }}
         >
           {isEditor ? (
@@ -239,7 +224,13 @@ export default function TrafficCorridorPreview({
       )}
 
       {/* Tables Area */}
-      <div className="flex-1 min-h-0 flex flex-col justify-center p-4 gap-3">
+      <div
+        className="flex-1 min-h-0 flex flex-col justify-center"
+        style={{
+          padding: isEditor ? '1rem' : '3vh 4vw',
+          gap: isEditor ? '0.75rem' : '2.5vh',
+        }}
+      >
         <div className="w-full">
           {renderTable(table0, 0)}
         </div>

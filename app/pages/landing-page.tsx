@@ -258,9 +258,14 @@ export default function LandingPage() {
                               QR Code Page
                             </div>
                           </SelectItem>
-                          <SelectItem value="template-3">
+                          <SelectItem value="image-only">
                             <div className="flex items-center gap-2 text-xs">
                               Image Only Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="template-3">
+                            <div className="flex items-center gap-2 text-xs">
+                              Image and Title Page
                             </div>
                           </SelectItem>
                           <SelectItem value="template-1">
@@ -269,8 +274,23 @@ export default function LandingPage() {
                             </div>
                           </SelectItem>
                           <SelectItem value="template-2">
-                            <div className="flex items-center gap- text-xs">
+                            <div className="flex items-center gap-2 text-xs">
                               Right Content/Left Image Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="weather">
+                            <div className="flex items-center gap-2 text-xs">
+                              Weather Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="citibike">
+                            <div className="flex items-center gap-2 text-xs">
+                              Citibike Page
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="traffic-corridor">
+                            <div className="flex items-center gap-2 text-xs">
+                              Traffic Corridor Page
                             </div>
                           </SelectItem>
                         </SelectContent>

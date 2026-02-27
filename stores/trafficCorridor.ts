@@ -9,6 +9,7 @@ export interface Corridor {
 export interface DestinationTable {
   destination: string;
   corridors: Corridor[];
+  coordinates?: [number, number];
 }
 
 interface TrafficCorridorSlideData {
