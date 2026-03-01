@@ -154,21 +154,17 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const fixedRouteData = currentState[slide.id]?.selectedStop || [];
       if(!fixedRouteData?.stop_id || !fixedRouteData?.services?.length) {continue;}
       const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid, slide.id, setFixedRouteDataError);
-      const arr: any = [];
-      
-      data?.trains.forEach((item: any) => {
-        arr.push({
-          destination: item.destination,
-          route: item.details.id,
-          routeId: item.routeId,
-          routeType: item.routeType,
-          routeColor: item.details.color,
-          routeTextColor: item.details.textColor,
-          time: item.arrivalTime,
-          duration: item.arrival,
-          status: item.status,
-        });
-      });
+
+      const arr = data?.trains.map((item: any) => ({
+        destination: item.destination,
+        routeId: item.routeId,
+        routeType: item.routeType,
+        routeColor: item.routeColor,
+        routeTextColor: item.routeTextColor,
+        time: item.arrivalTime,
+        duration: item.arrival,
+        status: item.status,
+      })) || [];
 
       setScheduleData(slide.id, arr);
       console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, arr);
