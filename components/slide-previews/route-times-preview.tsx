@@ -5,7 +5,7 @@ import { formatDepartureTime } from '@/services/data-gathering/fetchRouteData';
 import { formatTime12Hour } from '@/utils/timeFormatters';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { renderRouteOnMap, calculateStopBounds, calculateZoomFromBounds } from '@/services/map/renderRouteOnMap';
+import { renderRouteOnMap, calculateRouteBounds, calculateZoomFromBounds } from '@/services/map/renderRouteOnMap';
 import type { RouteDataItem, TripData, StopInfo, Departure, StopWithDepartures, PatternStop } from '@/types/route-times';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
@@ -94,7 +94,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     let initialZoom = 12;
 
     if (patternData?.stops && patternData.stops.length > 0) {
-      const bounds = calculateStopBounds(patternData.stops);
+      const bounds = calculateRouteBounds(patternData.stops, patternData.coordinates);
       if (bounds) {
         const center = bounds.getCenter();
         initialCenter = [center.lng, center.lat];
@@ -176,9 +176,9 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       });
       markersRef.current = newMarkers;
 
-      // Update bounds if we have stops
-      if (patternData.stops && patternData.stops.length > 0) {
-        const bounds = calculateStopBounds(patternData.stops);
+      // Update bounds if we have stops or route coordinates
+      if ((patternData.stops && patternData.stops.length > 0) || (patternData.coordinates && patternData.coordinates.length > 0)) {
+        const bounds = calculateRouteBounds(patternData.stops, patternData.coordinates);
         if (bounds) {
           mapRef.current.fitBounds(bounds, {
             padding: 50,
