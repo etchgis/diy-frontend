@@ -1,5 +1,4 @@
 import { formatTime, formatDuration } from '@/utils/formats';
-import { set } from 'react-hook-form';
 
 const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
 if (!SKIDS_URL) {
@@ -25,32 +24,11 @@ function findStatus(realtime: boolean, arrive: number, arriveScheduled: number) 
   }
 }
 
+// Default colors when route colors are not available from API
+const DEFAULT_ROUTE_COLOR = '0074D9';
+const DEFAULT_ROUTE_TEXT_COLOR = 'FFFFFF';
 
-async function fetchTrainDetails(arrivals: any[], serviceId: string, organizationId: string) {
-  const trainDetails = await Promise.all(
-    arrivals.map(async (train: any) => {
-      const endpoint = `${SKIDS_URL}/feed/${serviceId}/patterns/${train.id}?nysdot=true`;
-      const headers = {
-        'Content-Type': 'application/json',
-        'X-Organization-Id': organizationId,
-        'X-Skids-Route-Key': serviceId,
-      };
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: headers,
-      });
-      if (!response.ok) {
-        console.error(`Failed to fetch train details for ID: ${train.id}`);
-        return null;
-      }
-      return response.json();
-    })
-  );
-
-  return trainDetails;
-}
-
-async function formatBusData(data: any, serviceId: string, organizationId: string) {
+function formatBusData(data: any) {
   const currentTime = Date.now();
   const stationName = (data.name || '').toLowerCase().trim();
 
@@ -64,44 +42,33 @@ async function formatBusData(data: any, serviceId: string, organizationId: strin
     return true;
   }).slice(0, 6);
 
-  const formattedData = {
+  return {
     station: data.name,
     trains: futureArrivals.map((train: any) => ({
       destination: train.headsign,
-      routeId: train.routeId,
+      routeId: train.shortName || train.routeId || '',
       routeType: train.routeType,
-      arrivalTime: formatTime(Math.round((train.arrive))),
+      routeColor: train.color || DEFAULT_ROUTE_COLOR,
+      routeTextColor: train.textColor || DEFAULT_ROUTE_TEXT_COLOR,
+      arrivalTime: formatTime(Math.round(train.arrive)),
       arrival: formatDuration(Math.round((train.arriveScheduled - currentTime) / 1000)),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),
     })),
   };
-
-  const trainDetails = await fetchTrainDetails(futureArrivals, serviceId, organizationId);
-  formattedData.trains.forEach((train: any, index: number) => {
-    train.details = trainDetails[index];
-  });
-
-  return formattedData;
 }
 
 export async function fetchStopData(stopId: string, serviceId: string, organizationId: string, slideId: string, setDataError: (slideId: string, error: boolean) => void) {
   try {
-
-    console.log(serviceId, organizationId);
-
-
     const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=20&nysdot=true`;
     const headers = {
       'Content-Type': 'application/json',
-      'X-Organization-Id': `${organizationId}`,
+      'X-Organization-Id': organizationId,
       'X-Skids-Route-Key': serviceId,
     };
     const response = await fetch(endpoint, {
       method: 'GET',
       headers: headers,
     });
-
-    console.log(response);
 
     if (!response.ok) {
       setDataError(slideId, true);
@@ -110,16 +77,10 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
       setDataError(slideId, false);
     }
 
-
     const result = await response.json();
-    console.log(result);
-
-    const formattedData = await formatBusData(result, serviceId, organizationId);
-
-
+    const formattedData = formatBusData(result);
 
     return formattedData;
-
   } catch (error) {
     console.error('Error fetching stop data:', error);
   }

@@ -242,7 +242,6 @@ export default function StopArrivalsSlide({
   async function fetchData(stopId: string) {
     try {
       setIsLoading(slideId, true);
-      console.log(selectedStop);
       const data = await fetchStopData(
         stopId,
         selectedStop.services[0].service_guid ||
@@ -253,25 +252,23 @@ export default function StopArrivalsSlide({
         (slideId: string, error: boolean) =>
           useFixedRouteStore.getState().setDataError(slideId, error)
       );
-      const arr: any = [];
-      data?.trains.slice(0, 6).forEach((item: any) => {
-        arr.push({
-          destination: item.destination,
-          route: item.details.id,
-          routeId: item.routeId,
-          routeType: item.routeType,
-          routeColor: item.details.color,
-          routeTextColor: item.details.textColor,
-          time: item.arrivalTime,
-          duration: item.arrival,
-          status: item.status,
-        });
-      });
+
+      const arr = data?.trains.map((item: any) => ({
+        destination: item.destination,
+        routeId: item.routeId,
+        routeType: item.routeType,
+        routeColor: item.routeColor,
+        routeTextColor: item.routeTextColor,
+        time: item.arrivalTime,
+        duration: item.arrival,
+        status: item.status,
+      })) || [];
 
       setScheduleData(slideId, arr);
       setIsLoading(slideId, false);
     } catch (error) {
       console.error("Error fetching stop data:", error);
+      setIsLoading(slideId, false);
     }
   }
 
