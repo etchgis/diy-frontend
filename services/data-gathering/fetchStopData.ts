@@ -78,7 +78,10 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     }
 
     const result = await response.json();
+
+    console.log(result);
     const formattedData = formatBusData(result);
+    console.log(formattedData);
 
     return formattedData;
   } catch (error) {

@@ -146,7 +146,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
               <div className="p-6 flex items-center">
                 <div className="flex-1">
                   <div className="mb-2" style={{display: 'flex', alignItems: 'center', fontSize: `${18 * titleSizeMultiplier}px`}}>
-                    <img src={modeIcon} style={{height: `${25 * titleSizeMultiplier}px`, width: `${25 * titleSizeMultiplier}px`, marginRight: '5px', objectFit: 'contain'}} alt="" />
+                    <img src={modeIcon} style={{height: `${38 * titleSizeMultiplier}px`, width: `${38 * titleSizeMultiplier}px`, marginRight: '8px', objectFit: 'contain'}} alt="" />
                     <p>Stop #{selectedStop?.stop_id} arrival times</p>
                   </div>
 
@@ -180,7 +180,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                       alignItems: 'center'
                     }}
                   >
-                    <img src={modeIcon} style={{height: `clamp(16px, ${3 * titleSizeMultiplier}vh, 4rem)`, width: `clamp(16px, ${3 * titleSizeMultiplier}vh, 4rem)`, marginRight: '5px', objectFit: 'contain'}} alt="" />
+                    <img src={modeIcon} style={{height: `clamp(28px, ${5.5 * titleSizeMultiplier}vh, 7rem)`, width: `clamp(28px, ${5.5 * titleSizeMultiplier}vh, 7rem)`, marginRight: '8px', objectFit: 'contain'}} alt="" />
                     <span className="truncate">Stop #{selectedStop?.stop_id} arrival times</span>
                   </div>
 
