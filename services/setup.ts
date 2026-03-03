@@ -10,6 +10,7 @@ import { useRouteTimesStore } from "@/stores/routeTimes";
 import { useImageOnlyStore } from "@/stores/imageOnly";
 import { useWeatherStore } from "@/stores/weather";
 import { useCitibikeStore } from "@/stores/citibike";
+import { useTrafficCorridorStore } from "@/stores/trafficCorridor";
 import { useFooterStore } from "@/stores/footer";
 import { set } from "react-hook-form";
 
@@ -411,6 +412,38 @@ async function importData(setup: any) {
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setLogoImage(slide.id, slide.data.logoImage || '');
       setSearchRadius(slide.id, slide.data.searchRadius || 0.5);
+      setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
+      setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+    }
+
+    if (slide.type === 'traffic-corridor') {
+      const {
+        setTitle,
+        setShowTitle,
+        setBackgroundColor,
+        setBgImage,
+        setLogoImage,
+        setTitleColor,
+        setTextColor,
+        setTableHeaderColor,
+        setRowColor,
+        setTables,
+        setShowSecondTable,
+        setTitleTextSize,
+        setContentTextSize,
+      } = useTrafficCorridorStore.getState();
+
+      setTitle(slide.id, slide.data.title || '');
+      setShowTitle(slide.id, slide.data.showTitle !== false);
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
+      setBgImage(slide.id, slide.data.bgImage || '');
+      setLogoImage(slide.id, slide.data.logoImage || '');
+      setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
+      setTextColor(slide.id, slide.data.textColor || '#ffffff');
+      setTableHeaderColor(slide.id, slide.data.tableHeaderColor || '#78B1DD');
+      setRowColor(slide.id, slide.data.rowColor || '#192F51');
+      setTables(slide.id, slide.data.tables || [{ destination: '', corridors: [] }, { destination: '', corridors: [] }]);
+      setShowSecondTable(slide.id, slide.data.showSecondTable || false);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
     }

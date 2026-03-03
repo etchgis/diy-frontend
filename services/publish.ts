@@ -10,6 +10,7 @@ import { useRouteTimesStore } from '@/stores/routeTimes';
 import { useImageOnlyStore } from '@/stores/imageOnly';
 import { useWeatherStore } from '@/stores/weather';
 import { useCitibikeStore } from '@/stores/citibike';
+import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
@@ -340,6 +341,33 @@ export async function publish() {
         screenObj.data.textColor = textColor;
         screenObj.data.logoImage = logoImage;
         screenObj.data.searchRadius = searchRadius;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
+      }
+    }
+
+    if (slide.type === 'traffic-corridor') {
+      screenObj.type = 'traffic-corridor';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useTrafficCorridorStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { title, showTitle, backgroundColor, bgImage, logoImage, titleColor, textColor, tableHeaderColor, rowColor, tables, showSecondTable, titleTextSize, contentTextSize } = slideData;
+
+        screenObj.data.title = title;
+        screenObj.data.showTitle = showTitle;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.textColor = textColor;
+        screenObj.data.tableHeaderColor = tableHeaderColor;
+        screenObj.data.rowColor = rowColor;
+        screenObj.data.tables = tables;
+        screenObj.data.showSecondTable = showSecondTable;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
       }

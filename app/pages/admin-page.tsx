@@ -52,9 +52,13 @@ export default function AdminPage() {
     }
   };
 
-  const filteredScreens = screens.filter(screen =>
-    screen.shortcode.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredScreens = screens.filter(screen => {
+    const q = searchQuery.toLowerCase();
+    return (
+      screen.shortcode.toLowerCase().includes(q) ||
+      (screen.address?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +158,7 @@ export default function AdminPage() {
               <div className="w-80">
                 <Input
                   type="text"
-                  placeholder="Search by shortcode..."
+                  placeholder="Search by shortcode or address..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-white text-[#1a202c]"

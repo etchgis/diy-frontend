@@ -618,7 +618,7 @@ export default function TransitDestinationPreview({
                     alt="Light Rail"
                     style={getLegendIconSize()}
                   />
-                  <span className={getLegendTextSize()}>MetroNorth</span>
+                  <span className={getLegendTextSize()}>Metro-North</span>
                 </div>
 
                 {/* Amtrack Light Rail */}
@@ -628,7 +628,7 @@ export default function TransitDestinationPreview({
                     alt="Light Rail"
                     style={getLegendIconSize()}
                   />
-                  <span className={getLegendTextSize()}>Amtrack</span>
+                  <span className={getLegendTextSize()}>Amtrak</span>
                 </div>
                 
               </div>

@@ -28,6 +28,8 @@ import WeatherSlide from "@/components/slides/weather"
 import WeatherPreview from "@/components/slide-previews/weather-preview"
 import CitibikeSlide from "@/components/slides/citibike"
 import CitibikePreview from "@/components/slide-previews/citibike-preview"
+import TrafficCorridorSlide from "@/components/slides/traffic-corridor"
+import TrafficCorridorPreview from "@/components/slide-previews/traffic-corridor-preview"
 import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -59,6 +61,7 @@ import { useImageOnlyStore } from "@/stores/imageOnly"
 import { useWeatherStore } from "@/stores/weather"
 import { useCitibikeStore } from "@/stores/citibike"
 import { useRouteTimesStore } from "@/stores/routeTimes"
+import { useTrafficCorridorStore } from "@/stores/trafficCorridor"
 import { useFixedRouteStore } from "@/stores/fixedRoute"
 import { applyFontSizeToAllSlides } from "@/services/applyThemeToSlides"
 
@@ -136,6 +139,21 @@ export default function EditorPage() {
   const [tempThemeBodyText, setTempThemeBodyText] = useState(theme?.bodyText || '#ffffff');
   const [tempDefaultTitleTextSize, setTempDefaultTitleTextSize] = useState(defaultTitleTextSize);
   const [tempDefaultContentTextSize, setTempDefaultContentTextSize] = useState(defaultContentTextSize);
+  useEffect(() => {
+    if (showSettings) {
+      setTempRotationInterval(rotationInterval);
+      setTempDefaultBackgroundColor(defaultBackgroundColor);
+      setTempDefaultTitleColor(defaultTitleColor);
+      setTempDefaultTextColor(defaultTextColor);
+      setTempDefaultFontFamily(defaultFontFamily);
+      setTempThemePrimaryBackground(theme?.primaryBackground || '#192F51');
+      setTempThemeSecondaryAccent(theme?.secondaryAccent || '#78B1DD');
+      setTempThemeTitleText(theme?.titleText || '#ffffff');
+      setTempThemeBodyText(theme?.bodyText || '#ffffff');
+      setTempDefaultTitleTextSize(defaultTitleTextSize);
+      setTempDefaultContentTextSize(defaultContentTextSize);
+    }
+  }, [showSettings]);
 
   // Compute font family style for preview consistency with published page
   const fontFamilyStyle = defaultFontFamily && defaultFontFamily !== 'System Default'
@@ -221,6 +239,19 @@ export default function EditorPage() {
         useCitibikeStore.getState().setTextColor(slideId, bodyText);
         useCitibikeStore.getState().setTitleTextSize(slideId, titleSize);
         useCitibikeStore.getState().setContentTextSize(slideId, contentSize);
+        break;
+      case 'traffic-corridor':
+        useTrafficCorridorStore.getState().setBackgroundColor(slideId, primaryBg);
+        useTrafficCorridorStore.getState().setTableHeaderColor(slideId, secondaryAccent);
+        useTrafficCorridorStore.getState().setRowColor(slideId, primaryBg);
+        useTrafficCorridorStore.getState().setTitleColor(slideId, titleText);
+        useTrafficCorridorStore.getState().setTextColor(slideId, bodyText);
+        useTrafficCorridorStore.getState().setTitleTextSize(slideId, titleSize);
+        useTrafficCorridorStore.getState().setContentTextSize(slideId, contentSize);
+        useTrafficCorridorStore.getState().setTables(slideId, [
+          { destination: '', corridors: [] },
+          { destination: '', corridors: [] },
+        ]);
         break;
       case 'route-times':
         useRouteTimesStore.getState().setBackgroundColor(slideId, primaryBg);
@@ -447,6 +478,8 @@ export default function EditorPage() {
         return <WeatherSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "citibike":
         return <CitibikeSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "traffic-corridor":
+        return <TrafficCorridorSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       default:
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
@@ -482,6 +515,8 @@ export default function EditorPage() {
           return <WeatherPreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "citibike":
           return <CitibikePreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
+        case "traffic-corridor":
+          return <TrafficCorridorPreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         default:
           return null;
       }
@@ -603,6 +638,11 @@ export default function EditorPage() {
                 <SelectItem value="citibike">
                   <div className="flex items-center gap-2 text-xs">
                     Citibike Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="traffic-corridor">
+                  <div className="flex items-center gap-2 text-xs">
+                    Traffic Corridor Page
                   </div>
                 </SelectItem>
               </SelectContent>

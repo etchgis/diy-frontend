@@ -3,6 +3,7 @@ import { useTemplate1Store } from '@/stores/template1';
 import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
 import { useCitibikeStore } from '@/stores/citibike';
+import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
 import { useTransitDestinationsStore } from '@/stores/transitDestinations';
 import { useFixedRouteStore } from '@/stores/fixedRoute';
 import { useRouteTimesStore } from '@/stores/routeTimes';
@@ -77,6 +78,19 @@ const storeConfigs: StoreMapping[] = [
     colorMappings: {
       primaryBackground: ['backgroundColor'],
       secondaryAccent: [],
+      titleText: ['titleColor'],
+      bodyText: ['textColor'],
+    },
+    fontSizeMappings: {
+      titleTextSize: ['titleTextSize'],
+      contentTextSize: ['contentTextSize'],
+    },
+  },
+  {
+    store: useTrafficCorridorStore,
+    colorMappings: {
+      primaryBackground: ['backgroundColor', 'rowColor'],
+      secondaryAccent: ['tableHeaderColor'],
       titleText: ['titleColor'],
       bodyText: ['textColor'],
     },

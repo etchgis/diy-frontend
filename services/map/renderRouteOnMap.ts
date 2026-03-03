@@ -1,18 +1,20 @@
 import mapboxgl from 'mapbox-gl';
 
+export interface RouteStop {
+  id?: string;
+  stopId?: string;
+  name?: string;
+  stopName?: string;
+  coordinates?: number[];
+  lon?: number;
+  lat?: number;
+}
+
 export interface RouteMapOptions {
   map: mapboxgl.Map;
   patternData: {
     coordinates?: number[][];
-    stops?: Array<{
-      id?: string;
-      stopId?: string;
-      name?: string;
-      stopName?: string;
-      coordinates?: number[];
-      lon?: number;
-      lat?: number;
-    }>;
+    stops?: RouteStop[];
   };
   selectedRoute?: {
     route_color?: string;
@@ -122,26 +124,40 @@ export function renderRouteOnMap({
 }
 
 /**
- * Calculate bounds for a set of stops
+ * Calculate bounds for a set of stops and/or route coordinates
  */
-export function calculateStopBounds(stops: any[]): mapboxgl.LngLatBounds | null {
-  if (!stops || stops.length === 0) {return null;}
+export function calculateRouteBounds(stops?: RouteStop[], routeCoordinates?: number[][]): mapboxgl.LngLatBounds | null {
+  if ((!stops || stops.length === 0) && (!routeCoordinates || routeCoordinates.length === 0)) {
+    return null;
+  }
 
   const bounds = new mapboxgl.LngLatBounds();
 
-  stops.forEach((stop: any) => {
-    let lon, lat;
-    if (stop.coordinates && stop.coordinates.length === 2) {
-      [lon, lat] = stop.coordinates;
-    } else if (stop.lon !== undefined && stop.lat !== undefined) {
-      lon = stop.lon;
-      lat = stop.lat;
-    }
+  // Include stop coordinates
+  if (stops && stops.length > 0) {
+    stops.forEach((stop) => {
+      let lon, lat;
+      if (stop.coordinates && stop.coordinates.length === 2) {
+        [lon, lat] = stop.coordinates;
+      } else if (stop.lon !== undefined && stop.lat !== undefined) {
+        lon = stop.lon;
+        lat = stop.lat;
+      }
 
-    if (lon !== undefined && lat !== undefined) {
-      bounds.extend([lon, lat]);
-    }
-  });
+      if (lon !== undefined && lat !== undefined) {
+        bounds.extend([lon, lat]);
+      }
+    });
+  }
+
+  // Include route line coordinates
+  if (routeCoordinates && routeCoordinates.length > 0) {
+    routeCoordinates.forEach((coord: number[]) => {
+      if (coord.length >= 2) {
+        bounds.extend([coord[0], coord[1]]);
+      }
+    });
+  }
 
   return bounds.isEmpty() ? null : bounds;
 }
