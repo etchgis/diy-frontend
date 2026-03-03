@@ -1,8 +1,9 @@
-import { useGeneralStore } from "@/stores/general";
 import { useTransitDestinationsStore } from "@/stores/transitDestinations";
+import { useGeneralStore } from "@/stores/general";
 import { formatDuration, formatTime } from "@/utils/formats";
 import { usePathname } from "next/navigation";
 import { use, useEffect } from "react";
+import Footer from "../shared-components/footer";
 
 export default function TransitDestinationPreview({
   slideId,
@@ -31,17 +32,25 @@ export default function TransitDestinationPreview({
   const alternateRowTextColor = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.alternateRowTextColor || "#ffffff"
   );
+  const titleTextSize = useTransitDestinationsStore(
+    (state) => state.slides[slideId]?.titleTextSize || 5
+  );
+  const contentTextSize = useTransitDestinationsStore(
+    (state) => state.slides[slideId]?.contentTextSize || 5
+  );
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
   const dataError = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.dataError || false
   );
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   const mockDestinations: any = [];
   const destinationData = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.destinationData || mockDestinations
   );
 
-  // Always show exactly 6 rows total
-  const totalRows = 6;
+  const totalRows = 5;
 
   const destinationTags = [
     "Albany International Airport",
@@ -53,13 +62,15 @@ export default function TransitDestinationPreview({
 
   // Dynamic styling based on editor mode
   const getHeaderStyles = () => {
-    if (mobileMode) return "text-sm p-2";
-    return isEditor ? "text-lg p-4" : "text-[3.0vh] p-[2.5vh]";
+    if (mobileMode) return { className: "p-2", fontSize: `${14 * titleSizeMultiplier}px` };
+    if (isEditor) return { className: "p-4", fontSize: `${18 * titleSizeMultiplier}px` };
+    return { className: "p-[2.5vh]", fontSize: `clamp(1rem, ${3.0 * titleSizeMultiplier}vh, 4rem)` };
   };
 
   const getRowStyles = () => {
-    if (mobileMode) return "text-sm";
-    return isEditor ? "text-base" : "text-[2.8vh]";
+    if (mobileMode) return { className: "", fontSize: `${14 * contentSizeMultiplier}px` };
+    if (isEditor) return { className: "", fontSize: `${16 * contentSizeMultiplier}px` };
+    return { className: "", fontSize: `clamp(0.8rem, ${2.8 * contentSizeMultiplier}vh, 3.5rem)` };
   };
 
   const getGridGap = () => {
@@ -128,6 +139,35 @@ export default function TransitDestinationPreview({
     return "text-[2.4vh]";
   };
 
+  /**
+   * Get the appropriate rail icon based on agency ID
+   * Returns specific icons for LIRR, Metro-North, and Amtrak
+   * Falls back to default rail icon for other rail services
+   */
+  const getRailIcon = (agencyId: string | undefined): string => {
+    if (!agencyId) return "/images/rail-icon.png";
+
+    const agency = agencyId.toLowerCase();
+
+    // LIRR (Long Island Rail Road)
+    if (agency.includes("lirr") || agency.includes("long island")) {
+      return "/images/lirr-rail-icon.png";
+    }
+
+    // Metro-North
+    if (agency.includes("mnr") || agency.includes("metro-north") || agency.includes("metronorth") || agency.includes("metro north")) {
+      return "/images/mn-rail-icon.png";
+    }
+
+    // Amtrak
+    if (agency.includes("amtrak") || agency.includes("amtk")) {
+      return "/images/amtrack-rail-icon.png";
+    }
+
+    // Default rail icon
+    return "/images/rail-icon.png";
+  };
+
   const getArrowSize = (hasMany: boolean) => {
     if (mobileMode || hasMany) return { width: "18px", height: "18px" };
     if (isEditor) return { width: "25px", height: "25px" };
@@ -157,17 +197,29 @@ export default function TransitDestinationPreview({
     return "text-[2.5vh]";
   };
 
+  const getLegendIconSize = () => {
+    if (mobileMode) return { width: "24px", height: "24px" };
+    if (isEditor) return { width: "35px", height: "35px" };
+    return { width: "5vh", height: "5vh" };
+  };
+
+  const getLegendTextSize = () => {
+    if (mobileMode) return "text-xs";
+    if (isEditor) return "text-sm";
+    return "text-[3vh]";
+  };
+
   return (
     <div
       className={`w-full h-full flex flex-col text-white overflow-hidden ${
         mobileMode ? "mb-4" : "mb-6"
       }`}
-      style={{ backgroundColor }}
+      style={{ backgroundColor, fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined }}
     >
       {/* Header - Fixed height */}
       <div
-        className={`text-white flex-shrink-0 ${getHeaderStyles()}`}
-        style={{ backgroundColor, color: tableHeaderTextColor }}
+        className={`text-white flex-shrink-0 ${getHeaderStyles().className}`}
+        style={{ backgroundColor, color: tableHeaderTextColor, fontSize: getHeaderStyles().fontSize }}
       >
         <div
           className={`grid ${
@@ -193,10 +245,11 @@ export default function TransitDestinationPreview({
               mobileMode
                 ? "grid-cols-[1.5fr_1.5fr_1fr_1fr_1fr]"
                 : "grid-cols-[1.5fr_2fr_1fr_1fr_1fr]"
-            } ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
+            } ${getGridGap()} ${getRowPadding()} ${getRowStyles().className} w-full min-w-0 items-center`}
             style={{
               backgroundColor: rowColor,
               color: tableTextColor,
+              fontSize: getRowStyles().fontSize,
             }}
           >
             <div className="col-span-5 flex items-center justify-center">
@@ -210,7 +263,7 @@ export default function TransitDestinationPreview({
           // Render actual destinations if no dataError
           <>
             {destinationData &&
-              destinationData.map((dest: any, index: number) => {
+              destinationData.slice(0, totalRows).map((dest: any, index: number) => {
                 // Sanitize values with a dash if nothing exists
                 const name = dest.name || "-";
                 const route = dest.route || "-";
@@ -226,7 +279,7 @@ export default function TransitDestinationPreview({
                       mobileMode
                         ? "grid-cols-[1fr_1.5fr_1fr_1fr_1fr]"
                         : "grid-cols-[1.5fr_2fr_1fr_1fr_1fr]"
-                    } ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
+                    } ${getGridGap()} ${getRowPadding()} ${getRowStyles().className} w-full min-w-0 items-center`}
                     style={{
                       backgroundColor:
                         index % 2 === 0 ? rowColor : alternateRowColor,
@@ -234,6 +287,7 @@ export default function TransitDestinationPreview({
                         index % 2 === 0
                           ? tableTextColor
                           : alternateRowTextColor,
+                      fontSize: getRowStyles().fontSize,
                     }}
                   >
                     <div className="flex items-center gap-2 truncate">
@@ -290,7 +344,7 @@ export default function TransitDestinationPreview({
                                         style={getIconSizeForManyLegs(hasMany)}
                                         alt=""
                                       />
-                                    ) : leg.mode === "RAIL" ? (
+                                    ) : leg.mode == "LIGHT RAIL" ? (
                                       <div className="rail-leg flex items-center gap-0.5">
                                         <img
                                           className="leg-icon"
@@ -358,7 +412,51 @@ export default function TransitDestinationPreview({
                                           </p>
                                         </div>
                                       </div>
-                                    ) : (
+                                    ) : leg.mode == "RAIL" ? (
+                                      <div className="rail-leg flex items-center gap-0.5">
+                                        <img
+                                          className="train-icon"
+                                          src={getRailIcon(leg.agencyId)}
+                                          style={getIconSizeForManyLegs(
+                                            hasMany,
+                                            "RAIL"
+                                          )}
+                                          alt=""
+                                        />
+                                        <div
+                                          className={`rail-info rounded ${getBusPadding(
+                                            hasMany
+                                          )}`}
+                                          style={{
+                                            backgroundColor: leg.routeColor
+                                              ? `#${leg.routeColor}`
+                                              : "white",
+                                          }}
+                                        >
+                                          <p
+                                            className={`${getBusTextSize(
+                                              hasMany
+                                            )} leading-tight text-center`}
+                                            style={{
+                                              color: leg.routeTextColor
+                                                ? `#${leg.routeTextColor}`
+                                                : "black",
+                                            }}
+                                          >
+                                            {leg.routeShortName?.length > 5
+                                              ? `${leg.agencyId || "N/A"} ${
+                                                  leg.routeShortName.match(
+                                                    /\d+/
+                                                  )?.[0] || ""
+                                                }`
+                                              : leg.routeShortName ||
+                                                leg.tripShortName ||
+                                                "N/A"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )
+                                    : (
                                       <div className="bus-leg flex items-center gap-0.5">
                                         <img
                                           className="leg-icon"
@@ -433,7 +531,7 @@ export default function TransitDestinationPreview({
                 );
               })}
 
-            {/* Add empty rows to fill remaining space */}
+            {/* Add empty rows to fill remaining space (before legend) */}
             {Array.from({
               length: Math.max(0, totalRows - destinationData.length),
             }).map((_, index) => (
@@ -443,7 +541,7 @@ export default function TransitDestinationPreview({
                   mobileMode
                     ? "grid-cols-[1fr_1.5fr_1fr_1fr_1fr]"
                     : "grid-cols-[1.5fr_2fr_1fr_1fr_1fr]"
-                } ${getGridGap()} ${getRowPadding()} ${getRowStyles()} w-full min-w-0 items-center`}
+                } ${getGridGap()} ${getRowPadding()} ${getRowStyles().className} w-full min-w-0 items-center`}
                 style={{
                   backgroundColor:
                     (destinationData.length + index) % 2 === 0
@@ -451,6 +549,7 @@ export default function TransitDestinationPreview({
                       : alternateRowColor,
                   color:
                     index % 2 === 0 ? tableTextColor : alternateRowTextColor,
+                  fontSize: getRowStyles().fontSize,
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -464,25 +563,81 @@ export default function TransitDestinationPreview({
                 <div className="">-</div>
               </div>
             ))}
+
+            {/* Legend Row */}
+            <div
+              className={`flex-shrink-0 flex items-center justify-center ${getRowPadding()} ${mobileMode ? "py-2" : isEditor ? "py-3" : "py-[1.5vh]"} w-full`}
+              style={{
+                backgroundColor: backgroundColor,
+                color: tableHeaderTextColor,
+              }}
+            >
+              <div className={`flex items-center ${mobileMode ? "gap-3" : isEditor ? "gap-6" : "gap-[4vh]"} flex-wrap justify-center`}>
+                
+                {/* Walk */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/walking-man.png"
+                    alt="Walk"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>Walk</span>
+                </div>
+                {/* Bus */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/bus-icon.png"
+                    alt="Bus"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>Bus</span>
+                </div>
+                {/* Subway */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/subway-icon.png"
+                    alt="Subway"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>Subway</span>
+                </div>
+                {/* LIRR Light Rail */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/lirr-rail-icon.png"
+                    alt="Light Rail"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>LIRR</span>
+                </div>
+
+                {/* Metro North Light Rail */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/mn-rail-icon.png"
+                    alt="Light Rail"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>Metro-North</span>
+                </div>
+
+                {/* Amtrack Light Rail */}
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/images/amtrack-rail-icon.png"
+                    alt="Light Rail"
+                    style={getLegendIconSize()}
+                  />
+                  <span className={getLegendTextSize()}>Amtrak</span>
+                </div>
+                
+              </div>
+            </div>
           </>
         )}
       </div>
 
-      {/* Footer - Fixed height */}
-      <div
-        className={`bg-[#F4F4F4] flex items-center justify-between flex-shrink-0 ${getFooterPadding()}`}
-      >
-        <img
-          src="/images/statewide-mobility-services.png"
-          alt="Statewide Mobility Services"
-          className={getFooterImageSize().logo}
-        />
-        <img
-          src="/images/nysdot-footer-logo.png"
-          alt="NYSDOT"
-          className={getFooterImageSize().nysdot}
-        />
-      </div>
+      <Footer />
     </div>
   );
 }

@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { applyThemeColorToAllSlides } from '@/services/applyThemeToSlides';
+
+interface Theme {
+  primaryBackground: string;
+  secondaryAccent: string;
+  titleText: string;
+  bodyText: string;
+}
 
 interface Slide {
   id: string;
@@ -21,8 +29,21 @@ interface Store {
     lat: number;
     lng: number;
   };
+  // Default styling for new slides
+  defaultBackgroundColor?: string;
+  defaultTitleColor?: string;
+  defaultTextColor?: string;
+  defaultFontFamily?: string;
+  defaultTitleTextSize?: number;
+  defaultContentTextSize?: number;
+  // Theme settings
+  theme: Theme;
+  setThemePrimaryBackground: (color: string) => void;
+  setThemeSecondaryAccent: (color: string) => void;
+  setThemeTitleText: (color: string) => void;
+  setThemeBodyText: (color: string) => void;
   setTemplate: (name: string) => void;
-  setSlides: (slides: Slide[]) => void; 
+  setSlides: (slides: Slide[]) => void;
   setAddress: (address: string) => void;
   setLocation: (location: string) => void;
   setUrl: (url: string) => void;
@@ -31,12 +52,24 @@ interface Store {
   setRotationInterval: (interval: number) => void;
   setFirstPublish: (firstPublish: boolean) => void;
   setPublishPassword: (publishPassword: string) => void;
+  setDefaultBackgroundColor: (color: string) => void;
+  setDefaultTitleColor: (color: string) => void;
+  setDefaultTextColor: (color: string) => void;
+  setDefaultFontFamily: (font: string) => void;
+  setDefaultTitleTextSize: (size: number) => void;
+  setDefaultContentTextSize: (size: number) => void;
 }
 
 export const useGeneralStore = create<Store>()(
   persist(
     (set, get) => ({
       slides: [],
+      theme: {
+        primaryBackground: '#192F51',
+        secondaryAccent: '#78B1DD',
+        titleText: '#ffffff',
+        bodyText: '#ffffff',
+      },
 
       setSlides: (slides: Slide[]) => set(() => ({
         slides, 
@@ -73,8 +106,50 @@ export const useGeneralStore = create<Store>()(
         firstPublish,
       })),
       setPublishPassword: (publishPassword) => set(() => ({
-        publishPassword, 
+        publishPassword,
       })),
+      setDefaultBackgroundColor: (color) => set(() => ({
+        defaultBackgroundColor: color,
+      })),
+      setDefaultTitleColor: (color) => set(() => ({
+        defaultTitleColor: color,
+      })),
+      setDefaultTextColor: (color) => set(() => ({
+        defaultTextColor: color,
+      })),
+      setDefaultFontFamily: (font) => set(() => ({
+        defaultFontFamily: font,
+      })),
+      setDefaultTitleTextSize: (size) => set(() => ({
+        defaultTitleTextSize: size,
+      })),
+      setDefaultContentTextSize: (size) => set(() => ({
+        defaultContentTextSize: size,
+      })),
+      setThemePrimaryBackground: (color) => {
+        set((state) => ({
+          theme: { ...state.theme, primaryBackground: color },
+        }));
+        applyThemeColorToAllSlides('primaryBackground', color);
+      },
+      setThemeSecondaryAccent: (color) => {
+        set((state) => ({
+          theme: { ...state.theme, secondaryAccent: color },
+        }));
+        applyThemeColorToAllSlides('secondaryAccent', color);
+      },
+      setThemeTitleText: (color) => {
+        set((state) => ({
+          theme: { ...state.theme, titleText: color },
+        }));
+        applyThemeColorToAllSlides('titleText', color);
+      },
+      setThemeBodyText: (color) => {
+        set((state) => ({
+          theme: { ...state.theme, bodyText: color },
+        }));
+        applyThemeColorToAllSlides('bodyText', color);
+      },
     }),
     {
       name: 'general-store' ,

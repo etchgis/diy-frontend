@@ -7,9 +7,11 @@ import { useTransitDestinationsStore } from "@/stores/transitDestinations"
 import { useEffect, useRef, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
+import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
 
-const MAX_DESTINATIONS = 6;
+const MAX_DESTINATIONS = 5;
+const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -32,6 +34,12 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
   const alternateRowTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.alternateRowTextColor || '#ffffff');
   const setAlternateRowTextColor = useTransitDestinationsStore((state) => state.setAlternateRowTextColor);
+
+  const titleTextSize = useTransitDestinationsStore((state) => state.slides[slideId]?.titleTextSize || 5);
+  const setTitleTextSize = useTransitDestinationsStore((state) => state.setTitleTextSize);
+
+  const contentTextSize = useTransitDestinationsStore((state) => state.slides[slideId]?.contentTextSize || 5);
+  const setContentTextSize = useTransitDestinationsStore((state) => state.setContentTextSize);
 
   const tableHeaderTextColor = useTransitDestinationsStore((state) => state.slides[slideId]?.tableHeaderTextColor || '#ffffff');
   const setTableHeaderTextColor = useTransitDestinationsStore((state) => state.setTableHeaderTextColor);
@@ -88,7 +96,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
     saveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saved');
     }, 600);
-  }, [backgroundColor, rowColor, alternateRowColor, tableHeaderTextColor, tableTextColor]);
+  }, [backgroundColor, rowColor, alternateRowColor, tableHeaderTextColor, tableTextColor, titleTextSize, contentTextSize]);
 
 
 
@@ -189,21 +197,70 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
       setSelectedFeature(slideId, "");
       setLocationError(slideId, false);
 
-      const origin = `${coordinates.lat},${coordinates.lng}`;
-      const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+      let enrichedDestination;
 
-      const result = await fetchTransitData(origin, destination);
+      // Try SKIDS first if enabled
+      if (USE_SKIDS) {
+        try {
+          console.log('[SKIDS] Attempting to fetch transit data via SKIDS...');
+          const skidsResults = await fetchSkidsTransitData(
+            { lat: coordinates.lat, lng: coordinates.lng },
+            [newDestination]
+          );
 
-      const enrichedDestination = {
-        name: newDestination.name,
-        route: result.route || "N/A",
-        departure: formatTime(result.startTime),
-        arrival: formatTime(result.endTime),
-        travel: formatDuration(result.duration),
-        legs: result.legs,
-        coordinates: newDestination.coordinates,
-        dark: updatedDestinations.length % 2 === 0,
-      };
+          if (skidsResults && skidsResults.length > 0) {
+            const skidsData = skidsResults[0];
+            enrichedDestination = {
+              name: newDestination.name,
+              route: skidsData.route || "N/A",
+              departure: skidsData.departure,
+              arrival: skidsData.arrival,
+              travel: skidsData.travel,
+              legs: skidsData.legs,
+              coordinates: newDestination.coordinates,
+              dark: updatedDestinations.length % 2 === 0,
+            };
+            console.log('[SKIDS] Successfully fetched data via SKIDS');
+          } else {
+            throw new Error('SKIDS returned no results');
+          }
+        } catch (skidsError) {
+          console.error('[SKIDS] SKIDS fetch failed, falling back to OTP:', skidsError);
+          // Fall back to OTP
+          const origin = `${coordinates.lat},${coordinates.lng}`;
+          const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+          const result = await fetchTransitData(origin, destination);
+
+          enrichedDestination = {
+            name: newDestination.name,
+            route: result.route || "N/A",
+            departure: formatTime(result.startTime),
+            arrival: formatTime(result.endTime),
+            travel: formatDuration(result.duration),
+            legs: result.legs,
+            coordinates: newDestination.coordinates,
+            dark: updatedDestinations.length % 2 === 0,
+          };
+          console.log('[OTP] Successfully fetched data via OTP fallback');
+        }
+      } else {
+        // Use OTP directly if SKIDS is disabled
+        console.log('[OTP] Using OTP (SKIDS disabled)');
+        const origin = `${coordinates.lat},${coordinates.lng}`;
+        const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
+        const result = await fetchTransitData(origin, destination);
+
+        enrichedDestination = {
+          name: newDestination.name,
+          route: result.route || "N/A",
+          departure: formatTime(result.startTime),
+          arrival: formatTime(result.endTime),
+          travel: formatDuration(result.duration),
+          legs: result.legs,
+          coordinates: newDestination.coordinates,
+          dark: updatedDestinations.length % 2 === 0,
+        };
+      }
 
       const updatedDestinationData = [...destinationData, enrichedDestination];
       setDestinations(slideId, updatedDestinations);
@@ -252,7 +309,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               <span className="font-medium">Transit Destination Table Page Template</span>
             </div>
 
-            <p className="text-[#606061] mb-6">Input the destinations that you would like for the map to show. The maximum number of routes that this table can accommodate is 6.</p>
+            <p className="text-[#606061] mb-6">Input the destinations that you would like for the map to show. The maximum number of routes that this table can accommodate is 5.</p>
 
             {/* Destination Input */}
             <div className="mb-6">
@@ -453,6 +510,55 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               </div>
             </div>
 
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Header Text Size</label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
+                  disabled={titleTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
+                  disabled={titleTextSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Content Text Size</label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setContentTextSize(slideId, Math.max(1, contentTextSize - 1))}
+                  disabled={contentTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{contentTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setContentTextSize(slideId, Math.min(10, contentTextSize + 1))}
+                  disabled={contentTextSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
 
           </div>
 

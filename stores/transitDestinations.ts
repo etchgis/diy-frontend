@@ -18,6 +18,8 @@ interface TransitionDestinationsSlideData {
   errorMessage?: string;
   loading: boolean;
   query: string;
+  titleTextSize?: number;
+  contentTextSize?: number;
 }
 
 interface SlideStore {
@@ -38,6 +40,8 @@ interface SlideStore {
   setLoading: (slideId: string, loading: boolean) => void;  
   setDataError: (slideId: string, error: boolean) => void;
   setAlternateRowTextColor: (slideId: string, color: string) => void;
+  setTitleTextSize: (slideId: string, size: number) => void;
+  setContentTextSize: (slideId: string, size: number) => void;
 }
 
 export const useTransitDestinationsStore = create<SlideStore>()(
@@ -212,14 +216,34 @@ export const useTransitDestinationsStore = create<SlideStore>()(
         set((state) => ({
           slides: {
             ...state.slides,
-            [slideId]: {  
+            [slideId]: {
               ...(state.slides[slideId] || {}),
               dataError: error,
             },
           },
         })),
 
+      setTitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              titleTextSize: size,
+            },
+          },
+        })),
 
+      setContentTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              contentTextSize: size,
+            },
+          },
+        })),
     }),
     {
       name: 'transit-destinations-storage',

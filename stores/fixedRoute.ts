@@ -4,31 +4,39 @@ import { StateStorage, PersistOptions } from 'zustand/middleware';
 
 interface FixedRouteSlideData {
   stopName: string;
+  showTitle?: boolean;
   description: string;
   backgroundColor: string;
   titleColor: string;
   tableColor: string;
   tableTextColor: string;
   bgImage: string;
+  logoImage: string;
   selectedStop: any;
   dataError: boolean;
   scheduleData?: any;
   isLoading: boolean;
+  titleTextSize?: number;
+  contentTextSize?: number;
 }
 
 interface SlideStore {
   slides: Record<string, FixedRouteSlideData>;
   setStopName: (slideId: string, name: string) => void;
+  setShowTitle: (slideId: string, show: boolean) => void;
   setDescription: (slideId: string, description: string) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
   setTitleColor: (slideId: string, color: string) => void;
   setTableColor: (slideId: string, color: string) => void;
   setTableTextColor: (slideId: string, color: string) => void;
   setBgImage: (slideId: string, bgImage: string) => void;
+  setLogoImage: (slideId: string, bgImage: string) => void;
   setSelectedStop: (slideId: string, stop: any) => void;
   setScheduleData: (slideId: string, scheduleData: any) => void;
   setIsLoading: (slideId: string, isLoading: boolean) => void;
   setDataError: (slideId: string, error: boolean) => void;
+  setTitleTextSize: (slideId: string, size: number) => void;
+  setContentTextSize: (slideId: string, size: number) => void;
 }
 
 export const useFixedRouteStore = create<SlideStore>()(
@@ -43,6 +51,17 @@ export const useFixedRouteStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               stopName: name,
+            },
+          },
+        })),
+
+      setShowTitle: (slideId, show) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              showTitle: show,
             },
           },
         })),
@@ -98,6 +117,17 @@ export const useFixedRouteStore = create<SlideStore>()(
           },
         })),
 
+        setLogoImage: (slideId, image) =>
+          set((state) => ({
+            slides: {
+              ...state.slides,
+              [slideId]: {
+                ...(state.slides[slideId] || {}),
+                logoImage: image
+              },
+            },
+          })),
+
       setSelectedStop: (slideId, stop) =>
         set((state) => ({
           slides: {
@@ -127,6 +157,22 @@ export const useFixedRouteStore = create<SlideStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), dataError: error },
+          },
+        })),
+
+      setTitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), titleTextSize: size },
+          },
+        })),
+
+      setContentTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), contentTextSize: size },
           },
         })),
     }),

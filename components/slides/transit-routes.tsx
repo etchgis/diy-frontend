@@ -1,13 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { HelpCircle, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronRight, Plus, X } from "lucide-react";
 import TransitRoutesPreview from "../slide-previews/transit-routes-preview";
 import { useTransitRouteStore } from "@/stores/transitRoutes";
 import { useGeneralStore } from "@/stores/general";
@@ -16,6 +9,7 @@ import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinat
 import { formatTime, formatDuration } from "@/utils/formats";
 
 const MAX_DESTINATIONS = 6;
+// Always use OTP for this page to ensure we have route geometry for the map
 
 export default function TransitRoutesSlide({
   slideId,
@@ -177,11 +171,12 @@ export default function TransitRoutesSlide({
       },
     };
 
-    const origin = `${coordinates.lat},${coordinates.lng}`;
-    const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
-
     try {
       setIsLoading(slideId, true);
+
+      // Always use OTP for this page to get route geometry for map display
+      const origin = `${coordinates.lat},${coordinates.lng}`;
+      const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
       const result = await fetchTransitData(origin, destination);
 
       const enrichedRoute = {

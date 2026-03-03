@@ -3,19 +3,33 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface Template3SlideData {
   title: string;
+  showTitle?: boolean;
   image: string | null;
   bgImage: string;
   backgroundColor: string;
   textColor?: string;
+  titleColor?: string;
+  logoImage?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageObjectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+  titleTextSize?: number;
 }
 
 interface SlideStore {
   slides: Record<string, Template3SlideData>;
   setTitle: (slideId: string, name: string) => void;
+  setShowTitle: (slideId: string, show: boolean) => void;
   setImage: (slideId: string, name: string) => void;
   setBgImage: (slideId: string, bgImage: string) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
   setTextColor: (slideId: string, color: string) => void;
+  setTitleColor: (slideId: string, color: string) => void;
+  setLogoImage: (slideId: string, logoImage: string) => void;
+  setImageWidth: (slideId: string, width: number) => void;
+  setImageHeight: (slideId: string, height: number) => void;
+  setImageObjectFit: (slideId: string, objectFit: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down') => void;
+  setTitleTextSize: (slideId: string, size: number) => void;
 }
 
 export const useTemplate3Store = create<SlideStore>()(
@@ -30,6 +44,17 @@ export const useTemplate3Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               title,
+            },
+          },
+        })),
+
+      setShowTitle: (slideId, show) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              showTitle: show,
             },
           },
         })),
@@ -74,6 +99,72 @@ export const useTemplate3Store = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               textColor: color,
+            },
+          },
+        })),
+
+      setTitleColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              titleColor: color,
+            },
+          },
+        })),
+
+      setLogoImage: (slideId, logoImage) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              logoImage,
+            },
+          },
+        })),
+
+      setImageWidth: (slideId, width) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageWidth: width,
+            },
+          },
+        })),
+
+      setImageHeight: (slideId, height) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageHeight: height,
+            },
+          },
+        })),
+
+      setImageObjectFit: (slideId, objectFit) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              imageObjectFit: objectFit,
+            },
+          },
+        })),
+
+      setTitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              titleTextSize: size,
             },
           },
         })),

@@ -7,9 +7,26 @@ import { useTemplate1Store } from '@/stores/template1';
 import { useTemplate2Store } from '@/stores/template2';
 import { useTemplate3Store } from '@/stores/template3';
 import { useRouteTimesStore } from '@/stores/routeTimes';
+import { useImageOnlyStore } from '@/stores/imageOnly';
+import { useWeatherStore } from '@/stores/weather';
+import { useCitibikeStore } from '@/stores/citibike';
+import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
+import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
-  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword} = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme } = useGeneralStore.getState();
+  const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
+
+  console.log('[PUBLISH] Footer data being published:', {
+    leftImage,
+    middleImage,
+    rightImage,
+    leftType,
+    middleType,
+    rightType,
+    backgroundColor,
+    timeTextColor
+  });
 
   const json = {
     location: location,
@@ -19,6 +36,23 @@ export async function publish() {
     rotationInterval: rotationInterval,
     url: url,
     publishPassword: publishPassword,
+    defaultBackgroundColor: defaultBackgroundColor,
+    defaultTitleColor: defaultTitleColor,
+    defaultTextColor: defaultTextColor,
+    defaultFontFamily: defaultFontFamily,
+    defaultTitleTextSize: defaultTitleTextSize,
+    defaultContentTextSize: defaultContentTextSize,
+    theme: theme,
+    footer: {
+      leftImage: leftImage,
+      middleImage: middleImage,
+      rightImage: rightImage,
+      leftType: leftType,
+      middleType: middleType,
+      rightType: rightType,
+      backgroundColor: backgroundColor,
+      timeTextColor: timeTextColor,
+    },
     screens: [] as any[],
   }
 
@@ -41,7 +75,9 @@ export async function publish() {
           tableHeaderTextColor,
           tableTextColor,
           destinations,
-          alternateRowTextColor
+          alternateRowTextColor,
+          titleTextSize,
+          contentTextSize
         } = slideData;
 
         // Use the slide data as needed
@@ -55,6 +91,8 @@ export async function publish() {
           name: destination.name,
           coordinates: destination.coordinates,
         })) || [];
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
 
       } else {
       }
@@ -78,7 +116,10 @@ export async function publish() {
           tableColor,
           tableTextColor,
           bgImage,
-          selectedStop
+          logoImage,
+          selectedStop,
+          titleTextSize,
+          contentTextSize
         } = slideData;
 
 
@@ -89,7 +130,10 @@ export async function publish() {
         screenObj.data.tableColor = tableColor;
         screenObj.data.tableTextColor = tableTextColor;
         screenObj.data.bgImage = bgImage;
+        screenObj.data.logoImage = logoImage;
         screenObj.data.selectedStop = selectedStop;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       } else {
       }
     }
@@ -126,13 +170,19 @@ export async function publish() {
           text,
           url,
           backgroundColor,
-          bgImage
+          bgImage,
+          logoImage,
+          qrSize,
+          textSize
         } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.url = url;
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.bgImage = bgImage;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.qrSize = qrSize;
+        screenObj.data.textSize = textSize;
       } else {
       }
 
@@ -149,7 +199,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize } = slideData;
+        const { text, title, image, bgImage, backgroundColor, leftContentSize, rightContentSize, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -158,6 +208,14 @@ export async function publish() {
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.leftContentSize = leftContentSize;
         screenObj.data.rightContentSize = rightContentSize;
+        screenObj.data.textColor = textColor;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.imageWidth = imageWidth;
+        screenObj.data.imageHeight = imageHeight;
+        screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
 
       } else {
       }
@@ -174,7 +232,7 @@ export async function publish() {
 
       if (slideData) {
 
-        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage } = slideData;
+        const { text, title, image, backgroundColor, leftContentSize, rightContentSize, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.text = text;
         screenObj.data.title = title;
@@ -183,6 +241,14 @@ export async function publish() {
         screenObj.data.leftContentSize = leftContentSize;
         screenObj.data.rightContentSize = rightContentSize;
         screenObj.data.bgImage = bgImage;
+        screenObj.data.textColor = textColor;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.imageWidth = imageWidth;
+        screenObj.data.imageHeight = imageHeight;
+        screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       } else {
       }
     }
@@ -197,13 +263,113 @@ export async function publish() {
 
       if (slideData) {
 
-        const { title, image, backgroundColor, bgImage } = slideData;
+        const { title, image, backgroundColor, bgImage, textColor, titleColor, logoImage, imageWidth, imageHeight, imageObjectFit, titleTextSize } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.image = image;
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.bgImage = bgImage;
+        screenObj.data.textColor = textColor;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.imageWidth = imageWidth;
+        screenObj.data.imageHeight = imageHeight;
+        screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.titleTextSize = titleTextSize;
       } else {
+      }
+    }
+
+    if (slide.type === 'image-only') {
+      screenObj.type = 'image-only';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useImageOnlyStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { image, imageObjectFit, backgroundColor, fullScreen, imageWidth, imageHeight } = slideData;
+
+        screenObj.data.image = image;
+        screenObj.data.imageObjectFit = imageObjectFit;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.fullScreen = fullScreen;
+        screenObj.data.imageWidth = imageWidth;
+        screenObj.data.imageHeight = imageHeight;
+      }
+    }
+
+    if (slide.type === 'weather') {
+      screenObj.type = 'weather';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useWeatherStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { title, backgroundColor, contentBackgroundColor, bgImage, titleColor, textColor, logoImage, titleTextSize, contentTextSize } = slideData;
+
+        screenObj.data.title = title;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.contentBackgroundColor = contentBackgroundColor;
+        screenObj.data.bgImage = bgImage;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.textColor = textColor;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
+      }
+    }
+
+    if (slide.type === 'citibike') {
+      screenObj.type = 'citibike';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useCitibikeStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius, titleTextSize, contentTextSize } = slideData;
+
+        screenObj.data.title = title;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.textColor = textColor;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.searchRadius = searchRadius;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
+      }
+    }
+
+    if (slide.type === 'traffic-corridor') {
+      screenObj.type = 'traffic-corridor';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useTrafficCorridorStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { title, showTitle, backgroundColor, bgImage, logoImage, titleColor, textColor, tableHeaderColor, rowColor, tables, showSecondTable, titleTextSize, contentTextSize } = slideData;
+
+        screenObj.data.title = title;
+        screenObj.data.showTitle = showTitle;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.textColor = textColor;
+        screenObj.data.tableHeaderColor = tableHeaderColor;
+        screenObj.data.rowColor = rowColor;
+        screenObj.data.tables = tables;
+        screenObj.data.showSecondTable = showSecondTable;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       }
     }
 
@@ -225,7 +391,10 @@ export async function publish() {
           titleColor,
           tableColor,
           tableTextColor,
-          bgImage
+          bgImage,
+          logoImage,
+          titleTextSize,
+          contentTextSize
         } = slideData;
 
         screenObj.data.routeName = routeName;
@@ -237,6 +406,9 @@ export async function publish() {
         screenObj.data.tableColor = tableColor;
         screenObj.data.tableTextColor = tableTextColor;
         screenObj.data.bgImage = bgImage;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
       } else {
       }
     }

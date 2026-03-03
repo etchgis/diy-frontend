@@ -8,6 +8,8 @@ interface QRSlideData {
   bgImage?: string;
   backgroundColor?: string;
   textColor?: string;
+  logoImage?: string;
+  textSize?: number;
 }
 
 interface SlideStore {
@@ -18,6 +20,8 @@ interface SlideStore {
   setBackgroundColor: (slideId: string, name: string) => void;
   setTextColor: (slideId: string, color: string) => void;
   setBgImage: (slideId: string, bgImage: string) => void;
+  setLogoImage: (slideId: string, logoImage: string) => void;
+  setTextSize: (slideId: string, size: number) => void;
 }
 
 export const useQRStore = create<SlideStore>()(
@@ -87,6 +91,28 @@ export const useQRStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               bgImage,
+            },
+          },
+        })),
+
+      setLogoImage: (slideId, logoImage) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              logoImage,
+            },
+          },
+        })),
+
+      setTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              textSize: size,
             },
           },
         })),
