@@ -7,23 +7,204 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   HelpCircle,
   ChevronRight,
   Plus,
   ExternalLink,
   MapPin,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import FixedRoutePreview from "../slide-previews/fixed-route-preview";
-import { useEffect, useRef, useState } from "react";
-import { useFixedRouteStore } from "../../stores/fixedRoute";
-import { set } from "react-hook-form";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useFixedRouteStore, ServiceSelection, DirectionOption } from "../../stores/fixedRoute";
 import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { fetchStopData } from "@/services/data-gathering/fetchStopData";
 import { calculateDistance, formatDistance } from "@/utils/distance";
+
+// Stable empty array reference for Zustand selector
+const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
+
+const MAX_VISIBLE_SERVICES = 3;
+
+// Compute direction options for a specific service using its _stopIds
+function computeDirectionOptions(
+  service: any,
+  _allStopsArray: any[]
+): DirectionOption[] {
+  const stopIds: string[] = service._stopIds || [];
+
+  if (stopIds.length === 0) {
+    return [{ stop_id: '', label: 'All Directions', isAllDirections: true }];
+  }
+
+  // Separate parent stations from directional stops
+  const parentStopIds: string[] = [];
+  const directionalByLabel = new Map<string, string[]>(); // label -> [stop_ids]
+
+  for (const stopId of stopIds) {
+    // Check if this is a directional stop (ends with N/S/E/W)
+    const match = stopId.match(/([NSEW])$/);
+    if (match) {
+      const suffix = match[1];
+      const suffixMap: Record<string, string> = {
+        'N': 'Northbound',
+        'S': 'Southbound',
+        'E': 'Eastbound',
+        'W': 'Westbound'
+      };
+      const label = suffixMap[suffix];
+      if (!directionalByLabel.has(label)) {
+        directionalByLabel.set(label, []);
+      }
+      directionalByLabel.get(label)!.push(stopId);
+    } else {
+      parentStopIds.push(stopId);
+    }
+  }
+
+  const options: DirectionOption[] = [];
+
+  // If we have directional stops, offer direction options
+  if (directionalByLabel.size > 0) {
+    // "All Directions" uses all parent stop_ids (or all stops if no parents)
+    const allDirectionsStopIds = parentStopIds.length > 0 ? parentStopIds : stopIds;
+    options.push({
+      stop_id: allDirectionsStopIds.join(','),  // Comma-separated for multiple
+      label: 'All Directions',
+      isAllDirections: true
+    });
+
+    // Add each unique direction with all its stop_ids combined
+    for (const [label, dirStopIds] of directionalByLabel) {
+      options.push({
+        stop_id: dirStopIds.join(','),  // Comma-separated for multiple
+        label,
+        isAllDirections: false
+      });
+    }
+  } else {
+    // No directional stops - just use whatever we have
+    options.push({
+      stop_id: parentStopIds.join(',') || stopIds[0],
+      label: 'All Directions',
+      isAllDirections: true
+    });
+  }
+
+  return options;
+}
+
+// Deduplicate stops by stop_name for search dropdown
+// This merges all platforms/directions of the same station into one entry
+function deduplicateStops(stops: any[]): any[] {
+  const stopMap = new Map<string, any>();
+
+  for (const stop of stops) {
+    // Use stop_name as the key so all "Grand Central-42 St" entries merge into one
+    const key = stop.stop_name;
+    if (stopMap.has(key)) {
+      // Merge services into existing stop
+      const existing = stopMap.get(key);
+      for (const service of stop.services || []) {
+        const existingServiceIdx = existing.services.findIndex(
+          (s: any) => s.service_guid === service.service_guid
+        );
+        if (existingServiceIdx === -1) {
+          // New service - add it (clone to avoid mutation)
+          existing.services.push({
+            ...service,
+            routes: service.routes ? [...service.routes] : [],
+            _stopIds: [stop.stop_id]  // Track which stop_ids this service uses
+          });
+        } else {
+          // Same service - merge routes arrays and stop_ids
+          const existingService = existing.services[existingServiceIdx];
+          if (!existingService.routes) {
+            existingService.routes = [];
+          }
+          for (const route of service.routes || []) {
+            if (!existingService.routes.some((r: any) => r.route_id === route.route_id)) {
+              existingService.routes.push(route);
+            }
+          }
+          // Track stop_ids for this service
+          if (!existingService._stopIds) {
+            existingService._stopIds = [];
+          }
+          if (!existingService._stopIds.includes(stop.stop_id)) {
+            existingService._stopIds.push(stop.stop_id);
+          }
+        }
+      }
+      // Collect all related stop_ids for direction computation later
+      if (!existing._allStopIds) {
+        existing._allStopIds = [existing.stop_id];
+      }
+      if (!existing._allStopIds.includes(stop.stop_id)) {
+        existing._allStopIds.push(stop.stop_id);
+      }
+      // Prefer version with location_type = 1 (parent station)
+      if (stop.location_type === 1) {
+        existing.stop_id = stop.stop_id;
+        existing.location_type = stop.location_type;
+        existing.unique_stop_id = stop.unique_stop_id;
+      }
+    } else {
+      // Clone to avoid mutating original
+      const clonedServices = (stop.services || []).map((s: any) => ({
+        ...s,
+        routes: s.routes ? [...s.routes] : [],
+        _stopIds: [stop.stop_id]
+      }));
+      stopMap.set(key, {
+        ...stop,
+        services: clonedServices,
+        _allStopIds: [stop.stop_id]
+      });
+    }
+  }
+
+  // Deduplicate services with identical routes (e.g., MTA regular vs supplemented feeds)
+  for (const stop of stopMap.values()) {
+    const uniqueServices: any[] = [];
+    const seenRouteKeys = new Set<string>();
+
+    for (const service of stop.services) {
+      // Create a key from sorted route IDs
+      const routeKey = (service.routes || [])
+        .map((r: any) => r.route_id)
+        .sort()
+        .join(',');
+
+      if (!seenRouteKeys.has(routeKey)) {
+        seenRouteKeys.add(routeKey);
+        uniqueServices.push(service);
+      } else {
+        // Merge _stopIds into the existing service with same routes
+        const existingService = uniqueServices.find(s => {
+          const existingKey = (s.routes || []).map((r: any) => r.route_id).sort().join(',');
+          return existingKey === routeKey;
+        });
+        if (existingService && service._stopIds) {
+          for (const stopId of service._stopIds) {
+            if (!existingService._stopIds.includes(stopId)) {
+              existingService._stopIds.push(stopId);
+            }
+          }
+        }
+      }
+    }
+    stop.services = uniqueServices;
+  }
+
+  return Array.from(stopMap.values());
+}
 
 export default function StopArrivalsSlide({
   slideId,
@@ -61,6 +242,13 @@ export default function StopArrivalsSlide({
     (state) => state.slides[slideId]?.selectedStop || undefined
   );
   const setSelectedStop = useFixedRouteStore((state) => state.setSelectedStop);
+
+  const serviceSelections = useFixedRouteStore(
+    (state) => state.slides[slideId]?.serviceSelections ?? EMPTY_SERVICE_SELECTIONS
+  );
+  const setServiceSelections = useFixedRouteStore((state) => state.setServiceSelections);
+
+  const [servicesExpanded, setServicesExpanded] = useState(false);
 
   const description = useFixedRouteStore(
     (state) => state.slides[slideId]?.description || ""
@@ -231,6 +419,25 @@ export default function StopArrivalsSlide({
     setFilteredStops([]);
     setSelectedStop(slideId, stop);
     setShowDropdown(false);
+
+    // Initialize service selections - all enabled by default
+    const selections: ServiceSelection[] = (stop.services || []).map((service: any) => {
+      const directionOptions = computeDirectionOptions(service, allStops);
+      const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stop_id
+        || directionOptions[0]?.stop_id
+        || stop.stop_id;
+
+      return {
+        service_guid: service.service_guid,
+        agency_name: service.agency_name,
+        routes: service.routes,
+        enabled: true,  // All enabled by default
+        selectedStopId: defaultStopId,
+        directionOptions
+      };
+    });
+
+    setServiceSelections(slideId, selections);
   };
 
   const handleAddStop = () => {
@@ -239,44 +446,120 @@ export default function StopArrivalsSlide({
     }
   };
 
-  async function fetchData(stopId: string) {
+  const fetchData = useCallback(async () => {
+    if (!selectedStop || !serviceSelections?.length) return;
+
+    // Build queries from enabled service selections
+    // selectedStopId can be comma-separated (e.g., "631N,723N,901N")
+    const queries: { service_guid: string; stop_id: string; organization_guid: string }[] = [];
+
+    for (const selection of serviceSelections) {
+      if (!selection.enabled) continue;
+
+      const orgGuid = selectedStop.services?.find(
+        (svc: any) => svc.service_guid === selection.service_guid
+      )?.organization_guid;
+
+      // Split comma-separated stop_ids into individual queries
+      const stopIds = selection.selectedStopId.split(',').filter(Boolean);
+      for (const stopId of stopIds) {
+        queries.push({
+          service_guid: selection.service_guid,
+          stop_id: stopId,
+          organization_guid: orgGuid
+        });
+      }
+    }
+
+    if (queries.length === 0) return;
+
+    setIsLoading(slideId, true);
+
     try {
-      setIsLoading(slideId, true);
-      const data = await fetchStopData(
-        stopId,
-        selectedStop.services[0].service_guid ||
-          selectedStop.services[0].service_id,
-        selectedStop.services[0].organization_guid ||
-          selectedStop.services[0].organization_id,
-        slideId,
-        (slideId: string, error: boolean) =>
-          useFixedRouteStore.getState().setDataError(slideId, error)
+      // Fetch all in parallel with partial failure resilience
+      const results = await Promise.allSettled(
+        queries.map(async (q) => {
+          const data = await fetchStopData(
+            q.stop_id,
+            q.service_guid,
+            q.organization_guid,
+            slideId,
+            (sid: string, error: boolean) =>
+              useFixedRouteStore.getState().setDataError(sid, error)
+          );
+          // Tag each arrival with its source service
+          return (data?.trains || []).map((item: any) => ({
+            destination: item.destination,
+            routeId: item.routeId,
+            routeType: item.routeType,
+            routeColor: item.routeColor,
+            routeTextColor: item.routeTextColor,
+            time: item.arrivalTime,
+            timestamp: item.arrivalTimestamp,  // Raw timestamp for sorting
+            duration: item.arrival,
+            status: item.status,
+            _sourceService: q.service_guid
+          }));
+        })
       );
 
-      const arr = data?.trains.map((item: any) => ({
-        destination: item.destination,
-        routeId: item.routeId,
-        routeType: item.routeType,
-        routeColor: item.routeColor,
-        routeTextColor: item.routeTextColor,
-        time: item.arrivalTime,
-        duration: item.arrival,
-        status: item.status,
-      })) || [];
+      // Collect successful results, log failures
+      const allArrivals: any[] = [];
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          allArrivals.push(...result.value);
+        } else {
+          console.warn('[StopArrivals] Failed to fetch arrivals:', result.reason);
+        }
+      }
 
-      setScheduleData(slideId, arr);
-      setIsLoading(slideId, false);
+      // Sort by arrival timestamp
+      allArrivals.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+      setScheduleData(slideId, allArrivals);
+      useFixedRouteStore.getState().setDataError(slideId, false);
     } catch (error) {
       console.error("Error fetching stop data:", error);
+      useFixedRouteStore.getState().setDataError(slideId, true);
+    } finally {
       setIsLoading(slideId, false);
     }
-  }
+  }, [selectedStop, serviceSelections, slideId, setIsLoading, setScheduleData]);
+
+  // Migration: Initialize serviceSelections if we have selectedStop but no selections
+  useEffect(() => {
+    if (selectedStop && (!serviceSelections || serviceSelections.length === 0)) {
+      // Re-run handleSelectStop logic to initialize serviceSelections
+      const deduped = deduplicateStops([selectedStop, ...allStops.filter(s => s.stop_name === selectedStop.stop_name)]);
+      const dedupedStop = deduped[0] || selectedStop;
+
+      const selections: ServiceSelection[] = (dedupedStop.services || []).map((service: any) => {
+        const directionOptions = computeDirectionOptions(service, allStops);
+        const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stop_id
+          || directionOptions[0]?.stop_id
+          || selectedStop.stop_id;
+
+        return {
+          service_guid: service.service_guid,
+          agency_name: service.agency_name,
+          routes: service.routes,
+          enabled: true,
+          selectedStopId: defaultStopId,
+          directionOptions
+        };
+      });
+
+      if (selections.length > 0) {
+        setServiceSelections(slideId, selections);
+      }
+    }
+  }, [selectedStop, allStops, serviceSelections, setServiceSelections, slideId]);
 
   useEffect(() => {
-    if (selectedStop && selectedStop.stop_id) {
-      fetchData(selectedStop.stop_id);
+    if (selectedStop && serviceSelections?.length > 0) {
+      fetchData();
     }
-  }, [selectedStop]);
+  }, [selectedStop, serviceSelections, fetchData]);
 
   useEffect(() => {
     renderCount.current += 1;
@@ -430,7 +713,7 @@ export default function StopArrivalsSlide({
                           Searching stops...
                         </li>
                       )}
-                      {filteredStops.map((stop, index) => (
+                      {deduplicateStops(filteredStops).map((stop, index) => (
                         <li
                           key={index}
                           onClick={() => handleSelectStop(stop)}
@@ -438,6 +721,11 @@ export default function StopArrivalsSlide({
                         >
                           {stop.stop_name} -{" "}
                           {stop.services[0]?.agency_name || "No Agency"}
+                          {stop.services.length > 1 && (
+                            <span className="text-gray-400 text-xs ml-1">
+                              (+{stop.services.length - 1} more)
+                            </span>
+                          )}
                           {stop.distance !== undefined && (
                             <span className="text-gray-500 text-sm ml-2">
                               ({formatDistance(stop.distance)})
@@ -482,6 +770,107 @@ export default function StopArrivalsSlide({
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
+
+                  {/* Service & Direction Selection */}
+                  {serviceSelections.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <label className="block text-[#4a5568] font-medium text-sm mb-2">
+                        Lines & Directions
+                      </label>
+                      <div className="space-y-3">
+                        {(servicesExpanded
+                          ? serviceSelections
+                          : serviceSelections.slice(0, MAX_VISIBLE_SERVICES)
+                        ).map((selection, index) => (
+                          <div
+                            key={selection.service_guid}
+                            className="p-3 bg-white rounded-lg border"
+                          >
+                            {/* Route badges row */}
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <Checkbox
+                                checked={selection.enabled}
+                                onCheckedChange={(checked) => {
+                                  const updated = serviceSelections.map((s, i) =>
+                                    i === index ? { ...s, enabled: !!checked } : s
+                                  );
+                                  setServiceSelections(slideId, updated);
+                                }}
+                              />
+                              {selection.routes && selection.routes.length > 0 ? (
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {selection.routes.map((route: any) => (
+                                    <span
+                                      key={route.route_id}
+                                      className="px-2 py-0.5 rounded text-xs font-bold min-w-[24px] text-center"
+                                      style={{
+                                        backgroundColor: route.route_color ? `#${route.route_color}` : '#6b7280',
+                                        color: route.route_text_color ? `#${route.route_text_color}` : '#ffffff'
+                                      }}
+                                    >
+                                      {route.route_short_name || route.route_id}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-[#4a5568]">
+                                  {selection.agency_name}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Direction toggles row */}
+                            {selection.enabled && selection.directionOptions.length > 1 && (
+                              <div className="flex items-center gap-1.5 ml-6 flex-wrap">
+                                {selection.directionOptions.map((opt) => {
+                                  const isSelected = selection.selectedStopId === opt.stop_id;
+                                  return (
+                                    <button
+                                      key={opt.stop_id}
+                                      onClick={() => {
+                                        const updated = serviceSelections.map((s, i) =>
+                                          i === index ? { ...s, selectedStopId: opt.stop_id } : s
+                                        );
+                                        setServiceSelections(slideId, updated);
+                                      }}
+                                      className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                                        isSelected
+                                          ? 'bg-blue-600 text-white border-blue-600'
+                                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                      }`}
+                                    >
+                                      {opt.label === 'All Directions' ? 'All' : opt.label.replace('bound', '')}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {serviceSelections.length > MAX_VISIBLE_SERVICES && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-xs text-blue-600 hover:text-blue-700"
+                            onClick={() => setServicesExpanded(!servicesExpanded)}
+                          >
+                            {servicesExpanded ? (
+                              <>
+                                <ChevronUp className="w-3 h-3 mr-1" />
+                                Show less
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-3 h-3 mr-1" />
+                                Show {serviceSelections.length - MAX_VISIBLE_SERVICES} more
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

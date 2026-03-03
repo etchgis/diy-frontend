@@ -51,6 +51,7 @@ function formatBusData(data: any) {
       routeColor: train.color || DEFAULT_ROUTE_COLOR,
       routeTextColor: train.textColor || DEFAULT_ROUTE_TEXT_COLOR,
       arrivalTime: formatTime(Math.round(train.arrive)),
+      arrivalTimestamp: Math.round(train.arrive),  // Raw timestamp for sorting
       arrival: formatDuration(Math.round((train.arriveScheduled - currentTime) / 1000)),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),
     })),
