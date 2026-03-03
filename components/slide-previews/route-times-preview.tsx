@@ -5,7 +5,7 @@ import { formatDepartureTime } from '@/services/data-gathering/fetchRouteData';
 import { formatTime12Hour } from '@/utils/timeFormatters';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { renderRouteOnMap, calculateRouteBounds, calculateZoomFromBounds } from '@/services/map/renderRouteOnMap';
+import { renderRouteOnMap, calculateRouteBounds } from '@/services/map/renderRouteOnMap';
 import type { RouteDataItem, TripData, StopInfo, Departure, StopWithDepartures, PatternStop } from '@/types/route-times';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
@@ -89,26 +89,23 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       mapRef.current = null;
     }
 
-    // Calculate initial center from pattern data if available
-    let initialCenter: [number, number] = [-73.7562, 42.6526]; // Default to Albany
-    let initialZoom = 12;
-
-    if (patternData?.stops && patternData.stops.length > 0) {
-      const bounds = calculateRouteBounds(patternData.stops, patternData.coordinates);
-      if (bounds) {
-        const center = bounds.getCenter();
-        initialCenter = [center.lng, center.lat];
-        initialZoom = calculateZoomFromBounds(bounds);
-      }
-    }
+    // Calculate initial bounds from pattern data if available
+    const initialBounds = (patternData?.stops && patternData.stops.length > 0)
+      ? calculateRouteBounds(patternData.stops, patternData.coordinates)
+      : null;
 
     try {
-      // Create new map
+      // Create new map - use bounds if available, otherwise default center
       const map = new mapboxgl.Map({
         container: mapContainer,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: initialCenter,
-        zoom: initialZoom,
+        ...(initialBounds ? {
+          bounds: initialBounds,
+          fitBoundsOptions: { padding: 50, maxZoom: 15 }
+        } : {
+          center: [-73.7562, 42.6526] as [number, number], // Default to Albany
+          zoom: 12
+        }),
         attributionControl: false,
       });
 
@@ -138,6 +135,21 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
             markers: markersRef.current,
           });
           markersRef.current = newMarkers;
+
+          // Fit bounds after route is rendered
+          if ((patternData.stops && patternData.stops.length > 0) || (patternData.coordinates && patternData.coordinates.length > 0)) {
+            const bounds = calculateRouteBounds(patternData.stops, patternData.coordinates);
+            if (bounds) {
+              // Use requestAnimationFrame to ensure container is fully sized
+              requestAnimationFrame(() => {
+                map.resize();
+                map.fitBounds(bounds, {
+                  padding: 80,
+                  maxZoom: 15,
+                });
+              });
+            }
+          }
         }
       });
     } catch (e) {
@@ -180,19 +192,22 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       if ((patternData.stops && patternData.stops.length > 0) || (patternData.coordinates && patternData.coordinates.length > 0)) {
         const bounds = calculateRouteBounds(patternData.stops, patternData.coordinates);
         if (bounds) {
+          // Ensure map knows its container size before fitting bounds
+          mapRef.current.resize();
           mapRef.current.fitBounds(bounds, {
-            padding: 50,
+            padding: 80,
             maxZoom: 15,
           });
         }
       }
     };
 
-    // Wait for map to be loaded before updating
+    // Wait for map to be fully idle before updating
     if (mapRef.current.loaded()) {
-      updateMapData();
+      // Use requestAnimationFrame to ensure container is sized
+      requestAnimationFrame(() => updateMapData());
     } else {
-      mapRef.current.once('load', updateMapData);
+      mapRef.current.once('idle', updateMapData);
     }
   }, [patternData, selectedRoute, viewMode]);
 
@@ -450,7 +465,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     const hasNoTrips = trips.length === 0;
 
     return (
-      <div className="h-full overflow-auto p-4" style={{ backgroundColor: tableColor }}>
+      <div className="h-full overflow-hidden p-4" style={{ backgroundColor: tableColor }}>
         {(isShowingNextDay || isShowingLaterToday) && (
           <div className="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-blue-800 text-sm font-medium">
@@ -478,8 +493,8 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
             </div>
           </div>
         ) : (
-          <div className="min-w-max">
-            <table className="w-full border-collapse">
+          <div className="h-full">
+            <table className="w-full border-collapse table-fixed">
               <thead>
                 <tr>
                   {showTripColumn && (
@@ -493,8 +508,9 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
                   {displayStops.map((stop: StopInfo) => (
                     <th
                       key={stop.id}
-                      className="text-center p-3 border-b-2 font-semibold"
+                      className="text-center p-2 border-b-2 font-semibold truncate"
                       style={{ color: tableTextColor, borderColor: tableTextColor }}
+                      title={stop.name}
                     >
                       {stop.name}
                     </th>
@@ -503,15 +519,15 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
               </thead>
               <tbody>
                 {trips.slice(0, 10).map((trip: TripData, tripIndex: number) => (
-                  <tr key={trip.tripId} className={tripIndex % 2 === 0 ? 'bg-gray-50' : ''}>
+                  <tr key={trip.tripId} className={tripIndex % 2 === 0 ? 'bg-black/5' : ''}>
                     {showTripColumn && (
                       <td
-                        className="p-3 border-b font-medium"
+                        className="p-2 border-b font-medium max-w-0"
                         style={{ color: tableTextColor }}
                       >
                         <div className="flex items-center gap-2">
                           <span
-                            className="px-2 py-1 text-xs font-bold rounded"
+                            className="px-2 py-1 text-xs font-bold rounded flex-shrink-0"
                             style={{
                               backgroundColor: selectedRoute?.route_color ? `#${selectedRoute.route_color}` : '#0074D9',
                               color: selectedRoute?.route_text_color ? `#${selectedRoute.route_text_color}` : '#FFFFFF',
@@ -519,7 +535,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
                           >
                             {selectedRoute?.route_short_name || 'Route'}
                           </span>
-                          <span className="text-sm">{trip.headsign}</span>
+                          <span className="text-sm truncate" title={trip.headsign}>{trip.headsign}</span>
                         </div>
                       </td>
                     )}
@@ -528,7 +544,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
                       return (
                         <td
                           key={stop.id || `stop-${stop.name}`}
-                          className="text-center p-3 border-b"
+                          className="text-center p-2 border-b whitespace-nowrap"
                           style={{ color: tableTextColor }}
                         >
                           {departure ? formatTime12Hour(departure.departTime) : '-'}
@@ -555,7 +571,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
   return (
     <div
-      className="h-full flex flex-col relative"
+      className="h-full w-full flex flex-col relative overflow-hidden"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
         backgroundImage: bgImage ? `url(${bgImage})` : undefined,
