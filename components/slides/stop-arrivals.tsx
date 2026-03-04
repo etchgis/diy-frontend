@@ -72,10 +72,20 @@ function computeDirectionOptions(
 
   // If we have directional stops, offer direction options
   if (directionalByLabel.size > 0) {
-    // "All Directions" uses all parent stop_ids (or all stops if no parents)
-    const allDirectionsStopIds = parentStopIds.length > 0 ? parentStopIds : stopIds;
+    // Always use the actual directional stop IDs for "All Directions"
+    const allDirStopIds = Array.from(directionalByLabel.values()).flat();
+
+    // Only offer direction choice if there are 2+ distinct directions.
+    if (directionalByLabel.size < 2) {
+      return [{
+        stop_id: allDirStopIds.join(','),
+        label: 'All Directions',
+        isAllDirections: true
+      }];
+    }
+
     options.push({
-      stop_id: allDirectionsStopIds.join(','),  // Comma-separated for multiple
+      stop_id: allDirStopIds.join(','),
       label: 'All Directions',
       isAllDirections: true
     });
@@ -83,7 +93,7 @@ function computeDirectionOptions(
     // Add each unique direction with all its stop_ids combined
     for (const [label, dirStopIds] of directionalByLabel) {
       options.push({
-        stop_id: dirStopIds.join(','),  // Comma-separated for multiple
+        stop_id: dirStopIds.join(','),
         label,
         isAllDirections: false
       });
@@ -220,6 +230,7 @@ export default function StopArrivalsSlide({
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
     "idle"
   );
+  const allStopsRefreshedRef = useRef(false);
   const [isBgUploading, setIsBgUploading] = useState(false);
   const [isLogoUploading, setIsLogoUploading] = useState(false);
   const renderCount = useRef(0);
@@ -526,6 +537,43 @@ export default function StopArrivalsSlide({
     }
   }, [selectedStop, serviceSelections, slideId, setIsLoading, setScheduleData]);
 
+  // One-time refresh when allStops loads
+  useEffect(() => {
+    if (!allStops.length || allStopsRefreshedRef.current) return;
+    allStopsRefreshedRef.current = true;
+
+    const freshSlide = useFixedRouteStore.getState().slides[slideId];
+    const freshSelectedStop = freshSlide?.selectedStop;
+    const freshSelections = freshSlide?.serviceSelections;
+    if (!freshSelectedStop || !freshSelections?.length) return;
+
+    const deduped = deduplicateStops([freshSelectedStop, ...allStops.filter((s: any) => s.stop_name === freshSelectedStop.stop_name)]);
+    const dedupedStop = deduped[0] || freshSelectedStop;
+
+    let changed = false;
+    const updated = freshSelections.map((selection: ServiceSelection) => {
+      const service = dedupedStop.services?.find((s: any) => s.service_guid === selection.service_guid);
+      if (!service) return selection;
+
+      const newDirOptions = computeDirectionOptions(service, allStops);
+      const validStopIds = new Set(newDirOptions.map((o: DirectionOption) => o.stop_id));
+      const currentValid = validStopIds.has(selection.selectedStopId);
+      const newSelectedStopId = currentValid
+        ? selection.selectedStopId
+        : (newDirOptions.find((o: DirectionOption) => o.isAllDirections)?.stop_id || newDirOptions[0]?.stop_id || selection.selectedStopId);
+
+      if (newSelectedStopId !== selection.selectedStopId || JSON.stringify(newDirOptions) !== JSON.stringify(selection.directionOptions)) {
+        changed = true;
+        return { ...selection, directionOptions: newDirOptions, selectedStopId: newSelectedStopId };
+      }
+      return selection;
+    });
+
+    if (changed) {
+      setServiceSelections(slideId, updated);
+    }
+  }, [allStops, slideId, setServiceSelections]);
+
   // Migration: Initialize serviceSelections if we have selectedStop but no selections
   useEffect(() => {
     if (selectedStop && (!serviceSelections || serviceSelections.length === 0)) {
@@ -783,7 +831,7 @@ export default function StopArrivalsSlide({
                           : serviceSelections.slice(0, MAX_VISIBLE_SERVICES)
                         ).map((selection, index) => (
                           <div
-                            key={selection.service_guid}
+                            key={`${selection.service_guid}-${index}`}
                             className="p-3 bg-white rounded-lg border"
                           >
                             {/* Route badges row */}
@@ -799,9 +847,9 @@ export default function StopArrivalsSlide({
                               />
                               {selection.routes && selection.routes.length > 0 ? (
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  {selection.routes.map((route: any) => (
+                                  {selection.routes.map((route: any, rIdx: number) => (
                                     <span
-                                      key={route.route_id}
+                                      key={`${route.route_id}-${rIdx}`}
                                       className="px-2 py-0.5 rounded text-xs font-bold min-w-[24px] text-center"
                                       style={{
                                         backgroundColor: route.route_color ? `#${route.route_color}` : '#6b7280',
@@ -826,7 +874,7 @@ export default function StopArrivalsSlide({
                                   const isSelected = selection.selectedStopId === opt.stop_id;
                                   return (
                                     <button
-                                      key={opt.stop_id}
+                                      key={opt.label}
                                       onClick={() => {
                                         const updated = serviceSelections.map((s, i) =>
                                           i === index ? { ...s, selectedStopId: opt.stop_id } : s
