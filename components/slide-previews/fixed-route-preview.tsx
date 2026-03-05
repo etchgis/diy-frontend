@@ -257,8 +257,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           <div
                             className={`rounded font-bold text-center`}
                             style={{
-                              padding:
-                                "clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)",
+                              padding: "0.3em 0.6em",
                               fontSize: `${12 * contentSizeMultiplier}px`,
                               minWidth: `${40 * contentSizeMultiplier}px`,
                               color: `#${item.routeTextColor}`,
@@ -275,9 +274,8 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           </div>
                           <Button
                             variant="outline"
-                            size="sm"
                             className="bg-transparent"
-                            style={{ fontSize: `${12 * contentSizeMultiplier}px`, minWidth: `${90 * contentSizeMultiplier}px` }}
+                            style={{ fontSize: `${12 * contentSizeMultiplier}px`, minWidth: `${90 * contentSizeMultiplier}px`, padding: "0.3em 0.6em", height: 'auto' }}
                           >
                             {item.status}
                           </Button>
@@ -319,13 +317,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                         </div>
                         <div
                           className="flex items-center flex-shrink-0"
-                          style={{ gap: "clamp(0.5rem, 1vw, 1rem)" }}
+                          style={{ gap: "clamp(1rem, 2.5vh, 3rem)" }}
                         >
                           <div
                             className={`rounded font-bold text-center`}
                             style={{
-                              padding:
-                                "clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)",
+                              padding: "0.3em 0.8em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
                               minWidth: `clamp(40px, ${5 * contentSizeMultiplier}vh, 80px)`,
                               color: `#${item.routeTextColor}`,
@@ -357,9 +354,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             className="bg-transparent"
                             style={{
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              padding:
-                                "clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)",
+                              padding: "0.5em 1em",
                               minWidth: `clamp(70px, ${10 * contentSizeMultiplier}vh, 150px)`,
+                              height: 'auto',
                             }}
                           >
                             {item.status}
