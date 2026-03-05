@@ -24,7 +24,7 @@ import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
-import { fetchStopData } from "@/services/data-gathering/fetchStopData";
+import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { calculateDistance, formatDistance } from "@/utils/distance";
 
 // Stable empty array reference for Zustand selector
@@ -685,7 +685,8 @@ export default function StopArrivalsSlide({
         return selection.enabledRouteIds.includes(arr.routeId);
       });
 
-      setScheduleData(slideId, filteredArrivals);
+      // Limit arrivals (already sorted by timestamp)
+      setScheduleData(slideId, filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE));
       useFixedRouteStore.getState().setDataError(slideId, false);
     } catch (error) {
       console.error("Error fetching stop data:", error);

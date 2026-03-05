@@ -1,5 +1,8 @@
 import { formatTime, formatDuration } from '@/utils/formats';
 
+// Maximum number of arrivals to display per slide
+export const MAX_ARRIVALS_PER_SLIDE = 6;
+
 const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
 if (!SKIDS_URL) {
   throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
@@ -40,7 +43,7 @@ function formatBusData(data: any) {
     const headsign = (train.headsign || '').toLowerCase().trim();
     if (headsign && (headsign === stationName || stationName.includes(headsign) || headsign.includes(stationName))) return false;
     return true;
-  }).slice(0, 6);
+  }).slice(0, MAX_ARRIVALS_PER_SLIDE);
 
   return {
     station: data.name,
