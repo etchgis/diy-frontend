@@ -59,20 +59,37 @@ function formatBusData(data: any) {
   };
 }
 
+async function fetchStopById(stopId: string, serviceId: string, organizationId: string) {
+  const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=20&nysdot=true`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Organization-Id': organizationId,
+    'X-Skids-Route-Key': serviceId,
+  };
+  return fetch(endpoint, { method: 'GET', headers });
+}
+
 export async function fetchStopData(stopId: string, serviceId: string, organizationId: string, slideId: string, setDataError: (slideId: string, error: boolean) => void) {
   try {
-    const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=20&nysdot=true`;
-    const headers = {
-      'Content-Type': 'application/json',
-      'X-Organization-Id': organizationId,
-      'X-Skids-Route-Key': serviceId,
-    };
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: headers,
-    });
+    let response = await fetchStopById(stopId, serviceId, organizationId);
+
+    // If the stop ID has no directional suffix and the API rejects it,
+    // automatically retry with N and S variants
+    if (response.status === 400 && !/[NSEW]$/.test(stopId)) {
+      const fallbacks = [`${stopId}N`, `${stopId}S`];
+      for (const fallbackId of fallbacks) {
+        const fallbackResponse = await fetchStopById(fallbackId, serviceId, organizationId);
+        if (fallbackResponse.ok) {
+          response = fallbackResponse;
+          break;
+        }
+      }
+    }
 
     if (!response.ok) {
+      if (response.status >= 400 && response.status < 500) {
+        return undefined;
+      }
       setDataError(slideId, true);
       throw new Error(`Failed to fetch stop data: ${response.statusText}`);
     } else {
@@ -80,7 +97,10 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     }
 
     const result = await response.json();
+
+    console.log(result);
     const formattedData = formatBusData(result);
+    console.log(formattedData);
 
     return formattedData;
   } catch (error) {
