@@ -265,7 +265,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {item.routeId}
+                            {item.routeShortName || item.routeId}
                           </div>
                           <div className="font-medium text-center" style={{ fontSize: `${14 * contentSizeMultiplier}px`, minWidth: `${80 * contentSizeMultiplier}px` }}>
                             {item.time}
@@ -332,7 +332,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {item.routeId}
+                            {item.routeShortName || item.routeId}
                           </div>
                           <div
                             className="font-medium text-center"
