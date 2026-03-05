@@ -266,10 +266,10 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           >
                             {item.routeShortName || item.routeId}
                           </div>
-                          <div className="font-medium text-right" style={{ fontSize: `${14 * contentSizeMultiplier}px`, minWidth: `${80 * contentSizeMultiplier}px` }}>
+                          <div className="font-medium" style={{ fontSize: `${14 * contentSizeMultiplier}px`, minWidth: `${60 * contentSizeMultiplier}px` }}>
                             {item.time}
                           </div>
-                          <div className="text-right" style={{ fontSize: `${14 * contentSizeMultiplier}px`, minWidth: `${100 * contentSizeMultiplier}px` }}>
+                          <div className="" style={{ fontSize: `${14 * contentSizeMultiplier}px`, minWidth: `${40 * contentSizeMultiplier}px` }}>
                             {item.duration}
                           </div>
                           <Button
@@ -324,27 +324,28 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             style={{
                               padding: "0.3em 0.8em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              minWidth: `clamp(40px, ${5 * contentSizeMultiplier}vh, 80px)`,
+                              minWidth: `clamp(40px, ${6 * contentSizeMultiplier}vh, 80px)`,
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
+                              marginRight: 10
                             }}
                           >
                             {item.routeShortName || item.routeId}
                           </div>
                           <div
-                            className="font-medium text-right"
+                            className="font-medium"
                             style={{
                               fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              minWidth: `clamp(70px, ${9 * contentSizeMultiplier}vh, 140px)`,
+                              minWidth: `clamp(70px, ${12 * contentSizeMultiplier}vh, 140px)`,
                             }}
                           >
                             {item.time}
                           </div>
                           <div
-                            className="text-right"
+                            className=""
                             style={{
                               fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              minWidth: `clamp(90px, ${12 * contentSizeMultiplier}vh, 180px)`,
+                              minWidth: `clamp(90px, ${6 * contentSizeMultiplier}vh, 180px)`,
                             }}
                           >
                             {item.duration}
