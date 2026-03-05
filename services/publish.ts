@@ -118,6 +118,7 @@ export async function publish() {
           bgImage,
           logoImage,
           selectedStop,
+          serviceSelections,
           titleTextSize,
           contentTextSize
         } = slideData;
@@ -132,6 +133,7 @@ export async function publish() {
         screenObj.data.bgImage = bgImage;
         screenObj.data.logoImage = logoImage;
         screenObj.data.selectedStop = selectedStop;
+        screenObj.data.serviceSelections = serviceSelections;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
       } else {

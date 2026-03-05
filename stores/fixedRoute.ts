@@ -26,6 +26,7 @@ export interface ServiceSelection {
   enabled: boolean;
   selectedStopId: string;           // The stop_id to query for this service
   directionOptions: DirectionOption[];  // Available direction choices for this service
+  enabledRouteIds?: string[];       // Which routes are enabled (undefined = all enabled)
 }
 
 interface FixedRouteSlideData {
