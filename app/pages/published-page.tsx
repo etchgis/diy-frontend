@@ -12,7 +12,7 @@ import WeatherPreview from '@/components/slide-previews/weather-preview';
 import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
 import CitibikePreview from '@/components/slide-previews/citibike-preview';
 import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
-import { fetchStopData } from '@/services/data-gathering/fetchStopData';
+import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from '@/services/data-gathering/fetchStopData';
 import TrafficCorridorPreview from '@/components/slide-previews/traffic-corridor-preview';
 import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
 import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
@@ -254,8 +254,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           });
         }
 
+        // Limit arrivals (already sorted by timestamp)
+        const limitedArrivals = filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE);
+
         // Remove internal fields before storing
-        const arr = filteredArrivals.map(({ _sourceService, timestamp, ...rest }) => rest);
+        const arr = limitedArrivals.map(({ _sourceService, timestamp, ...rest }) => rest);
 
         setScheduleData(slide.id, arr);
         setFixedRouteDataError(slide.id, false);
