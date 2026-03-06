@@ -38,7 +38,7 @@ function formatBusData(data: any) {
     if (durationSeconds < 0) return false;
     // Filter out trains terminating at this station (headsign matches station name)
     const headsign = (train.headsign || '').toLowerCase().trim();
-    if (headsign && (headsign === stationName || stationName.includes(headsign) || headsign.includes(stationName))) return false;
+    if (headsign && headsign === stationName) return false;
     return true;
   }).slice(0, 6);
 
