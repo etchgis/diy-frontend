@@ -259,7 +259,8 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             style={{
                               padding: "0.3em 0.6em",
                               fontSize: `${12 * contentSizeMultiplier}px`,
-                              width: `${40 * contentSizeMultiplier}px`,
+                              minWidth: `${40 * contentSizeMultiplier}px`,
+                              whiteSpace: 'nowrap',
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
                             }}
@@ -324,7 +325,8 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             style={{
                               padding: "0.3em 0.8em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              width: `clamp(50px, ${7 * contentSizeMultiplier}vh, 100px)`,
+                              minWidth: `clamp(50px, ${7 * contentSizeMultiplier}vh, 100px)`,
+                              whiteSpace: 'nowrap',
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
                               marginRight: 10
