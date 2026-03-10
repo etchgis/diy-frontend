@@ -2,6 +2,33 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { StateStorage, PersistOptions } from 'zustand/middleware';
 
+// Route info from gtfs-stops API
+export interface RouteInfo {
+  route_id: string;
+  route_short_name: string;
+  route_long_name?: string;
+  route_color?: string;
+  route_text_color?: string;
+}
+
+// Direction option for a stop (e.g., "Northbound", "All Directions")
+export interface DirectionOption {
+  stop_id: string;       // The actual stop_id to query (e.g., "901N", "901S", "901")
+  label: string;         // Display label (e.g., "Northbound", "Platform 1", "All Directions")
+  isAllDirections: boolean;
+}
+
+// Service selection state for multi-select UI
+export interface ServiceSelection {
+  service_guid: string;
+  agency_name: string;
+  routes?: RouteInfo[];
+  enabled: boolean;
+  selectedStopId: string;           // The stop_id to query for this service
+  directionOptions: DirectionOption[];  // Available direction choices for this service
+  enabledRouteIds?: string[];       // Which routes are enabled (undefined = all enabled)
+}
+
 interface FixedRouteSlideData {
   stopName: string;
   showTitle?: boolean;
@@ -13,6 +40,7 @@ interface FixedRouteSlideData {
   bgImage: string;
   logoImage: string;
   selectedStop: any;
+  serviceSelections?: ServiceSelection[];
   dataError: boolean;
   scheduleData?: any;
   isLoading: boolean;
@@ -32,6 +60,7 @@ interface SlideStore {
   setBgImage: (slideId: string, bgImage: string) => void;
   setLogoImage: (slideId: string, bgImage: string) => void;
   setSelectedStop: (slideId: string, stop: any) => void;
+  setServiceSelections: (slideId: string, selections: ServiceSelection[]) => void;
   setScheduleData: (slideId: string, scheduleData: any) => void;
   setIsLoading: (slideId: string, isLoading: boolean) => void;
   setDataError: (slideId: string, error: boolean) => void;
@@ -133,6 +162,14 @@ export const useFixedRouteStore = create<SlideStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), selectedStop: stop },
+          },
+        })),
+
+      setServiceSelections: (slideId, selections) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), serviceSelections: selections },
           },
         })),
 

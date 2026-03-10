@@ -1,5 +1,8 @@
 import { formatTime, formatDuration } from '@/utils/formats';
 
+// Maximum number of arrivals to display per slide
+export const MAX_ARRIVALS_PER_SLIDE = 6;
+
 const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
 if (!SKIDS_URL) {
   throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
@@ -38,39 +41,58 @@ function formatBusData(data: any) {
     if (durationSeconds < 0) return false;
     // Filter out trains terminating at this station (headsign matches station name)
     const headsign = (train.headsign || '').toLowerCase().trim();
-    if (headsign && (headsign === stationName || stationName.includes(headsign) || headsign.includes(stationName))) return false;
+    if (headsign && headsign === stationName) return false;
     return true;
-  }).slice(0, 6);
+  }).slice(0, MAX_ARRIVALS_PER_SLIDE);
 
   return {
     station: data.name,
     trains: futureArrivals.map((train: any) => ({
       destination: train.headsign,
-      routeId: train.shortName || train.routeId || '',
+      routeId: train.routeId || '',              // Actual GTFS route_id for filtering
+      routeShortName: train.shortName || train.routeId || '',  // Display name for UI
       routeType: train.routeType,
       routeColor: train.color || DEFAULT_ROUTE_COLOR,
       routeTextColor: train.textColor || DEFAULT_ROUTE_TEXT_COLOR,
       arrivalTime: formatTime(Math.round(train.arrive)),
+      arrivalTimestamp: Math.round(train.arrive),  // Raw timestamp for sorting
       arrival: formatDuration(Math.round((train.arriveScheduled - currentTime) / 1000)),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),
     })),
   };
 }
 
+async function fetchStopById(stopId: string, serviceId: string, organizationId: string) {
+  const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=20&nysdot=true`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Organization-Id': organizationId,
+    'X-Skids-Route-Key': serviceId,
+  };
+  return fetch(endpoint, { method: 'GET', headers });
+}
+
 export async function fetchStopData(stopId: string, serviceId: string, organizationId: string, slideId: string, setDataError: (slideId: string, error: boolean) => void) {
   try {
-    const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=20&nysdot=true`;
-    const headers = {
-      'Content-Type': 'application/json',
-      'X-Organization-Id': organizationId,
-      'X-Skids-Route-Key': serviceId,
-    };
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: headers,
-    });
+    let response = await fetchStopById(stopId, serviceId, organizationId);
+
+    // If the stop ID has no directional suffix and the API rejects it,
+    // automatically retry with N and S variants
+    if (response.status === 400 && !/[NSEW]$/.test(stopId)) {
+      const fallbacks = [`${stopId}N`, `${stopId}S`];
+      for (const fallbackId of fallbacks) {
+        const fallbackResponse = await fetchStopById(fallbackId, serviceId, organizationId);
+        if (fallbackResponse.ok) {
+          response = fallbackResponse;
+          break;
+        }
+      }
+    }
 
     if (!response.ok) {
+      if (response.status >= 400 && response.status < 500) {
+        return undefined;
+      }
       setDataError(slideId, true);
       throw new Error(`Failed to fetch stop data: ${response.statusText}`);
     } else {
