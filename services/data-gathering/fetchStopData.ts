@@ -69,44 +69,38 @@ async function fetchStopById(stopId: string, serviceId: string, organizationId: 
     'X-Organization-Id': organizationId,
     'X-Skids-Route-Key': serviceId,
   };
+  console.log(endpoint, headers);
   return fetch(endpoint, { method: 'GET', headers });
 }
 
-export async function fetchStopData(stopId: string, serviceId: string, organizationId: string, slideId: string, setDataError: (slideId: string, error: boolean) => void) {
-  try {
-    let response = await fetchStopById(stopId, serviceId, organizationId);
+export async function fetchStopData(stopId: string, serviceId: string, organizationId: string) {
+  let response = await fetchStopById(stopId, serviceId, organizationId);
 
-    // If the stop ID has no directional suffix and the API rejects it,
-    // automatically retry with N and S variants
-    if (response.status === 400 && !/[NSEW]$/.test(stopId)) {
-      const fallbacks = [`${stopId}N`, `${stopId}S`];
-      for (const fallbackId of fallbacks) {
-        const fallbackResponse = await fetchStopById(fallbackId, serviceId, organizationId);
-        if (fallbackResponse.ok) {
-          response = fallbackResponse;
-          break;
-        }
+  // If the stop ID has no directional suffix and the API rejects it,
+  // automatically retry with N and S variants
+  if (response.status === 400 && !/[NSEW]$/.test(stopId)) {
+    const fallbacks = [`${stopId}N`, `${stopId}S`];
+    for (const fallbackId of fallbacks) {
+      const fallbackResponse = await fetchStopById(fallbackId, serviceId, organizationId);
+      if (fallbackResponse.ok) {
+        response = fallbackResponse;
+        break;
       }
     }
-
-    if (!response.ok) {
-      if (response.status >= 400 && response.status < 500) {
-        return undefined;
-      }
-      setDataError(slideId, true);
-      throw new Error(`Failed to fetch stop data: ${response.statusText}`);
-    } else {
-      setDataError(slideId, false);
-    }
-
-    const result = await response.json();
-
-    console.log(result);
-    const formattedData = formatBusData(result);
-    console.log(formattedData);
-
-    return formattedData;
-  } catch (error) {
-    console.error('Error fetching stop data:', error);
   }
+
+  if (!response.ok) {
+    if (response.status >= 400 && response.status < 500) {
+      return undefined;
+    }
+    throw new Error(`Failed to fetch stop data: ${response.status} ${response.statusText}`);
+  }
+
+  const result = await response.json();
+
+  console.log(result);
+  const formattedData = formatBusData(result);
+  console.log(formattedData);
+
+  return formattedData;
 }

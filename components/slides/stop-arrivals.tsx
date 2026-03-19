@@ -633,10 +633,7 @@ export default function StopArrivalsSlide({
           const data = await fetchStopData(
             q.stop_id,
             q.service_guid,
-            q.organization_guid,
-            slideId,
-            (sid: string, error: boolean) =>
-              useFixedRouteStore.getState().setDataError(sid, error)
+            q.organization_guid
           );
           // Tag each arrival with its source service
           return (data?.trains || []).map((item: any) => ({
@@ -657,12 +654,20 @@ export default function StopArrivalsSlide({
 
       // Collect successful results, log failures
       const allArrivals: any[] = [];
+      let serverErrorCount = 0;
       for (const result of results) {
         if (result.status === 'fulfilled') {
           allArrivals.push(...result.value);
         } else {
+          serverErrorCount++;
           console.warn('[StopArrivals] Failed to fetch arrivals:', result.reason);
         }
+      }
+
+      // Show error only if every query hit a server error (5xx/timeout)
+      if (serverErrorCount > 0 && serverErrorCount === results.length) {
+        useFixedRouteStore.getState().setDataError(slideId, true);
+        return;
       }
 
       // Sort by arrival timestamp
@@ -680,10 +685,14 @@ export default function StopArrivalsSlide({
       // Filter by enabled routes
       const filteredArrivals = uniqueArrivals.filter(arr => {
         const selection = serviceSelections.find(s => s.service_guid === arr._sourceService);
-        // If no selection found or no enabledRouteIds, include the arrival
-        if (!selection || !selection.enabledRouteIds) return true;
+        // If no selection found, no enabledRouteIds, or empty array, include the arrival
+        if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
         return selection.enabledRouteIds.includes(arr.routeId);
       });
+
+      console.log('[StopArrivals] allArrivals:', allArrivals.length, 'unique:', uniqueArrivals.length, 'filtered:', filteredArrivals.length);
+      console.log('[StopArrivals] enabledRouteIds per selection:', serviceSelections.map(s => ({ guid: s.service_guid.slice(-6), ids: s.enabledRouteIds })));
+      console.log('[StopArrivals] sample routeIds in arrivals:', [...new Set(allArrivals.map(a => a.routeId))]);
 
       // Limit arrivals (already sorted by timestamp)
       setScheduleData(slideId, filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE));
