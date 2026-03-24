@@ -127,28 +127,32 @@ export const useGeneralStore = create<Store>()(
         defaultContentTextSize: size,
       })),
       setThemePrimaryBackground: (color) => {
+        const oldColor = get().theme.primaryBackground;
         set((state) => ({
           theme: { ...state.theme, primaryBackground: color },
         }));
-        applyThemeColorToAllSlides('primaryBackground', color);
+        applyThemeColorToAllSlides('primaryBackground', color, oldColor);
       },
       setThemeSecondaryAccent: (color) => {
+        const oldColor = get().theme.secondaryAccent;
         set((state) => ({
           theme: { ...state.theme, secondaryAccent: color },
         }));
-        applyThemeColorToAllSlides('secondaryAccent', color);
+        applyThemeColorToAllSlides('secondaryAccent', color, oldColor);
       },
       setThemeTitleText: (color) => {
+        const oldColor = get().theme.titleText;
         set((state) => ({
           theme: { ...state.theme, titleText: color },
         }));
-        applyThemeColorToAllSlides('titleText', color);
+        applyThemeColorToAllSlides('titleText', color, oldColor);
       },
       setThemeBodyText: (color) => {
+        const oldColor = get().theme.bodyText;
         set((state) => ({
           theme: { ...state.theme, bodyText: color },
         }));
-        applyThemeColorToAllSlides('bodyText', color);
+        applyThemeColorToAllSlides('bodyText', color, oldColor);
       },
     }),
     {
