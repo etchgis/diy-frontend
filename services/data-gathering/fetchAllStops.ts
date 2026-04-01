@@ -73,7 +73,13 @@ export async function fetchAllStops(options: FetchStopsOptions | {lat: number, l
     }
 
     const data = await response.json();
-    return expandStops(data);
+    // Normalize to array
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.stops)) return data.stops;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.results)) return data.results;
+    console.warn('fetchAllStops: unexpected response shape', data);
+    return [];
   } catch (error: any) {
     console.error('Error fetching stops:', error.message || error);
     throw error;
