@@ -25,6 +25,9 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [loadingScreens, setLoadingScreens] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [confirmReset, setConfirmReset] = useState<string | null>(null); // shortcode pending confirm
+  const [resetLoading, setResetLoading] = useState<string | null>(null); // shortcode currently resetting
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null); // shortcode that was just reset
 
   const fetchScreens = async (authPassword: string) => {
     setLoadingScreens(true);
@@ -49,6 +52,28 @@ export default function AdminPage() {
       setError('Failed to load screens');
     } finally {
       setLoadingScreens(false);
+    }
+  };
+
+  const handleResetPassword = async (shortcode: string) => {
+    setResetLoading(shortcode);
+    setResetSuccess(null);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/admin/reset-password/${shortcode}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+        },
+      });
+      if (!response.ok) throw new Error('Reset failed');
+      setResetSuccess(shortcode);
+      setTimeout(() => setResetSuccess(null), 4000);
+    } catch (err) {
+      console.error('Error resetting password:', err);
+    } finally {
+      setResetLoading(null);
+      setConfirmReset(null);
     }
   };
 
@@ -210,13 +235,43 @@ export default function AdminPage() {
                               </p>
                             )}
                           </div>
-                          <div className="ml-4">
+                          <div className="ml-4 flex flex-col items-end gap-2">
                             <Button
                               onClick={() => window.open(screen.url, '_blank')}
                               className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white px-4 py-2"
                             >
                               View Screen
                             </Button>
+
+                            {confirmReset === screen.shortcode ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-[#9ca3af]">Reset publish password?</span>
+                                <Button
+                                  onClick={() => handleResetPassword(screen.shortcode)}
+                                  disabled={resetLoading === screen.shortcode}
+                                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs h-auto"
+                                >
+                                  {resetLoading === screen.shortcode ? 'Resetting...' : 'Confirm'}
+                                </Button>
+                                <Button
+                                  onClick={() => setConfirmReset(null)}
+                                  variant="outline"
+                                  className="px-3 py-1 text-xs h-auto"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : resetSuccess === screen.shortcode ? (
+                              <span className="text-xs text-green-600 font-medium">Password reset — user will be prompted to set a new one on next publish.</span>
+                            ) : (
+                              <Button
+                                onClick={() => setConfirmReset(screen.shortcode)}
+                                variant="outline"
+                                className="border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 text-sm"
+                              >
+                                Reset Password
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>
