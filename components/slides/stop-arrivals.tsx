@@ -41,6 +41,22 @@ function getUniqueRoutes(services: any[]): any[] {
   );
 }
 
+// Helper to extract unique headsigns from all services at a complex stop
+function getUniqueHeadsigns(services: any[]): string[] {
+  const headsignSet = new Set<string>();
+  for (const svc of services || []) {
+    const headsignsByRoute = svc.headsigns_by_route as Record<string, string[]> | undefined;
+    if (headsignsByRoute) {
+      for (const headsigns of Object.values(headsignsByRoute)) {
+        for (const headsign of headsigns) {
+          headsignSet.add(headsign);
+        }
+      }
+    }
+  }
+  return Array.from(headsignSet).sort();
+}
+
 // Compute direction options for a specific service using its _stopIds
 // enabledRouteIds filters which routes' headsigns to include (undefined = all routes)
 function computeDirectionOptions(
@@ -1332,6 +1348,11 @@ export default function StopArrivalsSlide({
                               </span>
                             )}
                           </div>
+                          {getUniqueHeadsigns(stop.services).length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1 truncate">
+                              {getUniqueHeadsigns(stop.services).join(' · ')}
+                            </p>
+                          )}
                         </div>
                         <Button
                           variant="outline"
