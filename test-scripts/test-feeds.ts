@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env npx tsx
 
 /**
  * DIY Mobility Builder - Data Feed Endpoint Test Script
@@ -6,12 +6,13 @@
  * Tests all external data feed endpoints used by the application.
  * Outputs logs to console and writes a CSV results file.
  *
- * Usage: node test-feeds.mjs
+ * Usage: npx tsx test-scripts/test-feeds.ts
  */
 
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { expandStops } from "../utils/expandStops";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -119,34 +120,6 @@ async function testSkidsGbfsNearby() {
 
 // ── 4. NYSDOT Nearby Stops ─────────────────────────────────────────────
 let discoveredStops = [];
-
-function expandStops(data) {
-  const { stops, _services, _routes } = data;
-
-  function expandServiceRef(svcRef) {
-    const service = _services[svcRef.ref];
-    if (!service) return null;
-
-    const routes = service.routes.map((routeKey) => _routes[routeKey]).filter(Boolean);
-
-    return {
-      service_guid: service.service_guid,
-      organization_guid: service.organization_guid,
-      agency_name: service.agency_name,
-      routes,
-      headsigns_by_route: svcRef.headsigns_by_route,
-    };
-  }
-
-  return stops.map(stop => ({
-    ...stop,
-    services: stop.services.map(expandServiceRef).filter(Boolean),
-    complex_stops: stop.complex_stops?.map((cs) => ({
-      ...cs,
-      services: cs.services.map(expandServiceRef).filter(Boolean),
-    })),
-  }));
-}
 
 async function testNearbyStops() {
   const url = `${NYSDOT_STOPS_URL}/nearby-stops?lat=${ORIGIN.lat}&lon=${ORIGIN.lng}&radius=${NEARBY_RADIUS}`;
