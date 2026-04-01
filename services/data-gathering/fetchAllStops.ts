@@ -1,3 +1,5 @@
+import { expandStops } from '@/utils/expandStops';
+
 const NYSDOT_STOPS_URL = process.env.NEXT_PUBLIC_NYSDOT_STOPS_URL;
 if (!NYSDOT_STOPS_URL) {
   throw new Error('NEXT_PUBLIC_NYSDOT_STOPS_URL environment variable is not configured');
@@ -7,43 +9,6 @@ interface FetchStopsOptions {
   coordinates: {lat: number, lng: number};
   radius?: number; // in meters, default 1000
   search?: string; // search term for filtering
-}
-
-function expandStops(data: { stops: any[]; _services: Record<string, any>; _routes: Record<string, any> }): any[] {
-  const { stops, _services, _routes } = data;
-
-  function expandServiceRef(svcRef: { ref: string; headsigns_by_route?: Record<string, string[]> }) {
-    const service = _services[svcRef.ref];
-    if (!service) {
-      console.warn(`[fetchAllStops] Missing service ref: ${svcRef.ref}`);
-      return null;
-    }
-
-    const routes = service.routes.map((routeKey: string) => {
-      const route = _routes[routeKey];
-      if (!route) {
-        console.warn(`[fetchAllStops] Missing route ref: ${routeKey}`);
-      }
-      return route;
-    }).filter(Boolean);
-
-    return {
-      service_guid: service.service_guid,
-      organization_guid: service.organization_guid,
-      agency_name: service.agency_name,
-      routes,
-      headsigns_by_route: svcRef.headsigns_by_route,
-    };
-  }
-
-  return stops.map(stop => ({
-    ...stop,
-    services: stop.services.map(expandServiceRef).filter(Boolean),
-    complex_stops: stop.complex_stops?.map((cs: any) => ({
-      ...cs,
-      services: cs.services.map(expandServiceRef).filter(Boolean),
-    })),
-  }));
 }
 
 export async function fetchAllStops(options: FetchStopsOptions | {lat: number, lng: number}): Promise<any> {
