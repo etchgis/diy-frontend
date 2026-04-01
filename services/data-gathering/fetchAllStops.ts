@@ -9,6 +9,43 @@ interface FetchStopsOptions {
   search?: string; // search term for filtering
 }
 
+function expandStops(data: { stops: any[]; _services: Record<string, any>; _routes: Record<string, any> }): any[] {
+  const { stops, _services, _routes } = data;
+
+  function expandServiceRef(svcRef: { ref: string; headsigns_by_route?: Record<string, string[]> }) {
+    const service = _services[svcRef.ref];
+    if (!service) {
+      console.warn(`[fetchAllStops] Missing service ref: ${svcRef.ref}`);
+      return null;
+    }
+
+    const routes = service.routes.map((routeKey: string) => {
+      const route = _routes[routeKey];
+      if (!route) {
+        console.warn(`[fetchAllStops] Missing route ref: ${routeKey}`);
+      }
+      return route;
+    }).filter(Boolean);
+
+    return {
+      service_guid: service.service_guid,
+      organization_guid: service.organization_guid,
+      agency_name: service.agency_name,
+      routes,
+      headsigns_by_route: svcRef.headsigns_by_route,
+    };
+  }
+
+  return stops.map(stop => ({
+    ...stop,
+    services: stop.services.map(expandServiceRef).filter(Boolean),
+    complex_stops: stop.complex_stops?.map((cs: any) => ({
+      ...cs,
+      services: cs.services.map(expandServiceRef).filter(Boolean),
+    })),
+  }));
+}
+
 export async function fetchAllStops(options: FetchStopsOptions | {lat: number, lng: number}): Promise<any> {
   try {
     // Handle both old signature (coordinates only) and new signature (options object)
@@ -36,7 +73,7 @@ export async function fetchAllStops(options: FetchStopsOptions | {lat: number, l
     }
 
     const data = await response.json();
-    return data;
+    return expandStops(data);
   } catch (error: any) {
     console.error('Error fetching stops:', error.message || error);
     throw error;

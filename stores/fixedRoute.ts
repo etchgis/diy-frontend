@@ -16,6 +16,7 @@ export interface DirectionOption {
   stop_id: string;       // The actual stop_id to query (e.g., "901N", "901S", "901")
   label: string;         // Display label (e.g., "Northbound", "Platform 1", "All Directions")
   isAllDirections: boolean;
+  headsignFilter?: string;  // If set, filter arrivals to only show this headsign (e.g., "Jamaica", "Hempstead")
 }
 
 // Service selection state for multi-select UI
@@ -25,6 +26,7 @@ export interface ServiceSelection {
   routes?: RouteInfo[];
   enabled: boolean;
   selectedStopId: string;           // The stop_id to query for this service
+  selectedHeadsignFilters?: string[];  // Filter arrivals by headsigns (multi-select, exact match)
   directionOptions: DirectionOption[];  // Available direction choices for this service
   enabledRouteIds?: string[];       // Which routes are enabled (undefined = all enabled)
 }

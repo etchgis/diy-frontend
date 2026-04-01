@@ -42,9 +42,11 @@ function getUniqueRoutes(services: any[]): any[] {
 }
 
 // Compute direction options for a specific service using its _stopIds
+// enabledRouteIds filters which routes' headsigns to include (undefined = all routes)
 function computeDirectionOptions(
   service: any,
-  _allStopsArray: any[]
+  _allStopsArray: any[],
+  enabledRouteIds?: string[]
 ): DirectionOption[] {
   const stopIds: string[] = service._stopIds || [];
 
@@ -167,6 +169,52 @@ function computeDirectionOptions(
     }
   }
 
+  // Try headsign-based direction options (e.g., "Jamaica", "Hempstead" for buses)
+  // This works when a single stop serves multiple destinations
+  const stopIdDataWithHeadsigns = service._stopIdData as Record<string, { routes: any[], headsigns_by_route?: Record<string, string[]>, location_type: number }> | undefined;
+  if (stopIdDataWithHeadsigns && stopIds.length > 0) {
+    // Collect unique headsigns from enabled routes only
+    // Use Map to deduplicate by lowercase key while preserving original for display
+    const headsignMap = new Map<string, string>(); // lowercase -> original
+    for (const stopId of stopIds) {
+      const data = stopIdDataWithHeadsigns[stopId];
+      if (data?.headsigns_by_route) {
+        for (const [routeId, headsigns] of Object.entries(data.headsigns_by_route)) {
+          // Only include headsigns from enabled routes (or all if no filter)
+          if (!enabledRouteIds || enabledRouteIds.includes(routeId)) {
+            for (const headsign of headsigns) {
+              const key = headsign.toLowerCase().trim();
+              if (!headsignMap.has(key)) {
+                headsignMap.set(key, headsign);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // If we have multiple headsigns, offer them as direction options
+    if (headsignMap.size > 1) {
+      options.push({
+        stop_id: stopIds.join(','),
+        label: 'All Directions',
+        isAllDirections: true
+      });
+
+      // Add each headsign as a direction option (sorted by original label)
+      const sortedHeadsigns = Array.from(headsignMap.values()).sort();
+      for (const headsign of sortedHeadsigns) {
+        options.push({
+          stop_id: stopIds.join(','),
+          label: headsign,
+          isAllDirections: false,
+          headsignFilter: headsign.toLowerCase().trim()  // Normalized for filtering
+        });
+      }
+      return options;
+    }
+  }
+
   // Fallback: no directional options available, just use all stop_ids
   options.push({
     stop_id: stopIds.join(','),
@@ -201,6 +249,7 @@ function deduplicateStops(stops: any[]): any[] {
             _stopIdData: {  // Track per-stop_id metadata for direction options
               [stop.stop_id]: {
                 routes: service.routes ? [...service.routes] : [],
+                headsigns_by_route: service.headsigns_by_route ? { ...service.headsigns_by_route } : undefined,
                 location_type: stop.location_type
               }
             }
@@ -229,6 +278,7 @@ function deduplicateStops(stops: any[]): any[] {
           }
           existingService._stopIdData[stop.stop_id] = {
             routes: service.routes ? [...service.routes] : [],
+            headsigns_by_route: service.headsigns_by_route ? { ...service.headsigns_by_route } : undefined,
             location_type: stop.location_type
           };
         }
@@ -255,6 +305,7 @@ function deduplicateStops(stops: any[]): any[] {
         _stopIdData: {
           [stop.stop_id]: {
             routes: s.routes ? [...s.routes] : [],
+            headsigns_by_route: s.headsigns_by_route ? { ...s.headsigns_by_route } : undefined,
             location_type: stop.location_type
           }
         }
@@ -561,30 +612,90 @@ export default function StopArrivalsSlide({
   };
 
   // Add services from a complex stop to the current selections
+  // Merges headsigns from the complex stop into existing services with matching service_guid
   const handleAddComplexStop = (complexStop: any) => {
-    const newSelections: ServiceSelection[] = (complexStop.services || []).map((service: any) => {
-      const directionOptions = computeDirectionOptions(service, allStops);
-      const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stop_id
-        || directionOptions[0]?.stop_id
-        || complexStop.stop_id;
+    const updatedSelections = [...serviceSelections];
+    let anyMerged = false;
 
-      return {
-        service_guid: service.service_guid,
-        agency_name: service.agency_name,
-        routes: service.routes,
-        enabled: true,
-        selectedStopId: defaultStopId,
-        directionOptions,
-        enabledRouteIds: service.routes?.map((r: any) => r.route_id) || []
-      };
-    });
+    for (const complexService of complexStop.services || []) {
+      const serviceGuid = complexService.service_guid;
+      if (!serviceGuid) {
+        console.warn('Skipping complex service without service_guid');
+        continue;
+      }
 
-    // Merge with existing selections, avoiding duplicates
-    const existingGuids = new Set(serviceSelections.map(s => s.service_guid));
-    const uniqueNewSelections = newSelections.filter(s => !existingGuids.has(s.service_guid));
+      // Find existing selection with matching service_guid
+      const existingIndex = updatedSelections.findIndex(
+        s => s.service_guid === serviceGuid
+      );
 
-    if (uniqueNewSelections.length > 0) {
-      setServiceSelections(slideId, [...serviceSelections, ...uniqueNewSelections]);
+      if (existingIndex !== -1) {
+        // Merge: add complex stop's headsigns to this service's _stopIdData
+        const existing = updatedSelections[existingIndex];
+
+        // Find the original service in selectedStop to get its _stopIdData
+        const originalService = selectedStop?.services?.find(
+          (s: any) => s.service_guid === serviceGuid
+        );
+
+        // Build enriched service with merged headsigns
+        const baseStopId = selectedStop?.stop_id || 'unknown';
+        const enrichedService = {
+          ...originalService,
+          _stopIds: originalService?._stopIds ? [...originalService._stopIds] : [baseStopId],
+          _stopIdData: originalService?._stopIdData ? { ...originalService._stopIdData } : {
+            [baseStopId]: {
+              routes: originalService?.routes || [],
+              headsigns_by_route: originalService?.headsigns_by_route,
+              location_type: selectedStop?.location_type
+            }
+          }
+        };
+
+        // Add the complex stop's headsigns
+        if (!enrichedService._stopIds.includes(complexStop.stop_id)) {
+          enrichedService._stopIds.push(complexStop.stop_id);
+        }
+        enrichedService._stopIdData[complexStop.stop_id] = {
+          routes: complexService.routes || originalService?.routes || [],
+          headsigns_by_route: complexService.headsigns_by_route,
+          location_type: complexStop.location_type || 0
+        };
+
+        // Recompute direction options with merged data
+        const newDirOptions = computeDirectionOptions(enrichedService, allStops, existing.enabledRouteIds);
+        const defaultStopId = newDirOptions.find(o => o.isAllDirections)?.stop_id
+          || newDirOptions[0]?.stop_id
+          || existing.selectedStopId;
+
+        updatedSelections[existingIndex] = {
+          ...existing,
+          directionOptions: newDirOptions,
+          selectedStopId: defaultStopId
+        };
+        anyMerged = true;
+      } else {
+        // New service - add it
+        const directionOptions = computeDirectionOptions(complexService, allStops);
+        const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stop_id
+          || directionOptions[0]?.stop_id
+          || complexStop.stop_id;
+
+        updatedSelections.push({
+          service_guid: serviceGuid,
+          agency_name: complexService.agency_name,
+          routes: complexService.routes,
+          enabled: true,
+          selectedStopId: defaultStopId,
+          directionOptions,
+          enabledRouteIds: complexService.routes?.map((r: any) => r.route_id) || []
+        });
+        anyMerged = true;
+      }
+    }
+
+    if (anyMerged) {
+      setServiceSelections(slideId, updatedSelections);
     }
 
     // Remove this stop from complex stops list
@@ -678,11 +789,23 @@ export default function StopArrivalsSlide({
       });
 
       // Filter by enabled routes
-      const filteredArrivals = uniqueArrivals.filter(arr => {
+      const routeFilteredArrivals = uniqueArrivals.filter(arr => {
         const selection = serviceSelections.find(s => s.service_guid === arr._sourceService);
         // If no selection found or no enabledRouteIds, include the arrival
         if (!selection || !selection.enabledRouteIds) return true;
         return selection.enabledRouteIds.includes(arr.routeId);
+      });
+
+      // Filter by headsign (destination) when direction filters are selected
+      const filteredArrivals = routeFilteredArrivals.filter(arr => {
+        const selection = serviceSelections.find(s => s.service_guid === arr._sourceService);
+        // If no headsign filters are set, include the arrival
+        if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
+        // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
+        const destination = (arr.destination || '').toLowerCase().trim();
+        return selection.selectedHeadsignFilters.some(filter =>
+          destination === filter.toLowerCase().trim()
+        );
       });
 
       // Limit arrivals (already sorted by timestamp)
@@ -714,16 +837,23 @@ export default function StopArrivalsSlide({
       const service = dedupedStop.services?.find((s: any) => s.service_guid === selection.service_guid);
       if (!service) return selection;
 
-      const newDirOptions = computeDirectionOptions(service, allStops);
+      // Pass enabledRouteIds to filter direction options by active routes
+      const newDirOptions = computeDirectionOptions(service, allStops, selection.enabledRouteIds);
       const validStopIds = new Set(newDirOptions.map((o: DirectionOption) => o.stop_id));
       const currentValid = validStopIds.has(selection.selectedStopId);
       const newSelectedStopId = currentValid
         ? selection.selectedStopId
         : (newDirOptions.find((o: DirectionOption) => o.isAllDirections)?.stop_id || newDirOptions[0]?.stop_id || selection.selectedStopId);
 
-      if (newSelectedStopId !== selection.selectedStopId || JSON.stringify(newDirOptions) !== JSON.stringify(selection.directionOptions)) {
+      // Also validate selectedHeadsignFilters - remove any that are no longer valid
+      const validHeadsignFilters = new Set(newDirOptions.map((o: DirectionOption) => o.headsignFilter).filter(Boolean));
+      const newSelectedHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsignFilters.has(h));
+
+      if (newSelectedStopId !== selection.selectedStopId ||
+          JSON.stringify(newSelectedHeadsignFilters) !== JSON.stringify(selection.selectedHeadsignFilters || []) ||
+          JSON.stringify(newDirOptions) !== JSON.stringify(selection.directionOptions)) {
         changed = true;
-        return { ...selection, directionOptions: newDirOptions, selectedStopId: newSelectedStopId };
+        return { ...selection, directionOptions: newDirOptions, selectedStopId: newSelectedStopId, selectedHeadsignFilters: newSelectedHeadsignFilters.length > 0 ? newSelectedHeadsignFilters : undefined };
       }
       return selection;
     });
@@ -1025,8 +1155,16 @@ export default function StopArrivalsSlide({
                                           const newEnabled = isRouteEnabled
                                             ? currentEnabled.filter((id: string) => id !== route.route_id)
                                             : [...currentEnabled, route.route_id];
+
+                                          // Recalculate direction options based on new enabled routes
+                                          const service = selectedStop.services?.find((s: any) => s.service_guid === selection.service_guid);
+                                          const newDirOptions = service ? computeDirectionOptions(service, allStops, newEnabled) : selection.directionOptions;
+                                          // Remove any headsign filters that are no longer valid
+                                          const validHeadsigns = new Set(newDirOptions.map(o => o.headsignFilter).filter(Boolean));
+                                          const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsigns.has(h));
+
                                           const updated = serviceSelections.map((s, i) =>
-                                            i === index ? { ...s, enabledRouteIds: newEnabled } : s
+                                            i === index ? { ...s, enabledRouteIds: newEnabled, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
                                           );
                                           setServiceSelections(slideId, updated);
                                         }}
@@ -1048,8 +1186,14 @@ export default function StopArrivalsSlide({
                                     <button
                                       onClick={() => {
                                         const allRouteIds = selection.routes!.map((r: any) => r.route_id);
+                                        // Recalculate direction options with all routes enabled
+                                        const service = selectedStop.services?.find((s: any) => s.service_guid === selection.service_guid);
+                                        const newDirOptions = service ? computeDirectionOptions(service, allStops, allRouteIds) : selection.directionOptions;
+                                        // Keep headsign filters that are still valid
+                                        const validHeadsigns = new Set(newDirOptions.map(o => o.headsignFilter).filter(Boolean));
+                                        const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsigns.has(h));
                                         const updated = serviceSelections.map((s, i) =>
-                                          i === index ? { ...s, enabledRouteIds: allRouteIds } : s
+                                          i === index ? { ...s, enabledRouteIds: allRouteIds, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
                                         );
                                         setServiceSelections(slideId, updated);
                                       }}
@@ -1066,17 +1210,44 @@ export default function StopArrivalsSlide({
                               )}
                             </div>
 
-                            {/* Direction toggles row */}
+                            {/* Direction toggles row - multi-select for headsign filters */}
                             {selection.enabled && selection.directionOptions.length > 1 && (
                               <div className="flex items-center gap-1.5 ml-6 flex-wrap">
                                 {selection.directionOptions.map((opt) => {
-                                  const isSelected = selection.selectedStopId === opt.stop_id;
+                                  // "All" is selected when no filters are active
+                                  // Individual headsigns are selected when in the selectedHeadsignFilters array
+                                  const currentFilters = selection.selectedHeadsignFilters || [];
+                                  const isAllOption = opt.isAllDirections;
+                                  const isSelected = isAllOption
+                                    ? currentFilters.length === 0
+                                    : opt.headsignFilter ? currentFilters.includes(opt.headsignFilter) : false;
+
                                   return (
                                     <button
                                       key={opt.label}
                                       onClick={() => {
+                                        let newFilters: string[];
+
+                                        if (isAllOption) {
+                                          // Clicking "All" clears all filters
+                                          newFilters = [];
+                                        } else if (opt.headsignFilter) {
+                                          // Toggle this headsign filter
+                                          if (currentFilters.includes(opt.headsignFilter)) {
+                                            newFilters = currentFilters.filter(f => f !== opt.headsignFilter);
+                                          } else {
+                                            newFilters = [...currentFilters, opt.headsignFilter];
+                                          }
+                                        } else {
+                                          newFilters = currentFilters;
+                                        }
+
                                         const updated = serviceSelections.map((s, i) =>
-                                          i === index ? { ...s, selectedStopId: opt.stop_id } : s
+                                          i === index ? {
+                                            ...s,
+                                            selectedStopId: opt.stop_id,
+                                            selectedHeadsignFilters: newFilters.length > 0 ? newFilters : undefined
+                                          } : s
                                         );
                                         setServiceSelections(slideId, updated);
                                       }}
