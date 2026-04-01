@@ -12,7 +12,7 @@ import WeatherPreview from '@/components/slide-previews/weather-preview';
 import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
 import CitibikePreview from '@/components/slide-previews/citibike-preview';
 import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
-import { fetchStopData } from '@/services/data-gathering/fetchStopData';
+import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from '@/services/data-gathering/fetchStopData';
 import TrafficCorridorPreview from '@/components/slide-previews/traffic-corridor-preview';
 import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
 import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
@@ -151,23 +151,137 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
     for (const slide of fixedRouteSlides) {
       const currentState = useFixedRouteStore.getState().slides;
-      const fixedRouteData = currentState[slide.id]?.selectedStop || [];
-      if(!fixedRouteData?.stop_id || !fixedRouteData?.services?.length) {continue;}
-      const data = await fetchStopData(fixedRouteData.stop_id, fixedRouteData.services[0].service_guid, fixedRouteData.services[0].organization_guid, slide.id, setFixedRouteDataError);
+      const selectedStop = currentState[slide.id]?.selectedStop;
+      const serviceSelections = currentState[slide.id]?.serviceSelections;
 
-      const arr = data?.trains.map((item: any) => ({
-        destination: item.destination,
-        routeId: item.routeId,
-        routeType: item.routeType,
-        routeColor: item.routeColor,
-        routeTextColor: item.routeTextColor,
-        time: item.arrivalTime,
-        duration: item.arrival,
-        status: item.status,
-      })) || [];
+      if (!selectedStop?.stop_id || !selectedStop?.services?.length) {
+        continue;
+      }
 
-      setScheduleData(slide.id, arr);
-      console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, arr);
+      // Build queries from serviceSelections if available, otherwise fall back to legacy behavior
+      const queries: { service_guid: string; stop_id: string; organization_guid: string }[] = [];
+
+      if (serviceSelections && serviceSelections.length > 0) {
+        // New behavior: use serviceSelections for multi-direction/multi-service support
+        for (const selection of serviceSelections) {
+          if (!selection.enabled) continue;
+
+          const orgGuid = selectedStop.services?.find(
+            (svc: any) => svc.service_guid === selection.service_guid
+          )?.organization_guid;
+
+          // Skip if we can't find the organization_guid
+          if (!orgGuid) continue;
+
+          // Split comma-separated stop_ids into individual queries
+          const stopIds = selection.selectedStopId.split(',').filter(Boolean);
+          for (const stopId of stopIds) {
+            queries.push({
+              service_guid: selection.service_guid,
+              stop_id: stopId,
+              organization_guid: orgGuid
+            });
+          }
+        }
+      } else {
+        // Legacy fallback: use single stop_id and first service
+        queries.push({
+          service_guid: selectedStop.services[0].service_guid,
+          stop_id: selectedStop.stop_id,
+          organization_guid: selectedStop.services[0].organization_guid
+        });
+      }
+
+      if (queries.length === 0) continue;
+
+      try {
+        // Fetch all queries in parallel
+        const results = await Promise.allSettled(
+          queries.map(async (q) => {
+            const data = await fetchStopData(
+              q.stop_id,
+              q.service_guid,
+              q.organization_guid,
+              slide.id,
+              setFixedRouteDataError
+            );
+            // Tag each arrival with its source service for filtering
+            return (data?.trains || []).map((item: any) => ({
+              destination: item.destination,
+              routeId: item.routeId,
+              routeShortName: item.routeShortName,
+              routeType: item.routeType,
+              routeColor: item.routeColor,
+              routeTextColor: item.routeTextColor,
+              time: item.arrivalTime,
+              timestamp: item.arrivalTimestamp,
+              duration: item.arrival,
+              status: item.status,
+              _sourceService: q.service_guid
+            }));
+          })
+        );
+
+        // Collect successful results
+        const allArrivals: any[] = [];
+        for (const result of results) {
+          if (result.status === 'fulfilled') {
+            allArrivals.push(...result.value);
+          } else {
+            console.warn('[DATA UPDATE] Failed to fetch arrivals:', result.reason);
+          }
+        }
+
+        // Sort by arrival timestamp
+        allArrivals.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+        // Deduplicate arrivals (same train can appear from multiple platform queries)
+        const seen = new Set<string>();
+        const uniqueArrivals = allArrivals.filter(arr => {
+          const key = `${arr.routeId}|${arr.destination}|${arr.timestamp}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        // Filter by enabled routes if serviceSelections exist
+        let routeFilteredArrivals = uniqueArrivals;
+        if (serviceSelections && serviceSelections.length > 0) {
+          routeFilteredArrivals = uniqueArrivals.filter(arr => {
+            const selection = serviceSelections.find((s: any) => s.service_guid === arr._sourceService);
+            if (!selection || !selection.enabledRouteIds) return true;
+            return selection.enabledRouteIds.includes(arr.routeId);
+          });
+        }
+
+        // Filter by headsign (destination) when direction filters are selected
+        let filteredArrivals = routeFilteredArrivals;
+        if (serviceSelections && serviceSelections.length > 0) {
+          filteredArrivals = routeFilteredArrivals.filter(arr => {
+            const selection = serviceSelections.find((s: any) => s.service_guid === arr._sourceService);
+            // If no headsign filters are set, include the arrival
+            if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
+            // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
+            const destination = (arr.destination || '').toLowerCase().trim();
+            return selection.selectedHeadsignFilters.some((filter: string) =>
+              destination === filter.toLowerCase().trim()
+            );
+          });
+        }
+
+        // Limit arrivals (already sorted by timestamp)
+        const limitedArrivals = filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE);
+
+        // Remove internal fields before storing
+        const arr = limitedArrivals.map(({ _sourceService, timestamp, ...rest }) => rest);
+
+        setScheduleData(slide.id, arr);
+        setFixedRouteDataError(slide.id, false);
+        console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, arr);
+      } catch (error) {
+        console.error(`[DATA UPDATE] Error fetching fixed route data for slide ${slide.id}:`, error);
+        setFixedRouteDataError(slide.id, true);
+      }
     }
   };
 

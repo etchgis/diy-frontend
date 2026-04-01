@@ -200,6 +200,7 @@ async function importData(setup: any) {
         setBgImage,
         setLogoImage,
         setSelectedStop,
+        setServiceSelections,
         setTitleTextSize,
         setContentTextSize
       } = useFixedRouteStore.getState();
@@ -213,6 +214,7 @@ async function importData(setup: any) {
       setBgImage(slide.id, slide.data.bgImage || '');
       setLogoImage(slide.id, slide.data.logoImage || '');
       setSelectedStop(slide.id, slide.data.selectedStop || undefined);
+      setServiceSelections(slide.id, slide.data.serviceSelections || []);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
     }
