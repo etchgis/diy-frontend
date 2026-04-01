@@ -255,27 +255,28 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                         </div>
                         <div className="flex items-center gap-4">
                           <div
-                            className={`rounded font-bold text-center`}
+                            className={`rounded font-bold text-center flex-shrink-0`}
                             style={{
                               padding: "0.3em 0.6em",
                               fontSize: `${12 * contentSizeMultiplier}px`,
                               minWidth: `${40 * contentSizeMultiplier}px`,
+                              whiteSpace: 'nowrap',
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
                             {item.routeShortName || item.routeId}
                           </div>
-                          <div className="font-medium" style={{ fontSize: `${14 * contentSizeMultiplier}px`, minWidth: `${60 * contentSizeMultiplier}px` }}>
+                          <div className="font-medium flex-shrink-0 overflow-hidden" style={{ fontSize: `${14 * contentSizeMultiplier}px`, width: `${70 * contentSizeMultiplier}px`, whiteSpace: 'nowrap' }}>
                             {item.time}
                           </div>
-                          <div className="" style={{ fontSize: `${14 * contentSizeMultiplier}px`, minWidth: `${40 * contentSizeMultiplier}px` }}>
+                          <div className="flex-shrink-0 overflow-hidden" style={{ fontSize: `${14 * contentSizeMultiplier}px`, width: `${80 * contentSizeMultiplier}px`, whiteSpace: 'nowrap' }}>
                             {item.duration}
                           </div>
                           <Button
                             variant="outline"
-                            className="bg-transparent"
-                            style={{ fontSize: `${12 * contentSizeMultiplier}px`, minWidth: `${90 * contentSizeMultiplier}px`, padding: "0.3em 0.6em", height: 'auto' }}
+                            className="bg-transparent flex-shrink-0"
+                            style={{ fontSize: `${12 * contentSizeMultiplier}px`, width: `${90 * contentSizeMultiplier}px`, padding: "0.3em 0.6em", height: 'auto' }}
                           >
                             {item.status}
                           </Button>
@@ -320,11 +321,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           style={{ gap: "clamp(1rem, 2.5vh, 3rem)" }}
                         >
                           <div
-                            className={`rounded font-bold text-center`}
+                            className={`rounded font-bold text-center flex-shrink-0`}
                             style={{
                               padding: "0.3em 0.8em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              minWidth: `clamp(40px, ${6 * contentSizeMultiplier}vh, 80px)`,
+                              minWidth: `clamp(50px, ${7 * contentSizeMultiplier}vh, 100px)`,
+                              whiteSpace: 'nowrap',
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
                               marginRight: 10
@@ -333,30 +335,32 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             {item.routeShortName || item.routeId}
                           </div>
                           <div
-                            className="font-medium"
+                            className="font-medium flex-shrink-0 overflow-hidden"
                             style={{
                               fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              minWidth: `clamp(70px, ${12 * contentSizeMultiplier}vh, 140px)`,
+                              width: `clamp(80px, ${12 * contentSizeMultiplier}vh, 160px)`,
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {item.time}
                           </div>
                           <div
-                            className=""
+                            className="flex-shrink-0 overflow-hidden"
                             style={{
                               fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              minWidth: `clamp(90px, ${6 * contentSizeMultiplier}vh, 180px)`,
+                              width: `clamp(100px, ${14 * contentSizeMultiplier}vh, 200px)`,
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {item.duration}
                           </div>
                           <Button
                             variant="outline"
-                            className="bg-transparent"
+                            className="bg-transparent flex-shrink-0"
                             style={{
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
                               padding: "0.5em 1em",
-                              minWidth: `clamp(70px, ${10 * contentSizeMultiplier}vh, 150px)`,
+                              width: `clamp(80px, ${11 * contentSizeMultiplier}vh, 160px)`,
                               height: 'auto',
                             }}
                           >
