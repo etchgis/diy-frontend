@@ -183,7 +183,7 @@ function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function applyThemeColorToAllSlides(colorType: ThemeColorType, color: string): void {
+export function applyThemeColorToAllSlides(colorType: ThemeColorType, color: string, oldColor?: string): void {
   for (const config of storeConfigs) {
     const state = config.store.getState();
     const propsToUpdate = config.colorMappings[colorType] || [];
@@ -192,7 +192,9 @@ export function applyThemeColorToAllSlides(colorType: ThemeColorType, color: str
     if (!state.slides) continue;
 
     for (const slideId of Object.keys(state.slides)) {
+      const slideData = state.slides[slideId];
       for (const prop of propsToUpdate) {
+        if (oldColor !== undefined && slideData?.[prop] !== oldColor) continue;
         const setterName = `set${capitalizeFirst(prop)}`;
         if (typeof state[setterName] === 'function') {
           state[setterName](slideId, color);

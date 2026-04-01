@@ -245,12 +245,27 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         });
 
         // Filter by enabled routes if serviceSelections exist
-        let filteredArrivals = uniqueArrivals;
+        let routeFilteredArrivals = uniqueArrivals;
         if (serviceSelections && serviceSelections.length > 0) {
-          filteredArrivals = uniqueArrivals.filter(arr => {
+          routeFilteredArrivals = uniqueArrivals.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.service_guid === arr._sourceService);
             if (!selection || !selection.enabledRouteIds) return true;
             return selection.enabledRouteIds.includes(arr.routeId);
+          });
+        }
+
+        // Filter by headsign (destination) when direction filters are selected
+        let filteredArrivals = routeFilteredArrivals;
+        if (serviceSelections && serviceSelections.length > 0) {
+          filteredArrivals = routeFilteredArrivals.filter(arr => {
+            const selection = serviceSelections.find((s: any) => s.service_guid === arr._sourceService);
+            // If no headsign filters are set, include the arrival
+            if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
+            // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
+            const destination = (arr.destination || '').toLowerCase().trim();
+            return selection.selectedHeadsignFilters.some((filter: string) =>
+              destination === filter.toLowerCase().trim()
+            );
           });
         }
 
