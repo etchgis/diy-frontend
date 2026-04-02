@@ -154,42 +154,29 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const selectedStop = currentState[slide.id]?.selectedStop;
       const serviceSelections = currentState[slide.id]?.serviceSelections;
 
-      if (!selectedStop?.stop_id || !selectedStop?.services?.length) {
+      if (!selectedStop?.id || !selectedStop?.services?.length || !serviceSelections?.length) {
         continue;
       }
 
-      // Build queries from serviceSelections if available, otherwise fall back to legacy behavior
-      const queries: { service_guid: string; stop_id: string; organization_guid: string }[] = [];
+      const queries: { serviceId: string; stopId: string; organizationId: string }[] = [];
 
-      if (serviceSelections && serviceSelections.length > 0) {
-        // New behavior: use serviceSelections for multi-direction/multi-service support
-        for (const selection of serviceSelections) {
-          if (!selection.enabled) continue;
+      for (const selection of serviceSelections) {
+        if (!selection.enabled) continue;
 
-          const orgGuid = selectedStop.services?.find(
-            (svc: any) => svc.service_guid === selection.service_guid
-          )?.organization_guid;
+        const orgId = selectedStop.services?.find(
+          (svc: any) => svc.id === selection.serviceId
+        )?.organizationId;
 
-          // Skip if we can't find the organization_guid
-          if (!orgGuid) continue;
+        if (!orgId) continue;
 
-          // Split comma-separated stop_ids into individual queries
-          const stopIds = selection.selectedStopId.split(',').filter(Boolean);
-          for (const stopId of stopIds) {
-            queries.push({
-              service_guid: selection.service_guid,
-              stop_id: stopId,
-              organization_guid: orgGuid
-            });
-          }
+        const stopIds = selection.selectedStopId.split(',').filter(Boolean);
+        for (const stopId of stopIds) {
+          queries.push({
+            serviceId: selection.serviceId,
+            stopId: stopId,
+            organizationId: orgId
+          });
         }
-      } else {
-        // Legacy fallback: use single stop_id and first service
-        queries.push({
-          service_guid: selectedStop.services[0].service_guid,
-          stop_id: selectedStop.stop_id,
-          organization_guid: selectedStop.services[0].organization_guid
-        });
       }
 
       if (queries.length === 0) continue;
@@ -199,13 +186,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         const results = await Promise.allSettled(
           queries.map(async (q) => {
             const data = await fetchStopData(
-              q.stop_id,
-              q.service_guid,
-              q.organization_guid,
-              slide.id,
-              setFixedRouteDataError
+              q.stopId,
+              q.serviceId,
+              q.organizationId
             );
-            // Tag each arrival with its source service for filtering
+            // Tag each arrival with its source feed for filtering
             return (data?.trains || []).map((item: any) => ({
               destination: item.destination,
               routeId: item.routeId,
@@ -217,7 +202,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
               timestamp: item.arrivalTimestamp,
               duration: item.arrival,
               status: item.status,
-              _sourceService: q.service_guid
+              _sourceService: q.serviceId
             }));
           })
         );
@@ -248,7 +233,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         let routeFilteredArrivals = uniqueArrivals;
         if (serviceSelections && serviceSelections.length > 0) {
           routeFilteredArrivals = uniqueArrivals.filter(arr => {
-            const selection = serviceSelections.find((s: any) => s.service_guid === arr._sourceService);
+            const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
             if (!selection || !selection.enabledRouteIds) return true;
             return selection.enabledRouteIds.includes(arr.routeId);
           });
@@ -258,7 +243,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         let filteredArrivals = routeFilteredArrivals;
         if (serviceSelections && serviceSelections.length > 0) {
           filteredArrivals = routeFilteredArrivals.filter(arr => {
-            const selection = serviceSelections.find((s: any) => s.service_guid === arr._sourceService);
+            const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
             // If no headsign filters are set, include the arrival
             if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
             // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)

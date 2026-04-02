@@ -1,87 +1,104 @@
 /**
  * TypeScript types for NYSDOT Stops API responses
+ *
+ * API uses camelCase naming and normalized refs structure.
  */
 
-// Route information
-export interface RouteInfo {
-  route_id: string;
-  route_short_name: string;
-  route_long_name?: string;
-  route_color?: string;
-  route_text_color?: string;
+// ============================================================================
+// API Response Types (wire format)
+// ============================================================================
+
+/** Route details in refs.routes lookup table */
+export interface RouteRef {
+  id: string;
+  shortName: string;
+  longName?: string;
+  color?: string;
+  textColor?: string;
 }
 
-// Service information (denormalized)
-export interface ServiceInfo {
-  service_guid: string;
-  organization_guid: string;
-  agency_name: string;
-  routes: RouteInfo[];
-  headsigns_by_route?: Record<string, string[]>;
-}
-
-// Stop in a station complex
-export interface ComplexStop {
-  stop_id: string;
-  stop_name: string;
-  stop_lat?: number;
-  stop_lon?: number;
-  services: ServiceInfo[];
-}
-
-// Full stop object (denormalized)
-export interface Stop {
-  stop_id: string;
-  stop_name: string;
-  stop_lat: number;
-  stop_lon: number;
-  location_type?: number;
-  services: ServiceInfo[];
-  complex_stops?: ComplexStop[];
-}
-
-// --- Normalized API Response Types (wire format) ---
-
-// Service reference in normalized response
+/** Service details in refs.services lookup table */
 export interface ServiceRef {
-  ref: string;
-  headsigns_by_route?: Record<string, string[]>;
+  id: string;
+  organizationId: string;
+  agencyName: string;
 }
 
-// Stop entry in normalized response
-export interface NormalizedStop {
-  stop_id: string;
-  stop_name: string;
-  stop_lat: number;
-  stop_lon: number;
-  location_type?: number;
-  services: ServiceRef[];
-  complex_stops?: Array<{
-    stop_id: string;
-    stop_name: string;
-    services: ServiceRef[];
-  }>;
+/** A route at a specific stop, with headsigns for that stop */
+export interface RouteAtStop {
+  routeId: string;
+  headsigns: string[];
 }
 
-// Service entity in lookup table
-export interface ServiceEntity {
-  service_guid: string;
-  organization_guid: string;
-  agency_name: string;
-  routes: string[];  // Keys into _routes
+/** A service's presence at a specific stop */
+export interface ServiceAtStop {
+  serviceId: string;  // Key into refs.services
+  routes: RouteAtStop[];
 }
 
-// Route entity in lookup table
-export interface RouteEntity {
-  route_id: string;
-  route_short_name: string;
-  route_color?: string;
-  route_text_color?: string;
+/** A linked stop (part of same station complex) */
+export interface LinkedStop {
+  id: string;
+  name: string;
+  services: ServiceAtStop[];
 }
 
-// Full normalized API response
-export interface NormalizedApiResponse {
-  stops: NormalizedStop[];
-  _services: Record<string, ServiceEntity>;
-  _routes: Record<string, RouteEntity>;
+/** A stop in the API response */
+export interface Stop {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  locationType?: number;
+  services: ServiceAtStop[];
+  linkedStops?: LinkedStop[];
+}
+
+/** The complete API response */
+export interface ApiResponse {
+  stops: Stop[];
+  refs: {
+    services: Record<string, ServiceRef>;
+    routes: Record<string, RouteRef>;
+  };
+}
+
+// ============================================================================
+// Expanded/Denormalized Types (for component use)
+// ============================================================================
+
+/** Route with full details attached */
+export interface ExpandedRoute {
+  id: string;
+  shortName: string;
+  longName?: string;
+  color?: string;
+  textColor?: string;
+  headsigns: string[];
+}
+
+/** Service with full details and expanded routes */
+export interface ExpandedService {
+  id: string;
+  organizationId: string;
+  agencyName: string;
+  routes: ExpandedRoute[];
+}
+
+/** Linked stop with expanded data */
+export interface ExpandedLinkedStop {
+  id: string;
+  name: string;
+  services: ExpandedService[];
+}
+
+/** Stop with all references expanded */
+export interface ExpandedStop {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  locationType?: number;
+  services: ExpandedService[];
+  linkedStops?: ExpandedLinkedStop[];
 }

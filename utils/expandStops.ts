@@ -1,41 +1,93 @@
-import type { NormalizedApiResponse, Stop, ServiceInfo } from '../types/nysdot-stops';
+import type {
+  ApiResponse,
+  Stop,
+  ServiceAtStop,
+  LinkedStop,
+  ServiceRef,
+  RouteRef,
+  ExpandedStop,
+  ExpandedService,
+  ExpandedRoute,
+  ExpandedLinkedStop,
+} from '../types/nysdot-stops';
 
 /**
  * Expands normalized API response into denormalized stop objects.
+ * Attaches full service and route details from refs lookup tables.
  */
-export function expandStops(data: NormalizedApiResponse): Stop[] {
-  const { stops, _services, _routes } = data;
+export function expandStops(data: ApiResponse): ExpandedStop[] {
+  const { stops, refs } = data;
 
-  function expandServiceRef(svcRef: { ref: string; headsigns_by_route?: Record<string, string[]> }): ServiceInfo | null {
-    const service = _services[svcRef.ref];
-    if (!service) {
-      console.warn(`[expandStops] Missing service ref: ${svcRef.ref}`);
-      return null;
+  /**
+   * Expands a ServiceAtStop by looking up service details and route details from refs
+   */
+  function expandService(serviceAtStop: ServiceAtStop): ExpandedService {
+    const serviceRef: ServiceRef | undefined = refs.services[serviceAtStop.serviceId];
+
+    if (!serviceRef) {
+      console.warn(`[expandStops] Missing service ref: ${serviceAtStop.serviceId}`);
     }
 
-    const routes = service.routes.map((routeKey) => {
-      const route = _routes[routeKey];
-      if (!route) {
-        console.warn(`[expandStops] Missing route ref: ${routeKey}`);
+    // Expand each route with full details
+    const expandedRoutes: ExpandedRoute[] = serviceAtStop.routes.map((routeAtStop) => {
+      // Route key format: serviceId:routeId
+      const routeKey = `${serviceAtStop.serviceId}:${routeAtStop.routeId}`;
+      const routeRef: RouteRef | undefined = refs.routes[routeKey];
+
+      if (routeRef) {
+        return {
+          id: routeRef.id,
+          shortName: routeRef.shortName,
+          longName: routeRef.longName,
+          color: routeRef.color,
+          textColor: routeRef.textColor,
+          headsigns: routeAtStop.headsigns,
+        };
       }
-      return route;
-    }).filter(Boolean);
+
+      // Fallback: create minimal route object if lookup fails
+      console.warn(`[expandStops] Missing route in refs.routes: ${routeKey}, creating fallback`);
+      const shortName = routeAtStop.routeId.split('-')[0];
+      return {
+        id: routeAtStop.routeId,
+        shortName,
+        headsigns: routeAtStop.headsigns,
+      };
+    });
 
     return {
-      service_guid: service.service_guid,
-      organization_guid: service.organization_guid,
-      agency_name: service.agency_name,
-      routes,
-      headsigns_by_route: svcRef.headsigns_by_route,
+      id: serviceAtStop.serviceId,
+      organizationId: serviceRef?.organizationId ?? '',
+      agencyName: serviceRef?.agencyName ?? 'Unknown Agency',
+      routes: expandedRoutes,
     };
   }
 
-  return stops.map(stop => ({
-    ...stop,
-    services: stop.services.map(expandServiceRef).filter((s): s is ServiceInfo => s !== null),
-    complex_stops: stop.complex_stops?.map((cs) => ({
-      ...cs,
-      services: cs.services.map(expandServiceRef).filter((s): s is ServiceInfo => s !== null),
-    })),
-  }));
+  /**
+   * Expands a LinkedStop by expanding its services
+   */
+  function expandLinkedStop(linkedStop: LinkedStop): ExpandedLinkedStop {
+    return {
+      id: linkedStop.id,
+      name: linkedStop.name,
+      services: linkedStop.services.map(expandService),
+    };
+  }
+
+  /**
+   * Expands a Stop by expanding its services and linked stops
+   */
+  function expandStop(stop: Stop): ExpandedStop {
+    return {
+      id: stop.id,
+      name: stop.name,
+      lat: stop.lat,
+      lon: stop.lon,
+      locationType: stop.locationType,
+      services: stop.services.map(expandService),
+      linkedStops: stop.linkedStops?.map(expandLinkedStop),
+    };
+  }
+
+  return stops.map(expandStop);
 }
