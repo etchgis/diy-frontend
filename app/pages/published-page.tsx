@@ -233,7 +233,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         if (serviceSelections && serviceSelections.length > 0) {
           routeFilteredArrivals = uniqueArrivals.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
-            if (!selection || !selection.enabledRouteIds) return true;
+            // If no route filter is set (undefined or empty array), include all arrivals
+            if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
             return selection.enabledRouteIds.includes(arr.routeId);
           });
         }
