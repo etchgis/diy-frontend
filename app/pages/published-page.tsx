@@ -26,7 +26,6 @@ import { useRouteTimesStore } from '@/stores/routeTimes';
 import { fetchCompleteRouteData } from '@/services/route-times/routeDataFetcher';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { set } from 'react-hook-form';
 
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const searchParams = useSearchParams();

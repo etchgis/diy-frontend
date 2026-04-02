@@ -23,12 +23,48 @@ import { useFooterStore } from "@/stores/footer";
 function migrateSelectedStop(stop: any): any {
   if (!stop) return stop;
 
-  // Check if already in new format (has 'id' instead of 'stop_id')
-  if (stop.id !== undefined && stop.stop_id === undefined) {
+  // Check if already in new format (has proper stop structure with services array)
+  // New format has: { id: "stopId", services: [{ id: "serviceGuid", ... }] }
+  if (stop.services && Array.isArray(stop.services) && stop.services[0]?.id && !stop.services[0]?.service_guid) {
     return stop;
   }
 
-  // Migrate old format to new format
+  // OLD FORMAT: selectedStop is actually a SERVICE object with _stopIds embedded:
+  // { service_guid, organization_guid, agency_name, routes, _stopIds: ["12337"], _stopIdData: {...} }
+  //
+  // NEW FORMAT: selectedStop is a proper STOP object with services array:
+  // { id: "12337", name: "...", services: [{ id: "service_guid", organizationId: "...", routes: [...] }] }
+
+  // Handle old flat service format (service_guid at root level)
+  if (stop.service_guid || (stop._stopIds && !stop.services)) {
+    const stopId = stop._stopIds?.[0] || '';
+    return {
+      id: stopId,
+      name: stop.stop_name ?? stop.name ?? '',
+      lat: stop.stop_lat ?? stop.lat,
+      lon: stop.stop_lon ?? stop.lon,
+      locationType: stop._stopIdData?.[stopId]?.location_type ?? stop.location_type ?? stop.locationType,
+      services: [{
+        id: stop.service_guid ?? stop.id,
+        organizationId: stop.organization_guid ?? stop.organizationId,
+        agencyName: stop.agency_name ?? stop.agencyName,
+        routes: (stop.routes || []).map((r: any) => ({
+          id: r.route_id ?? r.id,
+          shortName: r.route_short_name ?? r.shortName,
+          longName: r.route_long_name ?? r.longName,
+          color: r.route_color ?? r.color,
+          textColor: r.route_text_color ?? r.textColor,
+          headsigns: r.headsigns || [],
+        })),
+        _stopIds: stop._stopIds,
+        _stopIdData: stop._stopIdData,
+      }],
+      linkedStops: [],
+      _allStopIds: stop._allStopIds || stop._stopIds,
+    };
+  }
+
+  // Handle intermediate format (stop with services array but old field names)
   return {
     id: stop.stop_id ?? stop.id,
     name: stop.stop_name ?? stop.name,
@@ -47,7 +83,6 @@ function migrateSelectedStop(stop: any): any {
         textColor: r.route_text_color ?? r.textColor,
         headsigns: r.headsigns || [],
       })),
-      // Preserve internal tracking fields
       _stopIds: svc._stopIds,
       _stopIdData: svc._stopIdData,
     })),
@@ -68,7 +103,6 @@ function migrateSelectedStop(stop: any): any {
         })),
       })),
     })),
-    // Preserve other fields
     _allStopIds: stop._allStopIds,
     distance: stop.distance,
   };
@@ -334,8 +368,9 @@ async function importData(setup: any) {
       setLogoImage(slide.id, slide.data.logoImage || '');
       // TEMPORARY MIGRATION: Apply migration for old stored format
       const migratedStop = migrateSelectedStop(slide.data.selectedStop);
+      const migratedSelections = migrateServiceSelections(slide.data.serviceSelections, migratedStop) || [];
       setSelectedStop(slide.id, migratedStop || undefined);
-      setServiceSelections(slide.id, migrateServiceSelections(slide.data.serviceSelections, migratedStop) || []);
+      setServiceSelections(slide.id, migratedSelections);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
     }
