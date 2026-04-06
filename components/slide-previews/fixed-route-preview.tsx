@@ -102,14 +102,13 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     switch (routeType) {
       case 0: // Tram/Light Rail
       case 2: // Rail (LIRR, Metro-North, Amtrak, etc.)
-        const railIcon = getRailIcon();
-        return railIcon;
+        return getRailIcon();
       case 1: // Subway/Metro
         return '/images/subway-icon.png';
       case 3: // Bus
         return '/images/bus-icon.png';
       default:
-        return getRailIcon();;
+        return getRailIcon();
     }
   };
 
@@ -154,7 +153,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   </div>
 
                   <h2 className="font-bold mb-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
-                    {(displayName || selectedStop?.stop_name)?.toString().toUpperCase() ||
+                    {(displayName || selectedStop?.name || selectedStop?.stop_name)?.toString().toUpperCase() ||
                       "UNKNOWN STOP"}
                   </h2>
 

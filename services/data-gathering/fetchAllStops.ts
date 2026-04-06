@@ -42,43 +42,45 @@ export async function fetchAllStops(options: FetchStopsOptions | {lat: number, l
 
     console.log('[fetchAllStops] refs:', JSON.stringify(data?.refs).slice(0, 500));
 
-    // New format: { stops: [...], refs: { services: { [serviceId]: {...} }, ... } }
+    // New format: { stops: [...], refs: { services: { [serviceId]: {...} }, routes: { ["serviceId:routeId"]: {...} } } }
     if (Array.isArray(data?.stops)) {
       const serviceRefs: Record<string, any> = data?.refs?.services || {};
+      const routeRefs: Record<string, any> = data?.refs?.routes || {};
 
       const normalizeService = (svc: any) => {
         const ref = serviceRefs[svc.serviceId] || {};
         return {
-          service_guid: svc.serviceId,
-          organization_guid: ref.organizationId || ref.organization_guid || svc.serviceId,
-          agency_name: ref.agencyName || ref.agency_name || '',
-          routes: (svc.routes || []).map((r: any) => ({
-            route_id: r.routeId || r.route_id,
-            route_short_name: r.routeId || r.route_id,
-            headsigns_by_route: r.headsigns,
-          })),
-          headsigns_by_route: svc.routes?.reduce((acc: any, r: any) => {
-            acc[r.routeId || r.route_id] = r.headsigns || [];
-            return acc;
-          }, {}),
+          id: svc.serviceId,
+          organizationId: ref.organizationId || '',
+          agencyName: ref.agencyName || '',
+          routes: (svc.routes || []).map((r: any) => {
+            const routeId = r.routeId || r.route_id || r.id;
+            const routeRef = routeRefs[`${svc.serviceId}:${routeId}`] || {};
+            return {
+              id: routeId,
+              shortName: routeRef.shortName || r.shortName || routeId,
+              longName: routeRef.longName || r.longName || '',
+              color: routeRef.color || r.color || '',
+              textColor: routeRef.textColor || r.textColor || '',
+              headsigns: r.headsigns || [],
+            };
+          }),
         };
       };
 
       const normalizeStop = (stop: any) => ({
         ...stop,
+        // keep both old and new field names for compatibility
         stop_id: stop.id || stop.stop_id,
         stop_name: stop.name || stop.stop_name,
         stop_lat: stop.lat ?? stop.stop_lat,
         stop_lon: stop.lon ?? stop.stop_lon,
         location_type: stop.locationType ?? stop.location_type ?? 0,
         services: (stop.services || []).map(normalizeService),
-        complex_stops: (stop.linkedStops || stop.complex_stops || []).map((ls: any) => ({
+        linkedStops: (stop.linkedStops || []).map((ls: any) => ({
           ...ls,
           stop_id: ls.id || ls.stop_id,
           stop_name: ls.name || ls.stop_name,
-          stop_lat: ls.lat ?? ls.stop_lat,
-          stop_lon: ls.lon ?? ls.stop_lon,
-          location_type: ls.locationType ?? ls.location_type ?? 0,
           services: (ls.services || []).map(normalizeService),
         })),
       });
@@ -105,12 +107,16 @@ export async function fetchAllStops(options: FetchStopsOptions | {lat: number, l
       stop_lon: stop.lon ?? stop.stop_lon,
       location_type: stop.locationType ?? stop.location_type ?? 0,
       services: (stop.services || []).map((svc: any) => ({
-        service_guid: svc.serviceId || svc.service_guid,
-        organization_guid: svc.organizationId || svc.organization_guid || svc.serviceId,
-        agency_name: svc.agencyName || svc.agency_name || '',
+        id: svc.serviceId || svc.service_guid || svc.id,
+        organizationId: svc.organizationId || svc.organization_guid || '',
+        agencyName: svc.agencyName || svc.agency_name || '',
         routes: (svc.routes || []).map((r: any) => ({
-          route_id: r.routeId || r.route_id,
-          route_short_name: r.routeId || r.route_id,
+          id: r.routeId || r.route_id || r.id,
+          shortName: r.shortName || r.route_short_name || r.routeId || r.route_id || '',
+          longName: r.longName || r.route_long_name || '',
+          color: r.color || r.route_color || '',
+          textColor: r.textColor || r.route_text_color || '',
+          headsigns: r.headsigns || [],
         })),
       })),
     }));

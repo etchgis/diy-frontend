@@ -725,21 +725,25 @@ export default function StopArrivalsSlide({
     for (const selection of serviceSelections) {
       if (!selection.enabled) continue;
 
+      // Support both new format (serviceId) and old localStorage format (service_guid)
+      const selectionServiceId = selection.serviceId ?? (selection as any).service_guid;
+      if (!selectionServiceId) continue;
+
       const orgId = selectedStop.services?.find(
-        (service: any) => service.id === selection.serviceId
+        (service: any) => service.id === selectionServiceId
       )?.organizationId;
 
       // Skip if we can't find the organizationId
       if (!orgId) {
-        console.warn(`[StopArrivals] Could not find organizationId for service ${selection.serviceId}`);
+        console.warn(`[StopArrivals] Could not find organizationId for service ${selectionServiceId}`);
         continue;
       }
 
       // Split comma-separated stopIds into individual queries
-      const stopIds = selection.selectedStopId.split(',').filter(Boolean);
+      const stopIds = (selection.selectedStopId || selectedStop.id || '').split(',').filter(Boolean);
       for (const stopId of stopIds) {
         queries.push({
-          serviceId: selection.serviceId,
+          serviceId: selectionServiceId,
           stopId: stopId,
           organizationId: orgId
         });
@@ -1006,6 +1010,13 @@ export default function StopArrivalsSlide({
     }
   };
 
+  const selectedRouteIds = new Set(
+    serviceSelections.flatMap(s => (s.routes || []).map((r: RouteInfo) => r.id ?? (r as any).route_id))
+  );
+  const filteredLinkedStops = linkedStops.filter(stop =>
+    getUniqueRoutes(stop.services).some(r => !selectedRouteIds.has(r.id))
+  );
+
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",
@@ -1065,7 +1076,7 @@ export default function StopArrivalsSlide({
                   {showDropdown && filteredStops.length > 0 && (
                     <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
                       {isSearching && (
-                        <li className="px-4 py-2 text-gray-500 italic text-sm">
+                        <li key="searching" className="px-4 py-2 text-gray-500 italic text-sm">
                           Searching stops...
                         </li>
                       )}
@@ -1155,14 +1166,15 @@ export default function StopArrivalsSlide({
                               />
                               {selection.routes && selection.routes.length > 0 ? (
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  {selection.routes.map((route: RouteInfo) => {
+                                  {selection.routes.map((route: RouteInfo, routeIdx: number) => {
+                                    const routeId = route.id ?? (route as any).route_id;
                                     const isRouteEnabled = !selection.enabledRouteIds ||
-                                      selection.enabledRouteIds.includes(route.id);
+                                      selection.enabledRouteIds.includes(routeId);
                                     const canToggle = selection.enabled && selection.routes!.length > 1;
 
                                     return (
                                       <button
-                                        key={route.id}
+                                        key={routeId ?? routeIdx}
                                         disabled={!canToggle}
                                         onClick={() => {
                                           if (!canToggle) return;
@@ -1311,13 +1323,13 @@ export default function StopArrivalsSlide({
               )}
 
               {/* Also at this location - Station Complex */}
-              {selectedStop && linkedStops.length > 0 && (
+              {selectedStop && filteredLinkedStops.length > 0 && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-600 mb-2">
                     Also at this location
                   </h4>
-                  <div className="space-y-2">
-                    {linkedStops.map((stop, idx) => (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {filteredLinkedStops.map((stop, idx) => (
                       <div
                         key={idx}
                         className="flex items-center justify-between bg-white rounded border p-2"
@@ -1327,9 +1339,9 @@ export default function StopArrivalsSlide({
                             {stop.name}
                           </p>
                           <div className="flex items-center gap-1 mt-1 flex-wrap">
-                            {getUniqueRoutes(stop.services).slice(0, MAX_DISPLAYED_ROUTES).map((route: ExpandedRoute) => (
+                            {getUniqueRoutes(stop.services).slice(0, MAX_DISPLAYED_ROUTES).map((route: ExpandedRoute, routeIdx: number) => (
                               <span
-                                key={route.id}
+                                key={route.id ?? routeIdx}
                                 className="px-1.5 py-0.5 rounded text-xs font-bold"
                                 style={{
                                   backgroundColor: route.color ? `#${route.color}` : '#6b7280',
@@ -1371,7 +1383,7 @@ export default function StopArrivalsSlide({
                   Display Name Override
                 </label>
                 <Input
-                  placeholder={selectedStop?.stop_name || "Leave blank to use agency name"}
+                  placeholder={selectedStop?.name || selectedStop?.stop_name || "Leave blank to use agency name"}
                   className="bg-white border-[#cbd5e0]"
                   value={displayName}
                   onChange={(e) => setDisplayName(slideId, e.target.value)}
