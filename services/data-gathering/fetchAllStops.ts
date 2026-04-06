@@ -1,3 +1,5 @@
+import { expandStops } from '@/utils/expandStops';
+
 const NYSDOT_STOPS_URL = process.env.NEXT_PUBLIC_NYSDOT_STOPS_URL;
 if (!NYSDOT_STOPS_URL) {
   throw new Error('NEXT_PUBLIC_NYSDOT_STOPS_URL environment variable is not configured');

@@ -2,18 +2,19 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { StateStorage, PersistOptions } from 'zustand/middleware';
 
-// Route info from gtfs-stops API
+// Route info from gtfs-stops API (expanded format)
 export interface RouteInfo {
-  route_id: string;
-  route_short_name: string;
-  route_long_name?: string;
-  route_color?: string;
-  route_text_color?: string;
+  id: string;
+  shortName: string;
+  longName?: string;
+  color?: string;
+  textColor?: string;
+  headsigns?: string[];
 }
 
 // Direction option for a stop (e.g., "Northbound", "All Directions")
 export interface DirectionOption {
-  stop_id: string;       // The actual stop_id to query (e.g., "901N", "901S", "901")
+  stopId: string;       // The actual stop id to query (e.g., "901N", "901S", "901")
   label: string;         // Display label (e.g., "Northbound", "Platform 1", "All Directions")
   isAllDirections: boolean;
   headsignFilter?: string;  // If set, filter arrivals to only show this headsign (e.g., "Jamaica", "Hempstead")
@@ -21,11 +22,11 @@ export interface DirectionOption {
 
 // Service selection state for multi-select UI
 export interface ServiceSelection {
-  service_guid: string;
-  agency_name: string;
+  serviceId: string;
+  agencyName: string;
   routes?: RouteInfo[];
   enabled: boolean;
-  selectedStopId: string;           // The stop_id to query for this service
+  selectedStopId: string;           // The stop id to query for this service
   selectedHeadsignFilters?: string[];  // Filter arrivals by headsigns (multi-select, exact match)
   directionOptions: DirectionOption[];  // Available direction choices for this service
   enabledRouteIds?: string[];       // Which routes are enabled (undefined = all enabled)

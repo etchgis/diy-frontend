@@ -75,8 +75,8 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
 
   // Get rail icon based on organization/agency name
   const getRailIcon = (): string => {
-    const orgId = selectedStop?.services?.[0]?.organization_guid || selectedStop?.organization_guid || '';
-    const orgName = selectedStop?.services?.[0]?.agency_name || selectedStop?.agency_name || '';
+    const orgId = selectedStop?.services?.[0]?.organizationId || selectedStop?.organizationId || '';
+    const orgName = selectedStop?.services?.[0]?.agencyName || selectedStop?.agencyName || '';
     const combined = `${orgId} ${orgName}`.toLowerCase();
 
     if (combined.includes('lirr') || combined.includes('long island')) {
@@ -150,7 +150,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 <div className="flex-1">
                   <div className="mb-2" style={{display: 'flex', alignItems: 'center', fontSize: `${18 * titleSizeMultiplier}px`}}>
                     <img src={modeIcon} style={{height: `${38 * titleSizeMultiplier}px`, width: `${38 * titleSizeMultiplier}px`, marginRight: '8px', objectFit: 'contain'}} alt="" />
-                    <p>Stop #{selectedStop?.stop_id} arrival times</p>
+                    <p>Stop #{selectedStop?.id} arrival times</p>
                   </div>
 
                   <h2 className="font-bold mb-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
@@ -184,7 +184,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                     }}
                   >
                     <img src={modeIcon} style={{height: `clamp(28px, ${5.5 * titleSizeMultiplier}vh, 7rem)`, width: `clamp(28px, ${5.5 * titleSizeMultiplier}vh, 7rem)`, marginRight: '8px', objectFit: 'contain'}} alt="" />
-                    <span className="truncate">Stop #{selectedStop?.stop_id} arrival times</span>
+                    <span className="truncate">Stop #{selectedStop?.id} arrival times</span>
                   </div>
 
                   <h2

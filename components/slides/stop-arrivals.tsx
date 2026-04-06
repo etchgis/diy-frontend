@@ -19,13 +19,14 @@ import {
 } from "lucide-react";
 import FixedRoutePreview from "../slide-previews/fixed-route-preview";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useFixedRouteStore, ServiceSelection, DirectionOption } from "../../stores/fixedRoute";
+import { useFixedRouteStore, ServiceSelection, DirectionOption, RouteInfo } from "../../stores/fixedRoute";
 import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { calculateDistance, formatDistance } from "@/utils/distance";
+import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop } from "@/types/nysdot-stops";
 
 // Stable empty array reference for Zustand selector
 const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
@@ -33,12 +34,25 @@ const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
 const MAX_VISIBLE_SERVICES = 3;
 const MAX_DISPLAYED_ROUTES = 6;
 
-// Helper to deduplicate routes by route_id across all services
-function getUniqueRoutes(services: any[]): any[] {
-  const allRoutes = services?.flatMap((svc: any) => svc.routes || []) || [];
-  return allRoutes.filter((route: any, idx: number) =>
-    allRoutes.findIndex((r: any) => r.route_id === route.route_id) === idx
+// Helper to deduplicate routes by id across all services
+function getUniqueRoutes(services: ExpandedService[]): ExpandedRoute[] {
+  const allRoutes = services?.flatMap((service) => service.routes || []) || [];
+  return allRoutes.filter((route, idx) =>
+    allRoutes.findIndex((r) => r.id === route.id) === idx
   );
+}
+
+// Helper to extract unique headsigns from all services at a linked stop
+function getUniqueHeadsigns(services: ExpandedService[]): string[] {
+  const headsignSet = new Set<string>();
+  for (const service of services || []) {
+    for (const route of service.routes || []) {
+      for (const headsign of route.headsigns || []) {
+        headsignSet.add(headsign);
+      }
+    }
+  }
+  return Array.from(headsignSet).sort();
 }
 
 // Compute direction options for a specific service using its _stopIds
@@ -51,12 +65,12 @@ function computeDirectionOptions(
   const stopIds: string[] = service._stopIds || [];
 
   if (stopIds.length === 0) {
-    return [{ stop_id: '', label: 'All Directions', isAllDirections: true }];
+    return [{ stopId: '', label: 'All Directions', isAllDirections: true }];
   }
 
   // Separate parent stations from directional stops
   const parentStopIds: string[] = [];
-  const directionalByLabel = new Map<string, string[]>(); // label -> [stop_ids]
+  const directionalByLabel = new Map<string, string[]>(); // label -> [stopIds]
 
   for (const stopId of stopIds) {
     // Check if this is a directional stop (ends with N/S/E/W)
@@ -89,22 +103,22 @@ function computeDirectionOptions(
     // Only offer direction choice if there are 2+ distinct directions.
     if (directionalByLabel.size < 2) {
       return [{
-        stop_id: allDirStopIds.join(','),
+        stopId: allDirStopIds.join(','),
         label: 'All Directions',
         isAllDirections: true
       }];
     }
 
     options.push({
-      stop_id: allDirStopIds.join(','),
+      stopId: allDirStopIds.join(','),
       label: 'All Directions',
       isAllDirections: true
     });
 
-    // Add each unique direction with all its stop_ids combined
+    // Add each unique direction with all its stopIds combined
     for (const [label, dirStopIds] of directionalByLabel) {
       options.push({
-        stop_id: dirStopIds.join(','),
+        stopId: dirStopIds.join(','),
         label,
         isAllDirections: false
       });
@@ -113,27 +127,27 @@ function computeDirectionOptions(
   }
 
   // No N/S/E/W suffixes - try route-based direction options using _stopIdData
-  const stopIdData = service._stopIdData as Record<string, { routes: any[], location_type: number }> | undefined;
+  const stopIdData = service._stopIdData as Record<string, { routes: any[], locationType: number }> | undefined;
   if (stopIdData && Object.keys(stopIdData).length > 1) {
-    // Group stop_ids by route destination
-    const routeDestinations = new Map<string, string[]>(); // destination label -> [stop_ids]
+    // Group stopIds by route destination
+    const routeDestinations = new Map<string, string[]>(); // destination label -> [stopIds]
     const parentStationIds: string[] = [];  // Collect ALL parent stations
 
     for (const stopId of stopIds) {
       const data = stopIdData[stopId];
 
       // Check if this is a parent station
-      if (data?.location_type === 1) {
+      if (data?.locationType === 1) {
         parentStationIds.push(stopId);  // Collect all parent stations, not just the last one
         continue; // Parent stations get used for "All", not their own option
       }
 
-      // Group by route - use route_short_name or route_id as the grouping key
+      // Group by route - use shortName or id as the grouping key
       const routes = data?.routes || [];
       if (routes.length > 0) {
         const route = routes[0];
         // Use route short name as the label (e.g., "PATH", "A", "7")
-        const routeLabel = route.route_short_name || route.route_id;
+        const routeLabel = route.shortName || route.id;
 
         if (routeLabel) {
           if (!routeDestinations.has(routeLabel)) {
@@ -146,13 +160,13 @@ function computeDirectionOptions(
 
     // If we found multiple destinations, create route-based options
     if (routeDestinations.size > 1) {
-      // "All" option uses ALL parent stations if available, otherwise all child stop_ids
+      // "All" option uses ALL parent stations if available, otherwise all child stopIds
       const allStopIds = parentStationIds.length > 0
         ? parentStationIds
         : Array.from(routeDestinations.values()).flat();
 
       options.push({
-        stop_id: allStopIds.join(','),
+        stopId: allStopIds.join(','),
         label: 'All',
         isAllDirections: true
       });
@@ -160,7 +174,7 @@ function computeDirectionOptions(
       // Add each destination as an option
       for (const [destination, destStopIds] of routeDestinations) {
         options.push({
-          stop_id: destStopIds.join(','),
+          stopId: destStopIds.join(','),
           label: destination,
           isAllDirections: false
         });
@@ -171,18 +185,18 @@ function computeDirectionOptions(
 
   // Try headsign-based direction options (e.g., "Jamaica", "Hempstead" for buses)
   // This works when a single stop serves multiple destinations
-  const stopIdDataWithHeadsigns = service._stopIdData as Record<string, { routes: any[], headsigns_by_route?: Record<string, string[]>, location_type: number }> | undefined;
+  const stopIdDataWithHeadsigns = service._stopIdData as Record<string, { routes: ExpandedRoute[], locationType: number }> | undefined;
   if (stopIdDataWithHeadsigns && stopIds.length > 0) {
     // Collect unique headsigns from enabled routes only
     // Use Map to deduplicate by lowercase key while preserving original for display
     const headsignMap = new Map<string, string>(); // lowercase -> original
     for (const stopId of stopIds) {
       const data = stopIdDataWithHeadsigns[stopId];
-      if (data?.headsigns_by_route) {
-        for (const [routeId, headsigns] of Object.entries(data.headsigns_by_route)) {
+      if (data?.routes) {
+        for (const route of data.routes) {
           // Only include headsigns from enabled routes (or all if no filter)
-          if (!enabledRouteIds || enabledRouteIds.includes(routeId)) {
-            for (const headsign of headsigns) {
+          if (!enabledRouteIds || enabledRouteIds.includes(route.id)) {
+            for (const headsign of route.headsigns || []) {
               const key = headsign.toLowerCase().trim();
               if (!headsignMap.has(key)) {
                 headsignMap.set(key, headsign);
@@ -196,7 +210,7 @@ function computeDirectionOptions(
     // If we have multiple headsigns, offer them as direction options
     if (headsignMap.size > 1) {
       options.push({
-        stop_id: stopIds.join(','),
+        stopId: stopIds.join(','),
         label: 'All Directions',
         isAllDirections: true
       });
@@ -205,7 +219,7 @@ function computeDirectionOptions(
       const sortedHeadsigns = Array.from(headsignMap.values()).sort();
       for (const headsign of sortedHeadsigns) {
         options.push({
-          stop_id: stopIds.join(','),
+          stopId: stopIds.join(','),
           label: headsign,
           isAllDirections: false,
           headsignFilter: headsign.toLowerCase().trim()  // Normalized for filtering
@@ -215,9 +229,9 @@ function computeDirectionOptions(
     }
   }
 
-  // Fallback: no directional options available, just use all stop_ids
+  // Fallback: no directional options available, just use all stopIds
   options.push({
-    stop_id: stopIds.join(','),
+    stopId: stopIds.join(','),
     label: 'All Directions',
     isAllDirections: true
   });
@@ -225,132 +239,128 @@ function computeDirectionOptions(
   return options;
 }
 
-// Deduplicate stops by stop_name for search dropdown
+// Deduplicate stops by name for search dropdown
 // This merges all platforms/directions of the same station into one entry
-function deduplicateStops(stops: any[]): any[] {
+function deduplicateStops(stops: ExpandedStop[]): ExpandedStop[] {
   const stopMap = new Map<string, any>();
 
   for (const stop of stops) {
-    // Use stop_name as the key so all "Grand Central-42 St" entries merge into one
-    const key = stop.stop_name;
+    // Use name as the key so all "Grand Central-42 St" entries merge into one
+    const key = stop.name;
     if (stopMap.has(key)) {
       // Merge services into existing stop
       const existing = stopMap.get(key);
-      for (const service of stop.services || []) {
+      for (const svc of stop.services || []) {
         const existingServiceIdx = existing.services.findIndex(
-          (s: any) => s.service_guid === service.service_guid
+          (f: any) => f.id === svc.id
         );
         if (existingServiceIdx === -1) {
           // New service - add it (clone to avoid mutation)
           existing.services.push({
-            ...service,
-            routes: service.routes ? [...service.routes] : [],
-            _stopIds: [stop.stop_id],  // Track which stop_ids this service uses
-            _stopIdData: {  // Track per-stop_id metadata for direction options
-              [stop.stop_id]: {
-                routes: service.routes ? [...service.routes] : [],
-                headsigns_by_route: service.headsigns_by_route ? { ...service.headsigns_by_route } : undefined,
-                location_type: stop.location_type
+            ...svc,
+            routes: svc.routes ? [...svc.routes] : [],
+            _stopIds: [stop.id],  // Track which stopIds this service uses
+            _stopIdData: {  // Track per-stopId metadata for direction options
+              [stop.id]: {
+                routes: svc.routes ? [...svc.routes] : [],
+                locationType: stop.locationType
               }
             }
           });
         } else {
-          // Same service - merge routes arrays and stop_ids
+          // Same service - merge routes arrays and stopIds
           const existingService = existing.services[existingServiceIdx];
           if (!existingService.routes) {
             existingService.routes = [];
           }
-          for (const route of service.routes || []) {
-            if (!existingService.routes.some((r: any) => r.route_id === route.route_id)) {
+          for (const route of svc.routes || []) {
+            if (!existingService.routes.some((r: any) => r.id === route.id)) {
               existingService.routes.push(route);
             }
           }
-          // Track stop_ids for this service
+          // Track stopIds for this service
           if (!existingService._stopIds) {
             existingService._stopIds = [];
           }
-          if (!existingService._stopIds.includes(stop.stop_id)) {
-            existingService._stopIds.push(stop.stop_id);
+          if (!existingService._stopIds.includes(stop.id)) {
+            existingService._stopIds.push(stop.id);
           }
-          // Track per-stop_id metadata
+          // Track per-stopId metadata
           if (!existingService._stopIdData) {
             existingService._stopIdData = {};
           }
-          existingService._stopIdData[stop.stop_id] = {
-            routes: service.routes ? [...service.routes] : [],
-            headsigns_by_route: service.headsigns_by_route ? { ...service.headsigns_by_route } : undefined,
-            location_type: stop.location_type
+          existingService._stopIdData[stop.id] = {
+            routes: svc.routes ? [...svc.routes] : [],
+            locationType: stop.locationType
           };
         }
       }
-      // Collect all related stop_ids for direction computation later
+      // Collect all related stopIds for direction computation later
       if (!existing._allStopIds) {
-        existing._allStopIds = [existing.stop_id];
+        existing._allStopIds = [existing.id];
       }
-      if (!existing._allStopIds.includes(stop.stop_id)) {
-        existing._allStopIds.push(stop.stop_id);
+      if (!existing._allStopIds.includes(stop.id)) {
+        existing._allStopIds.push(stop.id);
       }
-      // Prefer version with location_type = 1 (parent station)
-      if (stop.location_type === 1) {
-        existing.stop_id = stop.stop_id;
-        existing.location_type = stop.location_type;
-        existing.unique_stop_id = stop.unique_stop_id;
+      // Prefer version with locationType = 1 (parent station)
+      if (stop.locationType === 1) {
+        existing.id = stop.id;
+        existing.locationType = stop.locationType;
       }
     } else {
       // Clone to avoid mutating original
-      const clonedServices = (stop.services || []).map((s: any) => ({
-        ...s,
-        routes: s.routes ? [...s.routes] : [],
-        _stopIds: [stop.stop_id],
+      const clonedServices = (stop.services || []).map((f: any) => ({
+        ...f,
+        routes: f.routes ? [...f.routes] : [],
+        _stopIds: [stop.id],
         _stopIdData: {
-          [stop.stop_id]: {
-            routes: s.routes ? [...s.routes] : [],
-            headsigns_by_route: s.headsigns_by_route ? { ...s.headsigns_by_route } : undefined,
-            location_type: stop.location_type
+          [stop.id]: {
+            routes: f.routes ? [...f.routes] : [],
+            locationType: stop.locationType
           }
         }
       }));
       stopMap.set(key, {
         ...stop,
         services: clonedServices,
-        _allStopIds: [stop.stop_id]
+        _allStopIds: [stop.id]
       });
     }
   }
 
-  // Deduplicate services with identical routes (e.g., MTA regular vs supplemented feeds)
+  // Deduplicate services with identical routes (e.g., MTA regular vs supplemented services)
   for (const stop of stopMap.values()) {
     const uniqueServices: any[] = [];
     const seenRouteKeys = new Set<string>();
 
-    for (const service of stop.services) {
+    for (const svc of stop.services) {
       // Create a key from sorted route IDs
-      const routeKey = (service.routes || [])
-        .map((r: any) => r.route_id)
+      const routeKey = (svc.routes || [])
+        .map((r: any) => r.id)
         .sort()
         .join(',');
 
       if (!seenRouteKeys.has(routeKey)) {
         seenRouteKeys.add(routeKey);
-        uniqueServices.push(service);
+        uniqueServices.push(svc);
       } else {
         // Merge _stopIds and _stopIdData into the existing service with same routes
-        const existingService = uniqueServices.find(s => {
-          const existingKey = (s.routes || []).map((r: any) => r.route_id).sort().join(',');
+        const existingService = uniqueServices.find(f => {
+          const existingKey = (f.routes || []).map((r: any) => r.id).sort().join(',');
           return existingKey === routeKey;
         });
-        if (existingService && service._stopIds) {
-          for (const stopId of service._stopIds) {
+        if (existingService && svc._stopIds) {
+          for (const stopId of svc._stopIds) {
             if (!existingService._stopIds.includes(stopId)) {
               existingService._stopIds.push(stopId);
             }
           }
           // Merge _stopIdData
-          if (service._stopIdData) {
+          if (svc._stopIdData) {
             if (!existingService._stopIdData) {
               existingService._stopIdData = {};
             }
-            Object.assign(existingService._stopIdData, service._stopIdData);
+            Object.assign(existingService._stopIdData, svc._stopIdData);
           }
         }
       }
@@ -382,13 +392,13 @@ export default function StopArrivalsSlide({
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const [allStops, setAllStops] = useState<any[]>([]);
-  const [filteredStops, setFilteredStops] = useState<any[]>([]);
+  const [allStops, setAllStops] = useState<ExpandedStop[]>([]);
+  const [filteredStops, setFilteredStops] = useState<ExpandedStop[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [nearbyStops, setNearbyStops] = useState<any[]>([]);
+  const [nearbyStops, setNearbyStops] = useState<ExpandedStop[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [complexStops, setComplexStops] = useState<any[]>([]); // Stops in same station complex
+  const [linkedStops, setLinkedStops] = useState<ExpandedLinkedStop[]>([]); // Stops in same station complex
 
   const stopName = useFixedRouteStore(
     (state) => state.slides[slideId]?.stopName || ""
@@ -488,8 +498,8 @@ export default function StopArrivalsSlide({
             distance: calculateDistance(
               coordinates.lat,
               coordinates.lng,
-              stop.stop_lat,
-              stop.stop_lon
+              stop.lat,
+              stop.lon
             ),
           }));
 
@@ -551,8 +561,8 @@ export default function StopArrivalsSlide({
             distance: calculateDistance(
               coordinates.lat,
               coordinates.lng,
-              stop.stop_lat,
-              stop.stop_lon
+              stop.lat,
+              stop.lon
             ),
           }));
 
@@ -577,36 +587,36 @@ export default function StopArrivalsSlide({
   };
 
   const handleSelectStop = (stop: any) => {
-    setStopName(slideId, stop.stop_name);
+    setStopName(slideId, stop.name);
     setFilteredStops([]);
     setSelectedStop(slideId, stop);
     setShowDropdown(false);
 
     // Initialize service selections - all enabled by default
-    const selections: ServiceSelection[] = (stop.services || []).map((service: any) => {
-      const directionOptions = computeDirectionOptions(service, allStops);
-      const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stop_id
-        || directionOptions[0]?.stop_id
-        || stop.stop_id;
+    const selections: ServiceSelection[] = (stop.services || []).map((svc: any) => {
+      const directionOptions = computeDirectionOptions(svc, allStops);
+      const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stopId
+        || directionOptions[0]?.stopId
+        || stop.id;
 
       return {
-        service_guid: service.service_guid,
-        agency_name: service.agency_name,
-        routes: service.routes,
+        serviceId: svc.id,
+        agencyName: svc.agencyName,
+        routes: svc.routes,
         enabled: true,  // All enabled by default
         selectedStopId: defaultStopId,
         directionOptions,
-        enabledRouteIds: service.routes?.map((r: any) => r.route_id) || []
+        enabledRouteIds: svc.routes?.map((r: any) => r.id) || []
       };
     });
 
     setServiceSelections(slideId, selections);
 
-    // Use complex_stops directly from the API response (full stop objects, already deduped by stop_name)
-    if (stop.complex_stops && stop.complex_stops.length > 0) {
-      setComplexStops(stop.complex_stops);
+    // Use linkedStops directly from the API response (full stop objects, already deduped by name)
+    if (stop.linkedStops && stop.linkedStops.length > 0) {
+      setLinkedStops(stop.linkedStops);
     } else {
-      setComplexStops([]);
+      setLinkedStops([]);
     }
   };
 
@@ -616,61 +626,59 @@ export default function StopArrivalsSlide({
     }
   };
 
-  // Add services from a complex stop to the current selections
-  // Merges headsigns from the complex stop into existing services with matching service_guid
-  const handleAddComplexStop = (complexStop: any) => {
+  // Add services from a linked stop to the current selections
+  // Merges headsigns from the linked stop into existing services with matching serviceId
+  const handleAddLinkedStop = (linkedStop: ExpandedLinkedStop) => {
     const updatedSelections = [...serviceSelections];
     let anyMerged = false;
 
-    for (const complexService of complexStop.services || []) {
-      const serviceGuid = complexService.service_guid;
-      if (!serviceGuid) {
-        console.warn('Skipping complex service without service_guid');
+    for (const linkedService of linkedStop.services || []) {
+      const serviceId = linkedService.id;
+      if (!serviceId) {
+        console.warn('Skipping linked service without id');
         continue;
       }
 
-      // Find existing selection with matching service_guid
+      // Find existing selection with matching serviceId
       const existingIndex = updatedSelections.findIndex(
-        s => s.service_guid === serviceGuid
+        s => s.serviceId === serviceId
       );
 
       if (existingIndex !== -1) {
-        // Merge: add complex stop's headsigns to this service's _stopIdData
+        // Merge: add linked stop's headsigns to this service's _stopIdData
         const existing = updatedSelections[existingIndex];
 
         // Find the original service in selectedStop to get its _stopIdData
         const originalService = selectedStop?.services?.find(
-          (s: any) => s.service_guid === serviceGuid
+          (f: any) => f.id === serviceId
         );
 
         // Build enriched service with merged headsigns
-        const baseStopId = selectedStop?.stop_id || 'unknown';
+        const baseStopId = selectedStop?.id || 'unknown';
         const enrichedService = {
           ...originalService,
           _stopIds: originalService?._stopIds ? [...originalService._stopIds] : [baseStopId],
           _stopIdData: originalService?._stopIdData ? { ...originalService._stopIdData } : {
             [baseStopId]: {
               routes: originalService?.routes || [],
-              headsigns_by_route: originalService?.headsigns_by_route,
-              location_type: selectedStop?.location_type
+              locationType: selectedStop?.locationType
             }
           }
         };
 
-        // Add the complex stop's headsigns
-        if (!enrichedService._stopIds.includes(complexStop.stop_id)) {
-          enrichedService._stopIds.push(complexStop.stop_id);
+        // Add the linked stop's headsigns
+        if (!enrichedService._stopIds.includes(linkedStop.id)) {
+          enrichedService._stopIds.push(linkedStop.id);
         }
-        enrichedService._stopIdData[complexStop.stop_id] = {
-          routes: complexService.routes || originalService?.routes || [],
-          headsigns_by_route: complexService.headsigns_by_route,
-          location_type: complexStop.location_type || 0
+        enrichedService._stopIdData[linkedStop.id] = {
+          routes: linkedService.routes || originalService?.routes || [],
+          locationType: 0
         };
 
         // Recompute direction options with merged data
         const newDirOptions = computeDirectionOptions(enrichedService, allStops, existing.enabledRouteIds);
-        const defaultStopId = newDirOptions.find(o => o.isAllDirections)?.stop_id
-          || newDirOptions[0]?.stop_id
+        const defaultStopId = newDirOptions.find(o => o.isAllDirections)?.stopId
+          || newDirOptions[0]?.stopId
           || existing.selectedStopId;
 
         updatedSelections[existingIndex] = {
@@ -681,19 +689,19 @@ export default function StopArrivalsSlide({
         anyMerged = true;
       } else {
         // New service - add it
-        const directionOptions = computeDirectionOptions(complexService, allStops);
-        const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stop_id
-          || directionOptions[0]?.stop_id
-          || complexStop.stop_id;
+        const directionOptions = computeDirectionOptions(linkedService, allStops);
+        const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stopId
+          || directionOptions[0]?.stopId
+          || linkedStop.id;
 
         updatedSelections.push({
-          service_guid: serviceGuid,
-          agency_name: complexService.agency_name,
-          routes: complexService.routes,
+          serviceId: serviceId,
+          agencyName: linkedService.agencyName,
+          routes: linkedService.routes,
           enabled: true,
           selectedStopId: defaultStopId,
           directionOptions,
-          enabledRouteIds: complexService.routes?.map((r: any) => r.route_id) || []
+          enabledRouteIds: linkedService.routes?.map((r: any) => r.id) || []
         });
         anyMerged = true;
       }
@@ -703,8 +711,8 @@ export default function StopArrivalsSlide({
       setServiceSelections(slideId, updatedSelections);
     }
 
-    // Remove this stop from complex stops list
-    setComplexStops(complexStops.filter(s => s.stop_name !== complexStop.stop_name));
+    // Remove this stop from linked stops list
+    setLinkedStops(linkedStops.filter(s => s.name !== linkedStop.name));
   };
 
   const fetchData = useCallback(async () => {
@@ -712,28 +720,28 @@ export default function StopArrivalsSlide({
 
     // Build queries from enabled service selections
     // selectedStopId can be comma-separated (e.g., "631N,723N,901N")
-    const queries: { service_guid: string; stop_id: string; organization_guid: string }[] = [];
+    const queries: { serviceId: string; stopId: string; organizationId: string }[] = [];
 
     for (const selection of serviceSelections) {
       if (!selection.enabled) continue;
 
-      const orgGuid = selectedStop.services?.find(
-        (svc: any) => svc.service_guid === selection.service_guid
-      )?.organization_guid;
+      const orgId = selectedStop.services?.find(
+        (service: any) => service.id === selection.serviceId
+      )?.organizationId;
 
-      // Skip if we can't find the organization_guid
-      if (!orgGuid) {
-        console.warn(`[StopArrivals] Could not find organization_guid for service ${selection.service_guid}`);
+      // Skip if we can't find the organizationId
+      if (!orgId) {
+        console.warn(`[StopArrivals] Could not find organizationId for service ${selection.serviceId}`);
         continue;
       }
 
-      // Split comma-separated stop_ids into individual queries
+      // Split comma-separated stopIds into individual queries
       const stopIds = selection.selectedStopId.split(',').filter(Boolean);
       for (const stopId of stopIds) {
         queries.push({
-          service_guid: selection.service_guid,
-          stop_id: stopId,
-          organization_guid: orgGuid
+          serviceId: selection.serviceId,
+          stopId: stopId,
+          organizationId: orgId
         });
       }
     }
@@ -747,9 +755,9 @@ export default function StopArrivalsSlide({
       const results = await Promise.allSettled(
         queries.map(async (q) => {
           const data = await fetchStopData(
-            q.stop_id,
-            q.service_guid,
-            q.organization_guid
+            q.stopId,
+            q.serviceId,
+            q.organizationId
           );
           // Tag each arrival with its source service
           return (data?.trains || []).map((item: any) => ({
@@ -763,7 +771,7 @@ export default function StopArrivalsSlide({
             timestamp: item.arrivalTimestamp,  // Raw timestamp for sorting
             duration: item.arrival,
             status: item.status,
-            _sourceService: q.service_guid
+            _sourceService: q.serviceId
           }));
         })
       );
@@ -800,7 +808,7 @@ export default function StopArrivalsSlide({
 
       // Filter by enabled routes
       const routeFilteredArrivals = uniqueArrivals.filter(arr => {
-        const selection = serviceSelections.find(s => s.service_guid === arr._sourceService);
+        const selection = serviceSelections.find(s => s.serviceId === arr._sourceService);
         // If no selection found, no enabledRouteIds, or empty array, include the arrival
         if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
         return selection.enabledRouteIds.includes(arr.routeId);
@@ -808,7 +816,7 @@ export default function StopArrivalsSlide({
 
       // Filter by headsign (destination) when direction filters are selected
       const filteredArrivals = routeFilteredArrivals.filter(arr => {
-        const selection = serviceSelections.find(s => s.service_guid === arr._sourceService);
+        const selection = serviceSelections.find(s => s.serviceId === arr._sourceService);
         // If no headsign filters are set, include the arrival
         if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
         // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
@@ -839,21 +847,21 @@ export default function StopArrivalsSlide({
     const freshSelections = freshSlide?.serviceSelections;
     if (!freshSelectedStop || !freshSelections?.length) return;
 
-    const deduped = deduplicateStops([freshSelectedStop, ...allStops.filter((s: any) => s.stop_name === freshSelectedStop.stop_name)]);
+    const deduped = deduplicateStops([freshSelectedStop, ...allStops.filter((s: any) => s.name === freshSelectedStop.name)]);
     const dedupedStop = deduped[0] || freshSelectedStop;
 
     let changed = false;
     const updated = freshSelections.map((selection: ServiceSelection) => {
-      const service = dedupedStop.services?.find((s: any) => s.service_guid === selection.service_guid);
-      if (!service) return selection;
+      const svc = dedupedStop.services?.find((f: any) => f.id === selection.serviceId);
+      if (!svc) return selection;
 
       // Pass enabledRouteIds to filter direction options by active routes
-      const newDirOptions = computeDirectionOptions(service, allStops, selection.enabledRouteIds);
-      const validStopIds = new Set(newDirOptions.map((o: DirectionOption) => o.stop_id));
+      const newDirOptions = computeDirectionOptions(svc, allStops, selection.enabledRouteIds);
+      const validStopIds = new Set(newDirOptions.map((o: DirectionOption) => o.stopId));
       const currentValid = validStopIds.has(selection.selectedStopId);
       const newSelectedStopId = currentValid
         ? selection.selectedStopId
-        : (newDirOptions.find((o: DirectionOption) => o.isAllDirections)?.stop_id || newDirOptions[0]?.stop_id || selection.selectedStopId);
+        : (newDirOptions.find((o: DirectionOption) => o.isAllDirections)?.stopId || newDirOptions[0]?.stopId || selection.selectedStopId);
 
       // Also validate selectedHeadsignFilters - remove any that are no longer valid
       const validHeadsignFilters = new Set(newDirOptions.map((o: DirectionOption) => o.headsignFilter).filter(Boolean));
@@ -877,23 +885,23 @@ export default function StopArrivalsSlide({
   useEffect(() => {
     if (selectedStop && (!serviceSelections || serviceSelections.length === 0)) {
       // Re-run handleSelectStop logic to initialize serviceSelections
-      const deduped = deduplicateStops([selectedStop, ...allStops.filter(s => s.stop_name === selectedStop.stop_name)]);
+      const deduped = deduplicateStops([selectedStop, ...allStops.filter(s => s.name === selectedStop.name)]);
       const dedupedStop = deduped[0] || selectedStop;
 
-      const selections: ServiceSelection[] = (dedupedStop.services || []).map((service: any) => {
-        const directionOptions = computeDirectionOptions(service, allStops);
-        const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stop_id
-          || directionOptions[0]?.stop_id
-          || selectedStop.stop_id;
+      const selections: ServiceSelection[] = (dedupedStop.services || []).map((svc: any) => {
+        const directionOptions = computeDirectionOptions(svc, allStops);
+        const defaultStopId = directionOptions.find(o => o.isAllDirections)?.stopId
+          || directionOptions[0]?.stopId
+          || selectedStop.id;
 
         return {
-          service_guid: service.service_guid,
-          agency_name: service.agency_name,
-          routes: service.routes,
+          serviceId: svc.id,
+          agencyName: svc.agencyName,
+          routes: svc.routes,
           enabled: true,
           selectedStopId: defaultStopId,
           directionOptions,
-          enabledRouteIds: service.routes?.map((r: any) => r.route_id) || []
+          enabledRouteIds: svc.routes?.map((r: any) => r.id) || []
         };
       });
 
@@ -986,7 +994,7 @@ export default function StopArrivalsSlide({
   const handleRemoveImage = async (target: ImageTarget) => {
     const currentImage = imageTargetMap[target].get();
     if (!currentImage) return;
-  
+
     try {
       await deleteImage(currentImage);
       imageTargetMap[target].set('');
@@ -1067,16 +1075,16 @@ export default function StopArrivalsSlide({
                           onClick={() => handleSelectStop(stop)}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
                         >
-                          {stop.stop_name} -{" "}
-                          {stop.services[0]?.agency_name || "No Agency"}
+                          {stop.name} -{" "}
+                          {stop.services[0]?.agencyName || "No Agency"}
                           {stop.services.length > 1 && (
                             <span className="text-gray-400 text-xs ml-1">
                               (+{stop.services.length - 1} more)
                             </span>
                           )}
-                          {stop.distance !== undefined && (
+                          {(stop as any).distance !== undefined && (
                             <span className="text-gray-500 text-sm ml-2">
-                              ({formatDistance(stop.distance)})
+                              ({formatDistance((stop as any).distance)})
                             </span>
                           )}
                         </li>
@@ -1097,10 +1105,10 @@ export default function StopArrivalsSlide({
                         </h4>
                       </div>
                       <p className="text-sm text-[#606061] mb-1">
-                        {selectedStop.stop_name}
+                        {selectedStop.name}
                       </p>
                       <p className="text-xs text-[#718096]">
-                        {selectedStop.services[0]?.agency_name || "No Agency"}
+                        {selectedStop.services[0]?.agencyName || "No Agency"}
                       </p>
                       {selectedStop.distance !== undefined && (
                         <p className="text-xs text-[#718096] mt-1">
@@ -1109,7 +1117,7 @@ export default function StopArrivalsSlide({
                       )}
                     </div>
                     <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${selectedStop.stop_lat},${selectedStop.stop_lon}`}
+                      href={`https://www.google.com/maps/search/?api=1&query=${selectedStop.lat},${selectedStop.lon}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-colors whitespace-nowrap flex-shrink-0"
@@ -1131,7 +1139,7 @@ export default function StopArrivalsSlide({
                           : serviceSelections.slice(0, MAX_VISIBLE_SERVICES)
                         ).map((selection, index) => (
                           <div
-                            key={`${selection.service_guid}-${index}`}
+                            key={`${selection.serviceId}-${index}`}
                             className="p-3 bg-white rounded-lg border"
                           >
                             {/* Route badges row */}
@@ -1147,28 +1155,28 @@ export default function StopArrivalsSlide({
                               />
                               {selection.routes && selection.routes.length > 0 ? (
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  {selection.routes.map((route: any) => {
+                                  {selection.routes.map((route: RouteInfo) => {
                                     const isRouteEnabled = !selection.enabledRouteIds ||
-                                      selection.enabledRouteIds.includes(route.route_id);
+                                      selection.enabledRouteIds.includes(route.id);
                                     const canToggle = selection.enabled && selection.routes!.length > 1;
 
                                     return (
                                       <button
-                                        key={route.route_id}
+                                        key={route.id}
                                         disabled={!canToggle}
                                         onClick={() => {
                                           if (!canToggle) return;
                                           const currentEnabled = selection.enabledRouteIds ||
-                                            selection.routes!.map((r: any) => r.route_id);
+                                            selection.routes!.map((r: RouteInfo) => r.id);
                                           // Prevent disabling all routes
                                           if (isRouteEnabled && currentEnabled.length === 1) return;
                                           const newEnabled = isRouteEnabled
-                                            ? currentEnabled.filter((id: string) => id !== route.route_id)
-                                            : [...currentEnabled, route.route_id];
+                                            ? currentEnabled.filter((id: string) => id !== route.id)
+                                            : [...currentEnabled, route.id];
 
                                           // Recalculate direction options based on new enabled routes
-                                          const service = selectedStop.services?.find((s: any) => s.service_guid === selection.service_guid);
-                                          const newDirOptions = service ? computeDirectionOptions(service, allStops, newEnabled) : selection.directionOptions;
+                                          const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
+                                          const newDirOptions = svc ? computeDirectionOptions(svc, allStops, newEnabled) : selection.directionOptions;
                                           // Remove any headsign filters that are no longer valid
                                           const validHeadsigns = new Set(newDirOptions.map(o => o.headsignFilter).filter(Boolean));
                                           const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsigns.has(h));
@@ -1182,12 +1190,12 @@ export default function StopArrivalsSlide({
                                           canToggle ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-400' : ''
                                         } ${isRouteEnabled ? 'opacity-100' : 'opacity-30'}`}
                                         style={{
-                                          backgroundColor: route.route_color ? `#${route.route_color}` : '#6b7280',
-                                          color: route.route_text_color ? `#${route.route_text_color}` : '#ffffff'
+                                          backgroundColor: route.color ? `#${route.color}` : '#6b7280',
+                                          color: route.textColor ? `#${route.textColor}` : '#ffffff'
                                         }}
-                                        title={canToggle ? `Click to ${isRouteEnabled ? 'hide' : 'show'} ${route.route_short_name || route.route_id} arrivals` : undefined}
+                                        title={canToggle ? `Click to ${isRouteEnabled ? 'hide' : 'show'} ${route.shortName || route.id} arrivals` : undefined}
                                       >
-                                        {route.route_short_name || route.route_id}
+                                        {route.shortName || route.id}
                                       </button>
                                     );
                                   })}
@@ -1195,10 +1203,10 @@ export default function StopArrivalsSlide({
                                   {selection.enabled && selection.routes.length > 3 && (
                                     <button
                                       onClick={() => {
-                                        const allRouteIds = selection.routes!.map((r: any) => r.route_id);
+                                        const allRouteIds = selection.routes!.map((r: RouteInfo) => r.id);
                                         // Recalculate direction options with all routes enabled
-                                        const service = selectedStop.services?.find((s: any) => s.service_guid === selection.service_guid);
-                                        const newDirOptions = service ? computeDirectionOptions(service, allStops, allRouteIds) : selection.directionOptions;
+                                        const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
+                                        const newDirOptions = svc ? computeDirectionOptions(svc, allStops, allRouteIds) : selection.directionOptions;
                                         // Keep headsign filters that are still valid
                                         const validHeadsigns = new Set(newDirOptions.map(o => o.headsignFilter).filter(Boolean));
                                         const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsigns.has(h));
@@ -1215,7 +1223,7 @@ export default function StopArrivalsSlide({
                                 </div>
                               ) : (
                                 <span className="text-sm text-[#4a5568]">
-                                  {selection.agency_name}
+                                  {selection.agencyName}
                                 </span>
                               )}
                             </div>
@@ -1255,7 +1263,7 @@ export default function StopArrivalsSlide({
                                         const updated = serviceSelections.map((s, i) =>
                                           i === index ? {
                                             ...s,
-                                            selectedStopId: opt.stop_id,
+                                            selectedStopId: opt.stopId,
                                             selectedHeadsignFilters: newFilters.length > 0 ? newFilters : undefined
                                           } : s
                                         );
@@ -1303,32 +1311,32 @@ export default function StopArrivalsSlide({
               )}
 
               {/* Also at this location - Station Complex */}
-              {selectedStop && complexStops.length > 0 && (
+              {selectedStop && linkedStops.length > 0 && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-600 mb-2">
                     Also at this location
                   </h4>
                   <div className="space-y-2">
-                    {complexStops.map((stop, idx) => (
+                    {linkedStops.map((stop, idx) => (
                       <div
                         key={idx}
                         className="flex items-center justify-between bg-white rounded border p-2"
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-800 truncate">
-                            {stop.stop_name}
+                            {stop.name}
                           </p>
                           <div className="flex items-center gap-1 mt-1 flex-wrap">
-                            {getUniqueRoutes(stop.services).slice(0, MAX_DISPLAYED_ROUTES).map((route: any) => (
+                            {getUniqueRoutes(stop.services).slice(0, MAX_DISPLAYED_ROUTES).map((route: ExpandedRoute) => (
                               <span
-                                key={route.route_id}
+                                key={route.id}
                                 className="px-1.5 py-0.5 rounded text-xs font-bold"
                                 style={{
-                                  backgroundColor: route.route_color ? `#${route.route_color}` : '#6b7280',
-                                  color: route.route_text_color ? `#${route.route_text_color}` : '#ffffff'
+                                  backgroundColor: route.color ? `#${route.color}` : '#6b7280',
+                                  color: route.textColor ? `#${route.textColor}` : '#ffffff'
                                 }}
                               >
-                                {route.route_short_name || route.route_id}
+                                {route.shortName || route.id}
                               </span>
                             ))}
                             {getUniqueRoutes(stop.services).length > MAX_DISPLAYED_ROUTES && (
@@ -1337,12 +1345,17 @@ export default function StopArrivalsSlide({
                               </span>
                             )}
                           </div>
+                          {getUniqueHeadsigns(stop.services).length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1 truncate">
+                              {getUniqueHeadsigns(stop.services).join(' · ')}
+                            </p>
+                          )}
                         </div>
                         <Button
                           variant="outline"
                           size="sm"
                           className="ml-2 text-xs flex-shrink-0"
-                          onClick={() => handleAddComplexStop(stop)}
+                          onClick={() => handleAddLinkedStop(stop)}
                         >
                           <Plus className="w-3 h-3 mr-1" />
                           Add
