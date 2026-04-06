@@ -163,7 +163,7 @@ async function importData(setup: any) {
   const slides: any = [];
 
   setup.screens.forEach((slide: any) => {
-    slides.push({ id: slide.id, type: slide.type });
+    slides.push({ id: slide.id, type: slide.type, hidden: slide.hidden ?? false });
     if (slide.type === 'transit-destinations') {
       const {
         setBackgroundColor,
@@ -192,6 +192,7 @@ async function importData(setup: any) {
     if (slide.type === 'fixed-routes') {
       const {
         setStopName,
+        setDisplayName,
         setDescription,
         setBackgroundColor,
         setTitleColor,
@@ -206,6 +207,7 @@ async function importData(setup: any) {
       } = useFixedRouteStore.getState();
 
       setStopName(slide.id, slide.data.stopName || '');
+      setDisplayName(slide.id, slide.data.displayName || '');
       setDescription(slide.id, slide.data.description || '');
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
       setTitleColor(slide.id, slide.data.slideTitleColor || '#ffffff');

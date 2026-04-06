@@ -395,6 +395,11 @@ export default function StopArrivalsSlide({
   );
   const setStopName = useFixedRouteStore((state) => state.setStopName);
 
+  const displayName = useFixedRouteStore(
+    (state) => state.slides[slideId]?.displayName ?? ""
+  );
+  const setDisplayName = useFixedRouteStore((state) => state.setDisplayName);
+
   const selectedStop = useFixedRouteStore(
     (state) => state.slides[slideId]?.selectedStop || undefined
   );
@@ -425,12 +430,12 @@ export default function StopArrivalsSlide({
   const setTitleColor = useFixedRouteStore((state) => state.setTitleColor);
 
   const tableColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableColor || "#FFFFFF"
+    (state) => state.slides[slideId]?.tableColor || "#78B1DD"
   );
   const setTableColor = useFixedRouteStore((state) => state.setTableColor);
 
   const tableTextColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableTextColor || "#000000"
+    (state) => state.slides[slideId]?.tableTextColor || "#FFFFFF"
   );
   const setTableTextColor = useFixedRouteStore(
     (state) => state.setTableTextColor
@@ -518,7 +523,7 @@ export default function StopArrivalsSlide({
 
     // For non-empty input, first do local filtering for immediate feedback
     const localFiltered = allStops.filter((stop) =>
-      stop.stop_name.toLowerCase().includes(value.toLowerCase())
+      stop.stop_name?.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredStops(localFiltered);
     setShowDropdown(localFiltered.length > 0);
@@ -1347,6 +1352,21 @@ export default function StopArrivalsSlide({
                   </div>
                 </div>
               )}
+
+              <div>
+                <label className="block text-[#4a5568] font-medium mb-2">
+                  Display Name Override
+                </label>
+                <Input
+                  placeholder={selectedStop?.stop_name || "Leave blank to use agency name"}
+                  className="bg-white border-[#cbd5e0]"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(slideId, e.target.value)}
+                />
+                <p className="text-xs text-[#718096] mt-1">
+                  Override the station name shown on screen. Leave blank to use the agency-provided name.
+                </p>
+              </div>
 
               <div>
                 <label className="block text-[#4a5568] font-medium mb-2">

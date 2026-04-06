@@ -18,6 +18,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const stopName = useFixedRouteStore(
     (state) => state.slides[slideId]?.stopName || ""
   );
+  const displayName = useFixedRouteStore(
+    (state) => state.slides[slideId]?.displayName || ""
+  );
   const description = useFixedRouteStore(
     (state) => state.slides[slideId]?.description || ""
   );
@@ -28,10 +31,10 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     (state) => state.slides[slideId]?.titleColor || "#FFFFFF"
   );
   const tableColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableColor || "#FFFFFF"
+    (state) => state.slides[slideId]?.tableColor || "#78B1DD"
   );
   const tableTextColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableTextColor || "#000000"
+    (state) => state.slides[slideId]?.tableTextColor || "#FFFFFF"
   );
   const bgImage = useFixedRouteStore(
     (state) => state.slides[slideId]?.bgImage || ""
@@ -151,7 +154,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   </div>
 
                   <h2 className="font-bold mb-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
-                    {selectedStop?.stop_name?.toString().toUpperCase() ||
+                    {(displayName || selectedStop?.stop_name)?.toString().toUpperCase() ||
                       "UNKNOWN STOP"}
                   </h2>
 
@@ -191,7 +194,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                       marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
                     }}
                   >
-                    {stopName?.toString().toUpperCase() || "UNKNOWN STOP"}
+                    {(displayName || stopName)?.toString().toUpperCase() || "UNKNOWN STOP"}
                   </h2>
 
                   <p className="truncate" style={{ fontSize: `clamp(0.625rem, ${2 * titleSizeMultiplier}vh, 2.5rem)` }}>

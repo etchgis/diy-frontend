@@ -75,15 +75,15 @@ export default function TransitRoutesPreview({
 
   // Route colors for different routes
   const routeColors = [
-    "#FF6B6B",
-    "#4ECDC4",
-    "#45B7D1",
-    "#96CEB4",
-    "#FFEAA7",
-    "#DDA0DD",
-    "#98D8C8",
-    "#F06292",
-    "#AED581",
+    "#E63946", // red
+    "#2196F3", // blue
+    "#FF9800", // orange
+    "#4CAF50", // green
+    "#9C27B0", // purple
+    "#00BCD4", // cyan
+    "#FF5722", // deep orange
+    "#FFEB3B", // yellow
+    "#3F51B5", // indigo
     "#FFB74D",
   ];
 

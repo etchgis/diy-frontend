@@ -32,7 +32,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const searchParams = useSearchParams();
   const isTvMode = searchParams.get('mode') === 'tv';
 
-  const slides = useGeneralStore((state) => state.slides);
+  const allSlides = useGeneralStore((state) => state.slides);
+  const slides = allSlides.filter((s: any) => !s.hidden);
   const setSlides = useGeneralStore((state) => state.setSlides);
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
@@ -104,11 +105,66 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         setSlides(result.screens);
         setScreens(result);
         setIsLoading(false);
-
       }
     };
     loadSlides();
   }, [shortcode, setSlides]);
+
+  // Log page visit for metrics
+  useEffect(() => {
+    if (!shortcode) return;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) return;
+
+    const events: string[] = ['screen_view'];
+    if (!isTvMode) events.push('qr_visit');
+
+    events.forEach(event => {
+      fetch(`${backendUrl}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shortcode, event }),
+      })
+        .then(res => console.log(`[METRICS] ${event} logged — ${shortcode} — ${res.ok ? 'ok' : `failed ${res.status}`}`))
+        .catch(err => console.warn(`[METRICS] ${event} log failed:`, err));
+    });
+  }, [shortcode, isTvMode]);
+
+  // Heartbeat: log every 5 minutes while tab is visible
+  useEffect(() => {
+    if (!shortcode) return;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) return;
+
+    const HEARTBEAT_INTERVAL_MS = 30 * 1000; // 30 seconds
+
+    const sendHeartbeat = () => {
+      if (document.visibilityState !== 'visible') return;
+      fetch(`${backendUrl}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shortcode, event: 'heartbeat' }),
+      })
+        .then(res => console.log(`[METRICS] heartbeat logged — ${shortcode} — ${new Date().toLocaleTimeString()} — ${res.ok ? 'ok' : `failed ${res.status}`}`))
+        .catch(err => console.warn(`[METRICS] heartbeat log failed:`, err));
+    };
+
+    const intervalId = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+
+    // Resume/pause heartbeat when tab visibility changes
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Tab just became visible again — send one immediately then let interval continue
+        sendHeartbeat();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [shortcode]);
 
   // Function and useEffect to fetch transit destination data every 60 seconds
   const getTransitDestinationData = async () => {

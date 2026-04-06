@@ -94,6 +94,7 @@ export default function EditorPage() {
 
   const slides: any = useGeneralStore((state) => state.slides || []);
   const setSlides = useGeneralStore((state) => state.setSlides);
+  const toggleSlideHidden = useGeneralStore((state) => state.toggleSlideHidden);
 
   const url = useGeneralStore((state) => state.url || '');
   const setUrl = useGeneralStore((state) => state.setUrl);
@@ -294,8 +295,31 @@ export default function EditorPage() {
     if (!hasGeneralStore) {
       router.push('/');
     }
-
   }, []);
+
+  // Auto-create the first slide (transit-destinations) only for truly new screens
+  const hasAutoCreatedSlide = useRef(false);
+  useEffect(() => {
+    if (hasAutoCreatedSlide.current) return;
+    if (slides.length > 0) return;
+
+    // Check localStorage directly — if the persisted store already has slides,
+    // Zustand just hasn't rehydrated yet. Don't overwrite.
+    try {
+      const stored = localStorage.getItem('general-store');
+      if (!stored) return; // no store at all, skip
+      const parsed = JSON.parse(stored);
+      if ((parsed?.state?.slides?.length ?? 0) > 0) return; // existing slides, wait for hydration
+    } catch {
+      return;
+    }
+
+    hasAutoCreatedSlide.current = true;
+    const newSlide = { id: uuidv4(), type: 'transit-destinations' };
+    initializeSlideDefaults(newSlide.id, 'transit-destinations');
+    setSlides([newSlide]);
+    setActiveSlideId(newSlide.id);
+  }, [slides.length]);
 
   const hasFetchedDestinations = useRef(false);
 
@@ -571,6 +595,7 @@ export default function EditorPage() {
                     activeSlideId={activeSlideId}
                     setActiveSlideId={setActiveSlideId}
                     renderSlidePreview={renderSlidePreview}
+                    toggleSlideHidden={toggleSlideHidden}
                   />
                 ))}
               </div>

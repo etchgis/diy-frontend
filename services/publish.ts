@@ -57,7 +57,7 @@ export async function publish() {
   }
 
   slides.forEach((slide) => {
-    const screenObj: any = {};
+    const screenObj: any = { hidden: slide.hidden ?? false };
     if (slide.type === 'transit-destinations') {
       screenObj.type = 'transit-destinations';
       screenObj.id = slide.id;
@@ -110,6 +110,7 @@ export async function publish() {
 
         const {
           stopName,
+          displayName,
           description,
           backgroundColor,
           titleColor,
@@ -125,6 +126,7 @@ export async function publish() {
 
 
         screenObj.data.stopName = stopName;
+        screenObj.data.displayName = displayName;
         screenObj.data.description = description;
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.slideTitleColor = titleColor;
