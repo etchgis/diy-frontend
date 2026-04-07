@@ -63,44 +63,44 @@ function MetricsChart({ timeseries }: { timeseries: ScreenMetrics['timeseries'] 
   if (!timeseries || timeseries.length === 0) {
     return <p className="text-xs text-[#9ca3af] mt-2">No timeseries data available yet.</p>;
   }
-  // Buckets from backend are UTC midnight — always display in UTC so dates don't shift
+
   const parseTS = (v: unknown) => {
     const s = String(v);
-    return typeof s === 'string' && !s.endsWith('Z') && !s.includes('+') ? s + 'Z' : s;
+    return !s.endsWith('Z') && !s.includes('+') ? s + 'Z' : s;
   };
 
-  console.log('[METRICS GRAPH] raw timeseries:', timeseries);
-  console.log('[METRICS GRAPH] first bucket raw:', timeseries[0]?.time);
-  console.log('[METRICS GRAPH] first bucket parsed:', parseTS(timeseries[0]?.time));
-  console.log('[METRICS GRAPH] first bucket as Date:', new Date(parseTS(timeseries[0]?.time)).toString());
-  console.log('[METRICS GRAPH] first bucket UTC display:', new Date(parseTS(timeseries[0]?.time)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }));
-  console.log('[METRICS GRAPH] browser timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+  // Detect granularity by diff between first two buckets
+  const isSubDaily = timeseries.length > 1 &&
+    (new Date(parseTS(timeseries[1].time)).getTime() - new Date(parseTS(timeseries[0].time)).getTime()) < 86400000;
+
+  const formatTick = (v: unknown) => {
+    try {
+      const d = new Date(parseTS(v));
+      return isSubDaily
+        ? d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })
+        : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    } catch { return String(v); }
+  };
+
+  const formatTooltipLabel = (v: unknown) => {
+    try {
+      const d = new Date(parseTS(v));
+      return isSubDaily
+        ? d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })
+        : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    } catch { return String(v); }
+  };
 
   return (
     <div className="mt-4" style={{ height: 180 }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={timeseries} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-          <XAxis
-            dataKey="time"
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
-            tickFormatter={(v) => {
-              try {
-                return new Date(parseTS(v)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
-              } catch { return String(v); }
-            }}
-          />
+          <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={formatTick} />
           <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} allowDecimals={false} width={28} />
-          <Tooltip
-            labelFormatter={(v) => {
-              try {
-                return new Date(parseTS(v)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-              } catch { return String(v); }
-            }}
-            contentStyle={{ fontSize: 11 }}
-          />
+          <Tooltip labelFormatter={formatTooltipLabel} contentStyle={{ fontSize: 11 }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Line type="monotone" dataKey="screen_views" name="TV Views" stroke="#0b5583" dot={false} strokeWidth={2} />
-          <Line type="monotone" dataKey="qr_visits" name="QR Visits" stroke="#face00" dot={false} strokeWidth={2} />
+          <Line type="monotone" dataKey="qr_visits" name="Interactive Views" stroke="#face00" dot={false} strokeWidth={2} />
           <Line type="monotone" dataKey="heartbeats" name="Heartbeats" stroke="#10b981" dot={false} strokeWidth={1} strokeDasharray="4 2" />
         </LineChart>
       </ResponsiveContainer>
@@ -150,7 +150,7 @@ function ScreenCard({
             {/* Metrics badges — always shown, default to 0 */}
             <div className="flex gap-4 mt-3 flex-wrap items-center">
               <MetricBadge value={m.screen_views} label="TV Views" />
-              <MetricBadge value={m.qr_visits} label="QR Visits" />
+              <MetricBadge value={m.qr_visits} label="Interactive Views" />
               <MetricBadge value={formatUptime(m.heartbeats)} label="Uptime" />
               {m.last_seen && (
                 <span className="text-[10px] text-[#9ca3af]">
@@ -243,7 +243,7 @@ export default function AdminPage() {
 
       const [screensResponse, metricsResponse] = await Promise.all([
         fetch(`${backendUrl}/shortcodes`, { headers: { 'Authorization': `Bearer ${pwd}` } }),
-        fetch(`${backendUrl}/metrics`, { headers: { 'Authorization': `Bearer ${pwd}` } }),
+        fetch(`${backendUrl}/metrics?granularity=hourly`, { headers: { 'Authorization': `Bearer ${pwd}` } }),
       ]);
 
       if (!screensResponse.ok) throw new Error('Failed to fetch screens');

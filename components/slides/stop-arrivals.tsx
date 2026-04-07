@@ -830,8 +830,32 @@ export default function StopArrivalsSlide({
         );
       });
 
+      // Build routeId → line name map from serviceSelections for LIRR/Metro-North display
+      const routeLineNameMap: Record<string, string> = {};
+      for (const sel of serviceSelections) {
+        for (const route of sel.routes || []) {
+          const routeId = route.id ?? (route as any).route_id;
+          const longName = route.longName ?? (route as any).route_long_name ?? '';
+          if (routeId && longName) {
+            // Strip common suffixes to get a compact display label
+            routeLineNameMap[routeId] = longName
+              .replace(/\s+Branch$/i, '')
+              .replace(/\s+Line$/i, '')
+              .replace(/\s+Railroad$/i, '')
+              .trim();
+          }
+        }
+      }
+
+      const displayArrivals = filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE).map(arr => {
+        if (arr.routeType === 2 && routeLineNameMap[arr.routeId]) {
+          return { ...arr, routeShortName: `${arr.routeShortName} ${routeLineNameMap[arr.routeId]}` };
+        }
+        return arr;
+      });
+
       // Limit arrivals (already sorted by timestamp)
-      setScheduleData(slideId, filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE));
+      setScheduleData(slideId, displayArrivals);
       useFixedRouteStore.getState().setDataError(slideId, false);
     } catch (error) {
       console.error("Error fetching stop data:", error);
