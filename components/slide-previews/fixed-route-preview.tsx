@@ -344,13 +344,13 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           </div>
                           <div
                             className="font-medium text-right flex-shrink-0"
-                            style={{ width: "5.5em", whiteSpace: "nowrap" }}
+                            style={{ width: "4.5em", whiteSpace: "nowrap" }}
                           >
                             {item.time}
                           </div>
                           <div
                             className="text-right flex-shrink-0"
-                            style={{ width: "10em", whiteSpace: "nowrap" }}
+                            style={{ width: "7em", whiteSpace: "nowrap", marginLeft: "-0.5em" }}
                           >
                             {item.duration}
                           </div>
