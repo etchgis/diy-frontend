@@ -290,8 +290,8 @@ export default function TransitDestinationPreview({
                       fontSize: getRowStyles().fontSize,
                     }}
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <span>{name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="break-words">{name}</span>
                     </div>
                     <div
                       className={`flex items-center gap-1 overflow-hidden ${

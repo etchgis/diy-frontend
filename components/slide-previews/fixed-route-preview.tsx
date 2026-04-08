@@ -18,6 +18,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const stopName = useFixedRouteStore(
     (state) => state.slides[slideId]?.stopName || ""
   );
+  const displayName = useFixedRouteStore(
+    (state) => state.slides[slideId]?.displayName || ""
+  );
   const description = useFixedRouteStore(
     (state) => state.slides[slideId]?.description || ""
   );
@@ -28,10 +31,10 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     (state) => state.slides[slideId]?.titleColor || "#FFFFFF"
   );
   const tableColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableColor || "#FFFFFF"
+    (state) => state.slides[slideId]?.tableColor || "#78B1DD"
   );
   const tableTextColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableTextColor || "#000000"
+    (state) => state.slides[slideId]?.tableTextColor || "#FFFFFF"
   );
   const bgImage = useFixedRouteStore(
     (state) => state.slides[slideId]?.bgImage || ""
@@ -99,14 +102,13 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     switch (routeType) {
       case 0: // Tram/Light Rail
       case 2: // Rail (LIRR, Metro-North, Amtrak, etc.)
-        const railIcon = getRailIcon();
-        return railIcon;
+        return getRailIcon();
       case 1: // Subway/Metro
         return '/images/subway-icon.png';
       case 3: // Bus
         return '/images/bus-icon.png';
       default:
-        return getRailIcon();;
+        return getRailIcon();
     }
   };
 
@@ -150,9 +152,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                     <p>Stop #{selectedStop?.id} arrival times</p>
                   </div>
 
-                  <h2 className="font-bold mb-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
-                    {selectedStop?.name?.toString().toUpperCase() ||
+                  <h2 className="font-bold mb-2 flex items-center gap-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
+                    {(displayName || selectedStop?.name || selectedStop?.stop_name)?.toString().toUpperCase() ||
                       "UNKNOWN STOP"}
+                    {selectedStop?.wheelchairBoarding === 1 && (
+                      <span title="Wheelchair accessible" style={{ fontSize: `${22 * titleSizeMultiplier}px` }}>♿</span>
+                    )}
                   </h2>
 
                   <p style={{ fontSize: `${16 * titleSizeMultiplier}px` }}>{description}</p>
@@ -185,13 +190,16 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   </div>
 
                   <h2
-                    className="font-bold mb-1 sm:mb-2 truncate"
+                    className="font-bold mb-1 sm:mb-2 flex items-center gap-2 overflow-hidden"
                     style={{
                       fontSize: `clamp(1.25rem, ${6 * titleSizeMultiplier}vh, 6rem)`,
                       marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
                     }}
                   >
-                    {stopName?.toString().toUpperCase() || "UNKNOWN STOP"}
+                    <span className="truncate">{(displayName || stopName)?.toString().toUpperCase() || "UNKNOWN STOP"}</span>
+                    {selectedStop?.wheelchairBoarding === 1 && (
+                      <span title="Wheelchair accessible" className="flex-shrink-0" style={{ fontSize: `clamp(1rem, ${4 * titleSizeMultiplier}vh, 4rem)` }}>♿</span>
+                    )}
                   </h2>
 
                   <p className="truncate" style={{ fontSize: `clamp(0.625rem, ${2 * titleSizeMultiplier}vh, 2.5rem)` }}>
@@ -293,79 +301,74 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                     scheduleData.map((item: any, index: number) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
+                        className="flex items-center border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
                         style={{
                           flex: "1 1 0",
                           minHeight: 0,
-                          backgroundColor: !bgImage
-                            ? tableColor
-                            : "transparent",
+                          backgroundColor: !bgImage ? tableColor : "transparent",
                           color: tableTextColor,
-                          padding: `clamp(0.5rem, 1.5vw, ${
-                            description ? "0.625rem" : "0.75rem"
-                          })`,
+                          padding: `clamp(0.5rem, 1.5vw, ${description ? "0.625rem" : "0.75rem"})`,
                         }}
                       >
+                        {/* Destination */}
                         <div className="flex-1 overflow-hidden">
                           <span
                             className="font-medium block truncate"
-                            style={{
-                              fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                            }}
+                            style={{ fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)` }}
                           >
                             {item.destination}
                           </span>
                         </div>
+                        {/* Right-side columns — em widths track font size so nothing ever clips */}
                         <div
                           className="flex items-center flex-shrink-0"
-                          style={{ gap: "clamp(1rem, 2.5vh, 3rem)" }}
+                          style={{
+                            fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
+                            gap: "1em",
+                          }}
                         >
                           <div
-                            className={`rounded font-bold text-center flex-shrink-0`}
+                            className="rounded font-bold text-center flex-shrink-0"
                             style={{
-                              padding: "0.3em 0.8em",
+                              width: "4.5em",
+                              padding: "0.3em 0.4em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              minWidth: `clamp(50px, ${7 * contentSizeMultiplier}vh, 100px)`,
-                              whiteSpace: 'nowrap',
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
-                              marginRight: 10
                             }}
                           >
                             {item.routeShortName || item.routeId}
                           </div>
                           <div
-                            className="font-medium flex-shrink-0 overflow-hidden"
-                            style={{
-                              fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              width: `clamp(80px, ${12 * contentSizeMultiplier}vh, 160px)`,
-                              whiteSpace: 'nowrap',
-                            }}
+                            className="font-medium text-right flex-shrink-0"
+                            style={{ width: "4.5em", whiteSpace: "nowrap" }}
                           >
                             {item.time}
                           </div>
                           <div
-                            className="flex-shrink-0 overflow-hidden"
-                            style={{
-                              fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              width: `clamp(100px, ${14 * contentSizeMultiplier}vh, 200px)`,
-                              whiteSpace: 'nowrap',
-                            }}
+                            className="text-right flex-shrink-0"
+                            style={{ width: "7em", whiteSpace: "nowrap", marginLeft: "-0.5em" }}
                           >
                             {item.duration}
                           </div>
-                          <Button
-                            variant="outline"
-                            className="bg-transparent flex-shrink-0"
+                          <div
+                            className="border rounded text-center flex-shrink-0"
                             style={{
+                              width: "9em",
+                              padding: "0.3em 0.4em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              padding: "0.5em 1em",
-                              width: `clamp(80px, ${11 * contentSizeMultiplier}vh, 160px)`,
-                              height: 'auto',
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              borderColor: "currentColor",
+                              lineHeight: 1.2,
                             }}
                           >
                             {item.status}
-                          </Button>
+                          </div>
                         </div>
                       </div>
                     ))}

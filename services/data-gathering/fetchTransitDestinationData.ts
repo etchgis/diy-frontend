@@ -15,7 +15,7 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
     const time = `${hours % 12 || 12}:${minutes < 10 ? `0${minutes}` : minutes}${hours >= 12 ? 'pm' : 'am'}`;
     const date = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()}`;
 
-    const query = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&mode=TRANSIT,WALK,SUBWAY`;
+    const query = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&numItineraries=5&mode=TRANSIT,WALK,SUBWAY`;
 
     // Query for WALK-only mode
     const walkQuery = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&mode=WALK`;

@@ -194,7 +194,12 @@ export function applyThemeColorToAllSlides(colorType: ThemeColorType, color: str
     for (const slideId of Object.keys(state.slides)) {
       const slideData = state.slides[slideId];
       for (const prop of propsToUpdate) {
-        if (oldColor !== undefined && slideData?.[prop] !== oldColor) continue;
+        // Only update slides that are still using the previous theme color.
+        // Slides with undefined (uninitialized prop) always get the new value.
+        // Slides manually changed to a different color are left alone.
+        if (oldColor !== undefined && slideData[prop] !== undefined && slideData[prop] !== oldColor) {
+          continue;
+        }
         const setterName = `set${capitalizeFirst(prop)}`;
         if (typeof state[setterName] === 'function') {
           state[setterName](slideId, color);

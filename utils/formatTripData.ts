@@ -1,6 +1,13 @@
+const MAX_ITINERARY_DURATION_SECONDS = 3 * 60 * 60; // 3 hours — anything longer is unrealistic
+
 export const formatTripData = (data: any[]) => {
 
-  const shortestItinerary = data.reduce((minItinerary: any, currentItinerary: any) => {
+  const realistic = data.filter((it: any) => it.duration <= MAX_ITINERARY_DURATION_SECONDS);
+  if (realistic.length === 0) {
+    throw new Error("No realistic route found for this destination.");
+  }
+
+  const shortestItinerary = realistic.reduce((minItinerary: any, currentItinerary: any) => {
     return currentItinerary.duration < minItinerary.duration ? currentItinerary : minItinerary;
   });
 

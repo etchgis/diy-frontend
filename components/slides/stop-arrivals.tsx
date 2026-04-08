@@ -62,7 +62,7 @@ function computeDirectionOptions(
   _allStopsArray: any[],
   enabledRouteIds?: string[]
 ): DirectionOption[] {
-  const stopIds: string[] = service._stopIds || [];
+  const stopIds: string[] = (service._stopIds || []).filter(Boolean);
 
   if (stopIds.length === 0) {
     return [{ stopId: '', label: 'All Directions', isAllDirections: true }];
@@ -246,7 +246,7 @@ function deduplicateStops(stops: ExpandedStop[]): ExpandedStop[] {
 
   for (const stop of stops) {
     // Use name as the key so all "Grand Central-42 St" entries merge into one
-    const key = stop.name;
+    const key = (stop as any).name || (stop as any).stop_name;
     if (stopMap.has(key)) {
       // Merge services into existing stop
       const existing = stopMap.get(key);
@@ -340,8 +340,9 @@ function deduplicateStops(stops: ExpandedStop[]): ExpandedStop[] {
         .sort()
         .join(',');
 
-      if (!seenRouteKeys.has(routeKey)) {
-        seenRouteKeys.add(routeKey);
+      // Don't deduplicate services with no routes — empty key would incorrectly collapse all of them
+      if (!routeKey || !seenRouteKeys.has(routeKey)) {
+        if (routeKey) seenRouteKeys.add(routeKey);
         uniqueServices.push(svc);
       } else {
         // Merge _stopIds and _stopIdData into the existing service with same routes
@@ -405,6 +406,11 @@ export default function StopArrivalsSlide({
   );
   const setStopName = useFixedRouteStore((state) => state.setStopName);
 
+  const displayName = useFixedRouteStore(
+    (state) => state.slides[slideId]?.displayName ?? ""
+  );
+  const setDisplayName = useFixedRouteStore((state) => state.setDisplayName);
+
   const selectedStop = useFixedRouteStore(
     (state) => state.slides[slideId]?.selectedStop || undefined
   );
@@ -435,12 +441,12 @@ export default function StopArrivalsSlide({
   const setTitleColor = useFixedRouteStore((state) => state.setTitleColor);
 
   const tableColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableColor || "#FFFFFF"
+    (state) => state.slides[slideId]?.tableColor || "#78B1DD"
   );
   const setTableColor = useFixedRouteStore((state) => state.setTableColor);
 
   const tableTextColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableTextColor || "#000000"
+    (state) => state.slides[slideId]?.tableTextColor || "#FFFFFF"
   );
   const setTableTextColor = useFixedRouteStore(
     (state) => state.setTableTextColor
@@ -528,7 +534,7 @@ export default function StopArrivalsSlide({
 
     // For non-empty input, first do local filtering for immediate feedback
     const localFiltered = allStops.filter((stop) =>
-      stop.name.toLowerCase().includes(value.toLowerCase())
+      stop.stop_name?.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredStops(localFiltered);
     setShowDropdown(localFiltered.length > 0);
@@ -720,21 +726,25 @@ export default function StopArrivalsSlide({
     for (const selection of serviceSelections) {
       if (!selection.enabled) continue;
 
+      // Support both new format (serviceId) and old localStorage format (service_guid)
+      const selectionServiceId = selection.serviceId ?? (selection as any).service_guid;
+      if (!selectionServiceId) continue;
+
       const orgId = selectedStop.services?.find(
-        (service: any) => service.id === selection.serviceId
+        (service: any) => service.id === selectionServiceId
       )?.organizationId;
 
       // Skip if we can't find the organizationId
       if (!orgId) {
-        console.warn(`[StopArrivals] Could not find organizationId for service ${selection.serviceId}`);
+        console.warn(`[StopArrivals] Could not find organizationId for service ${selectionServiceId}`);
         continue;
       }
 
       // Split comma-separated stopIds into individual queries
-      const stopIds = selection.selectedStopId.split(',').filter(Boolean);
+      const stopIds = (selection.selectedStopId || selectedStop.id || '').split(',').filter(Boolean);
       for (const stopId of stopIds) {
         queries.push({
-          serviceId: selection.serviceId,
+          serviceId: selectionServiceId,
           stopId: stopId,
           organizationId: orgId
         });
@@ -821,8 +831,32 @@ export default function StopArrivalsSlide({
         );
       });
 
+      // Build routeId → line name map from serviceSelections for LIRR/Metro-North display
+      const routeLineNameMap: Record<string, string> = {};
+      for (const sel of serviceSelections) {
+        for (const route of sel.routes || []) {
+          const routeId = route.id ?? (route as any).route_id;
+          const longName = route.longName ?? (route as any).route_long_name ?? '';
+          if (routeId && longName) {
+            // Strip common suffixes to get a compact display label
+            routeLineNameMap[routeId] = longName
+              .replace(/\s+Branch$/i, '')
+              .replace(/\s+Line$/i, '')
+              .replace(/\s+Railroad$/i, '')
+              .trim();
+          }
+        }
+      }
+
+      const displayArrivals = filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE).map(arr => {
+        if (arr.routeType === 2 && routeLineNameMap[arr.routeId]) {
+          return { ...arr, routeShortName: `${arr.routeShortName} ${routeLineNameMap[arr.routeId]}` };
+        }
+        return arr;
+      });
+
       // Limit arrivals (already sorted by timestamp)
-      setScheduleData(slideId, filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE));
+      setScheduleData(slideId, displayArrivals);
       useFixedRouteStore.getState().setDataError(slideId, false);
     } catch (error) {
       console.error("Error fetching stop data:", error);
@@ -1001,6 +1035,13 @@ export default function StopArrivalsSlide({
     }
   };
 
+  const selectedRouteIds = new Set(
+    serviceSelections.flatMap(s => (s.routes || []).map((r: RouteInfo) => r.id ?? (r as any).route_id))
+  );
+  const filteredLinkedStops = linkedStops.filter(stop =>
+    getUniqueRoutes(stop.services).some(r => !selectedRouteIds.has(r.id))
+  );
+
   const scheduleData = [
     {
       destination: "Airport directly to Rte 7 & Donald",
@@ -1060,7 +1101,7 @@ export default function StopArrivalsSlide({
                   {showDropdown && filteredStops.length > 0 && (
                     <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
                       {isSearching && (
-                        <li className="px-4 py-2 text-gray-500 italic text-sm">
+                        <li key="searching" className="px-4 py-2 text-gray-500 italic text-sm">
                           Searching stops...
                         </li>
                       )}
@@ -1068,20 +1109,25 @@ export default function StopArrivalsSlide({
                         <li
                           key={index}
                           onClick={() => handleSelectStop(stop)}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center gap-1.5"
                         >
-                          {stop.name} -{" "}
-                          {stop.services[0]?.agencyName || "No Agency"}
-                          {stop.services.length > 1 && (
-                            <span className="text-gray-400 text-xs ml-1">
-                              (+{stop.services.length - 1} more)
-                            </span>
+                          {(stop as any).wheelchairBoarding === 1 && (
+                            <span title="Wheelchair accessible" className="text-blue-500 flex-shrink-0">♿</span>
                           )}
-                          {(stop as any).distance !== undefined && (
-                            <span className="text-gray-500 text-sm ml-2">
-                              ({formatDistance((stop as any).distance)})
-                            </span>
-                          )}
+                          <span>
+                            {stop.name} -{" "}
+                            {stop.services[0]?.agencyName || "No Agency"}
+                            {stop.services.length > 1 && (
+                              <span className="text-gray-400 text-xs ml-1">
+                                (+{stop.services.length - 1} more)
+                              </span>
+                            )}
+                            {(stop as any).distance !== undefined && (
+                              <span className="text-gray-500 text-sm ml-2">
+                                ({formatDistance((stop as any).distance)})
+                              </span>
+                            )}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -1099,9 +1145,12 @@ export default function StopArrivalsSlide({
                           Selected Stop
                         </h4>
                       </div>
-                      <p className="text-sm text-[#606061] mb-1">
-                        {selectedStop.name}
-                      </p>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <p className="text-sm text-[#606061]">{selectedStop.name}</p>
+                        {selectedStop.wheelchairBoarding === 1 && (
+                          <span title="Wheelchair accessible" className="text-blue-500 text-sm">♿</span>
+                        )}
+                      </div>
                       <p className="text-xs text-[#718096]">
                         {selectedStop.services[0]?.agencyName || "No Agency"}
                       </p>
@@ -1150,14 +1199,15 @@ export default function StopArrivalsSlide({
                               />
                               {selection.routes && selection.routes.length > 0 ? (
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  {selection.routes.map((route: RouteInfo) => {
+                                  {selection.routes.map((route: RouteInfo, routeIdx: number) => {
+                                    const routeId = route.id ?? (route as any).route_id;
                                     const isRouteEnabled = !selection.enabledRouteIds ||
-                                      selection.enabledRouteIds.includes(route.id);
+                                      selection.enabledRouteIds.includes(routeId);
                                     const canToggle = selection.enabled && selection.routes!.length > 1;
 
                                     return (
                                       <button
-                                        key={route.id}
+                                        key={routeId ?? routeIdx}
                                         disabled={!canToggle}
                                         onClick={() => {
                                           if (!canToggle) return;
@@ -1306,13 +1356,13 @@ export default function StopArrivalsSlide({
               )}
 
               {/* Also at this location - Station Complex */}
-              {selectedStop && linkedStops.length > 0 && (
+              {selectedStop && filteredLinkedStops.length > 0 && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-600 mb-2">
                     Also at this location
                   </h4>
-                  <div className="space-y-2">
-                    {linkedStops.map((stop, idx) => (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {filteredLinkedStops.map((stop, idx) => (
                       <div
                         key={idx}
                         className="flex items-center justify-between bg-white rounded border p-2"
@@ -1322,9 +1372,9 @@ export default function StopArrivalsSlide({
                             {stop.name}
                           </p>
                           <div className="flex items-center gap-1 mt-1 flex-wrap">
-                            {getUniqueRoutes(stop.services).slice(0, MAX_DISPLAYED_ROUTES).map((route: ExpandedRoute) => (
+                            {getUniqueRoutes(stop.services).slice(0, MAX_DISPLAYED_ROUTES).map((route: ExpandedRoute, routeIdx: number) => (
                               <span
-                                key={route.id}
+                                key={route.id ?? routeIdx}
                                 className="px-1.5 py-0.5 rounded text-xs font-bold"
                                 style={{
                                   backgroundColor: route.color ? `#${route.color}` : '#6b7280',
@@ -1360,6 +1410,21 @@ export default function StopArrivalsSlide({
                   </div>
                 </div>
               )}
+
+              <div>
+                <label className="block text-[#4a5568] font-medium mb-2">
+                  Display Name Override
+                </label>
+                <Input
+                  placeholder={selectedStop?.name || selectedStop?.stop_name || "Leave blank to use agency name"}
+                  className="bg-white border-[#cbd5e0]"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(slideId, e.target.value)}
+                />
+                <p className="text-xs text-[#718096] mt-1">
+                  Override the station name shown on screen. Leave blank to use the agency-provided name.
+                </p>
+              </div>
 
               <div>
                 <label className="block text-[#4a5568] font-medium mb-2">

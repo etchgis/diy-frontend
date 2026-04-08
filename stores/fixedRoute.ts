@@ -34,6 +34,7 @@ export interface ServiceSelection {
 
 interface FixedRouteSlideData {
   stopName: string;
+  displayName?: string;
   showTitle?: boolean;
   description: string;
   backgroundColor: string;
@@ -54,6 +55,7 @@ interface FixedRouteSlideData {
 interface SlideStore {
   slides: Record<string, FixedRouteSlideData>;
   setStopName: (slideId: string, name: string) => void;
+  setDisplayName: (slideId: string, name: string) => void;
   setShowTitle: (slideId: string, show: boolean) => void;
   setDescription: (slideId: string, description: string) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
@@ -83,6 +85,17 @@ export const useFixedRouteStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               stopName: name,
+            },
+          },
+        })),
+
+      setDisplayName: (slideId, name) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              displayName: name,
             },
           },
         })),

@@ -31,8 +31,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const searchParams = useSearchParams();
   const isTvMode = searchParams.get('mode') === 'tv';
 
-  const slides = useGeneralStore((state) => state.slides);
-  const setSlides = useGeneralStore((state) => state.setSlides);
+  const allSlides = useGeneralStore((state) => state.slides);
+  const slides = allSlides.filter((s: any) => !s.hidden);
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
@@ -41,7 +41,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     : {};
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [screens, setScreens] = useState<any[]>([]);
+  const [screens] = useState<any[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const dataRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -99,15 +99,76 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   useEffect(() => {
     const loadSlides = async () => {
       if (shortcode) {
-        const result = await SetupSlides(shortcode);
-        setSlides(result.screens);
-        setScreens(result);
+        await SetupSlides(shortcode);
         setIsLoading(false);
-
+        getTransitDestinationData();
+        getFixedRouteData();
+        getTransitRoutesData();
+        getRouteTimesData();
+        getWeatherData();
+        getCitibikeData();
+        getTrafficCorridorData();
+        hasFetchedDestinations.current = true;
       }
     };
     loadSlides();
-  }, [shortcode, setSlides]);
+  }, [shortcode]);
+
+  // Log page visit for metrics
+  useEffect(() => {
+    if (!shortcode) return;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) return;
+
+    const events: string[] = ['screen_view'];
+    if (!isTvMode) events.push('qr_visit');
+
+    events.forEach(event => {
+      fetch(`${backendUrl}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shortcode, event }),
+      })
+        .then(res => console.log(`[METRICS] ${event} logged — ${shortcode} — ${res.ok ? 'ok' : `failed ${res.status}`}`))
+        .catch(err => console.warn(`[METRICS] ${event} log failed:`, err));
+    });
+  }, [shortcode, isTvMode]);
+
+  // Heartbeat: log every 5 minutes while tab is visible
+  useEffect(() => {
+    if (!shortcode) return;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) return;
+
+    const HEARTBEAT_INTERVAL_MS = 30 * 1000; // 30 seconds
+
+    const sendHeartbeat = () => {
+      if (document.visibilityState !== 'visible') return;
+      fetch(`${backendUrl}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shortcode, event: 'heartbeat' }),
+      })
+        .then(res => console.log(`[METRICS] heartbeat logged — ${shortcode} — ${new Date().toLocaleTimeString()} — ${res.ok ? 'ok' : `failed ${res.status}`}`))
+        .catch(err => console.warn(`[METRICS] heartbeat log failed:`, err));
+    };
+
+    const intervalId = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+
+    // Resume/pause heartbeat when tab visibility changes
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Tab just became visible again — send one immediately then let interval continue
+        sendHeartbeat();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [shortcode]);
 
   // Function and useEffect to fetch transit destination data every 60 seconds
   const getTransitDestinationData = async () => {
@@ -425,19 +486,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   useEffect(() => {
     if (slides.length === 0) {return;}
-
-    // Only fetch initially if we haven't fetched yet
-    if (!hasFetchedDestinations.current) {
-      hasFetchedDestinations.current = true;
-      console.log('[DATA UPDATE] Initial data fetch on page load');
-      getTransitDestinationData();
-      getFixedRouteData();
-      getTransitRoutesData();
-      getRouteTimesData();
-      getWeatherData();
-      getCitibikeData();
-      getTrafficCorridorData();
-    }
 
     // Only set up interval if it doesn't exist
     if (!dataRefreshIntervalRef.current) {

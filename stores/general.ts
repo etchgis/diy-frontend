@@ -12,6 +12,7 @@ interface Theme {
 interface Slide {
   id: string;
   type: string;
+  hidden?: boolean;
   data?: any;
 }
 
@@ -58,6 +59,7 @@ interface Store {
   setDefaultFontFamily: (font: string) => void;
   setDefaultTitleTextSize: (size: number) => void;
   setDefaultContentTextSize: (size: number) => void;
+  toggleSlideHidden: (id: string) => void;
 }
 
 export const useGeneralStore = create<Store>()(
@@ -154,6 +156,12 @@ export const useGeneralStore = create<Store>()(
         }));
         applyThemeColorToAllSlides('bodyText', color, oldColor);
       },
+      toggleSlideHidden: (id) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, hidden: !s.hidden } : s
+          ),
+        })),
     }),
     {
       name: 'general-store' ,

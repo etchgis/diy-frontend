@@ -226,18 +226,19 @@ export default function WeatherPreview({
                           ? "1px solid rgba(255,255,255,0.1)"
                           : "none",
                       fontSize: isEditor ? `${17.6 * contentSizeMultiplier}px` : `${3.8 * contentSizeMultiplier}vh`,
-                      gap: isEditor ? "12px" : "1.5vh",
+                      gap: isEditor ? "8px" : "1vh",
+                      minWidth: 0,
                     }}
                   >
-                    <span className="font-medium" style={{ minWidth: isEditor ? `${120 * contentSizeMultiplier}px` : `${22 * contentSizeMultiplier}vh` }}>
+                    <span className="font-medium flex-shrink-0" style={{ width: "30%" }}>
                       {day.dayName} {dayOfMonth}
                     </span>
-                    <span style={{ minWidth: isEditor ? `${70 * contentSizeMultiplier}px` : `${10 * contentSizeMultiplier}vh`, marginLeft: isEditor ? "30px" : "40px"}}>
+                    <span className="flex-shrink-0" style={{ width: "25%" }}>
                       {day.high}°/{day.low}°
                     </span>
-                    <span className="flex items-center gap-2" style={{ marginLeft: "auto" }}>
+                    <span className="flex items-center overflow-hidden" style={{ flex: 1, gap: isEditor ? "6px" : "0.8vh", minWidth: 0 }}>
                       <WeatherIcon code={day.code} size={isEditor ? `${24 * contentSizeMultiplier}px` : `${4.5 * contentSizeMultiplier}vh`} />
-                      <span style={{ opacity: 0.8 }}>{day.condition}</span>
+                      <span className="truncate" style={{ opacity: 0.8 }}>{day.condition}</span>
                     </span>
                   </div>
                 );
