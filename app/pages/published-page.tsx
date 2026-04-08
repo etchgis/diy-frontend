@@ -33,7 +33,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   const allSlides = useGeneralStore((state) => state.slides);
   const slides = allSlides.filter((s: any) => !s.hidden);
-  const setSlides = useGeneralStore((state) => state.setSlides);
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
@@ -42,7 +41,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     : {};
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [screens, setScreens] = useState<any[]>([]);
+  const [screens] = useState<any[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const dataRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -100,14 +99,20 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   useEffect(() => {
     const loadSlides = async () => {
       if (shortcode) {
-        const result = await SetupSlides(shortcode);
-        setSlides(result.screens);
-        setScreens(result);
+        await SetupSlides(shortcode);
         setIsLoading(false);
+        getTransitDestinationData();
+        getFixedRouteData();
+        getTransitRoutesData();
+        getRouteTimesData();
+        getWeatherData();
+        getCitibikeData();
+        getTrafficCorridorData();
+        hasFetchedDestinations.current = true;
       }
     };
     loadSlides();
-  }, [shortcode, setSlides]);
+  }, [shortcode]);
 
   // Log page visit for metrics
   useEffect(() => {
@@ -480,19 +485,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   useEffect(() => {
     if (slides.length === 0) {return;}
-
-    // Only fetch initially if we haven't fetched yet
-    if (!hasFetchedDestinations.current) {
-      hasFetchedDestinations.current = true;
-      console.log('[DATA UPDATE] Initial data fetch on page load');
-      getTransitDestinationData();
-      getFixedRouteData();
-      getTransitRoutesData();
-      getRouteTimesData();
-      getWeatherData();
-      getCitibikeData();
-      getTrafficCorridorData();
-    }
 
     // Only set up interval if it doesn't exist
     if (!dataRefreshIntervalRef.current) {

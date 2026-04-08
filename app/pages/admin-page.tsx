@@ -170,7 +170,7 @@ function ScreenCard({
 
           <div className="ml-4 flex flex-col items-end gap-2">
             <Button
-              onClick={() => window.open(screen.url, '_blank')}
+              onClick={() => window.open(`${screen.url}${screen.url.includes('?') ? '&' : '?'}mode=tv`, '_blank')}
               className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white px-4 py-2"
             >
               View Screen
