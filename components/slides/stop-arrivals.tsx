@@ -62,7 +62,7 @@ function computeDirectionOptions(
   _allStopsArray: any[],
   enabledRouteIds?: string[]
 ): DirectionOption[] {
-  const stopIds: string[] = service._stopIds || [];
+  const stopIds: string[] = (service._stopIds || []).filter(Boolean);
 
   if (stopIds.length === 0) {
     return [{ stopId: '', label: 'All Directions', isAllDirections: true }];
@@ -246,7 +246,7 @@ function deduplicateStops(stops: ExpandedStop[]): ExpandedStop[] {
 
   for (const stop of stops) {
     // Use name as the key so all "Grand Central-42 St" entries merge into one
-    const key = stop.name;
+    const key = (stop as any).name || (stop as any).stop_name;
     if (stopMap.has(key)) {
       // Merge services into existing stop
       const existing = stopMap.get(key);
@@ -340,8 +340,9 @@ function deduplicateStops(stops: ExpandedStop[]): ExpandedStop[] {
         .sort()
         .join(',');
 
-      if (!seenRouteKeys.has(routeKey)) {
-        seenRouteKeys.add(routeKey);
+      // Don't deduplicate services with no routes — empty key would incorrectly collapse all of them
+      if (!routeKey || !seenRouteKeys.has(routeKey)) {
+        if (routeKey) seenRouteKeys.add(routeKey);
         uniqueServices.push(svc);
       } else {
         // Merge _stopIds and _stopIdData into the existing service with same routes

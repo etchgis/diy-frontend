@@ -29,6 +29,7 @@ export async function fetchAllStops(options: FetchStopsOptions | {lat: number, l
       url += `&search=${encodeURIComponent(search)}`;
     }
 
+    console.log('[fetchAllStops] url:', url);
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -39,8 +40,15 @@ export async function fetchAllStops(options: FetchStopsOptions | {lat: number, l
     }
 
     const data = await response.json();
-
-    console.log('[fetchAllStops] refs:', JSON.stringify(data?.refs).slice(0, 500));
+    console.log('[fetchAllStops] raw response shape:', {
+      isArray: Array.isArray(data),
+      hasStops: Array.isArray(data?.stops),
+      stopsCount: data?.stops?.length ?? (Array.isArray(data) ? data.length : 'n/a'),
+      hasRefs: !!data?.refs,
+      servicesCount: data?.refs?.services ? Object.keys(data.refs.services).length : 0,
+      routesCount: data?.refs?.routes ? Object.keys(data.refs.routes).length : 0,
+      firstStop: data?.stops?.[0] ?? (Array.isArray(data) ? data[0] : null),
+    });
 
     // New format: { stops: [...], refs: { services: { [serviceId]: {...} }, routes: { ["serviceId:routeId"]: {...} } } }
     if (Array.isArray(data?.stops)) {
@@ -85,7 +93,9 @@ export async function fetchAllStops(options: FetchStopsOptions | {lat: number, l
         })),
       });
 
-      return data.stops.map(normalizeStop);
+      const normalized = data.stops.map(normalizeStop);
+      console.log('[fetchAllStops] normalized (new format), count:', normalized.length, 'sample:', normalized[0]);
+      return normalized;
     }
 
     // Legacy flat array

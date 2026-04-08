@@ -301,40 +301,41 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                     scheduleData.map((item: any, index: number) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
+                        className="flex items-center border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
                         style={{
                           flex: "1 1 0",
                           minHeight: 0,
-                          backgroundColor: !bgImage
-                            ? tableColor
-                            : "transparent",
+                          backgroundColor: !bgImage ? tableColor : "transparent",
                           color: tableTextColor,
-                          padding: `clamp(0.5rem, 1.5vw, ${
-                            description ? "0.625rem" : "0.75rem"
-                          })`,
+                          padding: `clamp(0.5rem, 1.5vw, ${description ? "0.625rem" : "0.75rem"})`,
                         }}
                       >
+                        {/* Destination */}
                         <div className="flex-1 overflow-hidden">
                           <span
                             className="font-medium block truncate"
-                            style={{
-                              fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                            }}
+                            style={{ fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)` }}
                           >
                             {item.destination}
                           </span>
                         </div>
+                        {/* Right-side columns — em widths track font size so nothing ever clips */}
                         <div
                           className="flex items-center flex-shrink-0"
-                          style={{ gap: "clamp(0.5rem, 1.5vh, 2rem)" }}
+                          style={{
+                            fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
+                            gap: "1em",
+                          }}
                         >
                           <div
                             className="rounded font-bold text-center flex-shrink-0"
                             style={{
-                              padding: "0.3em 0.8em",
+                              width: "4.5em",
+                              padding: "0.3em 0.4em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              minWidth: `clamp(50px, ${7 * contentSizeMultiplier}vh, 100px)`,
-                              whiteSpace: 'nowrap',
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
                             }}
@@ -342,30 +343,27 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             {item.routeShortName || item.routeId}
                           </div>
                           <div
-                            className="font-medium flex-shrink-0"
-                            style={{
-                              fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              whiteSpace: 'nowrap',
-                            }}
+                            className="font-medium text-right flex-shrink-0"
+                            style={{ width: "5.5em", whiteSpace: "nowrap" }}
                           >
                             {item.time}
                           </div>
                           <div
-                            className="flex-shrink-0"
-                            style={{
-                              fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              whiteSpace: 'nowrap',
-                            }}
+                            className="text-right flex-shrink-0"
+                            style={{ width: "10em", whiteSpace: "nowrap" }}
                           >
                             {item.duration}
                           </div>
                           <div
-                            className="flex-shrink-0 border rounded"
+                            className="border rounded text-center flex-shrink-0"
                             style={{
+                              width: "9em",
+                              padding: "0.3em 0.4em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              padding: "0.3em 0.8em",
-                              whiteSpace: 'nowrap',
-                              borderColor: 'currentColor',
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              borderColor: "currentColor",
                               lineHeight: 1.2,
                             }}
                           >
