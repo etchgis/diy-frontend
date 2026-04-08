@@ -1108,20 +1108,25 @@ export default function StopArrivalsSlide({
                         <li
                           key={index}
                           onClick={() => handleSelectStop(stop)}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center gap-1.5"
                         >
-                          {stop.name} -{" "}
-                          {stop.services[0]?.agencyName || "No Agency"}
-                          {stop.services.length > 1 && (
-                            <span className="text-gray-400 text-xs ml-1">
-                              (+{stop.services.length - 1} more)
-                            </span>
+                          {(stop as any).wheelchairBoarding === 1 && (
+                            <span title="Wheelchair accessible" className="text-blue-500 flex-shrink-0">♿</span>
                           )}
-                          {(stop as any).distance !== undefined && (
-                            <span className="text-gray-500 text-sm ml-2">
-                              ({formatDistance((stop as any).distance)})
-                            </span>
-                          )}
+                          <span>
+                            {stop.name} -{" "}
+                            {stop.services[0]?.agencyName || "No Agency"}
+                            {stop.services.length > 1 && (
+                              <span className="text-gray-400 text-xs ml-1">
+                                (+{stop.services.length - 1} more)
+                              </span>
+                            )}
+                            {(stop as any).distance !== undefined && (
+                              <span className="text-gray-500 text-sm ml-2">
+                                ({formatDistance((stop as any).distance)})
+                              </span>
+                            )}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -1139,9 +1144,12 @@ export default function StopArrivalsSlide({
                           Selected Stop
                         </h4>
                       </div>
-                      <p className="text-sm text-[#606061] mb-1">
-                        {selectedStop.name}
-                      </p>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <p className="text-sm text-[#606061]">{selectedStop.name}</p>
+                        {selectedStop.wheelchairBoarding === 1 && (
+                          <span title="Wheelchair accessible" className="text-blue-500 text-sm">♿</span>
+                        )}
+                      </div>
                       <p className="text-xs text-[#718096]">
                         {selectedStop.services[0]?.agencyName || "No Agency"}
                       </p>

@@ -152,9 +152,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                     <p>Stop #{selectedStop?.id} arrival times</p>
                   </div>
 
-                  <h2 className="font-bold mb-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
+                  <h2 className="font-bold mb-2 flex items-center gap-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
                     {(displayName || selectedStop?.name || selectedStop?.stop_name)?.toString().toUpperCase() ||
                       "UNKNOWN STOP"}
+                    {selectedStop?.wheelchairBoarding === 1 && (
+                      <span title="Wheelchair accessible" style={{ fontSize: `${22 * titleSizeMultiplier}px` }}>♿</span>
+                    )}
                   </h2>
 
                   <p style={{ fontSize: `${16 * titleSizeMultiplier}px` }}>{description}</p>
@@ -187,13 +190,16 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   </div>
 
                   <h2
-                    className="font-bold mb-1 sm:mb-2 truncate"
+                    className="font-bold mb-1 sm:mb-2 flex items-center gap-2 overflow-hidden"
                     style={{
                       fontSize: `clamp(1.25rem, ${6 * titleSizeMultiplier}vh, 6rem)`,
                       marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
                     }}
                   >
-                    {(displayName || stopName)?.toString().toUpperCase() || "UNKNOWN STOP"}
+                    <span className="truncate">{(displayName || stopName)?.toString().toUpperCase() || "UNKNOWN STOP"}</span>
+                    {selectedStop?.wheelchairBoarding === 1 && (
+                      <span title="Wheelchair accessible" className="flex-shrink-0" style={{ fontSize: `clamp(1rem, ${4 * titleSizeMultiplier}vh, 4rem)` }}>♿</span>
+                    )}
                   </h2>
 
                   <p className="truncate" style={{ fontSize: `clamp(0.625rem, ${2 * titleSizeMultiplier}vh, 2.5rem)` }}>
@@ -320,10 +326,10 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                         </div>
                         <div
                           className="flex items-center flex-shrink-0"
-                          style={{ gap: "clamp(1rem, 2.5vh, 3rem)" }}
+                          style={{ gap: "clamp(0.5rem, 1.5vh, 2rem)" }}
                         >
                           <div
-                            className={`rounded font-bold text-center flex-shrink-0`}
+                            className="rounded font-bold text-center flex-shrink-0"
                             style={{
                               padding: "0.3em 0.8em",
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
@@ -331,43 +337,40 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               whiteSpace: 'nowrap',
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
-                              marginRight: 10
                             }}
                           >
                             {item.routeShortName || item.routeId}
                           </div>
                           <div
-                            className="font-medium flex-shrink-0 overflow-hidden"
+                            className="font-medium flex-shrink-0"
                             style={{
                               fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              width: `clamp(80px, ${12 * contentSizeMultiplier}vh, 160px)`,
                               whiteSpace: 'nowrap',
                             }}
                           >
                             {item.time}
                           </div>
                           <div
-                            className="flex-shrink-0 overflow-hidden"
+                            className="flex-shrink-0"
                             style={{
                               fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
-                              width: `clamp(100px, ${14 * contentSizeMultiplier}vh, 200px)`,
                               whiteSpace: 'nowrap',
                             }}
                           >
                             {item.duration}
                           </div>
-                          <Button
-                            variant="outline"
-                            className="bg-transparent flex-shrink-0"
+                          <div
+                            className="flex-shrink-0 border rounded"
                             style={{
                               fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
-                              padding: "0.5em 1em",
-                              width: `clamp(80px, ${11 * contentSizeMultiplier}vh, 160px)`,
-                              height: 'auto',
+                              padding: "0.3em 0.8em",
+                              whiteSpace: 'nowrap',
+                              borderColor: 'currentColor',
+                              lineHeight: 1.2,
                             }}
                           >
                             {item.status}
-                          </Button>
+                          </div>
                         </div>
                       </div>
                     ))}

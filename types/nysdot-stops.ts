@@ -50,6 +50,7 @@ export interface Stop {
   lat: number;
   lon: number;
   locationType?: number;
+  wheelchairBoarding?: 0 | 1 | 2;
   services: ServiceAtStop[];
   linkedStops?: LinkedStop[];
 }
@@ -99,6 +100,7 @@ export interface ExpandedStop {
   lat: number;
   lon: number;
   locationType?: number;
+  wheelchairBoarding?: 0 | 1 | 2;
   services: ExpandedService[];
   linkedStops?: ExpandedLinkedStop[];
 }
