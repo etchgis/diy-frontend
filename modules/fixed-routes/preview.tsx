@@ -69,32 +69,40 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const columnLabels = useFixedRouteStore(
     (state) => state.slides[slideId]?.columnLabels
   );
-  const serviceSelections = useFixedRouteStore(
-    (state) => state.slides[slideId]?.serviceSelections
+  const columnServiceSelections = useFixedRouteStore(
+    (state) => state.slides[slideId]?.columnServiceSelections
   );
 
-  // Compute column data reactively so changing column assignment never triggers a re-fetch
   const columnData = useMemo(() => {
-    if (!columnMode || !scheduleData?.length || !serviceSelections?.length)
-      return null;
+    if (!columnMode || !scheduleData?.length) return null;
     const labels = columnLabels || ["Left", "Right"];
-    const col0 = scheduleData.filter((arr: any) => {
-      const sel = serviceSelections.find(
-        (s: any) => s.serviceId === arr._sourceService
-      );
-      return (sel?.columnIndex ?? 0) === 0;
-    });
-    const col1 = scheduleData.filter((arr: any) => {
-      const sel = serviceSelections.find(
-        (s: any) => s.serviceId === arr._sourceService
-      );
-      return sel?.columnIndex === 1;
-    });
+
+    const filterForColumn = (colSels: any[] | undefined, arrivals: any[]) => {
+      if (!colSels?.length) return arrivals;
+      return arrivals.filter((arr: any) => {
+        const sel = colSels.find((s: any) => s.serviceId === arr._sourceService);
+        if (!sel || !sel.enabled) return false;
+        // Match the stop ID queried for this column
+        if (arr._queryStopId && sel.selectedStopId) {
+          const selStopIds = sel.selectedStopId.split(',').map((s: string) => s.trim()).filter(Boolean);
+          if (!selStopIds.includes(arr._queryStopId)) return false;
+        }
+        // Route filter
+        if (sel.enabledRouteIds?.length && !sel.enabledRouteIds.includes(arr.routeId)) return false;
+        // Headsign filter
+        if (sel.selectedHeadsignFilters?.length) {
+          const dest = (arr.destination || '').toLowerCase().trim();
+          if (!sel.selectedHeadsignFilters.some((f: string) => dest === f.toLowerCase().trim())) return false;
+        }
+        return true;
+      });
+    };
+
     return [
-      { label: labels[0], arrivals: col0 },
-      { label: labels[1], arrivals: col1 },
+      { label: labels[0], arrivals: filterForColumn(columnServiceSelections?.[0], scheduleData) },
+      { label: labels[1], arrivals: filterForColumn(columnServiceSelections?.[1], scheduleData) },
     ];
-  }, [columnMode, scheduleData, serviceSelections, columnLabels]);
+  }, [columnMode, scheduleData, columnServiceSelections, columnLabels]);
   const titleTextSize = useFixedRouteStore(
     (state) => state.slides[slideId]?.titleTextSize || 5
   );

@@ -214,14 +214,19 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const currentState = useFixedRouteStore.getState().slides;
       const selectedStop = currentState[slide.id]?.selectedStop;
       const serviceSelections = currentState[slide.id]?.serviceSelections;
+      const columnMode = currentState[slide.id]?.columnMode;
+      const columnServiceSelections = currentState[slide.id]?.columnServiceSelections;
 
       if (!selectedStop?.id || !selectedStop?.services?.length || !serviceSelections?.length) {
         continue;
       }
 
-      const queries: { serviceId: string; stopId: string; organizationId: string }[] = [];
+      const queryMap = new Map<string, { serviceId: string; stopId: string; organizationId: string }>();
+      const activeSelections = columnMode && columnServiceSelections
+        ? [...columnServiceSelections[0], ...columnServiceSelections[1]]
+        : serviceSelections;
 
-      for (const selection of serviceSelections) {
+      for (const selection of activeSelections) {
         if (!selection.enabled) continue;
 
         const orgId = selectedStop.services?.find(
@@ -232,14 +237,14 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
         const stopIds = selection.selectedStopId.split(',').filter(Boolean);
         for (const stopId of stopIds) {
-          queries.push({
-            serviceId: selection.serviceId,
-            stopId: stopId,
-            organizationId: orgId
-          });
+          const key = `${selection.serviceId}:${stopId}`;
+          if (!queryMap.has(key)) {
+            queryMap.set(key, { serviceId: selection.serviceId, stopId, organizationId: orgId });
+          }
         }
       }
 
+      const queries = Array.from(queryMap.values());
       if (queries.length === 0) continue;
 
       try {
@@ -251,7 +256,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
               q.serviceId,
               q.organizationId
             );
-            // Tag each arrival with its source feed for filtering
+            // Tag each arrival with its source feed and query stop for column splitting
             return (data?.trains || []).map((item: any) => ({
               destination: item.destination,
               routeId: item.routeId,
@@ -263,7 +268,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
               timestamp: item.arrivalTimestamp,
               duration: item.arrival,
               status: item.status,
-              _sourceService: q.serviceId
+              _sourceService: q.serviceId,
+              _queryStopId: q.stopId,
             }));
           })
         );
@@ -281,34 +287,26 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         // Sort by arrival timestamp
         allArrivals.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-        // Deduplicate arrivals (same train can appear from multiple platform queries)
         const seen = new Set<string>();
         const uniqueArrivals = allArrivals.filter(arr => {
-          const key = `${arr.routeId}|${arr.destination}|${arr.timestamp}`;
+          const key = `${arr.routeId}|${arr.destination}|${arr.timestamp}|${arr._queryStopId}`;
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
         });
 
-        // Filter by enabled routes if serviceSelections exist
-        let routeFilteredArrivals = uniqueArrivals;
-        if (serviceSelections && serviceSelections.length > 0) {
-          routeFilteredArrivals = uniqueArrivals.filter(arr => {
+        let filteredArrivals: any[];
+        if (columnMode && columnServiceSelections) {
+          filteredArrivals = uniqueArrivals;
+        } else {
+          const routeFiltered = uniqueArrivals.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
-            // If no route filter is set (undefined or empty array), include all arrivals
             if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
             return selection.enabledRouteIds.includes(arr.routeId);
           });
-        }
-
-        // Filter by headsign (destination) when direction filters are selected
-        let filteredArrivals = routeFilteredArrivals;
-        if (serviceSelections && serviceSelections.length > 0) {
-          filteredArrivals = routeFilteredArrivals.filter(arr => {
+          filteredArrivals = routeFiltered.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
-            // If no headsign filters are set, include the arrival
             if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
-            // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
             const destination = (arr.destination || '').toLowerCase().trim();
             return selection.selectedHeadsignFilters.some((filter: string) =>
               destination === filter.toLowerCase().trim()
@@ -316,7 +314,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           });
         }
 
-        // Limit arrivals — keep _sourceService so the preview can split into columns
         const limitedArrivals = filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE);
 
         setScheduleData(slide.id, limitedArrivals);

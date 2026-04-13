@@ -33,6 +33,28 @@ const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
 const DEFAULT_COLUMN_LABELS: [string, string] = ['Left', 'Right'];
 
 const MAX_VISIBLE_SERVICES = 3;
+
+// Auto-split serviceSelections into two column configs based on directionality
+function autoSplitToColumns(serviceSelections: ServiceSelection[]): [ServiceSelection[], ServiceSelection[]] {
+  const left: ServiceSelection[] = [];
+  const right: ServiceSelection[] = [];
+  for (const sel of serviceSelections) {
+    const northOption = (sel.directionOptions || []).find(
+      (o: DirectionOption) => !o.isAllDirections && (o.label === 'Northbound' || o.label === 'Eastbound')
+    );
+    const southOption = (sel.directionOptions || []).find(
+      (o: DirectionOption) => !o.isAllDirections && (o.label === 'Southbound' || o.label === 'Westbound')
+    );
+    if (northOption && southOption) {
+      left.push({ ...sel, selectedStopId: northOption.stopId, selectedHeadsignFilters: undefined });
+      right.push({ ...sel, selectedStopId: southOption.stopId, selectedHeadsignFilters: undefined });
+    } else {
+      left.push({ ...sel });
+      right.push({ ...sel });
+    }
+  }
+  return [left, right];
+}
 const MAX_DISPLAYED_ROUTES = 6;
 
 // Helper to deduplicate routes by id across all services
@@ -216,14 +238,13 @@ function computeDirectionOptions(
         isAllDirections: true
       });
 
-      // Add each headsign as a direction option (sorted by original label)
       const sortedHeadsigns = Array.from(headsignMap.values()).sort();
       for (const headsign of sortedHeadsigns) {
         options.push({
           stopId: stopIds.join(','),
           label: headsign,
           isAllDirections: false,
-          headsignFilter: headsign.toLowerCase().trim()  // Normalized for filtering
+          headsignFilter: headsign.toLowerCase().trim()
         });
       }
       return options;
@@ -388,6 +409,7 @@ export default function StopArrivalsSlide({
     "idle"
   );
   const allStopsRefreshedRef = useRef(false);
+  const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isBgUploading, setIsBgUploading] = useState(false);
   const [isLogoUploading, setIsLogoUploading] = useState(false);
   const renderCount = useRef(0);
@@ -482,6 +504,9 @@ export default function StopArrivalsSlide({
   const setColumnMode = useFixedRouteStore((state: { setColumnMode: any; }) => state.setColumnMode);
   const columnLabels = useFixedRouteStore((state: { slides: { [x: string]: { columnLabels: any; }; }; }) => state.slides[slideId]?.columnLabels || DEFAULT_COLUMN_LABELS);
   const setColumnLabels = useFixedRouteStore((state: { setColumnLabels: any; }) => state.setColumnLabels);
+  const columnServiceSelections = useFixedRouteStore((state: any) => state.slides[slideId]?.columnServiceSelections as [ServiceSelection[], ServiceSelection[]] | undefined);
+  const setColumnServiceSelections = useFixedRouteStore((state: any) => state.setColumnServiceSelections);
+  const [columnActiveTab, setColumnActiveTab] = useState<0 | 1>(0);
 
   const setIsLoading = useFixedRouteStore((state: { setIsLoading: any; }) => state.setIsLoading);
 
@@ -608,6 +633,7 @@ export default function StopArrivalsSlide({
 
       return {
         serviceId: svc.id,
+        organizationId: svc.organizationId,
         agencyName: svc.agencyName,
         routes: svc.routes,
         enabled: true,  // All enabled by default
@@ -618,6 +644,7 @@ export default function StopArrivalsSlide({
     });
 
     setServiceSelections(slideId, selections);
+    setColumnServiceSelections(slideId, undefined);
 
     // Use linkedStops directly from the API response (full stop objects, already deduped by name)
     if (stop.linkedStops && stop.linkedStops.length > 0) {
@@ -703,6 +730,7 @@ export default function StopArrivalsSlide({
 
         updatedSelections.push({
           serviceId: serviceId,
+          organizationId: linkedService.organizationId,
           agencyName: linkedService.agencyName,
           routes: linkedService.routes,
           enabled: true,
@@ -727,35 +755,38 @@ export default function StopArrivalsSlide({
 
     // Build queries from enabled service selections
     // selectedStopId can be comma-separated (e.g., "631N,723N,901N")
-    const queries: { serviceId: string; stopId: string; organizationId: string }[] = [];
+    // In column mode, fetch the union of stop IDs from both column configs
+    const activeSelections: ServiceSelection[] = columnMode && columnServiceSelections
+      ? [...columnServiceSelections[0], ...columnServiceSelections[1]]
+      : serviceSelections;
 
-    for (const selection of serviceSelections) {
+    const queryMap = new Map<string, { serviceId: string; stopId: string; organizationId: string }>();
+
+    for (const selection of activeSelections) {
       if (!selection.enabled) continue;
 
-      // Support both new format (serviceId) and old localStorage format (service_guid)
       const selectionServiceId = selection.serviceId ?? (selection as any).service_guid;
       if (!selectionServiceId) continue;
 
-      const orgId = selectedStop.services?.find(
-        (service: any) => service.id === selectionServiceId
-      )?.organizationId;
+      // Prefer orgId stored on the selection (covers linked-stop services not in selectedStop.services)
+      const orgId = (selection as any).organizationId
+        || selectedStop.services?.find((service: any) => service.id === selectionServiceId)?.organizationId;
 
-      // Skip if we can't find the organizationId
       if (!orgId) {
         console.warn(`[StopArrivals] Could not find organizationId for service ${selectionServiceId}`);
         continue;
       }
 
-      // Split comma-separated stopIds into individual queries
       const stopIds = (selection.selectedStopId || selectedStop.id || '').split(',').filter(Boolean);
       for (const stopId of stopIds) {
-        queries.push({
-          serviceId: selectionServiceId,
-          stopId: stopId,
-          organizationId: orgId
-        });
+        const key = `${selectionServiceId}:${stopId}`;
+        if (!queryMap.has(key)) {
+          queryMap.set(key, { serviceId: selectionServiceId, stopId, organizationId: orgId });
+        }
       }
     }
+
+    const queries = Array.from(queryMap.values());
 
     if (queries.length === 0) return;
 
@@ -770,7 +801,7 @@ export default function StopArrivalsSlide({
             q.serviceId,
             q.organizationId
           );
-          // Tag each arrival with its source service
+          // Tag each arrival with its source service and query stop
           return (data?.trains || []).map((item: any) => ({
             destination: item.destination,
             routeId: item.routeId,              // GTFS route_id for filtering
@@ -782,7 +813,8 @@ export default function StopArrivalsSlide({
             timestamp: item.arrivalTimestamp,  // Raw timestamp for sorting
             duration: item.arrival,
             status: item.status,
-            _sourceService: q.serviceId
+            _sourceService: q.serviceId,
+            _queryStopId: q.stopId,
           }));
         })
       );
@@ -817,25 +849,25 @@ export default function StopArrivalsSlide({
         return true;
       });
 
-      // Filter by enabled routes
-      const routeFilteredArrivals = uniqueArrivals.filter(arr => {
-        const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
-        // If no selection found, no enabledRouteIds, or empty array, include the arrival
-        if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
-        return selection.enabledRouteIds.includes(arr.routeId);
-      });
+      let filteredArrivals: any[];
 
-      // Filter by headsign (destination) when direction filters are selected
-      const filteredArrivals = routeFilteredArrivals.filter(arr => {
-        const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
-        // If no headsign filters are set, include the arrival
-        if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
-        // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
-        const destination = (arr.destination || '').toLowerCase().trim();
-        return selection.selectedHeadsignFilters.some((filter: string) =>
-          destination === filter.toLowerCase().trim()
-        );
-      });
+      if (columnMode && columnServiceSelections) {
+        filteredArrivals = uniqueArrivals;
+      } else {
+        const routeFilteredArrivals = uniqueArrivals.filter(arr => {
+          const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
+          if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
+          return selection.enabledRouteIds.includes(arr.routeId);
+        });
+        filteredArrivals = routeFilteredArrivals.filter(arr => {
+          const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
+          if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
+          const destination = (arr.destination || '').toLowerCase().trim();
+          return selection.selectedHeadsignFilters.some((filter: string) =>
+            destination === filter.toLowerCase().trim()
+          );
+        });
+      }
 
       // Build routeId → line name map from serviceSelections for LIRR/Metro-North display
       const routeLineNameMap: Record<string, string> = {};
@@ -869,7 +901,7 @@ export default function StopArrivalsSlide({
     } finally {
       setIsLoading(slideId, false);
     }
-  }, [selectedStop, serviceSelections, slideId, setIsLoading, setScheduleData]);
+  }, [selectedStop, serviceSelections, columnMode, columnServiceSelections, slideId, setIsLoading, setScheduleData]);
 
   // One-time refresh when allStops loads
   useEffect(() => {
@@ -901,11 +933,23 @@ export default function StopArrivalsSlide({
       const validHeadsignFilters = new Set(newDirOptions.map((o: DirectionOption) => o.headsignFilter).filter(Boolean));
       const newSelectedHeadsignFilters = (selection.selectedHeadsignFilters || []).filter((h: any) => validHeadsignFilters.has(h));
 
-      if (newSelectedStopId !== selection.selectedStopId ||
+      // Also restore routes/agencyName if they were stripped by publish
+      const needsRouteRestore = (!selection.routes?.length) && svc.routes?.length;
+      const needsAgencyRestore = !selection.agencyName && svc.agencyName;
+
+      if (needsRouteRestore || needsAgencyRestore ||
+          newSelectedStopId !== selection.selectedStopId ||
           JSON.stringify(newSelectedHeadsignFilters) !== JSON.stringify(selection.selectedHeadsignFilters || []) ||
           JSON.stringify(newDirOptions) !== JSON.stringify(selection.directionOptions)) {
         changed = true;
-        return { ...selection, directionOptions: newDirOptions, selectedStopId: newSelectedStopId, selectedHeadsignFilters: newSelectedHeadsignFilters.length > 0 ? newSelectedHeadsignFilters : undefined };
+        return {
+          ...selection,
+          directionOptions: newDirOptions,
+          selectedStopId: newSelectedStopId,
+          selectedHeadsignFilters: newSelectedHeadsignFilters.length > 0 ? newSelectedHeadsignFilters : undefined,
+          ...(needsRouteRestore ? { routes: svc.routes, enabledRouteIds: selection.enabledRouteIds?.length ? selection.enabledRouteIds : svc.routes.map((r: any) => r.id) } : {}),
+          ...(needsAgencyRestore ? { agencyName: svc.agencyName } : {}),
+        };
       }
       return selection;
     });
@@ -914,6 +958,12 @@ export default function StopArrivalsSlide({
       setServiceSelections(slideId, updated);
     }
   }, [allStops, slideId, setServiceSelections]);
+
+  useEffect(() => {
+    if (columnMode && !columnServiceSelections && serviceSelections && serviceSelections.length > 0) {
+      setColumnServiceSelections(slideId, autoSplitToColumns(serviceSelections));
+    }
+  }, [columnMode, columnServiceSelections, serviceSelections, setColumnServiceSelections, slideId]);
 
   // Migration: Initialize serviceSelections if we have selectedStop but no selections
   useEffect(() => {
@@ -930,6 +980,7 @@ export default function StopArrivalsSlide({
 
         return {
           serviceId: svc.id,
+          organizationId: svc.organizationId,
           agencyName: svc.agencyName,
           routes: svc.routes,
           enabled: true,
@@ -946,9 +997,10 @@ export default function StopArrivalsSlide({
   }, [selectedStop, allStops, serviceSelections, setServiceSelections, slideId]);
 
   useEffect(() => {
-    if (selectedStop && serviceSelections?.length > 0) {
-      fetchData();
-    }
+    if (!selectedStop || !serviceSelections?.length) return;
+    if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+    fetchDebounceRef.current = setTimeout(() => { fetchData(); }, 150);
+    return () => { if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current); };
   }, [selectedStop, serviceSelections, fetchData]);
 
   useEffect(() => {
@@ -1182,12 +1234,62 @@ export default function StopArrivalsSlide({
                       <label className="block text-[#4a5568] font-medium text-sm mb-2">
                         Lines & Directions
                       </label>
+
+                      {/* Column mode: tab selector */}
+                      {columnMode && columnServiceSelections && (
+                        <div className="flex gap-1 mb-3">
+                          {([0, 1] as const).map((tabIdx) => (
+                            <button
+                              key={tabIdx}
+                              onClick={() => setColumnActiveTab(tabIdx)}
+                              className={`px-4 py-1.5 text-xs font-medium rounded border transition-colors ${
+                                columnActiveTab === tabIdx
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                              }`}
+                            >
+                              {columnLabels[tabIdx]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="space-y-3">
-                        {(servicesExpanded
-                          ? serviceSelections
-                          : serviceSelections.slice(0, MAX_VISIBLE_SERVICES)
-                        ).map((selection: { serviceId: any; enabled: string | boolean | undefined; routes: RouteInfo[]; enabledRouteIds: string | any[]; directionOptions: any[]; selectedHeadsignFilters: never[]; agencyName: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; columnIndex: any; }, index: any) => (
-                          <div
+                        {(() => {
+                          const activeSels: ServiceSelection[] = columnMode && columnServiceSelections
+                            ? columnServiceSelections[columnActiveTab]
+                            : serviceSelections;
+                          const setActiveSels = (updated: ServiceSelection[]) => {
+                            if (columnMode && columnServiceSelections) {
+                              const next: [ServiceSelection[], ServiceSelection[]] = [
+                                ...columnServiceSelections as [ServiceSelection[], ServiceSelection[]]
+                              ];
+                              next[columnActiveTab] = updated;
+                              setColumnServiceSelections(slideId, next);
+                            } else {
+                              setServiceSelections(slideId, updated);
+                            }
+                          };
+                          const visibleSels = servicesExpanded ? activeSels : activeSels.slice(0, MAX_VISIBLE_SERVICES);
+                          return (
+                            <>
+                              {visibleSels.map((sel: any, index: number) => {
+                              // In column mode, merge display-only fields (routes, directionOptions,
+                              // agencyName) from serviceSelections — those aren't stored in columnServiceSelections
+                              const baseDisplay: any = (columnMode && columnServiceSelections)
+                                ? (serviceSelections || []).find((s: any) => s.serviceId === sel.serviceId) || {}
+                                : {};
+                              // Use ?? so explicit undefined values in sel (from autoSplitToColumns spreading stripped
+                              // serviceSelections) don't override display-only fields from baseDisplay
+                              const selection = {
+                                ...baseDisplay,
+                                ...sel,
+                                routes: sel.routes ?? baseDisplay.routes,
+                                agencyName: sel.agencyName ?? baseDisplay.agencyName,
+                                directionOptions: sel.directionOptions ?? baseDisplay.directionOptions,
+                              };
+                              return (
+                              <div
                             key={`${selection.serviceId}-${index}`}
                             className="p-3 bg-white rounded-lg border min-w-0"
                           >
@@ -1196,10 +1298,10 @@ export default function StopArrivalsSlide({
                               <Checkbox
                                 checked={selection.enabled}
                                 onCheckedChange={(checked) => {
-                                  const updated = serviceSelections.map((s: any, i: any) =>
+                                  const updated = activeSels.map((s: any, i: any) =>
                                     i === index ? { ...s, enabled: !!checked } : s
                                   );
-                                  setServiceSelections(slideId, updated);
+                                  setActiveSels(updated);
                                 }}
                               />
                               {selection.routes && selection.routes.length > 0 ? (
@@ -1231,10 +1333,10 @@ export default function StopArrivalsSlide({
                                           const validHeadsigns = new Set(newDirOptions.map((o: { headsignFilter: any; }) => o.headsignFilter).filter(Boolean));
                                           const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter((h: unknown) => validHeadsigns.has(h));
 
-                                          const updated = serviceSelections.map((s: any, i: any) =>
+                                          const updated = activeSels.map((s: any, i: any) =>
                                             i === index ? { ...s, enabledRouteIds: newEnabled, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
                                           );
-                                          setServiceSelections(slideId, updated);
+                                          setActiveSels(updated);
                                         }}
                                         className={`px-2 py-0.5 rounded text-xs font-bold min-w-[24px] text-center transition-opacity ${
                                           canToggle ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-400' : ''
@@ -1260,10 +1362,10 @@ export default function StopArrivalsSlide({
                                         // Keep headsign filters that are still valid
                                         const validHeadsigns = new Set(newDirOptions.map((o: { headsignFilter: any; }) => o.headsignFilter).filter(Boolean));
                                         const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter((h: unknown) => validHeadsigns.has(h));
-                                        const updated = serviceSelections.map((s: any, i: any) =>
+                                        const updated = activeSels.map((s: any, i: any) =>
                                           i === index ? { ...s, enabledRouteIds: allRouteIds, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
                                         );
-                                        setServiceSelections(slideId, updated);
+                                        setActiveSels(updated);
                                       }}
                                       className="text-xs text-blue-600 hover:underline ml-1"
                                     >
@@ -1278,70 +1380,52 @@ export default function StopArrivalsSlide({
                               )}
                             </div>
 
-                            {/* Column assignment - only shown when split view is enabled */}
-                            {columnMode && (
-                              <div className="mt-2 ml-6 flex items-center gap-2">
-                                <span className="text-xs text-gray-500">Column:</span>
-                                <Select
-                                  value={(selection.columnIndex ?? 0).toString()}
-                                  onValueChange={(val) => {
-                                    const updated = serviceSelections.map((s: any, i: any) =>
-                                      i === index ? { ...s, columnIndex: parseInt(val) as 0 | 1 } : s
-                                    );
-                                    setServiceSelections(slideId, updated);
-                                  }}
-                                >
-                                  <SelectTrigger className="h-7 text-xs flex-1">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="0">{columnLabels[0]}</SelectItem>
-                                    <SelectItem value="1">{columnLabels[1]}</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
-
-                            {/* Direction toggles row - multi-select for headsign filters */}
-                            {selection.enabled && selection.directionOptions.length > 1 && (
+                            {/* Direction toggles row */}
+                            {selection.enabled && (selection.directionOptions?.length ?? 0) > 1 && (
                               <div className="flex items-center gap-1.5 ml-6 flex-wrap mt-2">
-                                {selection.directionOptions.map((opt: { isAllDirections: any; headsignFilter: string; label: Key | null | undefined; stopId: any; }) => {
-                                  // "All" is selected when no filters are active
-                                  // Individual headsigns are selected when in the selectedHeadsignFilters array
+                                {(selection.directionOptions || []).map((opt: DirectionOption) => {
                                   const currentFilters = selection.selectedHeadsignFilters || [];
                                   const isAllOption = opt.isAllDirections;
+                                  // Directional options (N/S/E/W) use selectedStopId for tracking;
+                                  // headsign options use selectedHeadsignFilters.
+                                  const isDirectionalOpt = !opt.headsignFilter;
+                                  const normalizeIds = (s: string) =>
+                                    (s || '').split(',').map(x => x.trim()).filter(Boolean).sort().join(',');
                                   const isSelected = isAllOption
-                                    ? currentFilters.length === 0
-                                    : opt.headsignFilter ? currentFilters.includes(opt.headsignFilter) : false;
+                                    ? isDirectionalOpt
+                                      ? normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId)
+                                      : currentFilters.length === 0
+                                    : opt.headsignFilter
+                                      ? currentFilters.includes(opt.headsignFilter)
+                                      : normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId);
 
                                   return (
                                     <button
-                                      key={opt.label}
+                                      key={String(opt.label)}
                                       onClick={() => {
                                         let newFilters: string[];
 
                                         if (isAllOption) {
-                                          // Clicking "All" clears all filters
                                           newFilters = [];
                                         } else if (opt.headsignFilter) {
-                                          // Toggle this headsign filter
+                                          // Headsign toggle
                                           if (currentFilters.includes(opt.headsignFilter)) {
-                                            newFilters = currentFilters.filter((f: any) => f !== opt.headsignFilter);
+                                            newFilters = currentFilters.filter((f: string) => f !== opt.headsignFilter);
                                           } else {
                                             newFilters = [...currentFilters, opt.headsignFilter];
                                           }
                                         } else {
-                                          newFilters = currentFilters;
+                                          newFilters = [];
                                         }
 
-                                        const updated = serviceSelections.map((s: any, i: any) =>
+                                        const updated = activeSels.map((s: any, i: any) =>
                                           i === index ? {
                                             ...s,
                                             selectedStopId: opt.stopId,
                                             selectedHeadsignFilters: newFilters.length > 0 ? newFilters : undefined
                                           } : s
                                         );
-                                        setServiceSelections(slideId, updated);
+                                        setActiveSels(updated);
                                       }}
                                       className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                                         isSelected
@@ -1349,16 +1433,15 @@ export default function StopArrivalsSlide({
                                           : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                                       }`}
                                     >
-                                      {opt.label === 'All Directions' ? 'All' : opt.label.replace('bound', '')}
+                                      {opt.label === 'All Directions' ? 'All' : String(opt.label).replace('bound', '')}
                                     </button>
                                   );
                                 })}
                               </div>
                             )}
                           </div>
-                        ))}
-
-                        {serviceSelections.length > MAX_VISIBLE_SERVICES && (
+                        ); })}
+                        {activeSels.length > MAX_VISIBLE_SERVICES && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1373,11 +1456,14 @@ export default function StopArrivalsSlide({
                             ) : (
                               <>
                                 <ChevronDown className="w-3 h-3 mr-1" />
-                                Show {serviceSelections.length - MAX_VISIBLE_SERVICES} more
+                                Show {activeSels.length - MAX_VISIBLE_SERVICES} more
                               </>
                             )}
                           </Button>
                         )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}
@@ -1526,7 +1612,13 @@ export default function StopArrivalsSlide({
                 <input
                   type="checkbox"
                   checked={columnMode}
-                  onChange={(e) => setColumnMode(slideId, e.target.checked)}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setColumnMode(slideId, enabled);
+                    if (enabled && serviceSelections.length > 0 && !columnServiceSelections) {
+                      setColumnServiceSelections(slideId, autoSplitToColumns(serviceSelections));
+                    }
+                  }}
                   className="w-4 h-4 rounded border-gray-300"
                 />
                 Split View (2 Columns)

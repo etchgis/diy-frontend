@@ -346,6 +346,7 @@ async function importData(setup: any) {
       const {
         setStopName,
         setDisplayName,
+        setShowTitle,
         setDescription,
         setBackgroundColor,
         setTitleColor,
@@ -356,16 +357,20 @@ async function importData(setup: any) {
         setSelectedStop,
         setServiceSelections,
         setTitleTextSize,
-        setContentTextSize
+        setContentTextSize,
+        setColumnMode,
+        setColumnLabels,
+        setColumnServiceSelections,
       } = useFixedRouteStore.getState();
 
       setStopName(slide.id, slide.data.stopName || '');
       setDisplayName(slide.id, slide.data.displayName || '');
+      setShowTitle(slide.id, slide.data.showTitle !== false);
       setDescription(slide.id, slide.data.description || '');
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
-      setTitleColor(slide.id, slide.data.slideTitleColor || '#ffffff');
-      setTableColor(slide.id, slide.data.tableColor || '#ffffff');
-      setTableTextColor(slide.id, slide.data.tableTextColor || '#000000');
+      setTitleColor(slide.id, slide.data.slideTitleColor || '#FFFFFF');
+      setTableColor(slide.id, slide.data.tableColor || '#78B1DD');
+      setTableTextColor(slide.id, slide.data.tableTextColor || '#FFFFFF');
       setBgImage(slide.id, slide.data.bgImage || '');
       setLogoImage(slide.id, slide.data.logoImage || '');
       // TEMPORARY MIGRATION: Apply migration for old stored format
@@ -375,6 +380,13 @@ async function importData(setup: any) {
       setServiceSelections(slide.id, migratedSelections);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+      setColumnMode(slide.id, slide.data.columnMode || false);
+      if (slide.data.columnLabels) {
+        setColumnLabels(slide.id, slide.data.columnLabels);
+      }
+      if (slide.data.columnServiceSelections) {
+        setColumnServiceSelections(slide.id, slide.data.columnServiceSelections);
+      }
     }
 
     if (slide.type === 'transit-routes') {

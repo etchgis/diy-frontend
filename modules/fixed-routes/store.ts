@@ -23,6 +23,7 @@ export interface DirectionOption {
 // Service selection state for multi-select UI
 export interface ServiceSelection {
   serviceId: string;
+  organizationId?: string;          // Organization ID for the SKIDS API (stored so linked-stop services work)
   agencyName: string;
   routes?: RouteInfo[];
   enabled: boolean;
@@ -54,6 +55,7 @@ interface FixedRouteSlideData {
   columnMode?: boolean;
   columnLabels?: [string, string];
   columnScheduleData?: { label: string; arrivals: any[] }[];
+  columnServiceSelections?: [ServiceSelection[], ServiceSelection[]];
 }
 
 interface SlideStore {
@@ -78,6 +80,7 @@ interface SlideStore {
   setColumnMode: (slideId: string, enabled: boolean) => void;
   setColumnLabels: (slideId: string, labels: [string, string]) => void;
   setColumnScheduleData: (slideId: string, data: { label: string; arrivals: any[] }[]) => void;
+  setColumnServiceSelections: (slideId: string, data: [ServiceSelection[], ServiceSelection[]] | undefined) => void;
 }
 
 export const useFixedRouteStore = create<SlideStore>()(
@@ -257,6 +260,14 @@ export const useFixedRouteStore = create<SlideStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), columnScheduleData: data },
+          },
+        })),
+
+      setColumnServiceSelections: (slideId, data) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), columnServiceSelections: data },
           },
         })),
     }),

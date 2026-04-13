@@ -121,23 +121,67 @@ export async function publish() {
           selectedStop,
           serviceSelections,
           titleTextSize,
-          contentTextSize
+          contentTextSize,
+          showTitle,
+          columnMode,
+          columnLabels,
         } = slideData;
 
+        screenObj.data.stopName = stopName ?? '';
+        screenObj.data.displayName = displayName ?? '';
+        screenObj.data.description = description ?? '';
+        screenObj.data.backgroundColor = backgroundColor ?? '#192F51';
+        screenObj.data.slideTitleColor = titleColor ?? '#FFFFFF';
+        screenObj.data.tableColor = tableColor ?? '#78B1DD';
+        screenObj.data.tableTextColor = tableTextColor ?? '#FFFFFF';
+        screenObj.data.bgImage = bgImage ?? '';
+        screenObj.data.logoImage = logoImage ?? '';
+        screenObj.data.showTitle = showTitle !== false;
+        screenObj.data.columnMode = columnMode ?? false;
+        screenObj.data.columnLabels = columnLabels ?? ['Left', 'Right'];
+        screenObj.data.titleTextSize = titleTextSize ?? 5;
+        screenObj.data.contentTextSize = contentTextSize ?? 5;
 
-        screenObj.data.stopName = stopName;
-        screenObj.data.displayName = displayName;
-        screenObj.data.description = description;
-        screenObj.data.backgroundColor = backgroundColor;
-        screenObj.data.slideTitleColor = titleColor;
-        screenObj.data.tableColor = tableColor;
-        screenObj.data.tableTextColor = tableTextColor;
-        screenObj.data.bgImage = bgImage;
-        screenObj.data.logoImage = logoImage;
-        screenObj.data.selectedStop = selectedStop;
-        screenObj.data.serviceSelections = serviceSelections;
-        screenObj.data.titleTextSize = titleTextSize;
-        screenObj.data.contentTextSize = contentTextSize;
+        if (selectedStop) {
+          screenObj.data.selectedStop = {
+            id: selectedStop.id,
+            name: selectedStop.name,
+            lat: selectedStop.lat,
+            lon: selectedStop.lon,
+            services: (selectedStop.services || []).map((svc: any) => ({
+              id: svc.id,
+              organizationId: svc.organizationId,
+              agencyName: svc.agencyName,
+            })),
+          };
+        }
+
+        if (serviceSelections) {
+          screenObj.data.serviceSelections = serviceSelections.map((s: any) => ({
+            serviceId: s.serviceId,
+            organizationId: s.organizationId,
+            enabled: s.enabled,
+            selectedStopId: s.selectedStopId,
+            enabledRouteIds: s.enabledRouteIds,
+            selectedHeadsignFilters: s.selectedHeadsignFilters,
+          }));
+        }
+
+        const { columnServiceSelections } = slideData;
+        if (columnServiceSelections) {
+          const stripSel = (s: any) => ({
+            serviceId: s.serviceId,
+            organizationId: s.organizationId,
+            enabled: s.enabled,
+            selectedStopId: s.selectedStopId,
+            enabledRouteIds: s.enabledRouteIds,
+            selectedHeadsignFilters: s.selectedHeadsignFilters,
+          });
+          screenObj.data.columnServiceSelections = [
+            columnServiceSelections[0].map(stripSel),
+            columnServiceSelections[1].map(stripSel),
+          ];
+        }
       } else {
       }
     }
