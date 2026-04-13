@@ -72,6 +72,27 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const columnServiceSelections = useFixedRouteStore(
     (state) => state.slides[slideId]?.columnServiceSelections
   );
+  const serviceSelections = useFixedRouteStore(
+    (state) => state.slides[slideId]?.serviceSelections
+  );
+
+  // Build a merged alias map: headsignFilter (lowercase) → alias display name
+  const headsignAliasMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (serviceSelections || []).forEach((sel: any) => {
+      if (sel.headsignAliases) {
+        Object.entries(sel.headsignAliases).forEach(([key, val]) => {
+          map[key.toLowerCase().trim()] = val as string;
+        });
+      }
+    });
+    return map;
+  }, [serviceSelections]);
+
+  const applyAlias = (destination: string) => {
+    const key = (destination || '').toLowerCase().trim();
+    return headsignAliasMap[key] ?? destination;
+  };
 
   const columnData = useMemo(() => {
     if (!columnMode || !scheduleData?.length) return null;
@@ -414,7 +435,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                                   fontSize: `${12 * contentSizeMultiplier}px`,
                                 }}
                               >
-                                {item.destination}
+                                {applyAlias(item.destination)}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
@@ -481,7 +502,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                                   }vh,2.5rem)`,
                                 }}
                               >
-                                {item.destination}
+                                {applyAlias(item.destination)}
                               </span>
                             </div>
                             <div
@@ -559,7 +580,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               fontSize: `${14 * contentSizeMultiplier}px`,
                             }}
                           >
-                            {item.destination}
+                            {applyAlias(item.destination)}
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
@@ -644,7 +665,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               }vh, 3rem)`,
                             }}
                           >
-                            {item.destination}
+                            {applyAlias(item.destination)}
                           </span>
                         </div>
                         {/* Right-side columns — em widths track font size so nothing ever clips */}

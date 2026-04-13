@@ -161,6 +161,7 @@ function migrateServiceSelections(selections: any[], selectedStop: any): any[] {
         headsignFilter: opt.headsignFilter,
       })),
       enabledRouteIds: sel.enabledRouteIds,
+      headsignAliases: sel.headsignAliases,
     };
   });
 }

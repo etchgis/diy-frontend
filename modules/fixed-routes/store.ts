@@ -32,6 +32,7 @@ export interface ServiceSelection {
   directionOptions: DirectionOption[];  // Available direction choices for this service
   enabledRouteIds?: string[];       // Which routes are enabled (undefined = all enabled)
   columnIndex?: 0 | 1;             // Which column this service belongs to in split-view mode
+  headsignAliases?: Record<string, string>;  // headsignFilter value → custom display name
 }
 
 interface FixedRouteSlideData {

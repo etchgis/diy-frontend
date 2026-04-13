@@ -16,6 +16,7 @@ import {
   MapPin,
   ChevronDown,
   ChevronUp,
+  Pencil,
 } from "lucide-react";
 import FixedRoutePreview from "./preview";
 import { useEffect, useRef, useState, useCallback, JSXElementConstructor, ReactElement, ReactNode, ReactPortal, Key } from "react";
@@ -445,6 +446,8 @@ export default function StopArrivalsSlide({
   const setServiceSelections = useFixedRouteStore((state: { setServiceSelections: any; }) => state.setServiceSelections);
 
   const [servicesExpanded, setServicesExpanded] = useState(false);
+  const [editingHeadsignsFor, setEditingHeadsignsFor] = useState<string | null>(null); // serviceId being renamed
+  const [headsignDraft, setHeadsignDraft] = useState<Record<string, string>>({}); // headsignFilter → draft name
 
   const description = useFixedRouteStore(
     (state: { slides: { [x: string]: { description: any; }; }; }) => state.slides[slideId]?.description || ""
@@ -1287,6 +1290,7 @@ export default function StopArrivalsSlide({
                                 routes: sel.routes ?? baseDisplay.routes,
                                 agencyName: sel.agencyName ?? baseDisplay.agencyName,
                                 directionOptions: sel.directionOptions ?? baseDisplay.directionOptions,
+                                headsignAliases: sel.headsignAliases ?? baseDisplay.headsignAliases,
                               };
                               return (
                               <div
@@ -1381,64 +1385,149 @@ export default function StopArrivalsSlide({
                             </div>
 
                             {/* Direction toggles row */}
-                            {selection.enabled && (selection.directionOptions?.length ?? 0) > 1 && (
-                              <div className="flex items-center gap-1.5 ml-6 flex-wrap mt-2">
-                                {(selection.directionOptions || []).map((opt: DirectionOption) => {
-                                  const currentFilters = selection.selectedHeadsignFilters || [];
-                                  const isAllOption = opt.isAllDirections;
-                                  // Directional options (N/S/E/W) use selectedStopId for tracking;
-                                  // headsign options use selectedHeadsignFilters.
-                                  const isDirectionalOpt = !opt.headsignFilter;
-                                  const normalizeIds = (s: string) =>
-                                    (s || '').split(',').map(x => x.trim()).filter(Boolean).sort().join(',');
-                                  const isSelected = isAllOption
-                                    ? isDirectionalOpt
-                                      ? normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId)
-                                      : currentFilters.length === 0
-                                    : opt.headsignFilter
-                                      ? currentFilters.includes(opt.headsignFilter)
-                                      : normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId);
+                            {selection.enabled && (selection.directionOptions?.length ?? 0) > 1 && (() => {
+                              const headsignOpts = (selection.directionOptions || []).filter((o: DirectionOption) => !o.isAllDirections && o.headsignFilter);
+                              const isEditing = editingHeadsignsFor === selection.serviceId;
+                              return (
+                                <>
+                                  <div className="flex items-center gap-1.5 ml-6 flex-wrap mt-2">
+                                    {(selection.directionOptions || []).map((opt: DirectionOption) => {
+                                      const currentFilters = selection.selectedHeadsignFilters || [];
+                                      const isAllOption = opt.isAllDirections;
+                                      const isDirectionalOpt = !opt.headsignFilter;
+                                      const normalizeIds = (s: string) =>
+                                        (s || '').split(',').map(x => x.trim()).filter(Boolean).sort().join(',');
+                                      const isSelected = isAllOption
+                                        ? isDirectionalOpt
+                                          ? normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId)
+                                          : currentFilters.length === 0
+                                        : opt.headsignFilter
+                                          ? currentFilters.includes(opt.headsignFilter)
+                                          : normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId);
 
-                                  return (
-                                    <button
-                                      key={String(opt.label)}
-                                      onClick={() => {
-                                        let newFilters: string[];
+                                      // Read aliases directly from serviceSelections (same source as preview)
+                                      // to avoid stale values going through the selection merge.
+                                      const savedAlias = opt.headsignFilter
+                                        ? (serviceSelections || []).find((s: any) => s.serviceId === selection.serviceId)?.headsignAliases?.[opt.headsignFilter]
+                                        : undefined;
+                                      // While rename panel is open show live draft; otherwise show saved alias.
+                                      const displayLabel = opt.headsignFilter
+                                        ? (isEditing && headsignDraft[opt.headsignFilter] !== undefined
+                                          ? (headsignDraft[opt.headsignFilter] || opt.headsignFilter)
+                                          : (savedAlias || opt.headsignFilter))
+                                        : opt.label === 'All Directions' ? 'All' : String(opt.label).replace('bound', '');
 
-                                        if (isAllOption) {
-                                          newFilters = [];
-                                        } else if (opt.headsignFilter) {
-                                          // Headsign toggle
-                                          if (currentFilters.includes(opt.headsignFilter)) {
-                                            newFilters = currentFilters.filter((f: string) => f !== opt.headsignFilter);
+                                      return (
+                                        <button
+                                          key={String(opt.label)}
+                                          onClick={() => {
+                                            let newFilters: string[];
+                                            if (isAllOption) {
+                                              newFilters = [];
+                                            } else if (opt.headsignFilter) {
+                                              if (currentFilters.includes(opt.headsignFilter)) {
+                                                newFilters = currentFilters.filter((f: string) => f !== opt.headsignFilter);
+                                              } else {
+                                                newFilters = [...currentFilters, opt.headsignFilter];
+                                              }
+                                            } else {
+                                              newFilters = [];
+                                            }
+                                            const updated = activeSels.map((s: any, i: any) =>
+                                              i === index ? {
+                                                ...s,
+                                                selectedStopId: opt.stopId,
+                                                selectedHeadsignFilters: newFilters.length > 0 ? newFilters : undefined
+                                              } : s
+                                            );
+                                            setActiveSels(updated);
+                                          }}
+                                          className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                                            isSelected
+                                              ? 'bg-blue-600 text-white border-blue-600'
+                                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                          }`}
+                                        >
+                                          {displayLabel}
+                                        </button>
+                                      );
+                                    })}
+                                    {/* Rename button — only show if there are headsign options */}
+                                    {headsignOpts.length > 0 && (
+                                      <button
+                                        onClick={() => {
+                                          if (isEditing) {
+                                            setEditingHeadsignsFor(null);
                                           } else {
-                                            newFilters = [...currentFilters, opt.headsignFilter];
+                                            // Read current aliases directly from serviceSelections to avoid stale merge
+                                            const baseSel = (serviceSelections || []).find((s: any) => s.serviceId === selection.serviceId);
+                                            const draft: Record<string, string> = {};
+                                            headsignOpts.forEach((o: DirectionOption) => {
+                                              draft[o.headsignFilter!] = baseSel?.headsignAliases?.[o.headsignFilter!] ?? o.headsignFilter!;
+                                            });
+                                            setHeadsignDraft(draft);
+                                            setEditingHeadsignsFor(selection.serviceId);
                                           }
-                                        } else {
-                                          newFilters = [];
-                                        }
-
-                                        const updated = activeSels.map((s: any, i: any) =>
-                                          i === index ? {
-                                            ...s,
-                                            selectedStopId: opt.stopId,
-                                            selectedHeadsignFilters: newFilters.length > 0 ? newFilters : undefined
-                                          } : s
-                                        );
-                                        setActiveSels(updated);
-                                      }}
-                                      className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                                        isSelected
-                                          ? 'bg-blue-600 text-white border-blue-600'
-                                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                                      }`}
-                                    >
-                                      {opt.label === 'All Directions' ? 'All' : String(opt.label).replace('bound', '')}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
+                                        }}
+                                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 ml-1"
+                                        title="Rename headsigns"
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                  {/* Inline headsign rename form */}
+                                  {isEditing && headsignOpts.length > 0 && (
+                                    <div className="ml-6 mt-2 space-y-1">
+                                      {headsignOpts.map((opt: DirectionOption) => (
+                                        <div key={opt.headsignFilter} className="flex items-center gap-1.5">
+                                          <span className="text-xs text-gray-400 w-24 truncate shrink-0" title={opt.headsignFilter}>{opt.headsignFilter}</span>
+                                          <span className="text-xs text-gray-300">→</span>
+                                          <input
+                                            type="text"
+                                            value={headsignDraft[opt.headsignFilter!] ?? opt.headsignFilter ?? ''}
+                                            onChange={(e) => {
+                                              const newDraft = { ...headsignDraft, [opt.headsignFilter!]: e.target.value };
+                                              setHeadsignDraft(newDraft);
+                                              // Save to store immediately so toggle labels and preview update live
+                                              const newAliases: Record<string, string> = {};
+                                              headsignOpts.forEach((o: DirectionOption) => {
+                                                const val = (newDraft[o.headsignFilter!] ?? '').trim();
+                                                if (val && val !== o.headsignFilter) {
+                                                  newAliases[o.headsignFilter!] = val;
+                                                }
+                                              });
+                                              const aliases = Object.keys(newAliases).length > 0 ? newAliases : undefined;
+                                              const updatedBase = (serviceSelections || []).map((s: any) =>
+                                                s.serviceId === selection.serviceId ? { ...s, headsignAliases: aliases } : s
+                                              );
+                                              setServiceSelections(slideId, updatedBase);
+                                            }}
+                                            onBlur={() => {
+                                              // Final save on blur (trim whitespace edge cases)
+                                              const newAliases: Record<string, string> = {};
+                                              headsignOpts.forEach((o: DirectionOption) => {
+                                                const val = (headsignDraft[o.headsignFilter!] ?? '').trim();
+                                                if (val && val !== o.headsignFilter) {
+                                                  newAliases[o.headsignFilter!] = val;
+                                                }
+                                              });
+                                              const aliases = Object.keys(newAliases).length > 0 ? newAliases : undefined;
+                                              const updatedBase = (serviceSelections || []).map((s: any) =>
+                                                s.serviceId === selection.serviceId ? { ...s, headsignAliases: aliases } : s
+                                              );
+                                              setServiceSelections(slideId, updatedBase);
+                                            }}
+                                            className="flex-1 min-w-0 text-xs border rounded px-1.5 py-0.5 h-6 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                            placeholder={opt.headsignFilter ?? ''}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         ); })}
                         {activeSels.length > MAX_VISIBLE_SERVICES && (

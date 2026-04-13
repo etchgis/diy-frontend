@@ -164,6 +164,7 @@ export async function publish() {
             selectedStopId: s.selectedStopId,
             enabledRouteIds: s.enabledRouteIds,
             selectedHeadsignFilters: s.selectedHeadsignFilters,
+            headsignAliases: s.headsignAliases,
           }));
         }
 
@@ -176,6 +177,7 @@ export async function publish() {
             selectedStopId: s.selectedStopId,
             enabledRouteIds: s.enabledRouteIds,
             selectedHeadsignFilters: s.selectedHeadsignFilters,
+            headsignAliases: s.headsignAliases,
           });
           screenObj.data.columnServiceSelections = [
             columnServiceSelections[0].map(stripSel),
