@@ -11,8 +11,9 @@ import { useFixedRouteStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import Footer from "@/components/shared-components/footer";
-import { useEffect } from "react";
+
 
 export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const stopName = useFixedRouteStore(
@@ -62,6 +63,38 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const isLoading = useFixedRouteStore(
     (state) => state.slides[slideId]?.isLoading
   );
+  const columnMode = useFixedRouteStore(
+    (state) => state.slides[slideId]?.columnMode || false
+  );
+  const columnLabels = useFixedRouteStore(
+    (state) => state.slides[slideId]?.columnLabels
+  );
+  const serviceSelections = useFixedRouteStore(
+    (state) => state.slides[slideId]?.serviceSelections
+  );
+
+  // Compute column data reactively so changing column assignment never triggers a re-fetch
+  const columnData = useMemo(() => {
+    if (!columnMode || !scheduleData?.length || !serviceSelections?.length)
+      return null;
+    const labels = columnLabels || ["Left", "Right"];
+    const col0 = scheduleData.filter((arr: any) => {
+      const sel = serviceSelections.find(
+        (s: any) => s.serviceId === arr._sourceService
+      );
+      return (sel?.columnIndex ?? 0) === 0;
+    });
+    const col1 = scheduleData.filter((arr: any) => {
+      const sel = serviceSelections.find(
+        (s: any) => s.serviceId === arr._sourceService
+      );
+      return sel?.columnIndex === 1;
+    });
+    return [
+      { label: labels[0], arrivals: col0 },
+      { label: labels[1], arrivals: col1 },
+    ];
+  }, [columnMode, scheduleData, serviceSelections, columnLabels]);
   const titleTextSize = useFixedRouteStore(
     (state) => state.slides[slideId]?.titleTextSize || 5
   );
@@ -75,28 +108,37 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
 
   // Get rail icon based on organization/agency name
   const getRailIcon = (): string => {
-    const orgId = selectedStop?.services?.[0]?.organizationId || selectedStop?.organizationId || '';
-    const orgName = selectedStop?.services?.[0]?.agencyName || selectedStop?.agencyName || '';
+    const orgId =
+      selectedStop?.services?.[0]?.organizationId ||
+      selectedStop?.organizationId ||
+      "";
+    const orgName =
+      selectedStop?.services?.[0]?.agencyName || selectedStop?.agencyName || "";
     const combined = `${orgId} ${orgName}`.toLowerCase();
 
-    if (combined.includes('lirr') || combined.includes('long island')) {
-      return '/images/lirr-rail-icon.png';
+    if (combined.includes("lirr") || combined.includes("long island")) {
+      return "/images/lirr-rail-icon.png";
     }
-    if (combined.includes('mnr') || combined.includes('metro-north') || combined.includes('metronorth') || combined.includes('metro north')) {
-      return '/images/mn-rail-icon.png';
+    if (
+      combined.includes("mnr") ||
+      combined.includes("metro-north") ||
+      combined.includes("metronorth") ||
+      combined.includes("metro north")
+    ) {
+      return "/images/mn-rail-icon.png";
     }
-    if (combined.includes('amtrak') || combined.includes('amtk')) {
-      return '/images/amtrack-rail-icon.png';
+    if (combined.includes("amtrak") || combined.includes("amtk")) {
+      return "/images/amtrack-rail-icon.png";
     }
-    return '/images/rail-icon.png';
+    return "/images/rail-icon.png";
   };
 
   // Determine the correct icon based on routeType from schedule data
   const getModeIcon = (): string => {
     // Get routeType from first arrival in scheduleData
     const routeTypeRaw = scheduleData?.[0]?.routeType;
-    const routeType = routeTypeRaw !== undefined ? Number(routeTypeRaw) : undefined;
-
+    const routeType =
+      routeTypeRaw !== undefined ? Number(routeTypeRaw) : undefined;
 
     // GTFS route types: 0=tram/light rail, 1=subway, 2=rail, 3=bus
     switch (routeType) {
@@ -104,16 +146,15 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
       case 2: // Rail (LIRR, Metro-North, Amtrak, etc.)
         return getRailIcon();
       case 1: // Subway/Metro
-        return '/images/subway-icon.png';
+        return "/images/subway-icon.png";
       case 3: // Bus
-        return '/images/bus-icon.png';
+        return "/images/bus-icon.png";
       default:
         return getRailIcon();
     }
   };
 
   const modeIcon = getModeIcon();
-
 
   // Loading Spinner Component
   const LoadingSpinner = () => (
@@ -129,35 +170,72 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     <>
       {/* Transit Schedule Display */}
       <div
-        className="w-full h-full flex flex-col text-white overflow-hidden relative"
-        style={{
-          backgroundColor: !bgImage ? backgroundColor : undefined,
-          backgroundImage: bgImage ? `url(${bgImage})` : undefined,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          color: titleColor || "#ffffff",
-          fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
-        }}
+        className={`w-full h-full flex flex-col justify-between text-white overflow-hidden mb-6 `}
       >
+        <div
+          className={`w-full h-full flex flex-col justify-between text-white overflow-hidden relative `}
+          style={{
+            backgroundColor: !bgImage ? backgroundColor : undefined,
+            backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            color: titleColor || "#ffffff",
+            fontFamily:
+              defaultFontFamily && defaultFontFamily !== "System Default"
+                ? defaultFontFamily
+                : undefined,
+          }}
+        >
           {/* Schedule Header */}
-          {showTitle && (
-            isEditor ? (
+          {showTitle &&
+            (isEditor ? (
               <div className="p-6 flex items-center">
                 <div className="flex-1">
-                  <div className="mb-2" style={{display: 'flex', alignItems: 'center', fontSize: `${18 * titleSizeMultiplier}px`}}>
-                    <img src={modeIcon} style={{height: `${38 * titleSizeMultiplier}px`, width: `${38 * titleSizeMultiplier}px`, marginRight: '8px', objectFit: 'contain'}} alt="" />
+                  <div
+                    className="mb-2"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      fontSize: `${18 * titleSizeMultiplier}px`,
+                    }}
+                  >
+                    <img
+                      src={modeIcon}
+                      style={{
+                        height: `${38 * titleSizeMultiplier}px`,
+                        width: `${38 * titleSizeMultiplier}px`,
+                        marginRight: "8px",
+                        objectFit: "contain",
+                      }}
+                      alt=""
+                    />
                     <p>Stop #{selectedStop?.id} arrival times</p>
                   </div>
 
-                  <h2 className="font-bold mb-2 flex items-center gap-2" style={{ fontSize: `${30 * titleSizeMultiplier}px` }}>
-                    {(displayName || selectedStop?.name || selectedStop?.stop_name)?.toString().toUpperCase() ||
-                      "UNKNOWN STOP"}
+                  <h2
+                    className="font-bold mb-2 flex items-center gap-2"
+                    style={{ fontSize: `${30 * titleSizeMultiplier}px` }}
+                  >
+                    {(
+                      displayName ||
+                      selectedStop?.name ||
+                      selectedStop?.stop_name
+                    )
+                      ?.toString()
+                      .toUpperCase() || "UNKNOWN STOP"}
                     {selectedStop?.wheelchairBoarding === 1 && (
-                      <span title="Wheelchair accessible" style={{ fontSize: `${22 * titleSizeMultiplier}px` }}>♿</span>
+                      <span
+                        title="Wheelchair accessible"
+                        style={{ fontSize: `${22 * titleSizeMultiplier}px` }}
+                      >
+                        ♿
+                      </span>
                     )}
                   </h2>
 
-                  <p style={{ fontSize: `${16 * titleSizeMultiplier}px` }}>{description}</p>
+                  <p style={{ fontSize: `${16 * titleSizeMultiplier}px` }}>
+                    {description}
+                  </p>
                 </div>
                 {logoImage && (
                   <img
@@ -170,36 +248,78 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
             ) : (
               <div
                 className="p-2 sm:p-4 lg:p-6 xl:p-8 flex items-center flex-shrink-0 overflow-hidden"
-                style={{ padding: "clamp(0.5rem, 2vw, 2rem)", maxHeight: "20%", flexShrink: 0 }}
+                style={{
+                  padding: "clamp(0.5rem, 2vw, 2rem)",
+                  maxHeight: "25%",
+                }}
               >
                 <div className="flex-1 overflow-hidden">
                   <div
                     className="mb-1 sm:mb-2 overflow-hidden"
                     style={{
-                      fontSize: `clamp(0.75rem, ${2.5 * titleSizeMultiplier}vh, 3rem)`,
+                      fontSize: `clamp(0.75rem, ${
+                        2.5 * titleSizeMultiplier
+                      }vh, 3rem)`,
                       marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
-                      display: 'flex',
-                      alignItems: 'center'
+                      display: "flex",
+                      alignItems: "center",
                     }}
                   >
-                    <img src={modeIcon} style={{height: `clamp(28px, ${5.5 * titleSizeMultiplier}vh, 7rem)`, width: `clamp(28px, ${5.5 * titleSizeMultiplier}vh, 7rem)`, marginRight: '8px', objectFit: 'contain'}} alt="" />
-                    <span className="truncate">Stop #{selectedStop?.id} arrival times</span>
+                    <img
+                      src={modeIcon}
+                      style={{
+                        height: `clamp(28px, ${
+                          5.5 * titleSizeMultiplier
+                        }vh, 7rem)`,
+                        width: `clamp(28px, ${
+                          5.5 * titleSizeMultiplier
+                        }vh, 7rem)`,
+                        marginRight: "8px",
+                        objectFit: "contain",
+                      }}
+                      alt=""
+                    />
+                    <span className="truncate">
+                      Stop #{selectedStop?.id} arrival times
+                    </span>
                   </div>
 
                   <h2
                     className="font-bold mb-1 sm:mb-2 flex items-center gap-2 overflow-hidden"
                     style={{
-                      fontSize: `clamp(1.25rem, ${6 * titleSizeMultiplier}vh, 6rem)`,
+                      fontSize: `clamp(1.25rem, ${
+                        6 * titleSizeMultiplier
+                      }vh, 6rem)`,
                       marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
                     }}
                   >
-                    <span className="truncate">{(displayName || stopName)?.toString().toUpperCase() || "UNKNOWN STOP"}</span>
+                    <span className="truncate">
+                      {(displayName || stopName)?.toString().toUpperCase() ||
+                        "UNKNOWN STOP"}
+                    </span>
                     {selectedStop?.wheelchairBoarding === 1 && (
-                      <span title="Wheelchair accessible" className="flex-shrink-0" style={{ fontSize: `clamp(1rem, ${4 * titleSizeMultiplier}vh, 4rem)` }}>♿</span>
+                      <span
+                        title="Wheelchair accessible"
+                        className="flex-shrink-0"
+                        style={{
+                          fontSize: `clamp(1rem, ${
+                            4 * titleSizeMultiplier
+                          }vh, 4rem)`,
+                        }}
+                      >
+                        ♿
+                      </span>
                     )}
                   </h2>
 
-                  <p className="truncate" style={{ fontSize: `clamp(0.625rem, ${2 * titleSizeMultiplier}vh, 2.5rem)` }}>
+                  <p
+                    className="truncate"
+                    style={{
+                      fontSize: `clamp(0.625rem, ${
+                        2 * titleSizeMultiplier
+                      }vh, 2.5rem)`,
+                    }}
+                  >
                     {description}
                   </p>
                 </div>
@@ -211,8 +331,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   />
                 )}
               </div>
-            )
-          )}
+            ))}
 
           {/* Schedule Table or Loading Spinner */}
           {isLoading ? (
@@ -235,7 +354,181 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 </p>
               </div>
             </div>
-          ) : isEditor ? (
+          ) : columnMode && columnData ? (
+            /* ── Split column view ── */
+            <div
+              style={{
+                display: "flex",
+                flex: "1 1 0",
+                minHeight: 0,
+                overflow: "hidden",
+              }}
+            >
+              {columnData.map(
+                (col: { label: string; arrivals: any[] }, colIdx: number) => (
+                  <div
+                    key={colIdx}
+                    style={{
+                      flex: "1 1 0",
+                      minWidth: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      overflow: "hidden",
+                      borderRight:
+                        colIdx === 0
+                          ? "1px solid rgba(128,128,128,0.3)"
+                          : undefined,
+                    }}
+                  >
+                    {isEditor ? (
+                      <div
+                        className="text-black flex flex-col overflow-hidden"
+                        style={{ flex: "1 1 0", minHeight: 0 }}
+                      >
+                        {col.arrivals.map((item: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
+                            style={{
+                              flex: "1 1 0",
+                              minHeight: 0,
+                              backgroundColor: !bgImage
+                                ? tableColor
+                                : "transparent",
+                              color: tableTextColor,
+                              padding: `${description ? "10px" : "12px"}`,
+                            }}
+                          >
+                            <div className="flex-1 overflow-hidden">
+                              <span
+                                className="truncate block"
+                                style={{
+                                  fontSize: `${12 * contentSizeMultiplier}px`,
+                                }}
+                              >
+                                {item.destination}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <div
+                                className="rounded font-bold text-center flex-shrink-0"
+                                style={{
+                                  padding: "0.2em 0.4em",
+                                  fontSize: `${10 * contentSizeMultiplier}px`,
+                                  color: `#${item.routeTextColor}`,
+                                  backgroundColor: `#${item.routeColor}`,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {item.routeShortName || item.routeId}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: `${12 * contentSizeMultiplier}px`,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {item.time}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: `${11 * contentSizeMultiplier}px`,
+                                  whiteSpace: "nowrap",
+                                  opacity: 0.8,
+                                }}
+                              >
+                                {item.duration}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        className="text-black flex flex-col overflow-hidden"
+                        style={{ flex: "1 1 0", minHeight: 0 }}
+                      >
+                        {col.arrivals.map((item: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
+                            style={{
+                              flex: "1 1 0",
+                              minHeight: 0,
+                              backgroundColor: !bgImage
+                                ? tableColor
+                                : "transparent",
+                              color: tableTextColor,
+                              padding: `clamp(0.5rem, 1.5vw, ${
+                                description ? "0.625rem" : "0.75rem"
+                              })`,
+                            }}
+                          >
+                            <div className="flex-1 overflow-hidden">
+                              <span
+                                className="font-medium block truncate"
+                                style={{
+                                  fontSize: `clamp(0.625rem,${
+                                    2.5 * contentSizeMultiplier
+                                  }vh,2.5rem)`,
+                                }}
+                              >
+                                {item.destination}
+                              </span>
+                            </div>
+                            <div
+                              className="flex items-center flex-shrink-0"
+                              style={{ gap: "clamp(0.5rem,1.5vh,2rem)" }}
+                            >
+                              <div
+                                className="rounded font-bold text-center flex-shrink-0"
+                                style={{
+                                  padding: "0.3em 0.6em",
+                                  fontSize: `clamp(0.5rem,${
+                                    2 * contentSizeMultiplier
+                                  }vh,2rem)`,
+                                  color: `#${item.routeTextColor}`,
+                                  backgroundColor: `#${item.routeColor}`,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {item.routeShortName || item.routeId}
+                              </div>
+                              <div
+                                className="font-medium flex-shrink-0"
+                                style={{
+                                  fontSize: `clamp(0.625rem,${
+                                    2.5 * contentSizeMultiplier
+                                  }vh,2.5rem)`,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {item.time}
+                              </div>
+                              <div
+                                className="flex-shrink-0"
+                                style={{
+                                  fontSize: `clamp(0.5rem,${
+                                    2 * contentSizeMultiplier
+                                  }vh,2rem)`,
+                                  whiteSpace: "nowrap",
+                                  opacity: 0.85,
+                                }}
+                              >
+                                {item.duration}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+          ) : (
+            <>
+              {isEditor ? (
                 <div className="text-black">
                   {scheduleData &&
                     scheduleData.map((item: any, index: number) => (
@@ -252,7 +545,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                         }}
                       >
                         <div className="flex-1">
-                          <span className="font-medium" style={{ fontSize: `${14 * contentSizeMultiplier}px` }}>
+                          <span
+                            className="font-medium"
+                            style={{
+                              fontSize: `${14 * contentSizeMultiplier}px`,
+                            }}
+                          >
                             {item.destination}
                           </span>
                         </div>
@@ -263,23 +561,42 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               padding: "0.3em 0.6em",
                               fontSize: `${12 * contentSizeMultiplier}px`,
                               minWidth: `${40 * contentSizeMultiplier}px`,
-                              whiteSpace: 'nowrap',
+                              whiteSpace: "nowrap",
                               color: `#${item.routeTextColor}`,
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
                             {item.routeShortName || item.routeId}
                           </div>
-                          <div className="font-medium flex-shrink-0 overflow-hidden" style={{ fontSize: `${14 * contentSizeMultiplier}px`, width: `${70 * contentSizeMultiplier}px`, whiteSpace: 'nowrap' }}>
+                          <div
+                            className="font-medium flex-shrink-0 overflow-hidden"
+                            style={{
+                              fontSize: `${14 * contentSizeMultiplier}px`,
+                              width: `${70 * contentSizeMultiplier}px`,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
                             {item.time}
                           </div>
-                          <div className="flex-shrink-0 overflow-hidden" style={{ fontSize: `${14 * contentSizeMultiplier}px`, width: `${80 * contentSizeMultiplier}px`, whiteSpace: 'nowrap' }}>
+                          <div
+                            className="flex-shrink-0 overflow-hidden"
+                            style={{
+                              fontSize: `${14 * contentSizeMultiplier}px`,
+                              width: `${80 * contentSizeMultiplier}px`,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
                             {item.duration}
                           </div>
                           <Button
                             variant="outline"
                             className="bg-transparent flex-shrink-0"
-                            style={{ fontSize: `${12 * contentSizeMultiplier}px`, width: `${90 * contentSizeMultiplier}px`, padding: "0.3em 0.6em", height: 'auto' }}
+                            style={{
+                              fontSize: `${12 * contentSizeMultiplier}px`,
+                              width: `${90 * contentSizeMultiplier}px`,
+                              padding: "0.3em 0.6em",
+                              height: "auto",
+                            }}
                           >
                             {item.status}
                           </Button>
@@ -298,17 +615,26 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                         key={index}
                         className="flex items-center border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
                         style={{
-                          flex: "1 1 auto",
-                          backgroundColor: !bgImage ? tableColor : "transparent",
+                          flex: "1 1 0",
+                          minHeight: 0,
+                          backgroundColor: !bgImage
+                            ? tableColor
+                            : "transparent",
                           color: tableTextColor,
-                          padding: `clamp(0.5rem, 1.5vw, 0.75rem)`,
+                          padding: `clamp(0.5rem, 1.5vw, ${
+                            description ? "0.625rem" : "0.75rem"
+                          })`,
                         }}
                       >
                         {/* Destination */}
                         <div className="flex-1 overflow-hidden">
                           <span
                             className="font-medium block truncate"
-                            style={{ fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)` }}
+                            style={{
+                              fontSize: `clamp(0.75rem, ${
+                                3 * contentSizeMultiplier
+                              }vh, 3rem)`,
+                            }}
                           >
                             {item.destination}
                           </span>
@@ -317,7 +643,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                         <div
                           className="flex items-center flex-shrink-0"
                           style={{
-                            fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)`,
+                            fontSize: `clamp(0.75rem, ${
+                              3 * contentSizeMultiplier
+                            }vh, 3rem)`,
                             gap: "1em",
                           }}
                         >
@@ -326,7 +654,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             style={{
                               width: "4.5em",
                               padding: "0.3em 0.4em",
-                              fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
+                              fontSize: `clamp(0.625rem, ${
+                                2.5 * contentSizeMultiplier
+                              }vh, 2.5rem)`,
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -344,7 +674,11 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           </div>
                           <div
                             className="text-right flex-shrink-0"
-                            style={{ width: "7em", whiteSpace: "nowrap", marginLeft: "-0.5em" }}
+                            style={{
+                              width: "7em",
+                              whiteSpace: "nowrap",
+                              marginLeft: "-0.5em",
+                            }}
                           >
                             {item.duration}
                           </div>
@@ -353,7 +687,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             style={{
                               width: "9em",
                               padding: "0.3em 0.4em",
-                              fontSize: `clamp(0.625rem, ${2.5 * contentSizeMultiplier}vh, 2.5rem)`,
+                              fontSize: `clamp(0.625rem, ${
+                                2.5 * contentSizeMultiplier
+                              }vh, 2.5rem)`,
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -367,10 +703,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                       </div>
                     ))}
                 </div>
+              )}
+            </>
           )}
-
+        </div>
         {/* Footer */}
-        <Footer />
+      <Footer />
       </div>
     </>
   );

@@ -30,6 +30,7 @@ export interface ServiceSelection {
   selectedHeadsignFilters?: string[];  // Filter arrivals by headsigns (multi-select, exact match)
   directionOptions: DirectionOption[];  // Available direction choices for this service
   enabledRouteIds?: string[];       // Which routes are enabled (undefined = all enabled)
+  columnIndex?: 0 | 1;             // Which column this service belongs to in split-view mode
 }
 
 interface FixedRouteSlideData {
@@ -50,6 +51,9 @@ interface FixedRouteSlideData {
   isLoading: boolean;
   titleTextSize?: number;
   contentTextSize?: number;
+  columnMode?: boolean;
+  columnLabels?: [string, string];
+  columnScheduleData?: { label: string; arrivals: any[] }[];
 }
 
 interface SlideStore {
@@ -71,6 +75,9 @@ interface SlideStore {
   setDataError: (slideId: string, error: boolean) => void;
   setTitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
+  setColumnMode: (slideId: string, enabled: boolean) => void;
+  setColumnLabels: (slideId: string, labels: [string, string]) => void;
+  setColumnScheduleData: (slideId: string, data: { label: string; arrivals: any[] }[]) => void;
 }
 
 export const useFixedRouteStore = create<SlideStore>()(
@@ -226,6 +233,30 @@ export const useFixedRouteStore = create<SlideStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), contentTextSize: size },
+          },
+        })),
+
+      setColumnMode: (slideId, enabled) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), columnMode: enabled },
+          },
+        })),
+
+      setColumnLabels: (slideId, labels) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), columnLabels: labels },
+          },
+        })),
+
+      setColumnScheduleData: (slideId, data) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), columnScheduleData: data },
           },
         })),
     }),

@@ -18,7 +18,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import FixedRoutePreview from "./preview";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, JSXElementConstructor, ReactElement, ReactNode, ReactPortal, Key } from "react";
 import { useFixedRouteStore, ServiceSelection, DirectionOption, RouteInfo } from "./store";
 import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
@@ -30,6 +30,7 @@ import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop }
 
 // Stable empty array reference for Zustand selector
 const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
+const DEFAULT_COLUMN_LABELS: [string, string] = ['Left', 'Right'];
 
 const MAX_VISIBLE_SERVICES = 3;
 const MAX_DISPLAYED_ROUTES = 6;
@@ -402,89 +403,94 @@ export default function StopArrivalsSlide({
   const [linkedStops, setLinkedStops] = useState<ExpandedLinkedStop[]>([]); // Stops in same station complex
 
   const stopName = useFixedRouteStore(
-    (state) => state.slides[slideId]?.stopName || ""
+    (state: { slides: { [x: string]: { stopName: any; }; }; }) => state.slides[slideId]?.stopName || ""
   );
-  const setStopName = useFixedRouteStore((state) => state.setStopName);
+  const setStopName = useFixedRouteStore((state: { setStopName: any; }) => state.setStopName);
 
   const displayName = useFixedRouteStore(
-    (state) => state.slides[slideId]?.displayName ?? ""
+    (state: { slides: { [x: string]: { displayName: any; }; }; }) => state.slides[slideId]?.displayName ?? ""
   );
-  const setDisplayName = useFixedRouteStore((state) => state.setDisplayName);
+  const setDisplayName = useFixedRouteStore((state: { setDisplayName: any; }) => state.setDisplayName);
 
   const selectedStop = useFixedRouteStore(
-    (state) => state.slides[slideId]?.selectedStop || undefined
+    (state: { slides: { [x: string]: { selectedStop: any; }; }; }) => state.slides[slideId]?.selectedStop || undefined
   );
-  const setSelectedStop = useFixedRouteStore((state) => state.setSelectedStop);
+  const setSelectedStop = useFixedRouteStore((state: { setSelectedStop: any; }) => state.setSelectedStop);
 
   const serviceSelections = useFixedRouteStore(
-    (state) => state.slides[slideId]?.serviceSelections ?? EMPTY_SERVICE_SELECTIONS
+    (state: { slides: { [x: string]: { serviceSelections: any; }; }; }) => state.slides[slideId]?.serviceSelections ?? EMPTY_SERVICE_SELECTIONS
   );
-  const setServiceSelections = useFixedRouteStore((state) => state.setServiceSelections);
+  const setServiceSelections = useFixedRouteStore((state: { setServiceSelections: any; }) => state.setServiceSelections);
 
   const [servicesExpanded, setServicesExpanded] = useState(false);
 
   const description = useFixedRouteStore(
-    (state) => state.slides[slideId]?.description || ""
+    (state: { slides: { [x: string]: { description: any; }; }; }) => state.slides[slideId]?.description || ""
   );
-  const setDescription = useFixedRouteStore((state) => state.setDescription);
+  const setDescription = useFixedRouteStore((state: { setDescription: any; }) => state.setDescription);
 
   const backgroundColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.backgroundColor || "#192F51"
+    (state: { slides: { [x: string]: { backgroundColor: any; }; }; }) => state.slides[slideId]?.backgroundColor || "#192F51"
   );
   const setBackgroundColor = useFixedRouteStore(
-    (state) => state.setBackgroundColor
+    (state: { setBackgroundColor: any; }) => state.setBackgroundColor
   );
 
   const titleColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.titleColor || "#FFFFFF"
+    (state: { slides: { [x: string]: { titleColor: any; }; }; }) => state.slides[slideId]?.titleColor || "#FFFFFF"
   );
-  const setTitleColor = useFixedRouteStore((state) => state.setTitleColor);
+  const setTitleColor = useFixedRouteStore((state: { setTitleColor: any; }) => state.setTitleColor);
 
   const tableColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableColor || "#78B1DD"
+    (state: { slides: { [x: string]: { tableColor: any; }; }; }) => state.slides[slideId]?.tableColor || "#78B1DD"
   );
-  const setTableColor = useFixedRouteStore((state) => state.setTableColor);
+  const setTableColor = useFixedRouteStore((state: { setTableColor: any; }) => state.setTableColor);
 
   const tableTextColor = useFixedRouteStore(
-    (state) => state.slides[slideId]?.tableTextColor || "#FFFFFF"
+    (state: { slides: { [x: string]: { tableTextColor: any; }; }; }) => state.slides[slideId]?.tableTextColor || "#FFFFFF"
   );
   const setTableTextColor = useFixedRouteStore(
-    (state) => state.setTableTextColor
+    (state: { setTableTextColor: any; }) => state.setTableTextColor
   );
 
   const bgImage = useFixedRouteStore(
-    (state) => state.slides[slideId]?.bgImage || ""
+    (state: { slides: { [x: string]: { bgImage: any; }; }; }) => state.slides[slideId]?.bgImage || ""
   );
-  const setBgImage = useFixedRouteStore((state) => state.setBgImage);
+  const setBgImage = useFixedRouteStore((state: { setBgImage: any; }) => state.setBgImage);
 
   const logoImage = useFixedRouteStore(
-    (state) => state.slides[slideId]?.logoImage || ""
+    (state: { slides: { [x: string]: { logoImage: any; }; }; }) => state.slides[slideId]?.logoImage || ""
   );
-  const setLogoImage = useFixedRouteStore((state) => state.setLogoImage);
+  const setLogoImage = useFixedRouteStore((state: { setLogoImage: any; }) => state.setLogoImage);
 
   const titleTextSize = useFixedRouteStore(
-    (state) => state.slides[slideId]?.titleTextSize || 5
+    (state: { slides: { [x: string]: { titleTextSize: any; }; }; }) => state.slides[slideId]?.titleTextSize || 5
   );
-  const setTitleTextSize = useFixedRouteStore((state) => state.setTitleTextSize);
+  const setTitleTextSize = useFixedRouteStore((state: { setTitleTextSize: any; }) => state.setTitleTextSize);
 
   const contentTextSize = useFixedRouteStore(
-    (state) => state.slides[slideId]?.contentTextSize || 5
+    (state: { slides: { [x: string]: { contentTextSize: any; }; }; }) => state.slides[slideId]?.contentTextSize || 5
   );
-  const setContentTextSize = useFixedRouteStore((state) => state.setContentTextSize);
+  const setContentTextSize = useFixedRouteStore((state: { setContentTextSize: any; }) => state.setContentTextSize);
 
   const showTitle = useFixedRouteStore(
-    (state) => state.slides[slideId]?.showTitle !== false
+    (state: { slides: { [x: string]: { showTitle: boolean; }; }; }) => state.slides[slideId]?.showTitle !== false
   );
-  const setShowTitle = useFixedRouteStore((state) => state.setShowTitle);
+  const setShowTitle = useFixedRouteStore((state: { setShowTitle: any; }) => state.setShowTitle);
 
-  const setIsLoading = useFixedRouteStore((state) => state.setIsLoading);
+  const columnMode = useFixedRouteStore((state: { slides: { [x: string]: { columnMode: any; }; }; }) => state.slides[slideId]?.columnMode || false);
+  const setColumnMode = useFixedRouteStore((state: { setColumnMode: any; }) => state.setColumnMode);
+  const columnLabels = useFixedRouteStore((state: { slides: { [x: string]: { columnLabels: any; }; }; }) => state.slides[slideId]?.columnLabels || DEFAULT_COLUMN_LABELS);
+  const setColumnLabels = useFixedRouteStore((state: { setColumnLabels: any; }) => state.setColumnLabels);
+
+  const setIsLoading = useFixedRouteStore((state: { setIsLoading: any; }) => state.setIsLoading);
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
   const coordinates = useGeneralStore(
     (state) => state.coordinates || { lat: 0, lng: 0 }
   );
 
-  const setScheduleData = useFixedRouteStore((state) => state.setScheduleData);
+  const setScheduleData = useFixedRouteStore((state: { setScheduleData: any; }) => state.setScheduleData);
 
   useEffect(() => {
     // Fetch stops within 5km by default
@@ -813,7 +819,7 @@ export default function StopArrivalsSlide({
 
       // Filter by enabled routes
       const routeFilteredArrivals = uniqueArrivals.filter(arr => {
-        const selection = serviceSelections.find(s => s.serviceId === arr._sourceService);
+        const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
         // If no selection found, no enabledRouteIds, or empty array, include the arrival
         if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
         return selection.enabledRouteIds.includes(arr.routeId);
@@ -821,12 +827,12 @@ export default function StopArrivalsSlide({
 
       // Filter by headsign (destination) when direction filters are selected
       const filteredArrivals = routeFilteredArrivals.filter(arr => {
-        const selection = serviceSelections.find(s => s.serviceId === arr._sourceService);
+        const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
         // If no headsign filters are set, include the arrival
         if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
         // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
         const destination = (arr.destination || '').toLowerCase().trim();
-        return selection.selectedHeadsignFilters.some(filter =>
+        return selection.selectedHeadsignFilters.some((filter: string) =>
           destination === filter.toLowerCase().trim()
         );
       });
@@ -855,8 +861,7 @@ export default function StopArrivalsSlide({
         return arr;
       });
 
-      // Limit arrivals (already sorted by timestamp)
-      setScheduleData(slideId, displayArrivals);
+      setScheduleData(slideId, filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE));
       useFixedRouteStore.getState().setDataError(slideId, false);
     } catch (error) {
       console.error("Error fetching stop data:", error);
@@ -894,7 +899,7 @@ export default function StopArrivalsSlide({
 
       // Also validate selectedHeadsignFilters - remove any that are no longer valid
       const validHeadsignFilters = new Set(newDirOptions.map((o: DirectionOption) => o.headsignFilter).filter(Boolean));
-      const newSelectedHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsignFilters.has(h));
+      const newSelectedHeadsignFilters = (selection.selectedHeadsignFilters || []).filter((h: any) => validHeadsignFilters.has(h));
 
       if (newSelectedStopId !== selection.selectedStopId ||
           JSON.stringify(newSelectedHeadsignFilters) !== JSON.stringify(selection.selectedHeadsignFilters || []) ||
@@ -1036,7 +1041,7 @@ export default function StopArrivalsSlide({
   };
 
   const selectedRouteIds = new Set(
-    serviceSelections.flatMap(s => (s.routes || []).map((r: RouteInfo) => r.id ?? (r as any).route_id))
+    serviceSelections.flatMap((s: { routes: any; }) => (s.routes || []).map((r: RouteInfo) => r.id ?? (r as any).route_id))
   );
   const filteredLinkedStops = linkedStops.filter(stop =>
     getUniqueRoutes(stop.services).some(r => !selectedRouteIds.has(r.id))
@@ -1057,7 +1062,7 @@ export default function StopArrivalsSlide({
       {/* Main Content Area */}
       <div className="flex flex-1">
         {/* Main Content */}
-        <div className="flex-1 bg-white">
+        <div className="flex-1 min-w-0 bg-white overflow-x-hidden">
           <div className="p-6">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-[#4a5568] mb-4">
@@ -1181,17 +1186,17 @@ export default function StopArrivalsSlide({
                         {(servicesExpanded
                           ? serviceSelections
                           : serviceSelections.slice(0, MAX_VISIBLE_SERVICES)
-                        ).map((selection, index) => (
+                        ).map((selection: { serviceId: any; enabled: string | boolean | undefined; routes: RouteInfo[]; enabledRouteIds: string | any[]; directionOptions: any[]; selectedHeadsignFilters: never[]; agencyName: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; columnIndex: any; }, index: any) => (
                           <div
                             key={`${selection.serviceId}-${index}`}
-                            className="p-3 bg-white rounded-lg border"
+                            className="p-3 bg-white rounded-lg border min-w-0"
                           >
                             {/* Route badges row */}
                             <div className="flex items-center gap-2 flex-wrap mb-2">
                               <Checkbox
                                 checked={selection.enabled}
                                 onCheckedChange={(checked) => {
-                                  const updated = serviceSelections.map((s, i) =>
+                                  const updated = serviceSelections.map((s: any, i: any) =>
                                     i === index ? { ...s, enabled: !!checked } : s
                                   );
                                   setServiceSelections(slideId, updated);
@@ -1223,10 +1228,10 @@ export default function StopArrivalsSlide({
                                           const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
                                           const newDirOptions = svc ? computeDirectionOptions(svc, allStops, newEnabled) : selection.directionOptions;
                                           // Remove any headsign filters that are no longer valid
-                                          const validHeadsigns = new Set(newDirOptions.map(o => o.headsignFilter).filter(Boolean));
-                                          const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsigns.has(h));
+                                          const validHeadsigns = new Set(newDirOptions.map((o: { headsignFilter: any; }) => o.headsignFilter).filter(Boolean));
+                                          const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter((h: unknown) => validHeadsigns.has(h));
 
-                                          const updated = serviceSelections.map((s, i) =>
+                                          const updated = serviceSelections.map((s: any, i: any) =>
                                             i === index ? { ...s, enabledRouteIds: newEnabled, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
                                           );
                                           setServiceSelections(slideId, updated);
@@ -1253,9 +1258,9 @@ export default function StopArrivalsSlide({
                                         const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
                                         const newDirOptions = svc ? computeDirectionOptions(svc, allStops, allRouteIds) : selection.directionOptions;
                                         // Keep headsign filters that are still valid
-                                        const validHeadsigns = new Set(newDirOptions.map(o => o.headsignFilter).filter(Boolean));
-                                        const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsigns.has(h));
-                                        const updated = serviceSelections.map((s, i) =>
+                                        const validHeadsigns = new Set(newDirOptions.map((o: { headsignFilter: any; }) => o.headsignFilter).filter(Boolean));
+                                        const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter((h: unknown) => validHeadsigns.has(h));
+                                        const updated = serviceSelections.map((s: any, i: any) =>
                                           i === index ? { ...s, enabledRouteIds: allRouteIds, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
                                         );
                                         setServiceSelections(slideId, updated);
@@ -1273,10 +1278,34 @@ export default function StopArrivalsSlide({
                               )}
                             </div>
 
+                            {/* Column assignment - only shown when split view is enabled */}
+                            {columnMode && (
+                              <div className="mt-2 ml-6 flex items-center gap-2">
+                                <span className="text-xs text-gray-500">Column:</span>
+                                <Select
+                                  value={(selection.columnIndex ?? 0).toString()}
+                                  onValueChange={(val) => {
+                                    const updated = serviceSelections.map((s: any, i: any) =>
+                                      i === index ? { ...s, columnIndex: parseInt(val) as 0 | 1 } : s
+                                    );
+                                    setServiceSelections(slideId, updated);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 text-xs flex-1">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="0">{columnLabels[0]}</SelectItem>
+                                    <SelectItem value="1">{columnLabels[1]}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+
                             {/* Direction toggles row - multi-select for headsign filters */}
                             {selection.enabled && selection.directionOptions.length > 1 && (
-                              <div className="flex items-center gap-1.5 ml-6 flex-wrap">
-                                {selection.directionOptions.map((opt) => {
+                              <div className="flex items-center gap-1.5 ml-6 flex-wrap mt-2">
+                                {selection.directionOptions.map((opt: { isAllDirections: any; headsignFilter: string; label: Key | null | undefined; stopId: any; }) => {
                                   // "All" is selected when no filters are active
                                   // Individual headsigns are selected when in the selectedHeadsignFilters array
                                   const currentFilters = selection.selectedHeadsignFilters || [];
@@ -1297,7 +1326,7 @@ export default function StopArrivalsSlide({
                                         } else if (opt.headsignFilter) {
                                           // Toggle this headsign filter
                                           if (currentFilters.includes(opt.headsignFilter)) {
-                                            newFilters = currentFilters.filter(f => f !== opt.headsignFilter);
+                                            newFilters = currentFilters.filter((f: any) => f !== opt.headsignFilter);
                                           } else {
                                             newFilters = [...currentFilters, opt.headsignFilter];
                                           }
@@ -1305,7 +1334,7 @@ export default function StopArrivalsSlide({
                                           newFilters = currentFilters;
                                         }
 
-                                        const updated = serviceSelections.map((s, i) =>
+                                        const updated = serviceSelections.map((s: any, i: any) =>
                                           i === index ? {
                                             ...s,
                                             selectedStopId: opt.stopId,
@@ -1357,7 +1386,7 @@ export default function StopArrivalsSlide({
 
               {/* Also at this location - Station Complex */}
               {selectedStop && filteredLinkedStops.length > 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-hidden">
                   <h4 className="text-sm font-medium text-gray-600 mb-2">
                     Also at this location
                   </h4>
@@ -1365,9 +1394,9 @@ export default function StopArrivalsSlide({
                     {filteredLinkedStops.map((stop, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between bg-white rounded border p-2"
+                        className="flex items-center justify-between bg-white rounded border p-2 min-w-0"
                       >
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 overflow-hidden">
                           <p className="text-sm font-medium text-gray-800 truncate">
                             {stop.name}
                           </p>
@@ -1375,7 +1404,7 @@ export default function StopArrivalsSlide({
                             {getUniqueRoutes(stop.services).slice(0, MAX_DISPLAYED_ROUTES).map((route: ExpandedRoute, routeIdx: number) => (
                               <span
                                 key={route.id ?? routeIdx}
-                                className="px-1.5 py-0.5 rounded text-xs font-bold"
+                                className="px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0"
                                 style={{
                                   backgroundColor: route.color ? `#${route.color}` : '#6b7280',
                                   color: route.textColor ? `#${route.textColor}` : '#ffffff'
@@ -1385,13 +1414,13 @@ export default function StopArrivalsSlide({
                               </span>
                             ))}
                             {getUniqueRoutes(stop.services).length > MAX_DISPLAYED_ROUTES && (
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-gray-400 flex-shrink-0">
                                 +{getUniqueRoutes(stop.services).length - MAX_DISPLAYED_ROUTES} more
                               </span>
                             )}
                           </div>
                           {getUniqueHeadsigns(stop.services).length > 0 && (
-                            <p className="text-xs text-gray-500 mt-1 truncate">
+                            <p className="text-xs text-gray-500 mt-1 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                               {getUniqueHeadsigns(stop.services).join(' · ')}
                             </p>
                           )}
@@ -1491,6 +1520,43 @@ export default function StopArrivalsSlide({
                 Show Title
               </label>
             </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={columnMode}
+                  onChange={(e) => setColumnMode(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Split View (2 Columns)
+              </label>
+            </div>
+
+            {columnMode && (
+              <>
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                    Left Column Label
+                  </label>
+                  <Input
+                    value={columnLabels[0]}
+                    className="flex-1 text-xs"
+                    onChange={(e) => setColumnLabels(slideId, [e.target.value, columnLabels[1]])}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                    Right Column Label
+                  </label>
+                  <Input
+                    value={columnLabels[1]}
+                    className="flex-1 text-xs"
+                    onChange={(e) => setColumnLabels(slideId, [columnLabels[0], e.target.value])}
+                  />
+                </div>
+              </>
+            )}
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">
