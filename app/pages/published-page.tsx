@@ -253,15 +253,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           });
         }
 
-        // Limit arrivals (already sorted by timestamp)
+        // Limit arrivals — keep _sourceService so the preview can split into columns
         const limitedArrivals = filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE);
 
-        // Remove internal fields before storing
-        const arr = limitedArrivals.map(({ _sourceService, timestamp, ...rest }) => rest);
-
-        setScheduleData(slide.id, arr);
+        setScheduleData(slide.id, limitedArrivals);
         setFixedRouteDataError(slide.id, false);
-        console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, arr);
+        console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, limitedArrivals);
       } catch (error) {
         console.error(`[DATA UPDATE] Error fetching fixed route data for slide ${slide.id}:`, error);
         setFixedRouteDataError(slide.id, true);

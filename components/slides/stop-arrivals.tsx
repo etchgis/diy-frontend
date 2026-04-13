@@ -30,6 +30,8 @@ import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop }
 
 // Stable empty array reference for Zustand selector
 const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
+// Stable default for column labels — inline array literals in selectors cause infinite loops
+const DEFAULT_COLUMN_LABELS: [string, string] = ['Left', 'Right'];
 
 const MAX_VISIBLE_SERVICES = 3;
 const MAX_DISPLAYED_ROUTES = 6;
@@ -471,6 +473,11 @@ export default function StopArrivalsSlide({
   );
   const setShowTitle = useFixedRouteStore((state) => state.setShowTitle);
 
+  const columnMode = useFixedRouteStore((state) => state.slides[slideId]?.columnMode || false);
+  const setColumnMode = useFixedRouteStore((state) => state.setColumnMode);
+  const columnLabels = useFixedRouteStore((state) => state.slides[slideId]?.columnLabels || DEFAULT_COLUMN_LABELS);
+  const setColumnLabels = useFixedRouteStore((state) => state.setColumnLabels);
+
   const setIsLoading = useFixedRouteStore((state) => state.setIsLoading);
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
@@ -821,7 +828,6 @@ export default function StopArrivalsSlide({
         );
       });
 
-      // Limit arrivals (already sorted by timestamp)
       setScheduleData(slideId, filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE));
       useFixedRouteStore.getState().setDataError(slideId, false);
     } catch (error) {
@@ -1223,9 +1229,33 @@ export default function StopArrivalsSlide({
                               )}
                             </div>
 
+                            {/* Column assignment - only shown when split view is enabled */}
+                            {columnMode && (
+                              <div className="mt-2 ml-6 flex items-center gap-2">
+                                <span className="text-xs text-gray-500">Column:</span>
+                                <Select
+                                  value={(selection.columnIndex ?? 0).toString()}
+                                  onValueChange={(val) => {
+                                    const updated = serviceSelections.map((s, i) =>
+                                      i === index ? { ...s, columnIndex: parseInt(val) as 0 | 1 } : s
+                                    );
+                                    setServiceSelections(slideId, updated);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 text-xs flex-1">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="0">{columnLabels[0]}</SelectItem>
+                                    <SelectItem value="1">{columnLabels[1]}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+
                             {/* Direction toggles row - multi-select for headsign filters */}
                             {selection.enabled && selection.directionOptions.length > 1 && (
-                              <div className="flex items-center gap-1.5 ml-6 flex-wrap">
+                              <div className="flex items-center gap-1.5 ml-6 flex-wrap mt-2">
                                 {selection.directionOptions.map((opt) => {
                                   // "All" is selected when no filters are active
                                   // Individual headsigns are selected when in the selectedHeadsignFilters array
@@ -1426,6 +1456,43 @@ export default function StopArrivalsSlide({
                 Show Title
               </label>
             </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={columnMode}
+                  onChange={(e) => setColumnMode(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Split View (2 Columns)
+              </label>
+            </div>
+
+            {columnMode && (
+              <>
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                    Left Column Label
+                  </label>
+                  <Input
+                    value={columnLabels[0]}
+                    className="flex-1 text-xs"
+                    onChange={(e) => setColumnLabels(slideId, [e.target.value, columnLabels[1]])}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                    Right Column Label
+                  </label>
+                  <Input
+                    value={columnLabels[1]}
+                    className="flex-1 text-xs"
+                    onChange={(e) => setColumnLabels(slideId, [columnLabels[0], e.target.value])}
+                  />
+                </div>
+              </>
+            )}
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">
