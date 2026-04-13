@@ -95,6 +95,7 @@ export interface ExpandedLinkedStop {
 
 /** Stop with all references expanded */
 export interface ExpandedStop {
+  stop_name: any;
   id: string;
   name: string;
   lat: number;

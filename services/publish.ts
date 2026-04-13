@@ -1,16 +1,16 @@
-import { useFixedRouteStore } from '@/stores/fixedRoute';
-import { useTransitDestinationsStore } from '@/stores/transitDestinations';
+import { useFixedRouteStore } from '@/modules/fixed-routes/store';
+import { useTransitDestinationsStore } from '@/modules/transit-destinations/store';
 import { useGeneralStore } from '@/stores/general';
-import { useQRStore } from '@/stores/qr';
-import { useTransitRouteStore } from '@/stores/transitRoutes';
-import { useTemplate1Store } from '@/stores/template1';
-import { useTemplate2Store } from '@/stores/template2';
-import { useTemplate3Store } from '@/stores/template3';
-import { useRouteTimesStore } from '@/stores/routeTimes';
-import { useImageOnlyStore } from '@/stores/imageOnly';
-import { useWeatherStore } from '@/stores/weather';
-import { useCitibikeStore } from '@/stores/citibike';
-import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
+import { useQRStore } from '@/modules/qr/store';
+import { useTransitRouteStore } from '@/modules/transit-routes/store';
+import { useTemplate1Store } from '@/modules/template-1/store';
+import { useTemplate2Store } from '@/modules/template-2/store';
+import { useTemplate3Store } from '@/modules/template-3/store';
+import { useRouteTimesStore } from '@/modules/route-times/store';
+import { useImageOnlyStore } from '@/modules/image-only/store';
+import { useWeatherStore } from '@/modules/weather/store';
+import { useCitibikeStore } from '@/modules/citibike/store';
+import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {

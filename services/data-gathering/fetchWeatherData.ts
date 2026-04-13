@@ -1,5 +1,5 @@
 import { useGeneralStore } from "@/stores/general";
-import { useWeatherStore } from "@/stores/weather";
+import { useWeatherStore } from "@/modules/weather/store";
 
 function getWeatherCondition(code: number): string {
   if (code === 0) return "Clear";

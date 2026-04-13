@@ -1,5 +1,5 @@
 import { useGeneralStore } from "@/stores/general";
-import { useCitibikeStore } from "@/stores/citibike";
+import { useCitibikeStore } from "@/modules/citibike/store";
 
 const SKIDS_URL = "https://api-stage.etch.app/skids";
 

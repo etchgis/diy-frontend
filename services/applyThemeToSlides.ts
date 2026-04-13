@@ -1,15 +1,15 @@
-import { useWeatherStore } from '@/stores/weather';
-import { useTemplate1Store } from '@/stores/template1';
-import { useTemplate2Store } from '@/stores/template2';
-import { useTemplate3Store } from '@/stores/template3';
-import { useCitibikeStore } from '@/stores/citibike';
-import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
-import { useTransitDestinationsStore } from '@/stores/transitDestinations';
-import { useFixedRouteStore } from '@/stores/fixedRoute';
-import { useRouteTimesStore } from '@/stores/routeTimes';
-import { useQRStore } from '@/stores/qr';
-import { useImageOnlyStore } from '@/stores/imageOnly';
-import { useTransitRouteStore } from '@/stores/transitRoutes';
+import { useWeatherStore } from '@/modules/weather/store';
+import { useTemplate1Store } from '@/modules/template-1/store';
+import { useTemplate2Store } from '@/modules/template-2/store';
+import { useTemplate3Store } from '@/modules/template-3/store';
+import { useCitibikeStore } from '@/modules/citibike/store';
+import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
+import { useTransitDestinationsStore } from '@/modules/transit-destinations/store';
+import { useFixedRouteStore } from '@/modules/fixed-routes/store';
+import { useRouteTimesStore } from '@/modules/route-times/store';
+import { useQRStore } from '@/modules/qr/store';
+import { useImageOnlyStore } from '@/modules/image-only/store';
+import { useTransitRouteStore } from '@/modules/transit-routes/store';
 
 type ThemeColorType = 'primaryBackground' | 'secondaryAccent' | 'titleText' | 'bodyText';
 type FontSizeType = 'titleTextSize' | 'contentTextSize';
