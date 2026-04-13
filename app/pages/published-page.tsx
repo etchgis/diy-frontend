@@ -109,7 +109,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         getWeatherData();
         getCitibikeData();
         getTrafficCorridorData();
-        hasFetchedDestinations.current = true;
       }
     };
     loadSlides();
@@ -229,9 +228,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       for (const selection of activeSelections) {
         if (!selection.enabled) continue;
 
-        const orgId = selectedStop.services?.find(
-          (svc: any) => svc.id === selection.serviceId
-        )?.organizationId;
+        const orgId = (selection as any).organizationId
+          || selectedStop.services?.find((svc: any) => svc.id === selection.serviceId)?.organizationId;
 
         if (!orgId) continue;
 
@@ -477,35 +475,26 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   };
 
-  const hasFetchedDestinations = useRef(false);
-
   useEffect(() => {
-    if (slides.length === 0) {return;}
-
-    // Only set up interval if it doesn't exist
-    if (!dataRefreshIntervalRef.current) {
-      dataRefreshIntervalRef.current = setInterval(() => {
-        console.log('[DATA UPDATE] ========== 60-second refresh triggered ==========');
-        getTransitDestinationData();
-        getFixedRouteData();
-        getTransitRoutesData();
-        getRouteTimesData();
-        getWeatherData();
-        getCitibikeData();
-        getTrafficCorridorData();
-      }, 60000);
-      console.log('[DATA UPDATE] Auto-refresh interval started (60 seconds)');
-    }
+    dataRefreshIntervalRef.current = setInterval(() => {
+      console.log('[DATA UPDATE] ========== 60-second refresh triggered ==========');
+      getTransitDestinationData();
+      getFixedRouteData();
+      getTransitRoutesData();
+      getRouteTimesData();
+      getWeatherData();
+      getCitibikeData();
+      getTrafficCorridorData();
+    }, 60000);
+    console.log('[DATA UPDATE] Auto-refresh interval started (60 seconds)');
 
     return () => {
-      // Only clear on unmount, not on re-renders
       if (dataRefreshIntervalRef.current) {
-        console.log('[DATA UPDATE] Auto-refresh interval cleared (component unmounting)');
         clearInterval(dataRefreshIntervalRef.current);
         dataRefreshIntervalRef.current = null;
       }
     };
-  }, [slides]);
+  }, []);
 
   useEffect(() => {
     if (isTvMode) {
