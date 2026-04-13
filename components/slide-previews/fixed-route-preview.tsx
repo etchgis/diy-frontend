@@ -12,7 +12,7 @@ import { useGeneralStore } from "@/stores/general";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Footer from "../shared-components/footer";
-import { useEffect } from "react";
+import { useMemo } from "react";
 
 export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const stopName = useFixedRouteStore(
@@ -62,6 +62,33 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const isLoading = useFixedRouteStore(
     (state) => state.slides[slideId]?.isLoading
   );
+  const columnMode = useFixedRouteStore(
+    (state) => state.slides[slideId]?.columnMode || false
+  );
+  const columnLabels = useFixedRouteStore(
+    (state) => state.slides[slideId]?.columnLabels
+  );
+  const serviceSelections = useFixedRouteStore(
+    (state) => state.slides[slideId]?.serviceSelections
+  );
+
+  // Compute column data reactively so changing column assignment never triggers a re-fetch
+  const columnData = useMemo(() => {
+    if (!columnMode || !scheduleData?.length || !serviceSelections?.length) return null;
+    const labels = columnLabels || ['Left', 'Right'];
+    const col0 = scheduleData.filter((arr: any) => {
+      const sel = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
+      return (sel?.columnIndex ?? 0) === 0;
+    });
+    const col1 = scheduleData.filter((arr: any) => {
+      const sel = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
+      return sel?.columnIndex === 1;
+    });
+    return [
+      { label: labels[0], arrivals: col0 },
+      { label: labels[1], arrivals: col1 },
+    ];
+  }, [columnMode, scheduleData, serviceSelections, columnLabels]);
   const titleTextSize = useFixedRouteStore(
     (state) => state.slides[slideId]?.titleTextSize || 5
   );
@@ -237,6 +264,85 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   again later.
                 </p>
               </div>
+            </div>
+          ) : columnMode && columnData ? (
+            /* ── Split column view ── */
+            <div style={{ display: 'flex', flex: '1 1 0', minHeight: 0, overflow: 'hidden' }}>
+              {columnData.map((col: { label: string; arrivals: any[] }, colIdx: number) => (
+                <div
+                  key={colIdx}
+                  style={{
+                    flex: '1 1 0',
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    borderRight: colIdx === 0 ? '1px solid rgba(128,128,128,0.3)' : undefined,
+                  }}
+                >
+                  {isEditor ? (
+                    <div className="text-black flex flex-col overflow-hidden" style={{ flex: '1 1 0', minHeight: 0 }}>
+                      {col.arrivals.map((item: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
+                          style={{ flex: '1 1 0', minHeight: 0, backgroundColor: !bgImage ? tableColor : 'transparent', color: tableTextColor, padding: `${description ? '10px' : '12px'}` }}
+                        >
+                          <div className="flex-1 overflow-hidden">
+                            <span className="truncate block" style={{ fontSize: `${12 * contentSizeMultiplier}px` }}>{item.destination}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div
+                              className="rounded font-bold text-center flex-shrink-0"
+                              style={{ padding: '0.2em 0.4em', fontSize: `${10 * contentSizeMultiplier}px`, color: `#${item.routeTextColor}`, backgroundColor: `#${item.routeColor}`, whiteSpace: 'nowrap' }}
+                            >
+                              {item.routeShortName || item.routeId}
+                            </div>
+                            <div style={{ fontSize: `${12 * contentSizeMultiplier}px`, whiteSpace: 'nowrap' }}>{item.time}</div>
+                            <div style={{ fontSize: `${11 * contentSizeMultiplier}px`, whiteSpace: 'nowrap', opacity: 0.8 }}>{item.duration}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-black flex flex-col overflow-hidden" style={{ flex: '1 1 0', minHeight: 0 }}>
+                      {col.arrivals.map((item: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between border-b border-[#e2e8f0] last:border-b-0 overflow-hidden"
+                          style={{
+                            flex: '1 1 0',
+                            minHeight: 0,
+                            backgroundColor: !bgImage ? tableColor : 'transparent',
+                            color: tableTextColor,
+                            padding: `clamp(0.5rem, 1.5vw, ${description ? '0.625rem' : '0.75rem'})`,
+                          }}
+                        >
+                          <div className="flex-1 overflow-hidden">
+                            <span className="font-medium block truncate" style={{ fontSize: `clamp(0.625rem,${2.5 * contentSizeMultiplier}vh,2.5rem)` }}>
+                              {item.destination}
+                            </span>
+                          </div>
+                          <div className="flex items-center flex-shrink-0" style={{ gap: 'clamp(0.5rem,1.5vh,2rem)' }}>
+                            <div
+                              className="rounded font-bold text-center flex-shrink-0"
+                              style={{ padding: '0.3em 0.6em', fontSize: `clamp(0.5rem,${2 * contentSizeMultiplier}vh,2rem)`, color: `#${item.routeTextColor}`, backgroundColor: `#${item.routeColor}`, whiteSpace: 'nowrap' }}
+                            >
+                              {item.routeShortName || item.routeId}
+                            </div>
+                            <div className="font-medium flex-shrink-0" style={{ fontSize: `clamp(0.625rem,${2.5 * contentSizeMultiplier}vh,2.5rem)`, whiteSpace: 'nowrap' }}>
+                              {item.time}
+                            </div>
+                            <div className="flex-shrink-0" style={{ fontSize: `clamp(0.5rem,${2 * contentSizeMultiplier}vh,2rem)`, whiteSpace: 'nowrap', opacity: 0.85 }}>
+                              {item.duration}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           ) : (
             <>
