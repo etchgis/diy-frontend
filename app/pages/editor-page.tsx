@@ -24,6 +24,8 @@ import Template3Slide from "@/modules/template-3/editor"
 import Template3Preview from "@/modules/template-3/preview"
 import ImageOnlySlide from "@/modules/image-only/editor"
 import ImageOnlyPreview from "@/modules/image-only/preview"
+import WebEmbedEditor from "@/modules/web-embed/editor"
+import WebEmbedPreview from "@/modules/web-embed/preview"
 import WeatherSlide from "@/modules/weather/editor"
 import WeatherPreview from "@/modules/weather/preview"
 import CitibikeSlide from "@/modules/citibike/editor"
@@ -504,6 +506,8 @@ export default function EditorPage() {
         return <CitibikeSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "traffic-corridor":
         return <TrafficCorridorSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "web-embed":
+        return <WebEmbedEditor slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       default:
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
@@ -541,6 +545,8 @@ export default function EditorPage() {
           return <CitibikePreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "traffic-corridor":
           return <TrafficCorridorPreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
+        case "web-embed":
+          return <WebEmbedPreview slideId={slideId} />;
         default:
           return null;
       }
@@ -668,6 +674,11 @@ export default function EditorPage() {
                 <SelectItem value="traffic-corridor">
                   <div className="flex items-center gap-2 text-xs">
                     Traffic Corridor Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="web-embed">
+                  <div className="flex items-center gap-2 text-xs">
+                    Web Embed Page
                   </div>
                 </SelectItem>
               </SelectContent>

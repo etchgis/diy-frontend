@@ -11,6 +11,7 @@ import { useImageOnlyStore } from "@/modules/image-only/store";
 import { useWeatherStore } from "@/modules/weather/store";
 import { useCitibikeStore } from "@/modules/citibike/store";
 import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store";
+import { useWebEmbedStore } from "@/modules/web-embed/store";
 import { useFooterStore } from "@/stores/footer";
 
 // =============================================================================
@@ -649,6 +650,15 @@ async function importData(setup: any) {
       setLogoImage(slide.id, slide.data.logoImage || '');
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+    }
+
+    if (slide.type === 'web-embed') {
+      const { setUrl, setZoom, setScrollX, setScrollY, setRefreshInterval } = useWebEmbedStore.getState();
+      setUrl(slide.id, slide.data.url || '');
+      setZoom(slide.id, slide.data.zoom ?? 1.0);
+      setScrollX(slide.id, slide.data.scrollX ?? 0);
+      setScrollY(slide.id, slide.data.scrollY ?? 0);
+      setRefreshInterval(slide.id, slide.data.refreshInterval ?? 0);
     }
   });
 

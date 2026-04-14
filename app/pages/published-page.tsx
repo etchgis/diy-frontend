@@ -14,6 +14,7 @@ import CitibikePreview from '@/modules/citibike/preview';
 import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from '@/services/data-gathering/fetchStopData';
 import TrafficCorridorPreview from '@/modules/traffic-corridor/preview';
+import WebEmbedPreview from '@/modules/web-embed/preview';
 import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
 import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
@@ -78,6 +79,17 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     },
     [slides.length, isTvMode]
   );
+
+  useEffect(() => {
+    if (!isTvMode) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+      document.documentElement.style.overflow = '';
+    };
+  }, [isTvMode]);
 
   // Auto-rotation effect - only in TV mode
   useEffect(() => {
@@ -529,6 +541,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         return <RouteTimesPreview slideId={slideId} />;
       case 'traffic-corridor':
         return <TrafficCorridorPreview slideId={slideId} />;
+      case 'web-embed':
+        return <WebEmbedPreview slideId={slideId} />;
       default:
         return null;
     }
@@ -563,6 +577,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   }
 
   // TV mode - slideshow with rotation
+  const webEmbedSlides = slides.filter((s: any) => s.type === 'web-embed');
+
   return (
     <div className="w-screen h-screen overflow-hidden bg-white relative" style={fontFamilyStyle}>
       {/* Persistent TransitRoutesPreview */}
@@ -575,8 +591,19 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         ) : null}
       </div>
 
+      {webEmbedSlides.map((slide: any) => (
+        <div
+          key={slide.id}
+          className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
+            currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+          }`}
+        >
+          <WebEmbedPreview slideId={slide.id} />
+        </div>
+      ))}
+
       {/* All other previews */}
-      {currentSlide && currentSlide.id && currentSlide.type !== 'transit-routes' ? (
+      {currentSlide && currentSlide.id && currentSlide.type !== 'transit-routes' && currentSlide.type !== 'web-embed' ? (
         <div className="w-full h-full z-10 relative">
           {renderSlidePreview(currentSlide.type, currentSlide.id)}
         </div>

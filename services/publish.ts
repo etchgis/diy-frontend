@@ -11,6 +11,7 @@ import { useImageOnlyStore } from '@/modules/image-only/store';
 import { useWeatherStore } from '@/modules/weather/store';
 import { useCitibikeStore } from '@/modules/citibike/store';
 import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
+import { useWebEmbedStore } from '@/modules/web-embed/store';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
@@ -460,6 +461,23 @@ export async function publish() {
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
       } else {
+      }
+    }
+
+    if (slide.type === 'web-embed') {
+      screenObj.type = 'web-embed';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useWebEmbedStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        screenObj.data.url = slideData.url;
+        screenObj.data.zoom = slideData.zoom;
+        screenObj.data.scrollX = slideData.scrollX;
+        screenObj.data.scrollY = slideData.scrollY;
+        screenObj.data.refreshInterval = slideData.refreshInterval ?? 0;
       }
     }
 
