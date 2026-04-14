@@ -37,6 +37,8 @@ interface Store {
   defaultFontFamily?: string;
   defaultTitleTextSize?: number;
   defaultContentTextSize?: number;
+  resolution: string;
+  setResolution: (resolution: string) => void;
   // Theme settings
   theme: Theme;
   setThemePrimaryBackground: (color: string) => void;
@@ -66,6 +68,7 @@ export const useGeneralStore = create<Store>()(
   persist(
     (set, get) => ({
       slides: [],
+      resolution: '1920x1080',
       theme: {
         primaryBackground: '#192F51',
         secondaryAccent: '#78B1DD',
@@ -127,6 +130,9 @@ export const useGeneralStore = create<Store>()(
       })),
       setDefaultContentTextSize: (size) => set(() => ({
         defaultContentTextSize: size,
+      })),
+      setResolution: (resolution) => set(() => ({
+        resolution,
       })),
       setThemePrimaryBackground: (color) => {
         const oldColor = get().theme.primaryBackground;

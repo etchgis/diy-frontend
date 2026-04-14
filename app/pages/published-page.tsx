@@ -21,6 +21,7 @@ import { getDestinationData } from '@/services/data-gathering/getDestinationData
 import { SetupSlides } from '@/services/setup';
 import { useFixedRouteStore } from '@/modules/fixed-routes/store';
 import { useGeneralStore } from '@/stores/general';
+import { ResolutionFrame } from '@/components/resolution-frame';
 import { useTransitDestinationsStore } from '@/modules/transit-destinations/store';
 import { useTransitRouteStore } from '@/modules/transit-routes/store';
 import { useRouteTimesStore } from '@/modules/route-times/store';
@@ -36,7 +37,14 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const allSlides = useGeneralStore((state) => state.slides);
   const slides = allSlides.filter((s: any) => !s.hidden);
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
+  const resolution = useGeneralStore((state) => state.resolution || '1920x1080');
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+
+  const parseResolution = (res: string) => {
+    const [w, h] = res.split('x').map(Number);
+    return { w: w || 1920, h: h || 1080 };
+  };
+  const { w: logicalW, h: logicalH } = parseResolution(resolution);
 
   const fontFamilyStyle = defaultFontFamily && defaultFontFamily !== 'System Default'
     ? { fontFamily: defaultFontFamily }
@@ -198,9 +206,17 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const currentState = useTransitDestinationsStore.getState().slides;
       const destinations = currentState[slide.id]?.destinations || [];
       const currentDestinationData = currentState[slide.id]?.destinationData || [];
+      const maxWalkDistance = currentState[slide.id]?.maxWalkDistance;
 
       try {
-        await getDestinationData(destinations, slide.id, setDestinationData, setDataError, currentDestinationData);
+        await getDestinationData(
+          destinations,
+          slide.id,
+          setDestinationData,
+          setDataError,
+          currentDestinationData,
+          maxWalkDistance != null ? { maxWalkDistance } : undefined
+        );
         const updatedState = useTransitDestinationsStore.getState().slides;
         const updatedData = updatedState[slide.id]?.destinationData || [];
         console.log(`[DATA UPDATE] Transit destinations updated for slide ${slide.id}:`, updatedData);
@@ -580,41 +596,45 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const webEmbedSlides = slides.filter((s: any) => s.type === 'web-embed');
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-white relative" style={fontFamilyStyle}>
-      {/* Persistent TransitRoutesPreview */}
-      <div
-        className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-          }`}
-      >
-        {currentSlide && currentSlide.id ? (
-          <TransitRoutesPreview slideId={currentSlide.id} />
-        ) : null}
-      </div>
+    <div className="w-screen h-screen overflow-hidden bg-black">
+      <ResolutionFrame logicalW={logicalW} logicalH={logicalH} fontFamilyStyle={fontFamilyStyle}>
+        <div className="w-full h-full bg-white relative overflow-hidden">
+          {/* Persistent TransitRoutesPreview */}
+          <div
+            className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+              }`}
+          >
+            {currentSlide && currentSlide.id ? (
+              <TransitRoutesPreview slideId={currentSlide.id} />
+            ) : null}
+          </div>
 
-      {webEmbedSlides.map((slide: any) => (
-        <div
-          key={slide.id}
-          className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
-            currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-          }`}
-        >
-          <WebEmbedPreview slideId={slide.id} />
-        </div>
-      ))}
+          {webEmbedSlides.map((slide: any) => (
+            <div
+              key={slide.id}
+              className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
+                currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+              }`}
+            >
+              <WebEmbedPreview slideId={slide.id} />
+            </div>
+          ))}
 
-      {/* All other previews */}
-      {currentSlide && currentSlide.id && currentSlide.type !== 'transit-routes' && currentSlide.type !== 'web-embed' ? (
-        <div className="w-full h-full z-10 relative">
-          {renderSlidePreview(currentSlide.type, currentSlide.id)}
-        </div>
-      ) : null}
+          {/* All other previews */}
+          {currentSlide && currentSlide.id && currentSlide.type !== 'transit-routes' && currentSlide.type !== 'web-embed' ? (
+            <div className="w-full h-full z-10 relative">
+              {renderSlidePreview(currentSlide.type, currentSlide.id)}
+            </div>
+          ) : null}
 
-      {/* Fallback for no slide loaded */}
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center w-full h-full z-10">
-          <h1 className="text-2xl font-bold">Loading slides...</h1>
+          {/* Fallback for no slide loaded */}
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center w-full h-full z-10">
+              <h1 className="text-2xl font-bold">Loading slides...</h1>
+            </div>
+          )}
         </div>
-      )}
+      </ResolutionFrame>
     </div>
   );
 }

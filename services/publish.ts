@@ -15,7 +15,7 @@ import { useWebEmbedStore } from '@/modules/web-embed/store';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
-  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme } = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
   const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
 
   console.log('[PUBLISH] Footer data being published:', {
@@ -44,6 +44,7 @@ export async function publish() {
     defaultTitleTextSize: defaultTitleTextSize,
     defaultContentTextSize: defaultContentTextSize,
     theme: theme,
+    resolution: resolution || '1920x1080',
     footer: {
       leftImage: leftImage,
       middleImage: middleImage,
@@ -78,10 +79,10 @@ export async function publish() {
           destinations,
           alternateRowTextColor,
           titleTextSize,
-          contentTextSize
+          contentTextSize,
+          maxWalkDistance,
         } = slideData;
 
-        // Use the slide data as needed
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.rowColor = rowColor;
         screenObj.data.alternatingRowColor = alternateRowColor;
@@ -91,9 +92,11 @@ export async function publish() {
         screenObj.data.destinations = destinations?.map((destination: any) => ({
           name: destination.name,
           coordinates: destination.coordinates,
+          allowedModes: destination.allowedModes ?? null,
         })) || [];
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+        screenObj.data.maxWalkDistance = maxWalkDistance ?? 800;
 
       } else {
       }

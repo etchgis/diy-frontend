@@ -66,6 +66,7 @@ import { useRouteTimesStore } from "@/modules/route-times/store"
 import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store"
 import { useFixedRouteStore } from "@/modules/fixed-routes/store"
 import { applyFontSizeToAllSlides } from "@/services/applyThemeToSlides"
+import { ResolutionFrame } from "@/components/resolution-frame"
 
 
 interface Slide {
@@ -103,6 +104,9 @@ export default function EditorPage() {
 
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 0);
   const setRotationInterval = useGeneralStore((state) => state.setRotationInterval);
+
+  const resolution = useGeneralStore((state) => state.resolution || '1920x1080');
+  const setResolution = useGeneralStore((state) => state.setResolution);
 
   const publishPassword = useGeneralStore((state) => state.publishPassword || '');
   const setPublishPassword = useGeneralStore((state) => state.setPublishPassword);
@@ -333,13 +337,21 @@ export default function EditorPage() {
     hasFetchedDestinations.current = true;
 
     for (const slide of transitSlides) {
-      const destinations = allSlidesState[slide.id]?.destinations || [];
-      console.log(destinations);
+      const slideState = allSlidesState[slide.id];
+      const destinations = slideState?.destinations || [];
+      const maxWalkDistance = slideState?.maxWalkDistance;
 
       try {
         setLoading(slide.id, true);
-        const currentDestinationData = allSlidesState[slide.id]?.destinationData || [];
-        await getDestinationData(destinations, slide.id, setDestinationData, setDataError, currentDestinationData);
+        const currentDestinationData = slideState?.destinationData || [];
+        await getDestinationData(
+          destinations,
+          slide.id,
+          setDestinationData,
+          setDataError,
+          currentDestinationData,
+          maxWalkDistance != null ? { maxWalkDistance } : undefined
+        );
       } finally {
         setLoading(slide.id, false);
       }
@@ -512,10 +524,12 @@ export default function EditorPage() {
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
   };
+  const parseResolution = (res: string): { w: number; h: number } => {
+    const [w, h] = res.split('x').map(Number);
+    return { w: w || 1920, h: h || 1080 };
+  };
 
   const renderSlidePreview = (type: string, slideId: string, noSizingDiv?: boolean, isFullPreview?: boolean) => {
-    // If noSizingDiv is not set, we're rendering in the sidebar thumbnail - always use preview mode
-    // If isFullPreview is true, we're in the modal preview - use preview mode
     const shouldUsePreviewMode = !noSizingDiv || isFullPreview;
 
     const content = (() => {
@@ -524,7 +538,7 @@ export default function EditorPage() {
           return <QRSlidePreview slideId={slideId} />;
         case "transit-destinations":
           return <TransitDestinationPreview slideId={slideId} />;
-        case "fixed-routes": // for backwards compatibility
+        case "fixed-routes":
         case "stop-arrivals":
           return <FixedRoutePreview slideId={slideId} />;
         case "transit-routes":
@@ -552,11 +566,21 @@ export default function EditorPage() {
       }
     })();
 
-    if (noSizingDiv) {
-      return <div style={fontFamilyStyle} className="h-full">{content}</div>;
+    if (!noSizingDiv) {
+      return <div className="h-[550px] rounded-lg" style={fontFamilyStyle}>{content}</div>;
     }
 
-    return <div className="h-[550px] rounded-lg" style={fontFamilyStyle}>{content}</div>;
+    const { w: logicalW, h: logicalH } = parseResolution(resolution);
+
+    return (
+      <ResolutionFrame
+        logicalW={logicalW}
+        logicalH={logicalH}
+        fontFamilyStyle={fontFamilyStyle}
+      >
+        {content}
+      </ResolutionFrame>
+    );
   };
 
 
@@ -770,7 +794,7 @@ export default function EditorPage() {
             </button>
 
             {/* Slide Preview */}
-            <div className="h-[550px] z-10">
+            <div className="flex-1 min-h-0 z-10">
               {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true, true)}
             </div>
 
@@ -835,6 +859,22 @@ export default function EditorPage() {
                     setTempRotationInterval(Number(e.target.value));
                   }}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Screen Resolution
+                </label>
+                <select
+                  value={resolution}
+                  onChange={(e) => setResolution(e.target.value)}
+                  className="w-full p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                >
+                  <option value="1920x1080">1920×1080 — HD Landscape</option>
+                  <option value="1080x1920">1080×1920 — HD Portrait</option>
+                  <option value="1280x720">1280×720 — 720p Landscape</option>
+                </select>
+                <p className="text-xs text-gray-400 mt-1">Affects the aspect ratio shown in the Preview.</p>
               </div>
 
               <div className="border-t pt-4">

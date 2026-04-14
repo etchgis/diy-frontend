@@ -154,7 +154,8 @@ function formatDurationSeconds(durationInSeconds: number): string {
  */
 export function transformSkidsResponse(
   response: SkidsResponse,
-  destinations: { name: string; coordinates: { lat: number; lng: number } }[]
+  destinations: { name: string; coordinates: { lat: number; lng: number } }[],
+  allowedModes?: string[]
 ): TransformedDestination[] {
   return response.results.map((result, index) => {
     const destCoord = destinations[index]?.coordinates;
@@ -175,8 +176,32 @@ export function transformSkidsResponse(
     // Transform all legs
     const allLegs = result.legs?.map(transformLeg) || [];
 
+    // Filter by allowed modes if specified
+    const modeFilteredLegs = allowedModes && allowedModes.length > 0
+      ? allLegs.filter((l) => {
+          if (l.mode === 'WALK') return allowedModes.includes('WALK');
+          // Match leg mode against allowed modes (case-insensitive)
+          return allowedModes.some((m) => m.toUpperCase() === l.mode?.toUpperCase());
+        })
+      : allLegs;
+
+    // If mode filtering removed all transit legs, mark as unreachable
+    const hasTransit = modeFilteredLegs.some((l) => l.mode !== 'WALK');
+    if (allowedModes && allowedModes.length > 0 && !hasTransit) {
+      return {
+        name: result.destinationName,
+        route: null,
+        departure: null,
+        arrival: null,
+        travel: null,
+        legs: [],
+        coordinates: destCoord,
+        dark: index % 2 === 0,
+      };
+    }
+
     // Filter short walks (< 4 min) for display
-    const displayLegs = allLegs.filter(
+    const displayLegs = modeFilteredLegs.filter(
       (l) => !(l.mode === 'WALK' && l.duration < 240)
     );
 
@@ -215,16 +240,31 @@ export function transformSkidsResponse(
   });
 }
 
+export interface SkidsFetchOptions {
+  allowedModes?: string[];        // e.g. ['BUS', 'SUBWAY', 'WALK']
+  maxWalkDistanceMeters?: number; // default ~800m
+}
+
 /**
  * Fetch transit routing data from Skids API for multiple destinations
  */
 export async function fetchSkidsTransitData(
   origin: { lat: number; lng: number },
-  destinations: { name: string; coordinates: { lat: number; lng: number } }[]
+  destinations: { name: string; coordinates: { lat: number; lng: number } }[],
+  options?: SkidsFetchOptions
 ): Promise<TransformedDestination[]> {
   if (!SKIDS_URL) {
     throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
   }
+
+  const apiOptions: any = { maxTransfers: 3 };
+  if (options?.maxWalkDistanceMeters != null) {
+    apiOptions.maxWalkDistanceMeters = options.maxWalkDistanceMeters;
+  }
+  if (options?.allowedModes && options.allowedModes.length > 0) {
+    apiOptions.allowedModes = options.allowedModes;
+  }
+
   const response = await fetch(`${SKIDS_URL}/api/transit/route/coordinates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -234,13 +274,9 @@ export async function fetchSkidsTransitData(
         name: d.name,
         coordinate: { lat: d.coordinates.lat, lon: d.coordinates.lng },
       })),
-      options: {
-        maxTransfers: 3,
-      },
+      options: apiOptions,
     }),
   });
-
-
 
   if (!response.ok) {
     const errorBody = await response.text();
@@ -249,5 +285,5 @@ export async function fetchSkidsTransitData(
 
   const data: SkidsResponse = await response.json();
   console.log(data);
-  return transformSkidsResponse(data, destinations);
+  return transformSkidsResponse(data, destinations, options?.allowedModes);
 }

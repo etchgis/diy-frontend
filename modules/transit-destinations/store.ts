@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
 interface TransitionDestinationsSlideData {
   backgroundColor: string;
@@ -20,6 +20,7 @@ interface TransitionDestinationsSlideData {
   query: string;
   titleTextSize?: number;
   contentTextSize?: number;
+  maxWalkDistance?: number; // meters, default 800
 }
 
 interface SlideStore {
@@ -42,11 +43,13 @@ interface SlideStore {
   setAlternateRowTextColor: (slideId: string, color: string) => void;
   setTitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
+  setMaxWalkDistance: (slideId: string, meters: number) => void;
+  setDestinationModes: (slideId: string, destName: string, modes: string[]) => void;
 }
 
 export const useTransitDestinationsStore = create<SlideStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       slides: {},
 
       setBackgroundColor: (slideId, color) =>
@@ -244,6 +247,26 @@ export const useTransitDestinationsStore = create<SlideStore>()(
             },
           },
         })),
+
+      setMaxWalkDistance: (slideId, meters) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              maxWalkDistance: meters,
+            },
+          },
+        })),
+
+      setDestinationModes: (slideId, destName, modes) =>
+        set((state) => {
+          const slide = state.slides[slideId] || {};
+          const destinations = (slide.destinations || []).map((d: any) =>
+            d.name === destName ? { ...d, allowedModes: modes } : d
+          );
+          return { slides: { ...state.slides, [slideId]: { ...slide, destinations } } };
+        }),
     }),
     {
       name: 'transit-destinations-storage',

@@ -210,6 +210,7 @@ async function importData(setup: any) {
     setSlides,
     setShortcode,
     setRotationInterval,
+    setResolution,
     setPublishPassword,
     setDefaultBackgroundColor,
     setDefaultTitleColor,
@@ -223,6 +224,7 @@ async function importData(setup: any) {
   setAddress(setup.address || 'Albany, NY');
   setShortcode(setup.shortcode || '');
   setRotationInterval(setup.rotationInterval || 20);
+  if (setup.resolution) setResolution(setup.resolution);
   setPublishPassword(setup.publishPassword || '');
 
   // Restore default styling settings
@@ -246,7 +248,6 @@ async function importData(setup: any) {
   }
 
   if (setup.theme) {
-    const generalState = useGeneralStore.getState();
     // Directly set theme state without triggering applyThemeColorToAllSlides
     useGeneralStore.setState({
       theme: {
@@ -329,7 +330,8 @@ async function importData(setup: any) {
         setDestinations,
         setAlternateRowTextColor,
         setTitleTextSize,
-        setContentTextSize
+        setContentTextSize,
+        setMaxWalkDistance,
       } = useTransitDestinationsStore.getState();
 
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
@@ -338,9 +340,13 @@ async function importData(setup: any) {
       setTableHeaderTextColor(slide.id, slide.data.tableHeaderTextColor || '#ffffff');
       setTableTextColor(slide.id, slide.data.tableTextColor || '#ffffff');
       setAlternateRowTextColor(slide.id, slide.data.alternateRowTextColor || '#ffffff');
+      // Destinations include optional allowedModes per entry — pass through as-is
       setDestinations(slide.id, slide.data.destinations || []);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+      if (slide.data.maxWalkDistance != null) {
+        setMaxWalkDistance(slide.id, slide.data.maxWalkDistance);
+      }
       console.log('Destinations set for slide:', slide.id, slide.data.destinations || []);
     }
 

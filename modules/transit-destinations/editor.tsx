@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Plus, X } from "lucide-react"
+import { HelpCircle, ChevronRight, Plus, X, RefreshCw, ChevronDown, ChevronUp } from "lucide-react"
 import TransitDestinationPreview from "./preview"
 import { useTransitDestinationsStore } from "./store"
 import { useEffect, useRef, useState } from "react"
@@ -9,15 +9,22 @@ import { useGeneralStore } from "@/stores/general"
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
 import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
+import { getDestinationData } from "@/services/data-gathering/getDestinationData"
 
 const MAX_DESTINATIONS = 5;
 const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
+
+const ALL_MODES = ['BUS', 'SUBWAY', 'RAIL', 'WALK'];
+const MODE_LABELS: Record<string, string> = { BUS: 'Bus', SUBWAY: 'Subway', RAIL: 'Rail', WALK: 'Walk' };
+const DEFAULT_MAX_WALK = 800; // meters
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const renderCount = useRef(0);
+  const [expandedDest, setExpandedDest] = useState<string | null>(null);
+  const [refetchingDest, setRefetchingDest] = useState<string | null>(null);
 
 
   const slides = useGeneralStore((state) => state.slides);
@@ -102,17 +109,48 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
   const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
   const setDestinations = useTransitDestinationsStore((state) => state.setDestinations);
+  const maxWalkDistance = useTransitDestinationsStore((state) => state.slides[slideId]?.maxWalkDistance ?? DEFAULT_MAX_WALK);
+  const setMaxWalkDistance = useTransitDestinationsStore((state) => state.setMaxWalkDistance);
+  const setDestinationModes = useTransitDestinationsStore((state) => state.setDestinationModes);
 
 
 
 
   const handleDeleteDestination = (name: string) => {
-
     const updatedDestinations = destinations.filter((dest: any) => dest.name !== name);
     const updatedDestinationData = destinationData.filter((dest: any) => dest.name !== name);
     setDestinations(slideId, updatedDestinations);
     setDestinationData(slideId, updatedDestinationData);
+  };
 
+  const handleToggleMode = (destName: string, mode: string, currentModes: string[]) => {
+    const updated = currentModes.includes(mode)
+      ? currentModes.filter((m) => m !== mode)
+      : [...currentModes, mode];
+    // Always keep at least one mode selected
+    if (updated.length === 0) return;
+    setDestinationModes(slideId, destName, updated);
+  };
+
+  const handleRefetchDestination = async (dest: any) => {
+    setRefetchingDest(dest.name);
+    try {
+      const updatedDests = destinations.map((d: any) =>
+        d.name === dest.name ? dest : d
+      );
+      await getDestinationData(
+        updatedDests,
+        slideId,
+        setDestinationData,
+        () => { /* suppress slide-level error during single refetch */ },
+        destinationData,
+        { maxWalkDistance }
+      );
+    } catch (e) {
+      console.error('Refetch failed:', e);
+    } finally {
+      setRefetchingDest(null);
+    }
   };
 
   useEffect(() => {
@@ -189,6 +227,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
           lat: selectedFeature.geometry.coordinates[1],
           lng: selectedFeature.geometry.coordinates[0],
         },
+        allowedModes: ALL_MODES, // default: all modes enabled
       };
 
       const updatedDestinations = [...destinations, newDestination];
@@ -205,7 +244,8 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
           console.log('[SKIDS] Attempting to fetch transit data via SKIDS...');
           const skidsResults = await fetchSkidsTransitData(
             { lat: coordinates.lat, lng: coordinates.lng },
-            [newDestination]
+            [newDestination],
+            { maxWalkDistanceMeters: maxWalkDistance }
           );
 
           if (skidsResults && skidsResults.length > 0) {
@@ -229,7 +269,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
           // Fall back to OTP
           const origin = `${coordinates.lat},${coordinates.lng}`;
           const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
-          const result = await fetchTransitData(origin, destination);
+          const result = await fetchTransitData(origin, destination, newDestination.allowedModes, maxWalkDistance);
 
           enrichedDestination = {
             name: newDestination.name,
@@ -248,7 +288,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
         console.log('[OTP] Using OTP (SKIDS disabled)');
         const origin = `${coordinates.lat},${coordinates.lng}`;
         const destination = `${newDestination.coordinates.lat},${newDestination.coordinates.lng}`;
-        const result = await fetchTransitData(origin, destination);
+        const result = await fetchTransitData(origin, destination, newDestination.allowedModes, maxWalkDistance);
 
         enrichedDestination = {
           name: newDestination.name,
@@ -563,16 +603,87 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
           </div>
 
           <div className="mb-4">
+            <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Max Walk Distance</h3>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0}
+                max={3000}
+                step={100}
+                value={maxWalkDistance}
+                onChange={(e) => setMaxWalkDistance(slideId, Number(e.target.value))}
+                className="flex-1"
+              />
+              <span className="text-xs text-gray-500 w-16 text-right">
+                {maxWalkDistance >= 1000 ? `${(maxWalkDistance / 1000).toFixed(1)} km` : `${maxWalkDistance} m`}
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Changes take effect on next refetch.</p>
+          </div>
+
+          <div className="mb-4">
             <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Destinations</h3>
             <div className="space-y-2">
-              {destinations.map((dest: any, index: number) => (
-                <div key={index} className="flex items-center justify-between bg-[#f4f4f4] p-2 rounded">
-                  <span className="text-xs text-[#4a5568] truncate pr-2">{dest.name}</span>
-                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => handleDeleteDestination(dest.name)}>
-                    <X className="w-2 h-2" />
-                  </Button>
-                </div>
-              ))}
+              {destinations.map((dest: any, index: number) => {
+                const currentModes: string[] = dest.allowedModes ?? ALL_MODES;
+                const isExpanded = expandedDest === dest.name;
+                const isRefetching = refetchingDest === dest.name;
+                return (
+                  <div key={index} className="bg-[#f4f4f4] rounded overflow-hidden">
+                    <div className="flex items-center justify-between p-2">
+                      <span className="text-xs text-[#4a5568] truncate pr-1 flex-1">{dest.name}</span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          className="p-0.5 text-gray-400 hover:text-gray-700"
+                          onClick={() => setExpandedDest(isExpanded ? null : dest.name)}
+                          title="Mode options"
+                        >
+                          {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
+                        <Button variant="ghost" size="sm" className="h-4 w-4 p-0" onClick={() => handleDeleteDestination(dest.name)}>
+                          <X className="w-2 h-2" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="px-2 pb-2 border-t border-gray-200 pt-2 space-y-2">
+                        <p className="text-xs text-gray-500">Allowed modes:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {ALL_MODES.map((mode) => {
+                            const active = currentModes.includes(mode);
+                            return (
+                              <button
+                                key={mode}
+                                onClick={() => handleToggleMode(dest.name, mode, currentModes)}
+                                className={`text-xs px-2 py-1 rounded font-medium border-2 transition-colors ${
+                                  active
+                                    ? 'bg-green-500 text-white border-green-600'
+                                    : 'bg-white text-red-500 border-red-300 line-through'
+                                }`}
+                              >
+                                {MODE_LABELS[mode]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full h-6 text-xs gap-1"
+                          disabled={isRefetching}
+                          onClick={() => handleRefetchDestination(dest)}
+                        >
+                          {isRefetching
+                            ? <><div className="w-2.5 h-2.5 border border-gray-400 border-t-transparent rounded-full animate-spin" /> Fetching...</>
+                            : <><RefreshCw className="w-2.5 h-2.5" /> Refetch</>
+                          }
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

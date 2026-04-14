@@ -91,26 +91,28 @@ export default function TransitDestinationPreview({
 
   const getIconSizeForManyLegs = (hasMany: boolean, mode?: string) => {
     if (mode === "RAIL") {
-      if (mobileMode || hasMany) return { width: "42px", height: "42px" };
-      if (isEditor) return { width: "48px", height: "48px" };
-      return { width: "6vh", height: "6vh" };
+      if (mobileMode) return { width: "42px", height: "42px", flexShrink: 0 };
+      if (hasMany) return { width: "min(42px,4.5vh)", height: "min(42px,4.5vh)", flexShrink: 0 };
+      if (isEditor) return { width: "48px", height: "48px", flexShrink: 0 };
+      return { width: "min(48px,6vh)", height: "min(48px,6vh)", flexShrink: 0 };
     }
 
-    if (mobileMode || hasMany) return { width: "30px", height: "30px" };
-    if (isEditor) return { width: "35px", height: "35px" };
-    return { width: "4.2vh", height: "4.2vh" };
+    if (mobileMode) return { width: "30px", height: "30px", flexShrink: 0 };
+    if (hasMany) return { width: "min(30px,3.2vh)", height: "min(30px,3.2vh)", flexShrink: 0 };
+    if (isEditor) return { width: "35px", height: "35px", flexShrink: 0 };
+    return { width: "min(35px,4.2vh)", height: "min(35px,4.2vh)", flexShrink: 0 };
   };
 
   const getBusPadding = (hasMany: boolean) => {
     if (mobileMode || hasMany) return "px-1 py-0.5";
-    if (isEditor) return "px-2 py-1";
-    return "px-[0.8vh] py-[0.4vh]";
+    if (isEditor) return "px-1 py-0.5";
+    return "px-[0.6vh] py-[0.3vh]";
   };
 
   const getBusTextSize = (hasMany: boolean) => {
     if (mobileMode || hasMany) return "text-xs";
-    if (isEditor) return "text-sm";
-    return "text-[1.8vh]";
+    if (isEditor) return "text-xs";
+    return "text-[min(14px,1.6vh)]";
   };
 
   /**
@@ -169,15 +171,15 @@ export default function TransitDestinationPreview({
   };
 
   const getArrowSize = (hasMany: boolean) => {
-    if (mobileMode || hasMany) return { width: "18px", height: "18px" };
-    if (isEditor) return { width: "25px", height: "25px" };
-    return { width: "2.5vh", height: "2.5vh" };
+    if (mobileMode || hasMany) return { width: "min(18px,1.8vh)", height: "min(18px,1.8vh)", flexShrink: 0 };
+    if (isEditor) return { width: "min(25px,2.2vh)", height: "min(25px,2.2vh)", flexShrink: 0 };
+    return { width: "min(25px,2.5vh)", height: "min(25px,2.5vh)", flexShrink: 0 };
   };
 
   const getArrowMargin = (hasMany: boolean) => {
     if (mobileMode || hasMany) return "2px";
-    if (isEditor) return "8px";
-    return "0.6vh";
+    if (isEditor) return "4px";
+    return "min(8px,0.6vh)";
   };
 
   const getFooterPadding = () => {
@@ -294,11 +296,11 @@ export default function TransitDestinationPreview({
                       <span className="break-words">{name}</span>
                     </div>
                     <div
-                      className={`flex items-center gap-1 overflow-hidden ${
+                      className={`flex items-center gap-1 flex-wrap min-w-0 ${
                         legs.filter(
                           (l: any) => !(l.mode === "WALK" && l.duration <= 240)
                         ).length > 3
-                          ? "flex-wrap py-1"
+                          ? "py-1"
                           : ""
                       }`}
                     >
@@ -320,21 +322,15 @@ export default function TransitDestinationPreview({
 
                             return (
                               <div
-                                className="flex items-center gap-1"
+                                className="flex items-center gap-1 flex-shrink min-w-0"
                                 key={legIndex}
                               >
-                                <div
-                                  className={
-                                    hasMany
-                                      ? "all-leg-content"
-                                      : "all-leg-content"
-                                  }
-                                >
+                                <div className="all-leg-content flex-shrink min-w-0">
                                   <div
                                     className={
                                       hasMany
                                         ? "flex flex-col items-center gap-0.5"
-                                        : "flex items-center gap-1"
+                                        : "flex items-center gap-1 flex-wrap"
                                     }
                                   >
                                     {leg.mode === "WALK" ? (
