@@ -6,9 +6,10 @@ interface ResolutionFrameProps {
   logicalH: number;
   fontFamilyStyle?: CSSProperties;
   children: ReactNode;
+  background?: string;
 }
 
-export function ResolutionFrame({ logicalW, logicalH, fontFamilyStyle = {}, children }: ResolutionFrameProps) {
+export function ResolutionFrame({ logicalW, logicalH, fontFamilyStyle = {}, children, background = '#111' }: ResolutionFrameProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number | null>(null);
 
@@ -39,7 +40,7 @@ export function ResolutionFrame({ logicalW, logicalH, fontFamilyStyle = {}, chil
   return (
     <div
       ref={wrapperRef}
-      style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', overflow: 'hidden' }}
+      style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background, overflow: 'hidden' }}
     >
       {scale != null && (
         <div style={{ width: scaledW, height: scaledH, overflow: 'hidden', position: 'relative', flexShrink: 0, ...fontFamilyStyle }}>

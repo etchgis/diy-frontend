@@ -146,6 +146,17 @@ export default function EditorPage() {
   const [tempThemeBodyText, setTempThemeBodyText] = useState(theme?.bodyText || '#ffffff');
   const [tempDefaultTitleTextSize, setTempDefaultTitleTextSize] = useState(defaultTitleTextSize);
   const [tempDefaultContentTextSize, setTempDefaultContentTextSize] = useState(defaultContentTextSize);
+
+  const PRESET_RESOLUTIONS = ['1920x1080', '1080x1920', '1280x720'];
+  const [useCustomResolution, setUseCustomResolution] = useState(() => !PRESET_RESOLUTIONS.includes(resolution));
+  const [customW, setCustomW] = useState(() => {
+    const [w] = resolution.split('x').map(Number);
+    return w || 1920;
+  });
+  const [customH, setCustomH] = useState(() => {
+    const [, h] = resolution.split('x').map(Number);
+    return h || 1080;
+  });
   useEffect(() => {
     if (showSettings) {
       setTempRotationInterval(rotationInterval);
@@ -159,6 +170,13 @@ export default function EditorPage() {
       setTempThemeBodyText(theme?.bodyText || '#ffffff');
       setTempDefaultTitleTextSize(defaultTitleTextSize);
       setTempDefaultContentTextSize(defaultContentTextSize);
+      const isCustom = !PRESET_RESOLUTIONS.includes(resolution);
+      setUseCustomResolution(isCustom);
+      if (isCustom) {
+        const [w, h] = resolution.split('x').map(Number);
+        if (w) setCustomW(w);
+        if (h) setCustomH(h);
+      }
     }
   }, [showSettings]);
 
@@ -577,6 +595,7 @@ export default function EditorPage() {
         logicalW={logicalW}
         logicalH={logicalH}
         fontFamilyStyle={fontFamilyStyle}
+        background="transparent"
       >
         {content}
       </ResolutionFrame>
@@ -782,43 +801,59 @@ export default function EditorPage() {
 
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-          <div className="relative w-full max-w-6xl h-[630px] bg-white rounded shadow-lg overflow-hidden flex flex-col">
-            {/* Close button */}
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl z-50"
+      {showModal && (() => {
+        const { w: modalLogicalW, h: modalLogicalH } = parseResolution(resolution);
+        const isPortrait = modalLogicalH > modalLogicalW;
+    
+        const CONTROLS_H = 64;
+        const MAX_PREVIEW_H = `calc(88vh - ${CONTROLS_H}px)`;
+        const aspectRatio = `${modalLogicalW} / ${modalLogicalH}`;
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+            <div
+              className="relative bg-white rounded shadow-lg overflow-hidden flex flex-col"
+              style={{
+                aspectRatio,
+                maxHeight: '90vh',
+                maxWidth: isPortrait ? '60vw' : '92vw',
+                width: isPortrait ? `calc((90vh - ${CONTROLS_H}px) * ${modalLogicalW / modalLogicalH})` : '100%',
+              }}
             >
-              ×
-            </button>
-
-            {/* Slide Preview */}
-            <div className="flex-1 min-h-0 z-10">
-              {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true, true)}
-            </div>
-
-            {/* Controls */}
-            <div className="flex justify-between items-center p-4 border-t bg-gray-50">
-              <Button
-                onClick={() => setModalSlideIndex((prev) => Math.max(0, prev - 1))}
-                disabled={modalSlideIndex === 0}
+              {/* Close button */}
+              <button
+                onClick={() => setShowModal(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl z-50"
               >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600">
-                Slide {modalSlideIndex + 1} of {slides.length}
-              </span>
-              <Button
-                onClick={() => setModalSlideIndex((prev) => Math.min(slides.length - 1, prev + 1))}
-                disabled={modalSlideIndex === slides.length - 1}
-              >
-                Next
-              </Button>
+                ×
+              </button>
+
+              {/* Slide Preview */}
+              <div className="flex-1 min-h-0 z-10">
+                {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true, true)}
+              </div>
+
+              {/* Controls */}
+              <div className="flex justify-between items-center p-4 border-t bg-gray-50 flex-shrink-0">
+                <Button
+                  onClick={() => setModalSlideIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={modalSlideIndex === 0}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Slide {modalSlideIndex + 1} of {slides.length}
+                </span>
+                <Button
+                  onClick={() => setModalSlideIndex((prev) => Math.min(slides.length - 1, prev + 1))}
+                  disabled={modalSlideIndex === slides.length - 1}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {showSettings && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
@@ -866,14 +901,60 @@ export default function EditorPage() {
                   Screen Resolution
                 </label>
                 <select
-                  value={resolution}
-                  onChange={(e) => setResolution(e.target.value)}
-                  className="w-full p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                  value={useCustomResolution ? 'custom' : resolution}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      setUseCustomResolution(true);
+                      setResolution(`${customW}x${customH}`);
+                    } else {
+                      setUseCustomResolution(false);
+                      setResolution(e.target.value);
+                    }
+                  }}
+                  className="select-padded w-full h-7 text-sm border border-gray-300 rounded cursor-pointer"
                 >
                   <option value="1920x1080">1920×1080 — HD Landscape</option>
                   <option value="1080x1920">1080×1920 — HD Portrait</option>
                   <option value="1280x720">1280×720 — 720p Landscape</option>
+                  <option value="custom">Custom…</option>
                 </select>
+
+                {useCustomResolution && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-0.5">Width (px)</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={7680}
+                        value={customW}
+                        onChange={(e) => {
+                          const w = Math.max(1, Number(e.target.value) || 1);
+                          setCustomW(w);
+                          setResolution(`${w}x${customH}`);
+                        }}
+                        className="w-full text-sm"
+                      />
+                    </div>
+                    <span className="text-gray-400 mt-4">×</span>
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-0.5">Height (px)</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={7680}
+                        value={customH}
+                        onChange={(e) => {
+                          const h = Math.max(1, Number(e.target.value) || 1);
+                          setCustomH(h);
+                          setResolution(`${customW}x${h}`);
+                        }}
+                        className="w-full text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-xs text-gray-400 mt-1">Affects the aspect ratio shown in the Preview.</p>
               </div>
 
@@ -938,13 +1019,13 @@ export default function EditorPage() {
 
               <div className="border-t pt-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Typography</h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Font Family</label>
                     <select
                       value={tempDefaultFontFamily}
                       onChange={(e) => setTempDefaultFontFamily(e.target.value)}
-                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                      className="select-padded h-7 w-40 text-sm border border-gray-300 rounded cursor-pointer"
                     >
                       <option value="System Default">System Default</option>
                       <option value="Arial">Arial</option>
@@ -962,7 +1043,7 @@ export default function EditorPage() {
                     <select
                       value={tempDefaultTitleTextSize}
                       onChange={(e) => setTempDefaultTitleTextSize(Number(e.target.value))}
-                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                      className="select-padded h-7 w-40 text-sm border border-gray-300 rounded cursor-pointer"
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((size) => (
                         <option key={size} value={size}>{size}</option>
@@ -974,7 +1055,7 @@ export default function EditorPage() {
                     <select
                       value={tempDefaultContentTextSize}
                       onChange={(e) => setTempDefaultContentTextSize(Number(e.target.value))}
-                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                      className="select-padded h-7 w-40 text-sm border border-gray-300 rounded cursor-pointer"
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((size) => (
                         <option key={size} value={size}>{size}</option>

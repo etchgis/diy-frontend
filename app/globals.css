@@ -8,6 +8,10 @@
   }
 }
 
+.select-padded {
+  padding: 10px 12px !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

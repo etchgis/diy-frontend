@@ -104,7 +104,7 @@ export default function WebEmbedEditor({
           <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-4">
             <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <span>
-              Some sites (e.g. Google, social media) block embedding. If the preview is blank, the site's server is preventing it — use a direct link to a page you control or one that allows framing.
+              Some sites block embedding. If the preview is blank, the site's server is preventing it. Use a direct link to a page you control or one that allows framing.
             </span>
           </div>
 
