@@ -6,7 +6,8 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/shared-components/footer";
 import ResizableImage from "@/components/shared-components/resizable-image";
-import AutoFitText from "@/components/shared-components/auto-fit-text";
+import RichTextEditor from "@/components/shared-components/rich-text-editor";
+import RichTextRenderer from "@/components/shared-components/rich-text-renderer";
 
 export default function Template1Preview({
   slideId,
@@ -222,16 +223,15 @@ export default function Template1Preview({
             }`}
           >
             {isEditor ? (
-              <textarea
-                value={content}
-                onChange={(e) => setContent(slideId, e.target.value)}
-                placeholder="Type text here"
-                className="w-full h-full bg-transparent outline-none resize-none font-light placeholder-white/50"
-                style={{ color: textColor, fontSize: `${24 * contentSizeMultiplier}px` }}
+              <RichTextEditor
+                content={content}
+                onChange={(html) => setContent(slideId, html)}
+                textColor={textColor}
+                fontSize={Math.round(24 * contentSizeMultiplier)}
               />
             ) : (
-              <AutoFitText
-                text={content || ""}
+              <RichTextRenderer
+                html={content || ""}
                 color={textColor}
                 maxFontSize={Math.round(48 * contentSizeMultiplier)}
                 minFontSize={4}
