@@ -147,7 +147,7 @@ export default function EditorPage() {
   const [tempDefaultTitleTextSize, setTempDefaultTitleTextSize] = useState(defaultTitleTextSize);
   const [tempDefaultContentTextSize, setTempDefaultContentTextSize] = useState(defaultContentTextSize);
 
-  const PRESET_RESOLUTIONS = ['1920x1080', '1080x1920', '1280x720'];
+  const PRESET_RESOLUTIONS = ['responsive', '1920x1080', '1080x1920', '1280x720'];
   const [useCustomResolution, setUseCustomResolution] = useState(() => !PRESET_RESOLUTIONS.includes(resolution));
   const [customW, setCustomW] = useState(() => {
     const [w] = resolution.split('x').map(Number);
@@ -588,6 +588,10 @@ export default function EditorPage() {
       return <div className="h-[550px] rounded-lg" style={fontFamilyStyle}>{content}</div>;
     }
 
+    if (resolution === 'responsive') {
+      return <div className="w-full h-full" style={fontFamilyStyle}>{content}</div>;
+    }
+
     const { w: logicalW, h: logicalH } = parseResolution(resolution);
 
     return (
@@ -802,22 +806,24 @@ export default function EditorPage() {
       </div>
 
       {showModal && (() => {
-        const { w: modalLogicalW, h: modalLogicalH } = parseResolution(resolution);
-        const isPortrait = modalLogicalH > modalLogicalW;
-    
+        const isResponsive = resolution === 'responsive';
+        const { w: modalLogicalW, h: modalLogicalH } = isResponsive ? { w: 1920, h: 1080 } : parseResolution(resolution);
+        const isPortrait = !isResponsive && modalLogicalH > modalLogicalW;
+
         const CONTROLS_H = 64;
-        const MAX_PREVIEW_H = `calc(88vh - ${CONTROLS_H}px)`;
-        const aspectRatio = `${modalLogicalW} / ${modalLogicalH}`;
+        const modalStyle: React.CSSProperties = isResponsive
+          ? { maxHeight: '90vh', width: '92vw' }
+          : {
+              aspectRatio: `${modalLogicalW} / ${modalLogicalH}`,
+              maxHeight: '90vh',
+              maxWidth: isPortrait ? '60vw' : '92vw',
+              width: isPortrait ? `calc((90vh - ${CONTROLS_H}px) * ${modalLogicalW / modalLogicalH})` : '100%',
+            };
         return (
           <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
             <div
               className="relative bg-white rounded shadow-lg overflow-hidden flex flex-col"
-              style={{
-                aspectRatio,
-                maxHeight: '90vh',
-                maxWidth: isPortrait ? '60vw' : '92vw',
-                width: isPortrait ? `calc((90vh - ${CONTROLS_H}px) * ${modalLogicalW / modalLogicalH})` : '100%',
-              }}
+              style={modalStyle}
             >
               {/* Close button */}
               <button
@@ -913,6 +919,7 @@ export default function EditorPage() {
                   }}
                   className="select-padded w-full h-7 text-sm border border-gray-300 rounded cursor-pointer"
                 >
+                  <option value="responsive">Responsive — fills any screen</option>
                   <option value="1920x1080">1920×1080 — HD Landscape</option>
                   <option value="1080x1920">1080×1920 — HD Portrait</option>
                   <option value="1280x720">1280×720 — 720p Landscape</option>

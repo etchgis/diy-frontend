@@ -595,46 +595,56 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   // TV mode - slideshow with rotation
   const webEmbedSlides = slides.filter((s: any) => s.type === 'web-embed');
 
+  const isResponsive = resolution === 'responsive';
+
+  const innerContent = (
+    <div className="w-full h-full bg-white relative overflow-hidden">
+      {/* Persistent TransitRoutesPreview */}
+      <div
+        className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+          }`}
+      >
+        {currentSlide && currentSlide.id ? (
+          <TransitRoutesPreview slideId={currentSlide.id} />
+        ) : null}
+      </div>
+
+      {webEmbedSlides.map((slide: any) => (
+        <div
+          key={slide.id}
+          className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
+            currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+          }`}
+        >
+          <WebEmbedPreview slideId={slide.id} />
+        </div>
+      ))}
+
+      {/* All other previews */}
+      {currentSlide && currentSlide.id && currentSlide.type !== 'transit-routes' && currentSlide.type !== 'web-embed' ? (
+        <div className="w-full h-full z-10 relative">
+          {renderSlidePreview(currentSlide.type, currentSlide.id)}
+        </div>
+      ) : null}
+
+      {/* Fallback for no slide loaded */}
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center w-full h-full z-10">
+          <h1 className="text-2xl font-bold">Loading slides...</h1>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="w-screen h-screen overflow-hidden bg-black">
-      <ResolutionFrame logicalW={logicalW} logicalH={logicalH} fontFamilyStyle={fontFamilyStyle}>
-        <div className="w-full h-full bg-white relative overflow-hidden">
-          {/* Persistent TransitRoutesPreview */}
-          <div
-            className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-              }`}
-          >
-            {currentSlide && currentSlide.id ? (
-              <TransitRoutesPreview slideId={currentSlide.id} />
-            ) : null}
-          </div>
-
-          {webEmbedSlides.map((slide: any) => (
-            <div
-              key={slide.id}
-              className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
-                currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-              }`}
-            >
-              <WebEmbedPreview slideId={slide.id} />
-            </div>
-          ))}
-
-          {/* All other previews */}
-          {currentSlide && currentSlide.id && currentSlide.type !== 'transit-routes' && currentSlide.type !== 'web-embed' ? (
-            <div className="w-full h-full z-10 relative">
-              {renderSlidePreview(currentSlide.type, currentSlide.id)}
-            </div>
-          ) : null}
-
-          {/* Fallback for no slide loaded */}
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center w-full h-full z-10">
-              <h1 className="text-2xl font-bold">Loading slides...</h1>
-            </div>
-          )}
-        </div>
-      </ResolutionFrame>
+      {isResponsive ? (
+        <div className="w-full h-full" style={fontFamilyStyle}>{innerContent}</div>
+      ) : (
+        <ResolutionFrame logicalW={logicalW} logicalH={logicalH} fontFamilyStyle={fontFamilyStyle}>
+          {innerContent}
+        </ResolutionFrame>
+      )}
     </div>
   );
 }

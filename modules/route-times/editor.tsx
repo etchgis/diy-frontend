@@ -33,6 +33,7 @@ export default function RouteTimesSlide({
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const routeCacheRef = useRef<any[]>([]);
   const [showTimetableWarning, setShowTimetableWarning] = useState(false);
 
   const slideData = useRouteTimesStore((state) => state.slides[slideId]);
@@ -88,14 +89,6 @@ export default function RouteTimesSlide({
       return;
     }
 
-    // Only do API search if 2 or more characters are entered
-    if (value.trim().length < 2) {
-      setFilteredRoutes([]);
-      setShowDropdown(false);
-      setIsSearching(false);
-      return;
-    }
-
     setIsSearching(true);
     setShowDropdown(true);
 
@@ -103,10 +96,18 @@ export default function RouteTimesSlide({
       try {
         const searchResults = await fetchRoutes(value);
 
-        console.log(searchResults);
+        const merged = [...routeCacheRef.current, ...(searchResults || [])];
+        const deduped = [...new Map(merged.map(r => [r.route_id, r])).values()];
+        routeCacheRef.current = deduped;
 
-        if (searchResults && searchResults.length > 0) {
-          setFilteredRoutes(searchResults);
+        const q = value.toLowerCase();
+        const cacheMatches = deduped.filter(r =>
+          r.route_short_name?.toLowerCase().startsWith(q) ||
+          r.route_long_name?.toLowerCase().includes(q)
+        );
+
+        if (cacheMatches.length > 0) {
+          setFilteredRoutes(cacheMatches);
           setShowDropdown(true);
         } else {
           setFilteredRoutes([]);
@@ -286,7 +287,7 @@ export default function RouteTimesSlide({
                       // Delay to allow click on dropdown items
                       setTimeout(() => setShowDropdown(false), 200);
                     }}
-                    placeholder="Search for a route..."
+                    placeholder="Search by route number or full name (e.g. E, 117, 8 Avenue Local…)"
                   />
                   {showDropdown && (filteredRoutes.length > 0 || isSearching) && (
                     <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">

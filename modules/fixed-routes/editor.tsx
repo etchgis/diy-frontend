@@ -26,6 +26,8 @@ import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
+import { fetchRoutes } from "@/services/data-gathering/fetchRoutes";
+import { fetchRoutePatterns } from "@/services/route-times/routeDataFetcher";
 import { calculateDistance, formatDistance } from "@/utils/distance";
 import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop } from "@/types/nysdot-stops";
 
@@ -425,6 +427,17 @@ export default function StopArrivalsSlide({
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [linkedStops, setLinkedStops] = useState<ExpandedLinkedStop[]>([]); // Stops in same station complex
 
+  // Route-first search mode
+  const [routeSearchMode, setRouteSearchMode] = useState(false);
+  const [routeQuery, setRouteQuery] = useState('');
+  const [routeResults, setRouteResults] = useState<any[]>([]);
+  const [isSearchingRoutes, setIsSearchingRoutes] = useState(false);
+  const [selectedRouteForStop, setSelectedRouteForStop] = useState<any>(null);
+  const [routeStops, setRouteStops] = useState<any[]>([]);
+  const [isLoadingRouteStops, setIsLoadingRouteStops] = useState(false);
+  const routeSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const routeCacheRef = useRef<any[]>([]);
+
   const stopName = useFixedRouteStore(
     (state: { slides: { [x: string]: { stopName: any; }; }; }) => state.slides[slideId]?.stopName || ""
   );
@@ -619,6 +632,88 @@ export default function StopArrivalsSlide({
         // Keep the local filtered results on error
       }
     }, 300); // 300ms debounce delay
+  };
+
+  const handleRouteQueryChange = (value: string) => {
+    setRouteQuery(value);
+    setSelectedRouteForStop(null);
+    setRouteStops([]);
+    if (routeSearchTimeoutRef.current) clearTimeout(routeSearchTimeoutRef.current);
+    if (!value.trim()) {
+      setRouteResults([]);
+      return;
+    }
+    setIsSearchingRoutes(true);
+    routeSearchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await fetchRoutes(value.trim());
+
+        const merged = [...routeCacheRef.current, ...(results || [])];
+        const deduped = [...new Map(merged.map(r => [r.route_id, r])).values()];
+        routeCacheRef.current = deduped;
+
+        const q = value.trim().toLowerCase();
+        const cacheMatches = deduped.filter(r =>
+          r.route_short_name?.toLowerCase().startsWith(q) ||
+          r.route_long_name?.toLowerCase().includes(q)
+        );
+
+        setRouteResults(cacheMatches);
+      } catch {
+        setRouteResults([]);
+      } finally {
+        setIsSearchingRoutes(false);
+      }
+    }, 300);
+  };
+
+  const handleSelectRouteForStop = async (route: any) => {
+    setSelectedRouteForStop(route);
+    setRouteQuery(`${route.route_short_name || ''} ${route.route_long_name || ''}`.trim());
+    setRouteResults([]);
+    setIsLoadingRouteStops(true);
+    try {
+      const patternData = await fetchRoutePatterns({
+        route_id: route.route_id,
+        route_short_name: route.route_short_name,
+        route_long_name: route.route_long_name,
+        services: route.services?.map((s: any) => ({
+          organization_guid: s.organization_guid,
+          service_guid: s.service_guid,
+        })) || [],
+      });
+      const stops = patternData?.stops || [];
+      stops.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+      setRouteStops(stops);
+    } catch {
+      setRouteStops([]);
+    } finally {
+      setIsLoadingRouteStops(false);
+    }
+  };
+
+  const handleSelectStopFromRoute = async (routeStop: any) => {
+    setIsLoadingRouteStops(true);
+    try {
+      const results = await fetchAllStops({
+        coordinates: { lat: routeStop.lat, lng: routeStop.lon },
+        radius: 100,
+        search: routeStop.name,
+      });
+      const deduped = deduplicateStops(results);
+      const match = deduped[0];
+      if (match) {
+        handleSelectStop(match);
+      }
+    } catch {
+      // nothing
+    } finally {
+      setIsLoadingRouteStops(false);
+      setRouteSearchMode(false);
+      setSelectedRouteForStop(null);
+      setRouteStops([]);
+      setRouteQuery('');
+    }
   };
 
   const handleSelectStop = (stop: any) => {
@@ -1136,63 +1231,169 @@ export default function StopArrivalsSlide({
 
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-[#4a5568] font-medium mb-2">
-                  Fixed Route Stop
-                </label>
-                <div className="relative">
-                  <Input
-                    className="flex-1 bg-white border-[#cbd5e0]"
-                    value={stopName}
-                    onChange={(e) => handleInputChange(e.target.value)}
-                    onFocus={() => {
-                      if (stopName.trim() === "" && nearbyStops.length > 0) {
-                        setFilteredStops(nearbyStops);
-                        setShowDropdown(true);
-                      } else if (filteredStops.length > 0) {
-                        setShowDropdown(true);
-                      }
-                    }}
-                    onBlur={() => {
-                      // Delay to allow click on dropdown items
-                      setTimeout(() => setShowDropdown(false), 200);
-                    }}
-                    placeholder="Enter text here... "
-                  />
-                  {showDropdown && filteredStops.length > 0 && (
-                    <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
-                      {isSearching && (
-                        <li key="searching" className="px-4 py-2 text-gray-500 italic text-sm">
-                          Searching stops...
-                        </li>
-                      )}
-                      {deduplicateStops(filteredStops).map((stop, index) => (
-                        <li
-                          key={index}
-                          onClick={() => handleSelectStop(stop)}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center gap-1.5"
-                        >
-                          {(stop as any).wheelchairBoarding === 1 && (
-                            <span title="Wheelchair accessible" className="text-blue-500 flex-shrink-0">♿</span>
-                          )}
-                          <span>
-                            {stop.name} -{" "}
-                            {stop.services[0]?.agencyName || "No Agency"}
-                            {stop.services.length > 1 && (
-                              <span className="text-gray-400 text-xs ml-1">
-                                (+{stop.services.length - 1} more)
-                              </span>
-                            )}
-                            {(stop as any).distance !== undefined && (
-                              <span className="text-gray-500 text-sm ml-2">
-                                ({formatDistance((stop as any).distance)})
-                              </span>
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[#4a5568] font-medium">
+                    Fixed Route Stop
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-[#718096]">Search by:</span>
+                    <div className="flex rounded border border-[#cbd5e0] overflow-hidden text-xs">
+                      <button
+                        onClick={() => {
+                          if (routeSearchMode) {
+                            setRouteSearchMode(false);
+                            setRouteQuery('');
+                            setRouteResults([]);
+                            setSelectedRouteForStop(null);
+                            setRouteStops([]);
+                          }
+                        }}
+                        className={`px-3 py-1 transition-colors ${!routeSearchMode ? 'bg-blue-600 text-white' : 'bg-white text-[#4a5568] hover:bg-gray-50'}`}
+                      >
+                        Stop
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!routeSearchMode) {
+                            setRouteSearchMode(true);
+                          }
+                        }}
+                        className={`px-3 py-1 border-l border-[#cbd5e0] transition-colors ${routeSearchMode ? 'bg-blue-600 text-white' : 'bg-white text-[#4a5568] hover:bg-gray-50'}`}
+                      >
+                        Route
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                {routeSearchMode ? (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Input
+                        className="bg-white border-[#cbd5e0]"
+                        value={routeQuery}
+                        onChange={(e) => handleRouteQueryChange(e.target.value)}
+                        onBlur={() => setTimeout(() => setRouteResults([]), 200)}
+                        placeholder="Search by route number or name (e.g. E, 117, 8 Avenue…)"
+                      />
+                      {(isSearchingRoutes || routeResults.length > 0) && (
+                        <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                          {isSearchingRoutes && (
+                            <li className="px-4 py-2 text-gray-500 italic text-sm">Searching routes...</li>
+                          )}
+                          {routeResults.map((route, i) => (
+                            <li
+                              key={i}
+                              onMouseDown={() => handleSelectRouteForStop(route)}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center gap-2"
+                            >
+                              {route.route_short_name && (
+                                <span
+                                  className="px-2 py-0.5 rounded text-xs font-bold flex-shrink-0"
+                                  style={{
+                                    backgroundColor: route.route_color ? `#${route.route_color}` : '#6b7280',
+                                    color: route.route_text_color ? `#${route.route_text_color}` : '#ffffff',
+                                  }}
+                                >
+                                  {route.route_short_name}
+                                </span>
+                              )}
+                              <span className="text-sm">{route.route_long_name || route.route_desc}</span>
+                              {route.services?.[0]?.agency_name && (
+                                <span className="text-gray-400 text-xs ml-auto flex-shrink-0">{route.services[0].agency_name}</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {selectedRouteForStop && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1.5">
+                          {isLoadingRouteStops
+                            ? 'Loading stops along route...'
+                            : routeStops.length > 0
+                            ? `${routeStops.length} stops on this route — pick one:`
+                            : 'No stops found for this route.'}
+                        </p>
+                        {isLoadingRouteStops && (
+                          <div className="flex items-center gap-2 py-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" />
+                          </div>
+                        )}
+                        {!isLoadingRouteStops && routeStops.length > 0 && (
+                          <ul className="border rounded bg-white max-h-56 overflow-y-auto shadow-sm">
+                            {routeStops.map((stop: any, i: number) => (
+                              <li
+                                key={i}
+                                onClick={() => handleSelectStopFromRoute(stop)}
+                                className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-black border-b last:border-b-0 flex items-center gap-2"
+                              >
+                                <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                {stop.name || stop.stopName}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      className="flex-1 bg-white border-[#cbd5e0]"
+                      value={stopName}
+                      onChange={(e) => handleInputChange(e.target.value)}
+                      onFocus={() => {
+                        if (stopName.trim() === "" && nearbyStops.length > 0) {
+                          setFilteredStops(nearbyStops);
+                          setShowDropdown(true);
+                        } else if (filteredStops.length > 0) {
+                          setShowDropdown(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => setShowDropdown(false), 200);
+                      }}
+                      placeholder="Search by stop name "
+                    />
+                    {showDropdown && filteredStops.length > 0 && (
+                      <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                        {isSearching && (
+                          <li key="searching" className="px-4 py-2 text-gray-500 italic text-sm">
+                            Searching stops...
+                          </li>
+                        )}
+                        {deduplicateStops(filteredStops).map((stop, index) => (
+                          <li
+                            key={index}
+                            onClick={() => handleSelectStop(stop)}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center gap-1.5"
+                          >
+                            {(stop as any).wheelchairBoarding === 1 && (
+                              <span title="Wheelchair accessible" className="text-blue-500 flex-shrink-0">♿</span>
+                            )}
+                            <span>
+                              {stop.name} -{" "}
+                              {stop.services[0]?.agencyName || "No Agency"}
+                              {stop.services.length > 1 && (
+                                <span className="text-gray-400 text-xs ml-1">
+                                  (+{stop.services.length - 1} more)
+                                </span>
+                              )}
+                              {(stop as any).distance !== undefined && (
+                                <span className="text-gray-500 text-sm ml-2">
+                                  ({formatDistance((stop as any).distance)})
+                                </span>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
 
               {selectedStop && (
