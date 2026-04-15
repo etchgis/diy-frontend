@@ -27,6 +27,8 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const routeData: any = slideData?.routeData || [];
   const patternData = slideData?.patternData;
   const isLoading = slideData?.isLoading || false;
+  const dataError = slideData?.dataError || false;
+  const outageMessage = slideData?.outageMessage || '';
   const isShowingNextDay = slideData?.isShowingNextDay || false;
   const isShowingLaterToday = slideData?.isShowingLaterToday || false;
   const titleTextSize = slideData?.titleTextSize || 5;
@@ -647,6 +649,12 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
             <p className="text-gray-500">Please select a route to display</p>
           </div>
         )}
+
+      {dataError && (
+        <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/80 text-white text-center px-4 py-3 text-base font-medium">
+          {outageMessage || 'Live transit data is currently unavailable.'}
+        </div>
+      )}
       </div>
     </div>
   );

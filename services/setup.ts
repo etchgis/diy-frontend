@@ -332,6 +332,8 @@ async function importData(setup: any) {
         setTitleTextSize,
         setContentTextSize,
         setMaxWalkDistance,
+        setOutageMessage: setTDOutageMessage,
+        setSkipOnError: setTDSkipOnError,
       } = useTransitDestinationsStore.getState();
 
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
@@ -347,6 +349,8 @@ async function importData(setup: any) {
       if (slide.data.maxWalkDistance != null) {
         setMaxWalkDistance(slide.id, slide.data.maxWalkDistance);
       }
+      setTDOutageMessage(slide.id, slide.data.outageMessage || '');
+      setTDSkipOnError(slide.id, slide.data.skipOnError ?? false);
       console.log('Destinations set for slide:', slide.id, slide.data.destinations || []);
     }
 
@@ -369,6 +373,8 @@ async function importData(setup: any) {
         setColumnMode,
         setColumnLabels,
         setColumnServiceSelections,
+        setOutageMessage: setFROutageMessage,
+        setSkipOnError: setFRSkipOnError,
       } = useFixedRouteStore.getState();
 
       setStopName(slide.id, slide.data.stopName || '');
@@ -395,6 +401,8 @@ async function importData(setup: any) {
       if (slide.data.columnServiceSelections) {
         setColumnServiceSelections(slide.id, slide.data.columnServiceSelections);
       }
+      setFROutageMessage(slide.id, slide.data.outageMessage || '');
+      setFRSkipOnError(slide.id, slide.data.skipOnError ?? false);
     }
 
     if (slide.type === 'transit-routes') {
@@ -641,7 +649,9 @@ async function importData(setup: any) {
         setBgImage,
         setLogoImage,
         setTitleTextSize,
-        setContentTextSize
+        setContentTextSize,
+        setOutageMessage: setRTOutageMessage,
+        setSkipOnError: setRTSkipOnError,
       } = useRouteTimesStore.getState();
 
       setRouteName(slide.id, slide.data.routeName || '');
@@ -656,6 +666,8 @@ async function importData(setup: any) {
       setLogoImage(slide.id, slide.data.logoImage || '');
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+      setRTOutageMessage(slide.id, slide.data.outageMessage || '');
+      setRTSkipOnError(slide.id, slide.data.skipOnError ?? false);
     }
 
     if (slide.type === 'web-embed') {

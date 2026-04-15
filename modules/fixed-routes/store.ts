@@ -49,6 +49,8 @@ interface FixedRouteSlideData {
   selectedStop: any;
   serviceSelections?: ServiceSelection[];
   dataError: boolean;
+  outageMessage: string;
+  skipOnError: boolean;
   scheduleData?: any;
   isLoading: boolean;
   titleTextSize?: number;
@@ -76,6 +78,8 @@ interface SlideStore {
   setScheduleData: (slideId: string, scheduleData: any) => void;
   setIsLoading: (slideId: string, isLoading: boolean) => void;
   setDataError: (slideId: string, error: boolean) => void;
+  setOutageMessage: (slideId: string, message: string) => void;
+  setSkipOnError: (slideId: string, skip: boolean) => void;
   setTitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
   setColumnMode: (slideId: string, enabled: boolean) => void;
@@ -221,6 +225,22 @@ export const useFixedRouteStore = create<SlideStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), dataError: error },
+          },
+        })),
+
+      setOutageMessage: (slideId, message) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), outageMessage: message },
+          },
+        })),
+
+      setSkipOnError: (slideId, skip) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), skipOnError: skip },
           },
         })),
 

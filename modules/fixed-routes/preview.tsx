@@ -50,7 +50,10 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     (state) => state.slides[slideId]?.scheduleData || null
   );
   const dataError = useFixedRouteStore(
-    (state) => state.slides[slideId]?.dataError || null
+    (state) => state.slides[slideId]?.dataError || false
+  );
+  const outageMessage = useFixedRouteStore(
+    (state) => state.slides[slideId]?.outageMessage || ''
   );
   const showTitle = useFixedRouteStore(
     (state) => state.slides[slideId]?.showTitle !== false
@@ -199,7 +202,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
     <>
       {/* Transit Schedule Display */}
       <div
-        className={`w-full h-full flex flex-col justify-between text-white overflow-hidden mb-6 `}
+        className={`w-full h-full flex flex-col justify-between text-white overflow-hidden mb-6 relative`}
       >
         <div
           className={`w-full h-full flex flex-col justify-between text-white overflow-hidden relative `}
@@ -738,6 +741,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
         </div>
         {/* Footer */}
       <Footer />
+
+      {dataError && (
+        <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/80 text-white text-center px-4 py-3 text-base font-medium">
+          {outageMessage || 'Live transit data is currently unavailable.'}
+        </div>
+      )}
       </div>
     </>
   );

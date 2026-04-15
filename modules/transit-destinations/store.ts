@@ -16,6 +16,8 @@ interface TransitionDestinationsSlideData {
   displayName: string;
   dataError: boolean;
   errorMessage?: string;
+  outageMessage: string;
+  skipOnError: boolean;
   loading: boolean;
   query: string;
   titleTextSize?: number;
@@ -40,6 +42,8 @@ interface SlideStore {
   setDestinationData: (slideId: string, data: any[]) => void;
   setLoading: (slideId: string, loading: boolean) => void;  
   setDataError: (slideId: string, error: boolean) => void;
+  setOutageMessage: (slideId: string, message: string) => void;
+  setSkipOnError: (slideId: string, skip: boolean) => void;
   setAlternateRowTextColor: (slideId: string, color: string) => void;
   setTitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
@@ -222,6 +226,28 @@ export const useTransitDestinationsStore = create<SlideStore>()(
             [slideId]: {
               ...(state.slides[slideId] || {}),
               dataError: error,
+            },
+          },
+        })),
+
+      setOutageMessage: (slideId, message) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              outageMessage: message,
+            },
+          },
+        })),
+
+      setSkipOnError: (slideId, skip) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...(state.slides[slideId] || {}),
+              skipOnError: skip,
             },
           },
         })),

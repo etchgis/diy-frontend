@@ -97,6 +97,8 @@ export async function publish() {
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
         screenObj.data.maxWalkDistance = maxWalkDistance ?? 800;
+        screenObj.data.outageMessage = slideData.outageMessage ?? '';
+        screenObj.data.skipOnError = slideData.skipOnError ?? false;
 
       } else {
       }
@@ -145,6 +147,8 @@ export async function publish() {
         screenObj.data.columnLabels = columnLabels ?? ['Left', 'Right'];
         screenObj.data.titleTextSize = titleTextSize ?? 5;
         screenObj.data.contentTextSize = contentTextSize ?? 5;
+        screenObj.data.outageMessage = slideData.outageMessage ?? '';
+        screenObj.data.skipOnError = slideData.skipOnError ?? false;
 
         if (selectedStop) {
           screenObj.data.selectedStop = {
@@ -463,6 +467,8 @@ export async function publish() {
         screenObj.data.logoImage = logoImage;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+        screenObj.data.outageMessage = slideData.outageMessage ?? '';
+        screenObj.data.skipOnError = slideData.skipOnError ?? false;
       } else {
       }
     }

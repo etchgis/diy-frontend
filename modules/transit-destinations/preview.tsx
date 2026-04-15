@@ -43,6 +43,9 @@ export default function TransitDestinationPreview({
   const dataError = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.dataError || false
   );
+  const outageMessage = useTransitDestinationsStore(
+    (state) => state.slides[slideId]?.outageMessage || ''
+  );
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   const mockDestinations: any = [];
@@ -211,7 +214,7 @@ export default function TransitDestinationPreview({
 
   return (
     <div
-      className={`w-full h-full flex flex-col text-white overflow-hidden ${
+      className={`w-full h-full flex flex-col text-white overflow-hidden relative ${
         mobileMode ? "mb-4" : "mb-6"
       }`}
       style={{ backgroundColor, fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined }}
@@ -638,6 +641,12 @@ export default function TransitDestinationPreview({
       </div>
 
       <Footer />
+
+      {dataError && (
+        <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/80 text-white text-center px-4 py-3 text-base font-medium">
+          {outageMessage || 'Live transit data is currently unavailable.'}
+        </div>
+      )}
     </div>
   );
 }

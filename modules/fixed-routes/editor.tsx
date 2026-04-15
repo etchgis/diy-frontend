@@ -526,6 +526,11 @@ export default function StopArrivalsSlide({
 
   const setIsLoading = useFixedRouteStore((state: { setIsLoading: any; }) => state.setIsLoading);
 
+  const outageMessage = useFixedRouteStore((state: any) => state.slides[slideId]?.outageMessage ?? '');
+  const setOutageMessage = useFixedRouteStore((state: any) => state.setOutageMessage);
+  const skipOnError = useFixedRouteStore((state: any) => state.slides[slideId]?.skipOnError ?? false);
+  const setSkipOnError = useFixedRouteStore((state: any) => state.setSkipOnError);
+
   const shortcode = useGeneralStore((state) => state.shortcode || "");
   const coordinates = useGeneralStore(
     (state) => state.coordinates || { lat: 0, lng: 0 }
@@ -2178,6 +2183,32 @@ export default function StopArrivalsSlide({
                 >
                   +
                 </Button>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Notifications</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">Message when data is unavailable</label>
+                  <textarea
+                    className="w-full border border-[#e2e8f0] rounded px-2 py-1.5 text-xs text-[#4a5568] resize-none focus:outline-none focus:border-blue-400"
+                    rows={3}
+                    placeholder="Live transit data is currently unavailable."
+                    value={outageMessage}
+                    onChange={(e) => setOutageMessage(slideId, e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`skip-on-error-fr-${slideId}`}
+                    checked={skipOnError}
+                    onChange={(e) => setSkipOnError(slideId, e.target.checked)}
+                    className="w-3.5 h-3.5 accent-blue-500"
+                  />
+                  <label htmlFor={`skip-on-error-fr-${slideId}`} className="text-xs text-[#4a5568]">Skip this slide when data is unavailable</label>
+                </div>
               </div>
             </div>
 

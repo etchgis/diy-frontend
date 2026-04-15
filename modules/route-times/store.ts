@@ -44,6 +44,9 @@ interface RouteTimesSlide {
   routeData: RouteScheduleData[];
   patternData?: any;
   isLoading: boolean;
+  dataError: boolean;
+  outageMessage: string;
+  skipOnError: boolean;
   isShowingNextDay?: boolean;
   isShowingLaterToday?: boolean;
   titleTextSize?: number;
@@ -68,6 +71,9 @@ interface RouteTimesStore {
   setRouteData: (slideId: string, data: RouteScheduleData[], isNextDay?: boolean, isLaterToday?: boolean) => void;
   setPatternData: (slideId: string, data: any) => void;
   setIsLoading: (slideId: string, loading: boolean) => void;
+  setDataError: (slideId: string, error: boolean) => void;
+  setOutageMessage: (slideId: string, message: string) => void;
+  setSkipOnError: (slideId: string, skip: boolean) => void;
   clearSlide: (slideId: string) => void;
   setTitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
@@ -88,6 +94,9 @@ const getDefaultSlide = (): RouteTimesSlide => ({
   routeData: [],
   patternData: undefined,
   isLoading: false,
+  dataError: false,
+  outageMessage: '',
+  skipOnError: false,
   isShowingNextDay: false,
   isShowingLaterToday: false,
   titleTextSize: 5,
@@ -267,6 +276,42 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
               ...getDefaultSlide(),
               ...state.slides[slideId],
               isLoading: loading,
+            },
+          },
+        })),
+
+      setDataError: (slideId, error) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              dataError: error,
+            },
+          },
+        })),
+
+      setOutageMessage: (slideId, message) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              outageMessage: message,
+            },
+          },
+        })),
+
+      setSkipOnError: (slideId, skip) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              skipOnError: skip,
             },
           },
         })),

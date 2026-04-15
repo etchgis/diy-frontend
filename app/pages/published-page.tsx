@@ -70,10 +70,34 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const setRouteTimesPatternData = useRouteTimesStore((state) => state.setPatternData);
   const setRouteTimesRouteData = useRouteTimesStore((state) => state.setRouteData);
   const setRouteTimesIsLoading = useRouteTimesStore((state) => state.setIsLoading);
+  const setRouteTimesDataError = useRouteTimesStore((state) => state.setDataError);
+
+  const shouldSkipSlide = (slide: any): boolean => {
+    if (slide.type === 'transit-destinations') {
+      const s = useTransitDestinationsStore.getState().slides[slide.id];
+      return !!(s?.skipOnError && s?.dataError);
+    }
+    if (slide.type === 'fixed-routes') {
+      const s = useFixedRouteStore.getState().slides[slide.id];
+      return !!(s?.skipOnError && s?.dataError);
+    }
+    if (slide.type === 'route-times') {
+      const s = useRouteTimesStore.getState().slides[slide.id];
+      return !!(s?.skipOnError && s?.dataError);
+    }
+    return false;
+  };
 
   const goToNextSlide = useCallback(() => {
-    setActiveIndex((prev) => (prev + 1) % slides.length);
-  }, [slides.length]);
+    setActiveIndex((prev) => {
+      const total = slides.length;
+      for (let i = 1; i <= total; i++) {
+        const nextIdx = (prev + i) % total;
+        if (!shouldSkipSlide(slides[nextIdx])) return nextIdx;
+      }
+      return (prev + 1) % total;
+    });
+  }, [slides]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -399,6 +423,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         }
 
         setRouteTimesRouteData(slide.id, result.timetableData, result.isNextDay, result.isLaterToday);
+        setRouteTimesDataError(slide.id, false);
         setRouteTimesIsLoading(slide.id, false);
 
         console.log(`[DATA UPDATE] Route times updated for slide ${slide.id}:`, {
@@ -409,6 +434,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         });
       } catch (error) {
         console.error(`[DATA UPDATE] Error fetching route times data for slide ${slide.id}:`, error);
+        setRouteTimesDataError(slide.id, true);
         setRouteTimesIsLoading(slide.id, false);
       }
     }

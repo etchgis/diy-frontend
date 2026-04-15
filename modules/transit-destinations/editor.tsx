@@ -66,6 +66,11 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const loading = useTransitDestinationsStore((state) => state.slides[slideId]?.loading || false);
   const setLoading = useTransitDestinationsStore((state) => state.setLoading);
 
+  const outageMessage = useTransitDestinationsStore((state) => state.slides[slideId]?.outageMessage ?? '');
+  const setOutageMessage = useTransitDestinationsStore((state) => state.setOutageMessage);
+  const skipOnError = useTransitDestinationsStore((state) => state.slides[slideId]?.skipOnError ?? false);
+  const setSkipOnError = useTransitDestinationsStore((state) => state.setSkipOnError);
+
   const displayName = useTransitDestinationsStore((state) => state.slides[slideId]?.displayName || '');
   const setDisplayName = useTransitDestinationsStore((state) => state.setDisplayName);
 
@@ -684,6 +689,32 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Notifications</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[#4a5568] font-medium mb-1 text-xs">Message when data is unavailable</label>
+                <textarea
+                  className="w-full border border-[#e2e8f0] rounded px-2 py-1.5 text-xs text-[#4a5568] resize-none focus:outline-none focus:border-blue-400"
+                  rows={3}
+                  placeholder="Live transit data is currently unavailable."
+                  value={outageMessage}
+                  onChange={(e) => setOutageMessage(slideId, e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id={`skip-on-error-td-${slideId}`}
+                  checked={skipOnError}
+                  onChange={(e) => setSkipOnError(slideId, e.target.checked)}
+                  className="w-3.5 h-3.5 accent-blue-500"
+                />
+                <label htmlFor={`skip-on-error-td-${slideId}`} className="text-xs text-[#4a5568]">Skip this slide when data is unavailable</label>
+              </div>
             </div>
           </div>
 
