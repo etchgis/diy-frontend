@@ -131,6 +131,7 @@ export async function publish() {
           showTitle,
           columnMode,
           columnLabels,
+          showColumnHeaders,
         } = slideData;
 
         screenObj.data.stopName = stopName ?? '';
@@ -145,6 +146,10 @@ export async function publish() {
         screenObj.data.showTitle = showTitle !== false;
         screenObj.data.columnMode = columnMode ?? false;
         screenObj.data.columnLabels = columnLabels ?? ['Left', 'Right'];
+        screenObj.data.showColumnHeaders = showColumnHeaders ?? false;
+        screenObj.data.columnHeaderBgColor = slideData.columnHeaderBgColor ?? '#ffffff';
+        screenObj.data.columnHeaderTextColor = slideData.columnHeaderTextColor ?? '#78B1DD';
+        screenObj.data.columnHeaderTextSize = slideData.columnHeaderTextSize ?? 5;
         screenObj.data.titleTextSize = titleTextSize ?? 5;
         screenObj.data.contentTextSize = contentTextSize ?? 5;
         screenObj.data.outageMessage = slideData.outageMessage ?? '';

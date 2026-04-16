@@ -18,6 +18,8 @@ export interface DirectionOption {
   label: string;         // Display label (e.g., "Northbound", "Platform 1", "All Directions")
   isAllDirections: boolean;
   headsignFilter?: string;  // If set, filter arrivals to only show this headsign (e.g., "Jamaica", "Hempstead")
+  directionGroup?: string;  // Which N/S/E/W group this headsign belongs to (e.g., "Northbound")
+  groupHeadsigns?: string[]; // For group buttons: the headsignFilter values to bulk-select/deselect
 }
 
 // Service selection state for multi-select UI
@@ -57,6 +59,10 @@ interface FixedRouteSlideData {
   contentTextSize?: number;
   columnMode?: boolean;
   columnLabels?: [string, string];
+  showColumnHeaders?: boolean;
+  columnHeaderBgColor?: string;
+  columnHeaderTextColor?: string;
+  columnHeaderTextSize?: number;
   columnScheduleData?: { label: string; arrivals: any[] }[];
   columnServiceSelections?: [ServiceSelection[], ServiceSelection[]];
 }
@@ -84,6 +90,10 @@ interface SlideStore {
   setContentTextSize: (slideId: string, size: number) => void;
   setColumnMode: (slideId: string, enabled: boolean) => void;
   setColumnLabels: (slideId: string, labels: [string, string]) => void;
+  setShowColumnHeaders: (slideId: string, show: boolean) => void;
+  setColumnHeaderBgColor: (slideId: string, color: string) => void;
+  setColumnHeaderTextColor: (slideId: string, color: string) => void;
+  setColumnHeaderTextSize: (slideId: string, size: number) => void;
   setColumnScheduleData: (slideId: string, data: { label: string; arrivals: any[] }[]) => void;
   setColumnServiceSelections: (slideId: string, data: [ServiceSelection[], ServiceSelection[]] | undefined) => void;
 }
@@ -274,6 +284,26 @@ export const useFixedRouteStore = create<SlideStore>()(
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), columnLabels: labels },
           },
+        })),
+
+      setShowColumnHeaders: (slideId, show) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), showColumnHeaders: show } },
+        })),
+
+      setColumnHeaderBgColor: (slideId, color) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), columnHeaderBgColor: color } },
+        })),
+
+      setColumnHeaderTextColor: (slideId, color) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), columnHeaderTextColor: color } },
+        })),
+
+      setColumnHeaderTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), columnHeaderTextSize: size } },
         })),
 
       setColumnScheduleData: (slideId, data) =>

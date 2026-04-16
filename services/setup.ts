@@ -372,6 +372,10 @@ async function importData(setup: any) {
         setContentTextSize,
         setColumnMode,
         setColumnLabels,
+        setShowColumnHeaders,
+        setColumnHeaderBgColor,
+        setColumnHeaderTextColor,
+        setColumnHeaderTextSize,
         setColumnServiceSelections,
         setOutageMessage: setFROutageMessage,
         setSkipOnError: setFRSkipOnError,
@@ -398,6 +402,10 @@ async function importData(setup: any) {
       if (slide.data.columnLabels) {
         setColumnLabels(slide.id, slide.data.columnLabels);
       }
+      setShowColumnHeaders(slide.id, slide.data.showColumnHeaders ?? false);
+      if (slide.data.columnHeaderBgColor) setColumnHeaderBgColor(slide.id, slide.data.columnHeaderBgColor);
+      if (slide.data.columnHeaderTextColor) setColumnHeaderTextColor(slide.id, slide.data.columnHeaderTextColor);
+      if (slide.data.columnHeaderTextSize) setColumnHeaderTextSize(slide.id, slide.data.columnHeaderTextSize);
       if (slide.data.columnServiceSelections) {
         setColumnServiceSelections(slide.id, slide.data.columnServiceSelections);
       }

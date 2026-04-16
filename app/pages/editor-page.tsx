@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Upload, Settings, Edit } from "lucide-react"
+import { ChevronRight, Upload, Settings, Edit } from "lucide-react"
 import QRSlide from "@/modules/qr/editor"
 import TransitDestinationSlide from "@/modules/transit-destinations/editor"
 import { useEffect, useRef, useState } from "react"
@@ -786,9 +786,6 @@ export default function EditorPage() {
               />
             </div>
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6" onClick={handleEdit}>Edit</Button>
-            <Button variant="ghost" size="icon" className="text-[#2d3748]">
-              <HelpCircle className="w-5 h-5" />
-            </Button>
           </div>
         </header>
 

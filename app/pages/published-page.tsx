@@ -298,16 +298,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       if (queries.length === 0) continue;
 
       try {
-        // Fetch all queries in parallel
-        const results = await Promise.allSettled(
-          queries.map(async (q) => {
-            const data = await fetchStopData(
-              q.stopId,
-              q.serviceId,
-              q.organizationId
-            );
-            // Tag each arrival with its source feed and query stop for column splitting
-            return (data?.trains || []).map((item: any) => ({
+        // Fetch queries sequentially to avoid overwhelming the API
+        const allArrivals: any[] = [];
+        for (const q of queries) {
+          try {
+            const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId);
+            const tagged = (data?.trains || []).map((item: any) => ({
               destination: item.destination,
               routeId: item.routeId,
               routeShortName: item.routeShortName,
@@ -321,16 +317,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
               _sourceService: q.serviceId,
               _queryStopId: q.stopId,
             }));
-          })
-        );
-
-        // Collect successful results
-        const allArrivals: any[] = [];
-        for (const result of results) {
-          if (result.status === 'fulfilled') {
-            allArrivals.push(...result.value);
-          } else {
-            console.warn('[DATA UPDATE] Failed to fetch arrivals:', result.reason);
+            allArrivals.push(...tagged);
+          } catch (err) {
+            console.warn('[DATA UPDATE] Failed to fetch arrivals:', err);
           }
         }
 
@@ -364,7 +353,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           });
         }
 
-        const limitedArrivals = filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE);
+        const cap = (columnMode && columnServiceSelections) ? Infinity : MAX_ARRIVALS_PER_SLIDE;
+        const limitedArrivals = cap === Infinity ? filteredArrivals : filteredArrivals.slice(0, cap);
 
         setScheduleData(slide.id, limitedArrivals);
         setFixedRouteDataError(slide.id, false);

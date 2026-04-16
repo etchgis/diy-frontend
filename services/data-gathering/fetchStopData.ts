@@ -43,7 +43,7 @@ function formatBusData(data: any) {
     const headsign = (train.headsign || '').toLowerCase().trim();
     if (headsign && headsign === stationName) return false;
     return true;
-  }).slice(0, MAX_ARRIVALS_PER_SLIDE);
+  });
 
   return {
     station: data.name,

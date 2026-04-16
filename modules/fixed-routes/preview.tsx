@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useFixedRouteStore } from "./store";
+import { MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { useGeneralStore } from "@/stores/general";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -72,6 +73,18 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const columnLabels = useFixedRouteStore(
     (state) => state.slides[slideId]?.columnLabels
   );
+  const showColumnHeaders = useFixedRouteStore(
+    (state) => state.slides[slideId]?.showColumnHeaders || false
+  );
+  const columnHeaderBgColor = useFixedRouteStore(
+    (state) => state.slides[slideId]?.columnHeaderBgColor || tableTextColor
+  );
+  const columnHeaderTextColor = useFixedRouteStore(
+    (state) => state.slides[slideId]?.columnHeaderTextColor || tableColor
+  );
+  const columnHeaderTextSize = useFixedRouteStore(
+    (state) => state.slides[slideId]?.columnHeaderTextSize || 5
+  );
   const columnServiceSelections = useFixedRouteStore(
     (state) => state.slides[slideId]?.columnServiceSelections
   );
@@ -122,11 +135,12 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
       });
     };
 
+    const arrivalCap = showColumnHeaders ? MAX_ARRIVALS_PER_SLIDE - 1 : MAX_ARRIVALS_PER_SLIDE;
     return [
-      { label: labels[0], arrivals: filterForColumn(columnServiceSelections?.[0], scheduleData) },
-      { label: labels[1], arrivals: filterForColumn(columnServiceSelections?.[1], scheduleData) },
+      { label: labels[0], arrivals: filterForColumn(columnServiceSelections?.[0], scheduleData).slice(0, arrivalCap) },
+      { label: labels[1], arrivals: filterForColumn(columnServiceSelections?.[1], scheduleData).slice(0, arrivalCap) },
     ];
-  }, [columnMode, scheduleData, columnServiceSelections, columnLabels]);
+  }, [columnMode, scheduleData, columnServiceSelections, columnLabels, showColumnHeaders]);
   const titleTextSize = useFixedRouteStore(
     (state) => state.slides[slideId]?.titleTextSize || 5
   );
@@ -412,6 +426,21 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           : undefined,
                     }}
                   >
+                    {showColumnHeaders && (
+                      <div
+                        className="flex items-center justify-center font-semibold flex-shrink-0"
+                        style={{
+                          backgroundColor: columnHeaderBgColor,
+                          color: columnHeaderTextColor,
+                          fontSize: isEditor
+                            ? `${(10 + columnHeaderTextSize * 0.8) * contentSizeMultiplier}px`
+                            : `clamp(0.8rem, ${(1.5 + columnHeaderTextSize * 0.3) * contentSizeMultiplier}vh, 5rem)`,
+                          padding: isEditor ? "6px 8px" : `${1.2 * contentSizeMultiplier}vh 2vw`,
+                        }}
+                      >
+                        {col.label}
+                      </div>
+                    )}
                     {isEditor ? (
                       <div
                         className="text-black flex flex-col overflow-hidden"
