@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import Footer from "@/components/shared-components/footer";
 import ResizableImage from "@/components/shared-components/resizable-image";
-import RichTextEditor from "@/components/shared-components/rich-text-editor";
+import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 import RichTextRenderer from "@/components/shared-components/rich-text-renderer";
 
 export default function Template2Preview({
@@ -174,13 +174,12 @@ export default function Template2Preview({
             }`}
           >
             {isEditor ? (
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(slideId, e.target.value)}
-                placeholder="Type title here"
-                className="w-full bg-transparent outline-none font-light placeholder-white/50"
-                style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+              <HtmlTextEditor
+                content={title}
+                onChange={(html) => setTitle(slideId, html)}
+                textColor={titleColor}
+                fontSize={Math.round(36 * titleSizeMultiplier)}
+                minHeight="1.4em"
               />
             ) : (
               <div
@@ -190,9 +189,8 @@ export default function Template2Preview({
                   fontSize: `clamp(1rem, ${8 * titleSizeMultiplier}vh, 11rem)`,
                   lineHeight: "1.2"
                 }}
-              >
-                {title || ""}
-              </div>
+                dangerouslySetInnerHTML={{ __html: title || "" }}
+              />
             )}
           </div>
           {logoImage && (
@@ -289,7 +287,7 @@ export default function Template2Preview({
             }`}
           >
             {isEditor ? (
-              <RichTextEditor
+              <HtmlTextEditor
                 content={content}
                 onChange={(html) => setContent(slideId, html)}
                 textColor={textColor}

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import Footer from "@/components/shared-components/footer";
 import ResizableImage from "@/components/shared-components/resizable-image";
+import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 
 export default function Template3Preview({
   slideId,
@@ -157,13 +158,12 @@ export default function Template3Preview({
               }`}
             >
               {isEditor ? (
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(slideId, e.target.value)}
-                  placeholder="Type title here"
-                  className="w-full bg-transparent outline-none font-light placeholder-white/50"
-                  style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+                <HtmlTextEditor
+                  content={title}
+                  onChange={(html) => setTitle(slideId, html)}
+                  textColor={titleColor}
+                  fontSize={Math.round(36 * titleSizeMultiplier)}
+                  minHeight="1.4em"
                 />
               ) : (
                 <div
@@ -173,9 +173,8 @@ export default function Template3Preview({
                     fontSize: `clamp(1.5rem, ${8 * titleSizeMultiplier}vh, 11rem)`,
                     lineHeight: "1.2"
                   }}
-                >
-                  {title || ""}
-                </div>
+                  dangerouslySetInnerHTML={{ __html: title || "" }}
+                />
               )}
             </div>
             {logoImage && (

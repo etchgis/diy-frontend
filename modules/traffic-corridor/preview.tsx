@@ -2,6 +2,7 @@ import { useTrafficCorridorStore, type DestinationTable } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/shared-components/footer";
+import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 
 const DEFAULT_TABLE: DestinationTable = { destination: '', corridors: [] };
 const DEFAULT_TABLES: DestinationTable[] = [DEFAULT_TABLE, DEFAULT_TABLE];
@@ -189,16 +190,12 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
             className={`flex-1 rounded px-3 ${isEditor ? 'border-2 border-[#11d1f7] py-1' : ''}`}
           >
             {isEditor ? (
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(slideId, e.target.value)}
-                placeholder="Type title here"
-                className="w-full bg-transparent outline-none font-light placeholder-white/50"
-                style={{
-                  color: titleColor,
-                  fontSize: `${36 * titleSizeMultiplier}px`,
-                }}
+              <HtmlTextEditor
+                content={title}
+                onChange={(html) => setTitle(slideId, html)}
+                textColor={titleColor}
+                fontSize={Math.round(36 * titleSizeMultiplier)}
+                minHeight="1.4em"
               />
             ) : (
               <div
@@ -208,9 +205,8 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
                   fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
                   lineHeight: '1.2',
                 }}
-              >
-                {title}
-              </div>
+                dangerouslySetInnerHTML={{ __html: title || "" }}
+              />
             )}
           </div>
           {logoImage && (

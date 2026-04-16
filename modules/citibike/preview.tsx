@@ -4,6 +4,7 @@ import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import Footer from "@/components/shared-components/footer";
+import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 import mapboxgl from "mapbox-gl";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY as string;
@@ -240,13 +241,12 @@ export default function CitibikePreview({
             }`}
           >
             {isEditor ? (
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(slideId, e.target.value)}
-                placeholder="Type title here"
-                className="w-full bg-transparent outline-none font-light placeholder-white/50"
-                style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+              <HtmlTextEditor
+                content={title}
+                onChange={(html) => setTitle(slideId, html)}
+                textColor={titleColor}
+                fontSize={Math.round(36 * titleSizeMultiplier)}
+                minHeight="1.4em"
               />
             ) : (
               <div
@@ -256,9 +256,8 @@ export default function CitibikePreview({
                   fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
                   lineHeight: "1.2",
                 }}
-              >
-                {title || ""}
-              </div>
+                dangerouslySetInnerHTML={{ __html: title || "" }}
+              />
             )}
           </div>
           {logoImage && (

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Footer from "@/components/shared-components/footer";
 import WeatherIcon from "@/components/shared-components/weather-icon";
+import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 
 export default function WeatherPreview({
   slideId,
@@ -90,13 +91,12 @@ export default function WeatherPreview({
             }`}
           >
             {isEditor ? (
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(slideId, e.target.value)}
-                placeholder="Type title here"
-                className="w-full bg-transparent outline-none font-light placeholder-white/50"
-                style={{ color: titleColor, fontSize: `${36 * titleSizeMultiplier}px` }}
+              <HtmlTextEditor
+                content={title}
+                onChange={(html) => setTitle(slideId, html)}
+                textColor={titleColor}
+                fontSize={Math.round(36 * titleSizeMultiplier)}
+                minHeight="1.4em"
               />
             ) : (
               <div
@@ -106,9 +106,8 @@ export default function WeatherPreview({
                   fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
                   lineHeight: "1.2",
                 }}
-              >
-                {title || ""}
-              </div>
+                dangerouslySetInnerHTML={{ __html: title || "" }}
+              />
             )}
           </div>
           {logoImage && (
