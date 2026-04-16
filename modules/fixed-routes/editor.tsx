@@ -573,6 +573,9 @@ export default function StopArrivalsSlide({
   const setOutageMessage = useFixedRouteStore((state: any) => state.setOutageMessage);
   const skipOnError = useFixedRouteStore((state: any) => state.slides[slideId]?.skipOnError ?? false);
   const setSkipOnError = useFixedRouteStore((state: any) => state.setSkipOnError);
+  const minArrivalMinutes = useFixedRouteStore((state: any) => state.slides[slideId]?.minArrivalMinutes ?? 0);
+  const setMinArrivalMinutes = useFixedRouteStore((state: any) => state.setMinArrivalMinutes);
+
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
   const coordinates = useGeneralStore(
@@ -984,12 +987,17 @@ export default function StopArrivalsSlide({
         return true;
       });
 
+      const offsetMs = minArrivalMinutes * 60 * 1000;
+      const offsetArrivals = offsetMs > 0
+        ? uniqueArrivals.filter(arr => (arr.timestamp || 0) - Date.now() >= offsetMs)
+        : uniqueArrivals;
+
       let filteredArrivals: any[];
 
       if (columnMode && columnServiceSelections) {
-        filteredArrivals = uniqueArrivals;
+        filteredArrivals = offsetArrivals;
       } else {
-        const routeFilteredArrivals = uniqueArrivals.filter(arr => {
+        const routeFilteredArrivals = offsetArrivals.filter(arr => {
           const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
           if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
           return selection.enabledRouteIds.includes(arr.routeId);
@@ -1040,7 +1048,7 @@ export default function StopArrivalsSlide({
     } finally {
       setIsLoading(slideId, false);
     }
-  }, [selectedStop, serviceSelections, columnMode, columnServiceSelections, slideId, setIsLoading, setScheduleData]);
+  }, [selectedStop, serviceSelections, columnMode, columnServiceSelections, slideId, setIsLoading, setScheduleData, minArrivalMinutes]);
 
   // One-time refresh when allStops loads
   useEffect(() => {
@@ -1141,6 +1149,7 @@ export default function StopArrivalsSlide({
     fetchDebounceRef.current = setTimeout(() => { fetchData(); }, 150);
     return () => { if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current); };
   }, [selectedStop, serviceSelections, fetchData]);
+
 
   useEffect(() => {
     renderCount.current += 1;
@@ -2328,6 +2337,37 @@ export default function StopArrivalsSlide({
                 >
                   +
                 </Button>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Data Settings</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                    Minimum arrival time (minutes)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={minArrivalMinutes}
+                      onChange={(e) => setMinArrivalMinutes(slideId, Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-20 border border-[#e2e8f0] rounded px-2 py-1 text-xs text-[#4a5568] focus:outline-none focus:border-blue-400"
+                    />
+                    <span className="text-xs text-[#718096]">Hide arrivals sooner than this</span>
+                  </div>
+                </div>
+                <div>
+                  <Button
+                    variant="outline"
+                    className="text-xs h-7 px-3"
+                    onClick={() => fetchData()}
+                  >
+                    Refresh Data
+                  </Button>
+                </div>
               </div>
             </div>
 

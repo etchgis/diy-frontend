@@ -267,6 +267,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const serviceSelections = currentState[slide.id]?.serviceSelections;
       const columnMode = currentState[slide.id]?.columnMode;
       const columnServiceSelections = currentState[slide.id]?.columnServiceSelections;
+      const minArrivalMinutes = currentState[slide.id]?.minArrivalMinutes ?? 0;
 
       if (!selectedStop?.id || !selectedStop?.services?.length || !serviceSelections?.length) {
         continue;
@@ -334,11 +335,17 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           return true;
         });
 
+        // Apply minimum arrival offset
+        const offsetMs = minArrivalMinutes * 60 * 1000;
+        const offsetArrivals = offsetMs > 0
+          ? uniqueArrivals.filter(arr => (arr.timestamp || 0) - Date.now() >= offsetMs)
+          : uniqueArrivals;
+
         let filteredArrivals: any[];
         if (columnMode && columnServiceSelections) {
-          filteredArrivals = uniqueArrivals;
+          filteredArrivals = offsetArrivals;
         } else {
-          const routeFiltered = uniqueArrivals.filter(arr => {
+          const routeFiltered = offsetArrivals.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
             if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
             return selection.enabledRouteIds.includes(arr.routeId);

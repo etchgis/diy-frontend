@@ -150,6 +150,7 @@ export async function publish() {
         screenObj.data.columnHeaderBgColor = slideData.columnHeaderBgColor ?? '#ffffff';
         screenObj.data.columnHeaderTextColor = slideData.columnHeaderTextColor ?? '#78B1DD';
         screenObj.data.columnHeaderTextSize = slideData.columnHeaderTextSize ?? 5;
+        screenObj.data.minArrivalMinutes = slideData.minArrivalMinutes ?? 0;
         screenObj.data.titleTextSize = titleTextSize ?? 5;
         screenObj.data.contentTextSize = contentTextSize ?? 5;
         screenObj.data.outageMessage = slideData.outageMessage ?? '';

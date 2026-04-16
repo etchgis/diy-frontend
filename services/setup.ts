@@ -376,6 +376,7 @@ async function importData(setup: any) {
         setColumnHeaderBgColor,
         setColumnHeaderTextColor,
         setColumnHeaderTextSize,
+        setMinArrivalMinutes,
         setColumnServiceSelections,
         setOutageMessage: setFROutageMessage,
         setSkipOnError: setFRSkipOnError,
@@ -406,6 +407,7 @@ async function importData(setup: any) {
       if (slide.data.columnHeaderBgColor) setColumnHeaderBgColor(slide.id, slide.data.columnHeaderBgColor);
       if (slide.data.columnHeaderTextColor) setColumnHeaderTextColor(slide.id, slide.data.columnHeaderTextColor);
       if (slide.data.columnHeaderTextSize) setColumnHeaderTextSize(slide.id, slide.data.columnHeaderTextSize);
+      setMinArrivalMinutes(slide.id, slide.data.minArrivalMinutes ?? 0);
       if (slide.data.columnServiceSelections) {
         setColumnServiceSelections(slide.id, slide.data.columnServiceSelections);
       }

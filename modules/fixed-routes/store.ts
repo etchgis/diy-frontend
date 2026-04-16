@@ -65,6 +65,7 @@ interface FixedRouteSlideData {
   columnHeaderTextSize?: number;
   columnScheduleData?: { label: string; arrivals: any[] }[];
   columnServiceSelections?: [ServiceSelection[], ServiceSelection[]];
+  minArrivalMinutes?: number;
 }
 
 interface SlideStore {
@@ -94,6 +95,7 @@ interface SlideStore {
   setColumnHeaderBgColor: (slideId: string, color: string) => void;
   setColumnHeaderTextColor: (slideId: string, color: string) => void;
   setColumnHeaderTextSize: (slideId: string, size: number) => void;
+  setMinArrivalMinutes: (slideId: string, minutes: number) => void;
   setColumnScheduleData: (slideId: string, data: { label: string; arrivals: any[] }[]) => void;
   setColumnServiceSelections: (slideId: string, data: [ServiceSelection[], ServiceSelection[]] | undefined) => void;
 }
@@ -304,6 +306,11 @@ export const useFixedRouteStore = create<SlideStore>()(
       setColumnHeaderTextSize: (slideId, size) =>
         set((state) => ({
           slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), columnHeaderTextSize: size } },
+        })),
+
+      setMinArrivalMinutes: (slideId, minutes) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), minArrivalMinutes: minutes } },
         })),
 
       setColumnScheduleData: (slideId, data) =>
