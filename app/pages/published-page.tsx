@@ -293,6 +293,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           routeFilteredArrivals = uniqueArrivals.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
             if (!selection || !selection.enabledRouteIds) return true;
+            if (!arr.routeId) return true;
             return selection.enabledRouteIds.includes(arr.routeId);
           });
         }
