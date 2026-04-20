@@ -125,7 +125,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
           if (!selStopIds.includes(arr._queryStopId)) return false;
         }
         // Route filter
-        if (sel.enabledRouteIds?.length && !sel.enabledRouteIds.includes(arr.routeId)) return false;
+        if (sel.enabledRouteIds?.length && arr.routeId && !sel.enabledRouteIds.includes(arr.routeId)) return false;
         // Headsign filter
         if (sel.selectedHeadsignFilters?.length) {
           const dest = (arr.destination || '').toLowerCase().trim();

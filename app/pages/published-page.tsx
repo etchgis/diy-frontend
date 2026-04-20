@@ -348,6 +348,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           const routeFiltered = offsetArrivals.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
             if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
+            if (!arr.routeId) return true;
             return selection.enabledRouteIds.includes(arr.routeId);
           });
           filteredArrivals = routeFiltered.filter(arr => {

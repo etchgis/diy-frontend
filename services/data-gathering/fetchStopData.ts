@@ -49,8 +49,8 @@ function formatBusData(data: any) {
     station: data.name,
     trains: futureArrivals.map((train: any) => ({
       destination: train.headsign,
-      routeId: train.routeId || '',              // Actual GTFS route_id for filtering
-      routeShortName: train.shortName || train.routeId || '',  // Display name for UI
+      routeId: train.routeId || train.id?.split(':')[0] || '',
+      routeShortName: train.shortName || train.routeId || train.id?.split(':')[0] || '',
       routeType: train.routeType,
       routeColor: train.color || DEFAULT_ROUTE_COLOR,
       routeTextColor: train.textColor || DEFAULT_ROUTE_TEXT_COLOR,

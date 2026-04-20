@@ -1000,6 +1000,7 @@ export default function StopArrivalsSlide({
         const routeFilteredArrivals = offsetArrivals.filter(arr => {
           const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
           if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
+          if (!arr.routeId) return true;
           return selection.enabledRouteIds.includes(arr.routeId);
         });
         filteredArrivals = routeFilteredArrivals.filter(arr => {
