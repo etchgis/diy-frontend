@@ -1,4 +1,4 @@
-import { formatTime, formatDuration } from '@/utils/formats';
+import { formatTime } from '@/utils/formats';
 
 // Maximum number of arrivals to display per slide
 export const MAX_ARRIVALS_PER_SLIDE = 6;
@@ -31,6 +31,36 @@ function findStatus(realtime: boolean, arrive: number, arriveScheduled: number) 
 const DEFAULT_ROUTE_COLOR = '0074D9';
 const DEFAULT_ROUTE_TEXT_COLOR = 'FFFFFF';
 
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/**
+ * Format arrival as duration for same-day, or day + date for future dates.
+ * - Same day: "4 hr 24 min" or "45 min"
+ * - Future: "Tue 4/22", "Wed 4/23", etc.
+ */
+function formatSmartDuration(arrivalTimestamp: number, currentTime: number): string {
+  const arrivalDate = new Date(arrivalTimestamp);
+  const currentDate = new Date(currentTime);
+
+  // Get calendar dates (midnight) for comparison
+  const arrivalDay = new Date(arrivalDate.getFullYear(), arrivalDate.getMonth(), arrivalDate.getDate());
+  const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+
+  if (arrivalDay.getTime() === currentDay.getTime()) {
+    // Same day - show duration
+    const durationSeconds = Math.round((arrivalTimestamp - currentTime) / 1000);
+    const hours = Math.floor(durationSeconds / 3600);
+    const minutes = Math.floor((durationSeconds % 3600) / 60);
+    return `${hours > 0 ? `${hours} hr ` : ''}${minutes} min`;
+  } else {
+    // Future day - show day name + date (e.g., "Tue 4/22")
+    const dayName = DAY_NAMES[arrivalDate.getDay()];
+    const month = arrivalDate.getMonth() + 1;
+    const day = arrivalDate.getDate();
+    return `${dayName} ${month}/${day}`;
+  }
+}
+
 function formatBusData(data: any) {
   const currentTime = Date.now();
   const stationName = (data.name || '').toLowerCase().trim();
@@ -56,7 +86,7 @@ function formatBusData(data: any) {
       routeTextColor: train.textColor || DEFAULT_ROUTE_TEXT_COLOR,
       arrivalTime: formatTime(Math.round(train.arrive)),
       arrivalTimestamp: Math.round(train.arrive),  // Raw timestamp for sorting
-      arrival: formatDuration(Math.round((train.arriveScheduled - currentTime) / 1000)),
+      arrival: formatSmartDuration(train.arriveScheduled, currentTime),
       status: findStatus(train.realtime, train.arrive, train.arriveScheduled),
     })),
   };
