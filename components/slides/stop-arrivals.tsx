@@ -1100,7 +1100,7 @@ export default function StopArrivalsSlide({
                     placeholder="Enter text here... "
                   />
                   {showDropdown && filteredStops.length > 0 && (
-                    <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                    <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-72 overflow-y-auto shadow-md">
                       {isSearching && (
                         <li key="searching" className="px-4 py-2 text-gray-500 italic text-sm">
                           Searching stops...
@@ -1110,25 +1110,52 @@ export default function StopArrivalsSlide({
                         <li
                           key={index}
                           onClick={() => handleSelectStop(stop)}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center gap-1.5"
+                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer text-black border-b border-gray-100 last:border-b-0"
                         >
-                          {(stop as any).wheelchairBoarding === 1 && (
-                            <span title="Wheelchair accessible" className="text-blue-500 flex-shrink-0">♿</span>
-                          )}
-                          <span>
-                            {stop.name} -{" "}
+                          {/* Stop name and distance */}
+                          <div className="flex items-center gap-1.5">
+                            {(stop as any).wheelchairBoarding === 1 && (
+                              <span title="Wheelchair accessible" className="text-blue-500 flex-shrink-0">♿</span>
+                            )}
+                            <span className="font-medium">{stop.name}</span>
+                            <span className="text-gray-400 text-xs">#{stop.id}</span>
+                            {(stop as any).distance !== undefined && (
+                              <span className="text-gray-400 text-sm ml-auto">
+                                {formatDistance((stop as any).distance)}
+                              </span>
+                            )}
+                          </div>
+                          {/* Agency name */}
+                          <div className="text-xs text-gray-500 mt-0.5">
                             {stop.services[0]?.agencyName || "No Agency"}
                             {stop.services.length > 1 && (
-                              <span className="text-gray-400 text-xs ml-1">
+                              <span className="text-gray-400 ml-1">
                                 (+{stop.services.length - 1} more)
                               </span>
                             )}
-                            {(stop as any).distance !== undefined && (
-                              <span className="text-gray-500 text-sm ml-2">
-                                ({formatDistance((stop as any).distance)})
-                              </span>
-                            )}
-                          </span>
+                          </div>
+                          {/* Routes with their headsigns */}
+                          <div className="mt-1.5 space-y-0.5">
+                            {getUniqueRoutes(stop.services).map((route: ExpandedRoute, routeIdx: number) => (
+                              <div key={route.id ?? routeIdx} className="flex items-start gap-2">
+                                <span
+                                  className="px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 w-[42px] text-center"
+                                  style={{
+                                    backgroundColor: route.color ? `#${route.color}` : '#6b7280',
+                                    color: route.textColor ? `#${route.textColor}` : '#ffffff'
+                                  }}
+                                >
+                                  {route.shortName || route.id}
+                                </span>
+                                {route.headsigns && route.headsigns.length > 0 && (
+                                  <span className="text-xs text-gray-500">
+                                    {route.headsigns.slice(0, 3).join(', ')}
+                                    {route.headsigns.length > 3 && ` +${route.headsigns.length - 3}`}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </li>
                       ))}
                     </ul>
