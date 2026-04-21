@@ -62,7 +62,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const setRouteTimesIsLoading = useRouteTimesStore((state) => state.setIsLoading);
 
   const goToNextSlide = useCallback(() => {
-    setActiveIndex((prev) => (prev + 1) % slides.length);
+    setActiveIndex((currentIndex) => (currentIndex + 1) % slides.length);
   }, [slides.length]);
 
   const handleKeyDown = useCallback(
@@ -70,9 +70,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       if (!isTvMode) {return;} // Only handle keyboard navigation in TV mode
 
       if (event.key === 'ArrowRight') {
-        setActiveIndex((prev) => (prev + 1) % slides.length);
+        setActiveIndex((currentIndex) => (currentIndex + 1) % slides.length);
       } else if (event.key === 'ArrowLeft') {
-        setActiveIndex((prev) => (prev - 1 + slides.length) % slides.length);
+        setActiveIndex((currentIndex) => (currentIndex - 1 + slides.length) % slides.length);
       }
     },
     [slides.length, isTvMode]
@@ -99,15 +99,21 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   useEffect(() => {
     const loadSlides = async () => {
       if (shortcode) {
-        await SetupSlides(shortcode);
-        setIsLoading(false);
-        getTransitDestinationData();
-        getFixedRouteData();
-        getTransitRoutesData();
-        getRouteTimesData();
-        getWeatherData();
-        getCitibikeData();
-        getTrafficCorridorData();
+        try {
+          await SetupSlides(shortcode);
+          // Fetch data after successful setup
+          getTransitDestinationData();
+          getFixedRouteData();
+          getTransitRoutesData();
+          getRouteTimesData();
+          getWeatherData();
+          getCitibikeData();
+          getTrafficCorridorData();
+        } catch (error) {
+          console.error('[SETUP] Failed to load slides:', error);
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
     loadSlides();
@@ -343,7 +349,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     for (const slide of transitRoutesSlides) {
       const currentState = useTransitRouteStore.getState().slides;
       const transitRouteData = currentState[slide.id]?.routes || [];
-      await getDestinationData(transitRouteData, slide.id, setRoutesData, setTransitRoutesDataError);
+      // Pass includeGeometry: true for transit-routes (needed for map visualization)
+      await getDestinationData(transitRouteData, slide.id, setRoutesData, setTransitRoutesDataError, [], { includeGeometry: true });
       const updatedState = useTransitRouteStore.getState().slides;
       const updatedData = updatedState[slide.id]?.routes || [];
       console.log(`[DATA UPDATE] Transit routes updated for slide ${slide.id}:`, updatedData);
