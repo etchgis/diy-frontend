@@ -29,6 +29,13 @@ interface SkidsResult {
   legs?: SkidsLeg[];
 }
 
+interface SkidsStopInfo {
+  id: string;
+  name: string;
+  lat?: number;
+  lon?: number;
+}
+
 interface SkidsTransitLeg {
   type: 'transit';
   route: {
@@ -42,18 +49,21 @@ interface SkidsTransitLeg {
     agencyId?: string;    // GTFS agency_id (e.g., "MTA NYCT")
     agencyName?: string;  // Full agency name
   };
-  boardStop: { id: string; name: string };
-  alightStop: { id: string; name: string };
+  boardStop: SkidsStopInfo;
+  alightStop: SkidsStopInfo;
   boardTime: number;
   alightTime: number;
   headsign: string;
   stops: string[];
+  legGeometry?: {
+    points: string;  // Google-encoded polyline
+  };
 }
 
 interface SkidsTransferLeg {
   type: 'transfer';
-  fromStop: { id: string; name: string };
-  toStop: { id: string; name: string };
+  fromStop: SkidsStopInfo;
+  toStop: SkidsStopInfo;
   duration: number;
   distanceMeters?: number;
 }
@@ -65,8 +75,8 @@ export interface TransformedLeg {
   mode: string;
   duration: number;
   distanceMeters?: number;
-  from: { id: string; name: string };
-  to: { id: string; name: string };
+  from: { id: string; name: string; lat?: number; lon?: number };
+  to: { id: string; name: string; lat?: number; lon?: number };
   routeShortName?: string;
   routeColor?: string;
   routeTextColor?: string;
@@ -76,6 +86,9 @@ export interface TransformedLeg {
   headsign?: string;
   boardTime?: number;
   alightTime?: number;
+  legGeometry?: {
+    points: string;  // Google-encoded polyline
+  };
 }
 
 /** Transformed destination format expected by the UI */
@@ -115,8 +128,18 @@ function transformLeg(leg: SkidsLeg): TransformedLeg {
       mode: 'WALK',
       duration: leg.duration,
       distanceMeters: leg.distanceMeters,
-      from: leg.fromStop,
-      to: leg.toStop,
+      from: {
+        id: leg.fromStop.id,
+        name: leg.fromStop.name,
+        lat: leg.fromStop.lat,
+        lon: leg.fromStop.lon,
+      },
+      to: {
+        id: leg.toStop.id,
+        name: leg.toStop.name,
+        lat: leg.toStop.lat,
+        lon: leg.toStop.lon,
+      },
     };
   }
 
@@ -131,11 +154,22 @@ function transformLeg(leg: SkidsLeg): TransformedLeg {
     routeType: leg.route.type,
     agencyId: leg.route.agencyId,      // GTFS agency_id (e.g., "MTA NYCT")
     agencyName: leg.route.agencyName,  // Full agency name
-    from: leg.boardStop,
-    to: leg.alightStop,
+    from: {
+      id: leg.boardStop.id,
+      name: leg.boardStop.name,
+      lat: leg.boardStop.lat,
+      lon: leg.boardStop.lon,
+    },
+    to: {
+      id: leg.alightStop.id,
+      name: leg.alightStop.name,
+      lat: leg.alightStop.lat,
+      lon: leg.alightStop.lon,
+    },
     headsign: leg.headsign,
     boardTime: leg.boardTime,
     alightTime: leg.alightTime,
+    legGeometry: leg.legGeometry,
   };
 }
 
@@ -215,12 +249,18 @@ export function transformSkidsResponse(
   });
 }
 
+export interface FetchSkidsOptions {
+  /** Include shape geometry in response (for map visualization) */
+  includeGeometry?: boolean;
+}
+
 /**
  * Fetch transit routing data from Skids API for multiple destinations
  */
 export async function fetchSkidsTransitData(
   origin: { lat: number; lng: number },
-  destinations: { name: string; coordinates: { lat: number; lng: number } }[]
+  destinations: { name: string; coordinates: { lat: number; lng: number } }[],
+  options?: FetchSkidsOptions
 ): Promise<TransformedDestination[]> {
   if (!SKIDS_URL) {
     throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
@@ -236,6 +276,7 @@ export async function fetchSkidsTransitData(
       })),
       options: {
         maxTransfers: 3,
+        includeGeometry: options?.includeGeometry ?? false,
       },
     }),
   });

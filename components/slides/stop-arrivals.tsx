@@ -816,6 +816,7 @@ export default function StopArrivalsSlide({
         const selection = serviceSelections.find(s => s.serviceId === arr._sourceService);
         // If no selection found, no enabledRouteIds, or empty array, include the arrival
         if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
+        if (!arr.routeId) return true;
         return selection.enabledRouteIds.includes(arr.routeId);
       });
 

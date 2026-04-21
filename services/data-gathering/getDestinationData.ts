@@ -6,12 +6,18 @@ import { formatTime, formatDuration } from "@/utils/formats";
 // use Skids API by default, set to 'false' to use OTP
 const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
 
+export interface GetDestinationDataOptions {
+  /** Include shape geometry for map visualization (transit-routes slides) */
+  includeGeometry?: boolean;
+}
+
 export async function getDestinationData(
   destList: { name: string; coordinates: { lat: number; lng: number } }[],
   slideId: string,
   setDestinationData: (slideId: string, data: any[]) => void,
   setDataError: (slideId: string, error: boolean) => void,
-  currentDestinationData: any[] = []
+  currentDestinationData: any[] = [],
+  options?: GetDestinationDataOptions
 ) {
   if (!Array.isArray(currentDestinationData)) currentDestinationData = [];
   if (destList.length === 0) return;
@@ -39,7 +45,8 @@ export async function getDestinationData(
       // Response already has pre-formatted departure/arrival/travel strings
       const results = await fetchSkidsTransitData(
         { lat: coordinates.lat, lng: coordinates.lng },
-        destList
+        destList,
+        { includeGeometry: options?.includeGeometry }
       );
 
       const enrichedDestinations = results.map((data, index) => ({
