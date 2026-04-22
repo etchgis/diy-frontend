@@ -15,7 +15,7 @@ import { useWebEmbedStore } from '@/modules/web-embed/store';
 import { useFooterStore } from '@/stores/footer';
 
 export async function publish() {
-  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, isTempPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
   const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
 
   console.log('[PUBLISH] Footer data being published:', {
@@ -37,6 +37,7 @@ export async function publish() {
     rotationInterval: rotationInterval,
     url: url,
     publishPassword: publishPassword,
+    isTempPassword: isTempPassword ?? false,
     defaultBackgroundColor: defaultBackgroundColor,
     defaultTitleColor: defaultTitleColor,
     defaultTextColor: defaultTextColor,
@@ -93,6 +94,7 @@ export async function publish() {
           name: destination.name,
           coordinates: destination.coordinates,
           allowedModes: destination.allowedModes ?? null,
+          preferredItinerary: destination.preferredItinerary ?? null,
         })) || [];
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;

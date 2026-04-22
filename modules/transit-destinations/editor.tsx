@@ -117,6 +117,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const maxWalkDistance = useTransitDestinationsStore((state) => state.slides[slideId]?.maxWalkDistance ?? DEFAULT_MAX_WALK);
   const setMaxWalkDistance = useTransitDestinationsStore((state) => state.setMaxWalkDistance);
   const setDestinationModes = useTransitDestinationsStore((state) => state.setDestinationModes);
+  const setDestinationPreferredItinerary = useTransitDestinationsStore((state) => state.setDestinationPreferredItinerary);
 
 
 
@@ -651,41 +652,91 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                       </div>
                     </div>
 
-                    {isExpanded && (
-                      <div className="px-2 pb-2 border-t border-gray-200 pt-2 space-y-2">
-                        <p className="text-xs text-gray-500">Allowed modes:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {ALL_MODES.map((mode) => {
-                            const active = currentModes.includes(mode);
-                            return (
-                              <button
-                                key={mode}
-                                onClick={() => handleToggleMode(dest.name, mode, currentModes)}
-                                className={`text-xs px-2 py-1 rounded font-medium border-2 transition-colors ${
-                                  active
-                                    ? 'bg-green-500 text-white border-green-600'
-                                    : 'bg-white text-red-500 border-red-300 line-through'
-                                }`}
-                              >
-                                {MODE_LABELS[mode]}
-                              </button>
-                            );
-                          })}
+                    {isExpanded && (() => {
+                      const preferredItinerary: string[] = dest.preferredItinerary ?? [];
+                      const destResult = destinationData.find((d: any) => d.name === dest.name);
+                      const allItineraries: { routeSignature: string[]; route: string | null }[] = destResult?.allItineraries ?? [];
+                      const preferredLabel = preferredItinerary.length > 0 ? preferredItinerary.join(' › ') : null;
+                      return (
+                        <div className="px-2 pb-2 border-t border-gray-200 pt-2 space-y-2">
+                          <p className="text-xs text-gray-500">Allowed modes:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {ALL_MODES.map((mode) => {
+                              const active = currentModes.includes(mode);
+                              return (
+                                <button
+                                  key={mode}
+                                  onClick={() => handleToggleMode(dest.name, mode, currentModes)}
+                                  className={`text-xs px-2 py-1 rounded font-medium border-2 transition-colors ${
+                                    active
+                                      ? 'bg-green-500 text-white border-green-600'
+                                      : 'bg-white text-red-500 border-red-300 line-through'
+                                  }`}
+                                >
+                                  {MODE_LABELS[mode]}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {allItineraries.length > 1 && (
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">Preferred itinerary:</p>
+                              <div className="space-y-1">
+                                {allItineraries.map((it, i) => {
+                                  const label = it.route || it.routeSignature.join(' › ') || `Option ${i + 1}`;
+                                  const isSelected = preferredItinerary.length > 0 &&
+                                    preferredItinerary.every((r) => it.routeSignature.includes(r)) &&
+                                    it.routeSignature.every((r) => preferredItinerary.includes(r));
+                                  return (
+                                    <button
+                                      key={i}
+                                      onClick={() => setDestinationPreferredItinerary(slideId, dest.name, it.routeSignature)}
+                                      className={`w-full text-left text-xs px-2 py-1 rounded border transition-colors ${
+                                        isSelected
+                                          ? 'bg-blue-500 text-white border-blue-600'
+                                          : 'bg-white text-gray-600 border-gray-300 hover:border-blue-300'
+                                      }`}
+                                    >
+                                      {label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              {preferredLabel && (
+                                <button
+                                  className="text-xs text-gray-400 hover:text-gray-600 mt-1"
+                                  onClick={() => setDestinationPreferredItinerary(slideId, dest.name, [])}
+                                >
+                                  Clear preference
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {allItineraries.length <= 1 && (
+                            <p className="text-xs text-gray-400 italic">
+                              {allItineraries.length === 0
+                                ? 'Refetch to see itinerary options.'
+                                : 'Only one itinerary available.'}
+                            </p>
+                          )}
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-6 text-xs gap-1"
+                            disabled={isRefetching}
+                            onClick={() => handleRefetchDestination(dest)}
+                          >
+                            {isRefetching
+                              ? <><div className="w-2.5 h-2.5 border border-gray-400 border-t-transparent rounded-full animate-spin" /> Fetching...</>
+                              : <><RefreshCw className="w-2.5 h-2.5" /> Refetch</>
+                            }
+                          </Button>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full h-6 text-xs gap-1"
-                          disabled={isRefetching}
-                          onClick={() => handleRefetchDestination(dest)}
-                        >
-                          {isRefetching
-                            ? <><div className="w-2.5 h-2.5 border border-gray-400 border-t-transparent rounded-full animate-spin" /> Fetching...</>
-                            : <><RefreshCw className="w-2.5 h-2.5" /> Refetch</>
-                          }
-                        </Button>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}

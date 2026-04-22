@@ -10,8 +10,22 @@ export interface DestinationFetchOptions {
   maxWalkDistance?: number; 
 }
 
+function scoreItinerary(itinerary: { routeSignature: string[] }, preferred: string[]): number {
+  return preferred.filter((p) => itinerary.routeSignature.includes(p)).length;
+}
+
+function selectBestItinerary<T extends { routeSignature: string[]; route: string | null; departure: string | null; arrival: string | null; travel: string | null; legs: any[] }>(
+  itineraries: T[],
+  preferred: string[]
+): T {
+  if (!preferred.length || itineraries.length <= 1) return itineraries[0];
+  return itineraries.reduce((best, it) =>
+    scoreItinerary(it, preferred) >= scoreItinerary(best, preferred) ? it : best
+  );
+}
+
 export async function getDestinationData(
-  destList: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[] }[],
+  destList: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[]; preferredItinerary?: string[] }[],
   slideId: string,
   setDestinationData: (slideId: string, data: any[]) => void,
   setDataError: (slideId: string, error: boolean) => void,
@@ -39,17 +53,21 @@ export async function getDestinationData(
   }
 
   
-  const anyPerDestModes = destList.some((d) => d.allowedModes && d.allowedModes.length > 0);
+  // Always fetch per-destination when any dest has allowedModes or preferredItinerary set,
+  // so we can apply per-dest options and itinerary selection independently.
+  const anyPerDestOptions = destList.some(
+    (d) => (d.allowedModes && d.allowedModes.length > 0) || (d.preferredItinerary && d.preferredItinerary.length > 0)
+  );
 
   try {
     if (USE_SKIDS) {
-      if (anyPerDestModes) {
+      if (anyPerDestOptions) {
         const results = await Promise.allSettled(
           destList.map((dest) =>
             fetchSkidsTransitData(
               { lat: coordinates.lat, lng: coordinates.lng },
               [dest],
-              { allowedModes: dest.allowedModes, maxWalkDistanceMeters: options?.maxWalkDistance }
+              { allowedModes: dest.allowedModes, numItineraries: 3, maxWalkDistanceMeters: options?.maxWalkDistance }
             )
           )
         );
@@ -58,16 +76,20 @@ export async function getDestinationData(
           const dest = destList[index];
           if (res.status === 'fulfilled' && res.value.length > 0) {
             const data = res.value[0];
+            const chosen = data.allItineraries && dest.preferredItinerary?.length
+              ? selectBestItinerary(data.allItineraries, dest.preferredItinerary)
+              : null;
             return {
               name: data.name ?? dest.name,
-              route: data.route ?? null,
-              departure: data.departure ?? null,
-              arrival: data.arrival ?? null,
-              travel: data.travel ?? null,
-              legs: Array.isArray(data.legs) ? data.legs : [],
+              route: chosen?.route ?? data.route ?? null,
+              departure: chosen?.departure ?? data.departure ?? null,
+              arrival: chosen?.arrival ?? data.arrival ?? null,
+              travel: chosen?.travel ?? data.travel ?? null,
+              legs: chosen?.legs ?? (Array.isArray(data.legs) ? data.legs : []),
               coordinates: dest.coordinates,
               dark: index % 2 === 0,
               originStop: data.originStop ?? null,
+              allItineraries: data.allItineraries,
             };
           }
           return { name: dest.name, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: dest.coordinates, dark: index % 2 === 0 };
@@ -82,7 +104,7 @@ export async function getDestinationData(
         const results = await fetchSkidsTransitData(
           { lat: coordinates.lat, lng: coordinates.lng },
           destList,
-          { maxWalkDistanceMeters: options?.maxWalkDistance }
+          { numItineraries: 3, maxWalkDistanceMeters: options?.maxWalkDistance }
         );
 
         const enrichedDestinations = results.map((data, index) => ({
@@ -95,6 +117,7 @@ export async function getDestinationData(
           coordinates: destList[index].coordinates,
           dark: index % 2 === 0,
           originStop: data.originStop ?? null,
+          allItineraries: data.allItineraries,
         }));
 
         const anySuccess = enrichedDestinations.some(

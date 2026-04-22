@@ -16,6 +16,13 @@ interface SkidsResponse {
   };
 }
 
+interface SkidsItinerary {
+  arrivalTime?: number;
+  duration?: number;
+  numberOfTransfers?: number;
+  legs?: SkidsLeg[];
+}
+
 interface SkidsResult {
   destinationName: string;
   destinationCoordinate: { lat: number; lon: number };
@@ -27,6 +34,7 @@ interface SkidsResult {
   resolvedStop?: { id: string; name: string; distanceMeters: number };
   candidateStops?: { id: string; name: string; distanceMeters: number; routeCount: number }[];
   legs?: SkidsLeg[];
+  itineraries?: SkidsItinerary[]; // multiple itinerary options when numItineraries > 1
 }
 
 interface SkidsTransitLeg {
@@ -78,6 +86,15 @@ export interface TransformedLeg {
   alightTime?: number;
 }
 
+export interface TransformedItinerary {
+  routeSignature: string[];   // ordered transit route short names, used for matching
+  route: string | null;
+  departure: string | null;
+  arrival: string | null;
+  travel: string | null;
+  legs: TransformedLeg[];
+}
+
 /** Transformed destination format expected by the UI */
 export interface TransformedDestination {
   name: string;
@@ -89,6 +106,7 @@ export interface TransformedDestination {
   coordinates?: { lat: number; lng: number };
   dark: boolean;
   originStop?: { id: string; name: string; distanceMeters: number } | null;
+  allItineraries?: TransformedItinerary[]; // populated when numItineraries > 1
 }
 
 /**
@@ -149,8 +167,44 @@ function formatDurationSeconds(durationInSeconds: number): string {
 }
 
 /**
+ * Transform a raw itinerary into a TransformedItinerary.
+ */
+function transformItinerary(
+  rawLegs: SkidsLeg[],
+  arrivalTime: number | undefined,
+  duration: number | undefined,
+  allowedModes?: string[]
+): TransformedItinerary | null {
+  const allLegs = rawLegs.map(transformLeg);
+
+  const modeFilteredLegs = allowedModes && allowedModes.length > 0
+    ? allLegs.filter((l) => {
+        if (l.mode === 'WALK') return allowedModes.includes('WALK');
+        return allowedModes.some((m) => m.toUpperCase() === l.mode?.toUpperCase());
+      })
+    : allLegs;
+
+  const hasTransit = modeFilteredLegs.some((l) => l.mode !== 'WALK');
+  if (allowedModes && allowedModes.length > 0 && !hasTransit) return null;
+
+  const displayLegs = modeFilteredLegs.filter((l) => !(l.mode === 'WALK' && l.duration < 240));
+  const routeStr = displayLegs.map((l) => (l.mode === 'WALK' ? 'Walk' : l.routeShortName)).join(' > ');
+  const routeSignature = displayLegs
+    .filter((l) => l.mode !== 'WALK' && l.routeShortName)
+    .map((l) => l.routeShortName!);
+
+  const firstTransitRaw = rawLegs.find((l) => l.type === 'transit') as SkidsTransitLeg | undefined;
+  const departure = firstTransitRaw?.boardTime != null ? formatSecondsAsTime(firstTransitRaw.boardTime) : null;
+  const arrival = arrivalTime != null ? formatSecondsAsTime(arrivalTime) : null;
+  const travel = duration != null ? formatDurationSeconds(duration) : null;
+
+  return { routeSignature, route: routeStr || null, departure, arrival, travel, legs: displayLegs };
+}
+
+/**
  * Transform Skids response to the format expected by the UI.
  * Returns pre-formatted departure/arrival strings to avoid browser timezone issues.
+ * Populates allItineraries when multiple itineraries are returned by the API.
  */
 export function transformSkidsResponse(
   response: SkidsResponse,
@@ -161,88 +215,42 @@ export function transformSkidsResponse(
     const destCoord = destinations[index]?.coordinates;
 
     if (!result.reachable) {
-      return {
-        name: result.destinationName,
-        route: null,
-        departure: null,
-        arrival: null,
-        travel: null,
-        legs: [],
-        coordinates: destCoord,
-        dark: index % 2 === 0,
-      };
+      return { name: result.destinationName, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: destCoord, dark: index % 2 === 0 };
     }
 
-    // Transform all legs
-    const allLegs = result.legs?.map(transformLeg) || [];
+    const rawItineraries: { legs: SkidsLeg[]; arrivalTime?: number; duration?: number }[] =
+      result.itineraries && result.itineraries.length > 0
+        ? result.itineraries.map((it) => ({ legs: it.legs || [], arrivalTime: it.arrivalTime, duration: it.duration }))
+        : [{ legs: result.legs || [], arrivalTime: result.arrivalTime, duration: result.duration }];
 
-    // Filter by allowed modes if specified
-    const modeFilteredLegs = allowedModes && allowedModes.length > 0
-      ? allLegs.filter((l) => {
-          if (l.mode === 'WALK') return allowedModes.includes('WALK');
-          // Match leg mode against allowed modes (case-insensitive)
-          return allowedModes.some((m) => m.toUpperCase() === l.mode?.toUpperCase());
-        })
-      : allLegs;
+    const transformedItineraries = rawItineraries
+      .map((it) => transformItinerary(it.legs, it.arrivalTime, it.duration, allowedModes))
+      .filter((it): it is TransformedItinerary => it !== null);
 
-    // If mode filtering removed all transit legs, mark as unreachable
-    const hasTransit = modeFilteredLegs.some((l) => l.mode !== 'WALK');
-    if (allowedModes && allowedModes.length > 0 && !hasTransit) {
-      return {
-        name: result.destinationName,
-        route: null,
-        departure: null,
-        arrival: null,
-        travel: null,
-        legs: [],
-        coordinates: destCoord,
-        dark: index % 2 === 0,
-      };
+    if (transformedItineraries.length === 0) {
+      return { name: result.destinationName, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: destCoord, dark: index % 2 === 0 };
     }
 
-    // Filter short walks (< 4 min) for display
-    const displayLegs = modeFilteredLegs.filter(
-      (l) => !(l.mode === 'WALK' && l.duration < 240)
-    );
-
-    // Build route string from visible legs
-    const routeStr = displayLegs
-      .map((l) => (l.mode === 'WALK' ? 'Walk' : l.routeShortName))
-      .join(' > ');
-
-    // Get departure from first transit leg - format directly from seconds
-    const firstTransitLeg = result.legs?.find((l) => l.type === 'transit') as SkidsTransitLeg | undefined;
-    const departure = firstTransitLeg?.boardTime != null
-      ? formatSecondsAsTime(firstTransitLeg.boardTime)
-      : null;
-
-    // Format arrival time directly from seconds
-    const arrival = result.arrivalTime != null
-      ? formatSecondsAsTime(result.arrivalTime)
-      : null;
-
-    // Format travel duration
-    const travel = result.duration != null
-      ? formatDurationSeconds(result.duration)
-      : null;
-
+    const primary = transformedItineraries[0];
     return {
       name: result.destinationName,
-      route: routeStr || null,
-      departure,
-      arrival,
-      travel,
-      legs: displayLegs,
+      route: primary.route,
+      departure: primary.departure,
+      arrival: primary.arrival,
+      travel: primary.travel,
+      legs: primary.legs,
       coordinates: destCoord,
       dark: index % 2 === 0,
       originStop: response.origin?.candidateStops?.[0] || null,
+      allItineraries: transformedItineraries.length > 1 ? transformedItineraries : undefined,
     };
   });
 }
 
 export interface SkidsFetchOptions {
   allowedModes?: string[];        // e.g. ['BUS', 'SUBWAY', 'WALK']
-  maxWalkDistanceMeters?: number; // default ~800m
+  numItineraries?: number;        // request multiple itineraries per destination (default 1)
+  maxWalkDistanceMeters?: number;
 }
 
 /**
@@ -264,6 +272,9 @@ export async function fetchSkidsTransitData(
   if (options?.allowedModes && options.allowedModes.length > 0) {
     apiOptions.allowedModes = options.allowedModes;
   }
+  if (options?.numItineraries && options.numItineraries > 1) {
+    apiOptions.numItineraries = options.numItineraries;
+  }
 
   const response = await fetch(`${SKIDS_URL}/api/transit/route/coordinates`, {
     method: 'POST',
@@ -284,6 +295,5 @@ export async function fetchSkidsTransitData(
   }
 
   const data: SkidsResponse = await response.json();
-  console.log(data);
   return transformSkidsResponse(data, destinations, options?.allowedModes);
 }

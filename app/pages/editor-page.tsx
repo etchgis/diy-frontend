@@ -90,6 +90,7 @@ export default function EditorPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [isChangingFromTemp, setIsChangingFromTemp] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const template = useGeneralStore((state) => state.template || '');
@@ -110,6 +111,8 @@ export default function EditorPage() {
 
   const publishPassword = useGeneralStore((state) => state.publishPassword || '');
   const setPublishPassword = useGeneralStore((state) => state.setPublishPassword);
+  const isTempPassword = useGeneralStore((state) => state.isTempPassword ?? false);
+  const setIsTempPassword = useGeneralStore((state) => state.setIsTempPassword);
 
   const defaultBackgroundColor = useGeneralStore((state) => state.defaultBackgroundColor || '#192F51');
   const setDefaultBackgroundColor = useGeneralStore((state) => state.setDefaultBackgroundColor);
@@ -321,6 +324,23 @@ export default function EditorPage() {
     }
   }, []);
 
+  // On mount refresh publishPassword + isTempPassword from the backend so
+  useEffect(() => {
+    const shortcode = useGeneralStore.getState().shortcode;
+    if (!shortcode) return;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) return;
+    fetch(`${backendUrl}/config/${shortcode}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        const { setPublishPassword, setIsTempPassword } = useGeneralStore.getState();
+        setPublishPassword(data.publishPassword || '');
+        setIsTempPassword(data.isTempPassword === true);
+      })
+      .catch(() => {});
+  }, []);
+
   // Auto-create the first slide (transit-destinations) only for truly new screens
   const hasAutoCreatedSlide = useRef(false);
   useEffect(() => {
@@ -461,32 +481,48 @@ export default function EditorPage() {
     } else {
       setIsSettingPassword(false);
     }
+    setIsChangingFromTemp(false);
     setPasswordInput("");
     setErrorMessage("");
     setShowPasswordModal(true);
   };
 
   const handlePublish = async () => {
-    if (isSettingPassword) {
+    if (isSettingPassword || isChangingFromTemp) {
       if (!passwordInput.trim()) {
         setErrorMessage("Password cannot be empty.");
         return;
       }
       const hashed = await bcrypt.hash(passwordInput, 10);
       setPublishPassword(hashed);
+      setIsTempPassword(false);
       setShowPasswordModal(false);
+      setIsChangingFromTemp(false);
       setErrorMessage("");
-      alert("Password set successfully. Please publish again.");
-      return;
-    } else {
-      const match = await bcrypt.compare(passwordInput, publishPassword);
-      if (!match) {
-        setErrorMessage("Incorrect password. Please try again.");
-        return;
+      if (isChangingFromTemp) {
+        handlePublishingStep();
+      } else {
+        alert("Password set successfully. Please publish again.");
       }
-      setShowPasswordModal(false);
-      handlePublishingStep();
+      return;
     }
+
+    const match = await bcrypt.compare(passwordInput, publishPassword);
+    if (!match) {
+      setErrorMessage("Incorrect password. Please try again.");
+      return;
+    }
+
+    if (isTempPassword) {
+      setIsChangingFromTemp(true);
+      setIsSettingPassword(false);
+      setPasswordInput("");
+      setErrorMessage("");
+      return;
+    }
+
+    setShowPasswordModal(false);
+    handlePublishingStep();
   };
 
   const handlePublishingStep = async () => {
@@ -1110,10 +1146,13 @@ export default function EditorPage() {
               ×
             </button>
 
-            <h2 className={`text-xl font-semibold ${publishPassword ? 'mb-6' : 'mb-1'}`}>
-              {isSettingPassword ? "Set Publishing Password" : "Enter Your Publishing Password"}
+            <h2 className={`text-xl font-semibold ${isChangingFromTemp ? 'mb-1' : publishPassword ? 'mb-6' : 'mb-1'}`}>
+              {isChangingFromTemp ? "Set a New Password" : isSettingPassword ? "Set Publishing Password" : "Enter Your Publishing Password"}
             </h2>
-            {!publishPassword && (
+            {isChangingFromTemp && (
+              <p className="mb-4 text-[#7e807f] text-sm">Your temporary password was accepted. Please set a permanent password to continue.</p>
+            )}
+            {!isChangingFromTemp && !publishPassword && (
               <p className="mb-4 text-[#7e807f] text-sm">Save this password somewhere safe</p>
             )}
 
@@ -1121,7 +1160,7 @@ export default function EditorPage() {
               type="password"
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              placeholder={isSettingPassword ? "Create a password" : "Enter password"}
+              placeholder={isSettingPassword || isChangingFromTemp ? "Create a password" : "Enter password"}
               className="border border-gray-300 p-2 rounded w-full"
             />
 
@@ -1139,13 +1178,13 @@ export default function EditorPage() {
               </Button>
               <Button
                 variant="outline"
-                className="w-[120px] text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90 border-none"
+                className="min-w-[120px] text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90 border-none"
                 onClick={() => {
                   handlePublish();
                 }}
               >
 
-                {publishPassword ? 'Continue' : 'Set Password'}
+                {isChangingFromTemp ? 'Set Password & Publish' : publishPassword ? 'Continue' : 'Set Password'}
               </Button>
             </div>
           </div>

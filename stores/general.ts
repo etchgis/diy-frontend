@@ -26,6 +26,7 @@ interface Store {
   rotationInterval?: number,
   firstPublish?: boolean;
   publishPassword?: string;
+  isTempPassword?: boolean;
   coordinates?: {
     lat: number;
     lng: number;
@@ -55,6 +56,7 @@ interface Store {
   setRotationInterval: (interval: number) => void;
   setFirstPublish: (firstPublish: boolean) => void;
   setPublishPassword: (publishPassword: string) => void;
+  setIsTempPassword: (isTempPassword: boolean) => void;
   setDefaultBackgroundColor: (color: string) => void;
   setDefaultTitleColor: (color: string) => void;
   setDefaultTextColor: (color: string) => void;
@@ -112,6 +114,9 @@ export const useGeneralStore = create<Store>()(
       })),
       setPublishPassword: (publishPassword) => set(() => ({
         publishPassword,
+      })),
+      setIsTempPassword: (isTempPassword) => set(() => ({
+        isTempPassword,
       })),
       setDefaultBackgroundColor: (color) => set(() => ({
         defaultBackgroundColor: color,

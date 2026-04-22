@@ -212,6 +212,7 @@ async function importData(setup: any) {
     setRotationInterval,
     setResolution,
     setPublishPassword,
+    setIsTempPassword,
     setDefaultBackgroundColor,
     setDefaultTitleColor,
     setDefaultTextColor,
@@ -225,7 +226,10 @@ async function importData(setup: any) {
   setShortcode(setup.shortcode || '');
   setRotationInterval(setup.rotationInterval || 20);
   if (setup.resolution) setResolution(setup.resolution);
+  console.log('[SETUP] publishPassword from backend:', setup.publishPassword ? `set (${setup.publishPassword.length} chars, starts: ${setup.publishPassword.substring(0, 20)})` : 'empty/null');
+  console.log('[SETUP] isTempPassword from backend:', setup.isTempPassword);
   setPublishPassword(setup.publishPassword || '');
+  setIsTempPassword(setup.isTempPassword === true);
 
   // Restore default styling settings
   if (setup.defaultBackgroundColor) {
