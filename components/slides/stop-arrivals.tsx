@@ -27,12 +27,19 @@ import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { calculateDistance, formatDistance } from "@/utils/distance";
 import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop } from "@/types/nysdot-stops";
+import { applyArrivalFilters, migrateHeadsignFilters, validateHeadsignFilters, isHeadsignSelected } from "@/lib/stop-arrivals-filters";
+import type { HeadsignFilter } from "../../stores/fixedRoute";
 
 // Stable empty array reference for Zustand selector
 const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
 
 const MAX_VISIBLE_SERVICES = 3;
 const MAX_DISPLAYED_ROUTES = 6;
+const MAX_HEADSIGN_PREVIEW_CHARS = 120;
+
+function truncateText(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max).trimEnd() + "…" : text;
+}
 
 // Helper to deduplicate routes by id across all services
 function getUniqueRoutes(services: ExpandedService[]): ExpandedRoute[] {
@@ -207,24 +214,14 @@ function computeDirectionOptions(
       }
     }
 
-    // If we have multiple headsigns, offer them as direction options
+    // Per-headsign filtering is client-side via selectedHeadsignFilters; only the
+    // union stopId is needed here.
     if (headsignMap.size > 1) {
       options.push({
         stopId: stopIds.join(','),
         label: 'All Directions',
         isAllDirections: true
       });
-
-      // Add each headsign as a direction option (sorted by original label)
-      const sortedHeadsigns = Array.from(headsignMap.values()).sort();
-      for (const headsign of sortedHeadsigns) {
-        options.push({
-          stopId: stopIds.join(','),
-          label: headsign,
-          isAllDirections: false,
-          headsignFilter: headsign.toLowerCase().trim()  // Normalized for filtering
-        });
-      }
       return options;
     }
   }
@@ -306,6 +303,18 @@ function deduplicateStops(stops: ExpandedStop[]): ExpandedStop[] {
       if (stop.locationType === 1) {
         existing.id = stop.id;
         existing.locationType = stop.locationType;
+      }
+      // Merge linkedStops (dedupe by name)
+      if (stop.linkedStops && stop.linkedStops.length > 0) {
+        if (!existing.linkedStops) {
+          existing.linkedStops = [];
+        }
+        for (const ls of stop.linkedStops) {
+          const lsName = ls.name || ls.stop_name;
+          if (!existing.linkedStops.some((e: any) => (e.name || e.stop_name) === lsName)) {
+            existing.linkedStops.push(ls);
+          }
+        }
       }
     } else {
       // Clone to avoid mutating original
@@ -607,7 +616,8 @@ export default function StopArrivalsSlide({
         enabled: true,  // All enabled by default
         selectedStopId: defaultStopId,
         directionOptions,
-        enabledRouteIds: svc.routes?.map((r: any) => r.id) || []
+        // undefined === all routes enabled (matcher convention).
+        enabledRouteIds: undefined,
       };
     });
 
@@ -702,7 +712,7 @@ export default function StopArrivalsSlide({
           enabled: true,
           selectedStopId: defaultStopId,
           directionOptions,
-          enabledRouteIds: linkedService.routes?.map((r: any) => r.id) || []
+          enabledRouteIds: undefined,
         });
         anyMerged = true;
       }
@@ -751,7 +761,11 @@ export default function StopArrivalsSlide({
       }
     }
 
-    if (queries.length === 0) return;
+    if (queries.length === 0) {
+      setScheduleData(slideId, []);
+      useFixedRouteStore.getState().setDataError(slideId, false);
+      return;
+    }
 
     setIsLoading(slideId, true);
 
@@ -811,26 +825,7 @@ export default function StopArrivalsSlide({
         return true;
       });
 
-      // Filter by enabled routes
-      const routeFilteredArrivals = uniqueArrivals.filter(arr => {
-        const selection = serviceSelections.find(s => s.serviceId === arr._sourceService);
-        // If no selection found, no enabledRouteIds, or empty array, include the arrival
-        if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
-        if (!arr.routeId) return true;
-        return selection.enabledRouteIds.includes(arr.routeId);
-      });
-
-      // Filter by headsign (destination) when direction filters are selected
-      const filteredArrivals = routeFilteredArrivals.filter(arr => {
-        const selection = serviceSelections.find(s => s.serviceId === arr._sourceService);
-        // If no headsign filters are set, include the arrival
-        if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
-        // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
-        const destination = (arr.destination || '').toLowerCase().trim();
-        return selection.selectedHeadsignFilters.some(filter =>
-          destination === filter.toLowerCase().trim()
-        );
-      });
+      const filteredArrivals = applyArrivalFilters(uniqueArrivals, serviceSelections);
 
       // Build routeId → line name map from serviceSelections for LIRR/Metro-North display
       const routeLineNameMap: Record<string, string> = {};
@@ -885,23 +880,19 @@ export default function StopArrivalsSlide({
       const svc = dedupedStop.services?.find((f: any) => f.id === selection.serviceId);
       if (!svc) return selection;
 
-      // Pass enabledRouteIds to filter direction options by active routes
       const newDirOptions = computeDirectionOptions(svc, allStops, selection.enabledRouteIds);
-      const validStopIds = new Set(newDirOptions.map((o: DirectionOption) => o.stopId));
-      const currentValid = validStopIds.has(selection.selectedStopId);
-      const newSelectedStopId = currentValid
-        ? selection.selectedStopId
-        : (newDirOptions.find((o: DirectionOption) => o.isAllDirections)?.stopId || newDirOptions[0]?.stopId || selection.selectedStopId);
+      const newSelectedStopId = newDirOptions.find((o: DirectionOption) => o.isAllDirections)?.stopId
+        || newDirOptions[0]?.stopId
+        || selection.selectedStopId;
 
-      // Also validate selectedHeadsignFilters - remove any that are no longer valid
-      const validHeadsignFilters = new Set(newDirOptions.map((o: DirectionOption) => o.headsignFilter).filter(Boolean));
-      const newSelectedHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsignFilters.has(h));
+      const migrated = migrateHeadsignFilters(selection.selectedHeadsignFilters, selection.routes, selection.enabledRouteIds);
+      const newSelectedHeadsignFilters = validateHeadsignFilters(migrated, selection.routes, selection.enabledRouteIds);
 
       if (newSelectedStopId !== selection.selectedStopId ||
-          JSON.stringify(newSelectedHeadsignFilters) !== JSON.stringify(selection.selectedHeadsignFilters || []) ||
+          JSON.stringify(newSelectedHeadsignFilters) !== JSON.stringify(selection.selectedHeadsignFilters) ||
           JSON.stringify(newDirOptions) !== JSON.stringify(selection.directionOptions)) {
         changed = true;
-        return { ...selection, directionOptions: newDirOptions, selectedStopId: newSelectedStopId, selectedHeadsignFilters: newSelectedHeadsignFilters.length > 0 ? newSelectedHeadsignFilters : undefined };
+        return { ...selection, directionOptions: newDirOptions, selectedStopId: newSelectedStopId, selectedHeadsignFilters: newSelectedHeadsignFilters };
       }
       return selection;
     });
@@ -931,7 +922,7 @@ export default function StopArrivalsSlide({
           enabled: true,
           selectedStopId: defaultStopId,
           directionOptions,
-          enabledRouteIds: svc.routes?.map((r: any) => r.id) || []
+          enabledRouteIds: undefined,
         };
       });
 
@@ -1209,153 +1200,177 @@ export default function StopArrivalsSlide({
                         {(servicesExpanded
                           ? serviceSelections
                           : serviceSelections.slice(0, MAX_VISIBLE_SERVICES)
-                        ).map((selection, index) => (
-                          <div
-                            key={`${selection.serviceId}-${index}`}
-                            className="p-3 bg-white rounded-lg border"
-                          >
-                            {/* Route badges row */}
-                            <div className="flex items-center gap-2 flex-wrap mb-2">
-                              <Checkbox
-                                checked={selection.enabled}
-                                onCheckedChange={(checked) => {
-                                  const updated = serviceSelections.map((s, i) =>
-                                    i === index ? { ...s, enabled: !!checked } : s
-                                  );
-                                  setServiceSelections(slideId, updated);
-                                }}
-                              />
-                              {selection.routes && selection.routes.length > 0 ? (
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  {selection.routes.map((route: RouteInfo, routeIdx: number) => {
-                                    const routeId = route.id ?? (route as any).route_id;
-                                    const isRouteEnabled = !selection.enabledRouteIds ||
-                                      selection.enabledRouteIds.includes(routeId);
-                                    const canToggle = selection.enabled && selection.routes!.length > 1;
+                        ).map((selection, index) => {
+                          const currentFilters = selection.selectedHeadsignFilters || [];
+                          const hasActiveFilters = currentFilters.length > 0;
+                          const totalRoutes = selection.routes?.length ?? 0;
+                          const enabledCount = selection.enabledRouteIds
+                            ? selection.enabledRouteIds.length
+                            : totalRoutes;
+                          const hasDisabledRoutes = totalRoutes > 1 && enabledCount < totalRoutes;
 
-                                    return (
-                                      <button
-                                        key={routeId ?? routeIdx}
-                                        disabled={!canToggle}
-                                        onClick={() => {
-                                          if (!canToggle) return;
-                                          const currentEnabled = selection.enabledRouteIds ||
-                                            selection.routes!.map((r: RouteInfo) => r.id);
-                                          // Prevent disabling all routes
-                                          if (isRouteEnabled && currentEnabled.length === 1) return;
-                                          const newEnabled = isRouteEnabled
-                                            ? currentEnabled.filter((id: string) => id !== route.id)
-                                            : [...currentEnabled, route.id];
-
-                                          // Recalculate direction options based on new enabled routes
-                                          const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
-                                          const newDirOptions = svc ? computeDirectionOptions(svc, allStops, newEnabled) : selection.directionOptions;
-                                          // Remove any headsign filters that are no longer valid
-                                          const validHeadsigns = new Set(newDirOptions.map(o => o.headsignFilter).filter(Boolean));
-                                          const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsigns.has(h));
-
-                                          const updated = serviceSelections.map((s, i) =>
-                                            i === index ? { ...s, enabledRouteIds: newEnabled, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
-                                          );
-                                          setServiceSelections(slideId, updated);
-                                        }}
-                                        className={`px-2 py-0.5 rounded text-xs font-bold min-w-[24px] text-center transition-opacity ${
-                                          canToggle ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-400' : ''
-                                        } ${isRouteEnabled ? 'opacity-100' : 'opacity-30'}`}
-                                        style={{
-                                          backgroundColor: route.color ? `#${route.color}` : '#6b7280',
-                                          color: route.textColor ? `#${route.textColor}` : '#ffffff'
-                                        }}
-                                        title={canToggle ? `Click to ${isRouteEnabled ? 'hide' : 'show'} ${route.shortName || route.id} arrivals` : undefined}
-                                      >
-                                        {route.shortName || route.id}
-                                      </button>
+                          return (
+                            <div
+                              key={`${selection.serviceId}-${index}`}
+                              className="p-3 bg-white rounded-lg border"
+                            >
+                              {/* Service header with checkbox and agency name */}
+                              <div className="flex items-center gap-2 mb-2">
+                                <Checkbox
+                                  checked={selection.enabled}
+                                  onCheckedChange={(checked) => {
+                                    const updated = serviceSelections.map((s, i) =>
+                                      i === index ? { ...s, enabled: !!checked } : s
                                     );
-                                  })}
-                                  {/* Select All button for services with many routes */}
-                                  {selection.enabled && selection.routes.length > 3 && (
-                                    <button
-                                      onClick={() => {
-                                        const allRouteIds = selection.routes!.map((r: RouteInfo) => r.id);
-                                        // Recalculate direction options with all routes enabled
-                                        const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
-                                        const newDirOptions = svc ? computeDirectionOptions(svc, allStops, allRouteIds) : selection.directionOptions;
-                                        // Keep headsign filters that are still valid
-                                        const validHeadsigns = new Set(newDirOptions.map(o => o.headsignFilter).filter(Boolean));
-                                        const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter(h => validHeadsigns.has(h));
-                                        const updated = serviceSelections.map((s, i) =>
-                                          i === index ? { ...s, enabledRouteIds: allRouteIds, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
-                                        );
-                                        setServiceSelections(slideId, updated);
-                                      }}
-                                      className="text-xs text-blue-600 hover:underline ml-1"
-                                    >
-                                      Select All
-                                    </button>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-sm text-[#4a5568]">
+                                    setServiceSelections(slideId, updated);
+                                  }}
+                                />
+                                <span className="text-sm font-medium text-[#4a5568]">
                                   {selection.agencyName}
                                 </span>
-                              )}
-                            </div>
-
-                            {/* Direction toggles row - multi-select for headsign filters */}
-                            {selection.enabled && selection.directionOptions.length > 1 && (
-                              <div className="flex items-center gap-1.5 ml-6 flex-wrap">
-                                {selection.directionOptions.map((opt) => {
-                                  // "All" is selected when no filters are active
-                                  // Individual headsigns are selected when in the selectedHeadsignFilters array
-                                  const currentFilters = selection.selectedHeadsignFilters || [];
-                                  const isAllOption = opt.isAllDirections;
-                                  const isSelected = isAllOption
-                                    ? currentFilters.length === 0
-                                    : opt.headsignFilter ? currentFilters.includes(opt.headsignFilter) : false;
-
-                                  return (
+                                <div className="ml-auto flex items-center gap-3">
+                                  {selection.enabled && hasDisabledRoutes && (
                                     <button
-                                      key={opt.label}
                                       onClick={() => {
-                                        let newFilters: string[];
-
-                                        if (isAllOption) {
-                                          // Clicking "All" clears all filters
-                                          newFilters = [];
-                                        } else if (opt.headsignFilter) {
-                                          // Toggle this headsign filter
-                                          if (currentFilters.includes(opt.headsignFilter)) {
-                                            newFilters = currentFilters.filter(f => f !== opt.headsignFilter);
-                                          } else {
-                                            newFilters = [...currentFilters, opt.headsignFilter];
-                                          }
-                                        } else {
-                                          newFilters = currentFilters;
-                                        }
-
+                                        const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
+                                        const newDirOptions = svc ? computeDirectionOptions(svc, allStops, undefined) : selection.directionOptions;
+                                        const newSelectedStopId = newDirOptions.find(o => o.isAllDirections)?.stopId
+                                          || newDirOptions[0]?.stopId
+                                          || selection.selectedStopId;
+                                        const newHeadsignFilters = validateHeadsignFilters(selection.selectedHeadsignFilters, selection.routes, undefined);
                                         const updated = serviceSelections.map((s, i) =>
                                           i === index ? {
                                             ...s,
-                                            selectedStopId: opt.stopId,
-                                            selectedHeadsignFilters: newFilters.length > 0 ? newFilters : undefined
+                                            enabledRouteIds: undefined,
+                                            directionOptions: newDirOptions,
+                                            selectedStopId: newSelectedStopId,
+                                            selectedHeadsignFilters: newHeadsignFilters,
                                           } : s
                                         );
                                         setServiceSelections(slideId, updated);
                                       }}
-                                      className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                                        isSelected
-                                          ? 'bg-blue-600 text-white border-blue-600'
-                                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                                      }`}
+                                      className="text-xs text-blue-600 hover:underline"
                                     >
-                                      {opt.label === 'All Directions' ? 'All' : opt.label.replace('bound', '')}
+                                      Select all routes
                                     </button>
-                                  );
-                                })}
+                                  )}
+                                  {selection.enabled && hasActiveFilters && (
+                                    <button
+                                      onClick={() => {
+                                        const updated = serviceSelections.map((s, i) =>
+                                          i === index ? { ...s, selectedHeadsignFilters: undefined } : s
+                                        );
+                                        setServiceSelections(slideId, updated);
+                                      }}
+                                      className="text-xs text-blue-600 hover:underline"
+                                    >
+                                      Clear filters
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        ))}
+
+                              {/* Routes with headsigns - vertical layout */}
+                              {selection.enabled && selection.routes && selection.routes.length > 0 && (
+                                <div className="space-y-1.5 ml-6">
+                                  {selection.routes.map((route: RouteInfo, routeIdx: number) => {
+                                    const routeId = route.id ?? (route as any).route_id;
+                                    const isRouteEnabled = !selection.enabledRouteIds ||
+                                      selection.enabledRouteIds.includes(routeId);
+                                    const canToggle = selection.routes!.length > 1;
+
+                                    return (
+                                      <div key={routeId ?? routeIdx} className="flex items-start gap-2">
+                                        {/* Route toggle badge */}
+                                        <button
+                                          disabled={!canToggle}
+                                          onClick={() => {
+                                            if (!canToggle) return;
+                                            const currentEnabled = selection.enabledRouteIds ||
+                                              selection.routes!.map((r: RouteInfo) => r.id);
+                                            if (isRouteEnabled && currentEnabled.length === 1) return;
+                                            const newEnabled = isRouteEnabled
+                                              ? currentEnabled.filter((id: string) => id !== route.id)
+                                              : [...currentEnabled, route.id];
+
+                                            const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
+                                            const newDirOptions = svc ? computeDirectionOptions(svc, allStops, newEnabled) : selection.directionOptions;
+                                            const newHeadsignFilters = validateHeadsignFilters(selection.selectedHeadsignFilters, selection.routes, newEnabled);
+                                            const newSelectedStopId = newDirOptions.find(o => o.isAllDirections)?.stopId
+                                              || newDirOptions[0]?.stopId
+                                              || selection.selectedStopId;
+
+                                            const updated = serviceSelections.map((s, i) =>
+                                              i === index ? { ...s, enabledRouteIds: newEnabled, directionOptions: newDirOptions, selectedStopId: newSelectedStopId, selectedHeadsignFilters: newHeadsignFilters } : s
+                                            );
+                                            setServiceSelections(slideId, updated);
+                                          }}
+                                          className={`px-2 py-0.5 rounded text-xs font-bold w-[42px] text-center flex-shrink-0 transition-opacity ${
+                                            canToggle ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-400' : ''
+                                          } ${isRouteEnabled ? 'opacity-100' : 'opacity-30'}`}
+                                          style={{
+                                            backgroundColor: route.color ? `#${route.color}` : '#6b7280',
+                                            color: route.textColor ? `#${route.textColor}` : '#ffffff'
+                                          }}
+                                          title={canToggle ? `Click to ${isRouteEnabled ? 'hide' : 'show'} ${route.shortName || route.id} arrivals` : undefined}
+                                        >
+                                          {route.shortName || route.id}
+                                        </button>
+
+                                        {/* Headsigns for this route - clickable filter pills */}
+                                        {isRouteEnabled && route.headsigns && route.headsigns.length > 0 ? (
+                                          <div className="flex items-center gap-1 flex-wrap">
+                                            {route.headsigns.map((headsign: string, hsIdx: number) => {
+                                              const normalizedHeadsign = headsign.toLowerCase().trim();
+                                              const isSelected = isHeadsignSelected(currentFilters, routeId, headsign);
+
+                                              return (
+                                                <button
+                                                  key={hsIdx}
+                                                  onClick={() => {
+                                                    let newFilters: HeadsignFilter[];
+                                                    if (isSelected) {
+                                                      newFilters = currentFilters.filter(f => {
+                                                        if (typeof f === 'string') return f.toLowerCase().trim() !== normalizedHeadsign;
+                                                        return !(f.routeId === routeId && f.headsign.toLowerCase().trim() === normalizedHeadsign);
+                                                      });
+                                                    } else {
+                                                      newFilters = [...currentFilters, { routeId, headsign: normalizedHeadsign }];
+                                                    }
+
+                                                    const updated = serviceSelections.map((s, i) =>
+                                                      i === index ? {
+                                                        ...s,
+                                                        selectedHeadsignFilters: newFilters.length > 0 ? newFilters : undefined
+                                                      } : s
+                                                    );
+                                                    setServiceSelections(slideId, updated);
+                                                  }}
+                                                  className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                                                    isSelected
+                                                      ? 'bg-blue-600 text-white border-blue-600'
+                                                      : hasActiveFilters
+                                                        ? 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200'
+                                                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                                  }`}
+                                                  title={`Click to ${isSelected ? 'remove' : 'filter by'} "${headsign}"`}
+                                                >
+                                                  {headsign}
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        ) : isRouteEnabled ? (
+                                          <span className="text-xs text-gray-400 italic py-0.5">No headsign data</span>
+                                        ) : null}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
 
                         {serviceSelections.length > MAX_VISIBLE_SERVICES && (
                           <Button
@@ -1395,7 +1410,7 @@ export default function StopArrivalsSlide({
                         key={idx}
                         className="flex items-center justify-between bg-white rounded border p-2"
                       >
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 overflow-hidden">
                           <p className="text-sm font-medium text-gray-800 truncate">
                             {stop.name}
                           </p>
@@ -1418,11 +1433,19 @@ export default function StopArrivalsSlide({
                               </span>
                             )}
                           </div>
-                          {getUniqueHeadsigns(stop.services).length > 0 && (
-                            <p className="text-xs text-gray-500 mt-1 truncate">
-                              {getUniqueHeadsigns(stop.services).join(' · ')}
-                            </p>
-                          )}
+                          {getUniqueHeadsigns(stop.services).length > 0 && (() => {
+                            const allHeadsigns = getUniqueHeadsigns(stop.services);
+                            const shown = allHeadsigns.slice(0, 5);
+                            const joined = shown.join(' · ');
+                            const truncated = truncateText(joined, MAX_HEADSIGN_PREVIEW_CHARS);
+                            const extraCount = allHeadsigns.length - 5;
+                            return (
+                              <p className="text-xs text-gray-500 mt-1 truncate" title={allHeadsigns.join(' · ')}>
+                                {truncated}
+                                {extraCount > 0 && ` +${extraCount}`}
+                              </p>
+                            );
+                          })()}
                         </div>
                         <Button
                           variant="outline"

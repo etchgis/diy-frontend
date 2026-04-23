@@ -12,6 +12,7 @@ import { useWeatherStore } from "@/stores/weather";
 import { useCitibikeStore } from "@/stores/citibike";
 import { useTrafficCorridorStore } from "@/stores/trafficCorridor";
 import { useFooterStore } from "@/stores/footer";
+import { migrateHeadsignFilters } from "@/lib/stop-arrivals-filters";
 
 // =============================================================================
 // TEMPORARY MIGRATION: Remove after all stored configs have been re-published
@@ -130,37 +131,45 @@ function migrateServiceSelections(selections: any[], selectedStop: any): any[] {
       enabled: true,
       selectedStopId: stopId,
       directionOptions: [{ stopId, label: 'All Directions', isAllDirections: true }],
-      enabledRouteIds: (svc.routes || []).map((r: any) => r.id ?? r.route_id),
+      // undefined === all routes enabled (matcher convention).
+      enabledRouteIds: undefined,
     }));
   }
 
   return selections.map((sel: any) => {
-    // Check if already in new format (has 'serviceId' instead of 'service_guid')
-    if (sel.serviceId !== undefined && sel.service_guid === undefined) {
-      return sel;
-    }
+    // Migrate filters here, not in the editor's allStops effect, so the published page
+    // and a no-network editor session both see route-scoped filters for legacy slides.
+    const normalized = (sel.serviceId !== undefined && sel.service_guid === undefined)
+      ? sel
+      : {
+          serviceId: sel.service_guid ?? sel.serviceId,
+          agencyName: sel.agency_name ?? sel.agencyName,
+          routes: (sel.routes || []).map((r: any) => ({
+            id: r.route_id ?? r.id,
+            shortName: r.route_short_name ?? r.shortName,
+            longName: r.route_long_name ?? r.longName,
+            color: r.route_color ?? r.color,
+            textColor: r.route_text_color ?? r.textColor,
+            headsigns: r.headsigns,
+          })),
+          enabled: sel.enabled,
+          selectedStopId: sel.selectedStopId,
+          selectedHeadsignFilters: sel.selectedHeadsignFilters,
+          directionOptions: (sel.directionOptions || []).map((opt: any) => ({
+            stopId: opt.stop_id ?? opt.stopId,
+            label: opt.label,
+            isAllDirections: opt.isAllDirections,
+          })),
+          enabledRouteIds: sel.enabledRouteIds,
+        };
 
     return {
-      serviceId: sel.service_guid ?? sel.serviceId,
-      agencyName: sel.agency_name ?? sel.agencyName,
-      routes: (sel.routes || []).map((r: any) => ({
-        id: r.route_id ?? r.id,
-        shortName: r.route_short_name ?? r.shortName,
-        longName: r.route_long_name ?? r.longName,
-        color: r.route_color ?? r.color,
-        textColor: r.route_text_color ?? r.textColor,
-        headsigns: r.headsigns,
-      })),
-      enabled: sel.enabled,
-      selectedStopId: sel.selectedStopId,
-      selectedHeadsignFilters: sel.selectedHeadsignFilters,
-      directionOptions: (sel.directionOptions || []).map((opt: any) => ({
-        stopId: opt.stop_id ?? opt.stopId,
-        label: opt.label,
-        isAllDirections: opt.isAllDirections,
-        headsignFilter: opt.headsignFilter,
-      })),
-      enabledRouteIds: sel.enabledRouteIds,
+      ...normalized,
+      selectedHeadsignFilters: migrateHeadsignFilters(
+        normalized.selectedHeadsignFilters,
+        normalized.routes,
+        normalized.enabledRouteIds,
+      ),
     };
   });
 }

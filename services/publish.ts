@@ -12,6 +12,7 @@ import { useWeatherStore } from '@/stores/weather';
 import { useCitibikeStore } from '@/stores/citibike';
 import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
 import { useFooterStore } from '@/stores/footer';
+import { migrateHeadsignFilters } from '@/lib/stop-arrivals-filters';
 
 export async function publish() {
   const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme } = useGeneralStore.getState();
@@ -135,7 +136,21 @@ export async function publish() {
         screenObj.data.bgImage = bgImage;
         screenObj.data.logoImage = logoImage;
         screenObj.data.selectedStop = selectedStop;
-        screenObj.data.serviceSelections = serviceSelections;
+        // Canonicalize legacy slides on publish so the published page doesn't depend
+        // on the editor's allStops migration having run.
+        screenObj.data.serviceSelections = serviceSelections?.map((sel) => {
+          const allDir = sel.directionOptions?.find((o) => o.isAllDirections)?.stopId
+            || sel.directionOptions?.[0]?.stopId;
+          return {
+            ...sel,
+            selectedStopId: allDir ?? sel.selectedStopId,
+            selectedHeadsignFilters: migrateHeadsignFilters(
+              sel.selectedHeadsignFilters,
+              sel.routes,
+              sel.enabledRouteIds,
+            ),
+          };
+        });
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
       } else {
