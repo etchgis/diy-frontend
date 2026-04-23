@@ -13,6 +13,7 @@ import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
 import CitibikePreview from '@/components/slide-previews/citibike-preview';
 import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from '@/services/data-gathering/fetchStopData';
+import { applyArrivalFilters } from '@/lib/stop-arrivals-filters';
 import TrafficCorridorPreview from '@/components/slide-previews/traffic-corridor-preview';
 import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
 import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
@@ -243,7 +244,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         }
       }
 
-      if (queries.length === 0) continue;
+      if (queries.length === 0) {
+        setScheduleData(slide.id, []);
+        setFixedRouteDataError(slide.id, false);
+        continue;
+      }
 
       try {
         // Fetch all queries in parallel
@@ -293,33 +298,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           return true;
         });
 
-        // Filter by enabled routes if serviceSelections exist
-        let routeFilteredArrivals = uniqueArrivals;
-        if (serviceSelections && serviceSelections.length > 0) {
-          routeFilteredArrivals = uniqueArrivals.filter(arr => {
-            const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
-            // If no route filter is set (undefined or empty array), include all arrivals
-            if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
-            // Include arrivals without routeId (can't be filtered)
-            if (!arr.routeId) return true;
-            return selection.enabledRouteIds.includes(arr.routeId);
-          });
-        }
-
-        // Filter by headsign (destination) when direction filters are selected
-        let filteredArrivals = routeFilteredArrivals;
-        if (serviceSelections && serviceSelections.length > 0) {
-          filteredArrivals = routeFilteredArrivals.filter(arr => {
-            const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
-            // If no headsign filters are set, include the arrival
-            if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
-            // Match the arrival's destination to any of the selected headsigns (exact match, case-insensitive)
-            const destination = (arr.destination || '').toLowerCase().trim();
-            return selection.selectedHeadsignFilters.some((filter: string) =>
-              destination === filter.toLowerCase().trim()
-            );
-          });
-        }
+        const filteredArrivals = applyArrivalFilters(uniqueArrivals, serviceSelections);
 
         // Limit arrivals (already sorted by timestamp)
         const limitedArrivals = filteredArrivals.slice(0, MAX_ARRIVALS_PER_SLIDE);
