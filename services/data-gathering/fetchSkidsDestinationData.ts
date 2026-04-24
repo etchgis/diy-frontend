@@ -248,8 +248,7 @@ export function transformSkidsResponse(
 }
 
 export interface SkidsFetchOptions {
-  allowedModes?: string[];        // e.g. ['BUS', 'SUBWAY', 'WALK']
-  numItineraries?: number;        // request multiple itineraries per destination (default 1)
+  allowedModes?: string[];        // e.g. ['BUS', 'SUBWAY', 'WALK'] — used for client-side filtering only
   maxWalkDistanceMeters?: number;
 }
 
@@ -270,10 +269,7 @@ export async function fetchSkidsTransitData(
     apiOptions.maxWalkDistanceMeters = options.maxWalkDistanceMeters;
   }
   if (options?.allowedModes && options.allowedModes.length > 0) {
-    apiOptions.allowedModes = options.allowedModes;
-  }
-  if (options?.numItineraries && options.numItineraries > 1) {
-    apiOptions.numItineraries = options.numItineraries;
+    apiOptions.modes = options.allowedModes;
   }
 
   const response = await fetch(`${SKIDS_URL}/api/transit/route/coordinates`, {

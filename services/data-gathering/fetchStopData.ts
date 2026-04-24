@@ -47,6 +47,7 @@ function formatBusData(data: any) {
 
   return {
     station: data.name,
+    wheelchairBoarding: data.wheelchairBoarding as 0 | 1 | 2 | undefined,
     trains: futureArrivals.map((train: any) => ({
       destination: train.headsign,
       routeId: train.routeId || train.id?.split(':')[0] || '',

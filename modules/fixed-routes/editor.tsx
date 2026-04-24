@@ -945,9 +945,13 @@ export default function StopArrivalsSlide({
       // Fetch sequentially to avoid overwhelming the API
       const allArrivals: any[] = [];
       let serverErrorCount = 0;
+      let resolvedWheelchairBoarding: 0 | 1 | 2 | undefined = undefined;
       for (const q of queries) {
         try {
           const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId);
+          if (resolvedWheelchairBoarding === undefined && data?.wheelchairBoarding !== undefined) {
+            resolvedWheelchairBoarding = data.wheelchairBoarding;
+          }
           const tagged = (data?.trains || []).map((item: any) => ({
             destination: item.destination,
             routeId: item.routeId,
@@ -1041,6 +1045,7 @@ export default function StopArrivalsSlide({
         return arr;
       });
 
+      useFixedRouteStore.getState().setStopWheelchairBoarding(slideId, resolvedWheelchairBoarding);
       setScheduleData(slideId, displayArrivals);
       useFixedRouteStore.getState().setDataError(slideId, false);
     } catch (error) {

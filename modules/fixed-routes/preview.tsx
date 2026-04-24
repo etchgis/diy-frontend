@@ -47,6 +47,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const selectedStop = useFixedRouteStore(
     (state) => state.slides[slideId]?.selectedStop || null
   );
+  const stopWheelchairBoarding = useFixedRouteStore(
+    (state) => state.slides[slideId]?.stopWheelchairBoarding ?? selectedStop?.wheelchairBoarding
+  );
   const scheduleData = useFixedRouteStore(
     (state) => state.slides[slideId]?.scheduleData || null
   );
@@ -269,13 +272,11 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                     )
                       ?.toString()
                       .toUpperCase() || "UNKNOWN STOP"}
-                    {selectedStop?.wheelchairBoarding === 1 && (
-                      <span
-                        title="Wheelchair accessible"
-                        style={{ fontSize: `${22 * titleSizeMultiplier}px` }}
-                      >
-                        ♿
-                      </span>
+                    {stopWheelchairBoarding === 1 && (
+                      <span title="Wheelchair accessible" style={{ fontSize: `${22 * titleSizeMultiplier}px` }}>♿</span>
+                    )}
+                    {stopWheelchairBoarding === 2 && (
+                      <span title="Not wheelchair accessible" style={{ fontSize: `${22 * titleSizeMultiplier}px`, opacity: 0.7 }}>🚫♿</span>
                     )}
                   </h2>
 
@@ -343,18 +344,11 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                       {(displayName || stopName)?.toString().toUpperCase() ||
                         "UNKNOWN STOP"}
                     </span>
-                    {selectedStop?.wheelchairBoarding === 1 && (
-                      <span
-                        title="Wheelchair accessible"
-                        className="flex-shrink-0"
-                        style={{
-                          fontSize: `clamp(1rem, ${
-                            4 * titleSizeMultiplier
-                          }vh, 4rem)`,
-                        }}
-                      >
-                        ♿
-                      </span>
+                    {stopWheelchairBoarding === 1 && (
+                      <span title="Wheelchair accessible" className="flex-shrink-0" style={{ fontSize: `clamp(1rem, ${4 * titleSizeMultiplier}vh, 4rem)` }}>♿</span>
+                    )}
+                    {stopWheelchairBoarding === 2 && (
+                      <span title="Not wheelchair accessible" className="flex-shrink-0" style={{ fontSize: `clamp(1rem, ${4 * titleSizeMultiplier}vh, 4rem)`, opacity: 0.7 }}>🚫♿</span>
                     )}
                   </h2>
 

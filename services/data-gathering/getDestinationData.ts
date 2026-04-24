@@ -67,7 +67,7 @@ export async function getDestinationData(
             fetchSkidsTransitData(
               { lat: coordinates.lat, lng: coordinates.lng },
               [dest],
-              { allowedModes: dest.allowedModes, numItineraries: 3, maxWalkDistanceMeters: options?.maxWalkDistance }
+              { allowedModes: dest.allowedModes, maxWalkDistanceMeters: options?.maxWalkDistance }
             )
           )
         );
@@ -104,7 +104,7 @@ export async function getDestinationData(
         const results = await fetchSkidsTransitData(
           { lat: coordinates.lat, lng: coordinates.lng },
           destList,
-          { numItineraries: 3, maxWalkDistanceMeters: options?.maxWalkDistance }
+          { maxWalkDistanceMeters: options?.maxWalkDistance }
         );
 
         const enrichedDestinations = results.map((data, index) => ({

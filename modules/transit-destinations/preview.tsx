@@ -525,7 +525,7 @@ export default function TransitDestinationPreview({
                               </div>
                             );
                           })
-                        : "No transit option available"}
+                        : null}
                     </div>
                     <div className="truncate">{departure}</div>
                     <div className="truncate">{arrival}</div>

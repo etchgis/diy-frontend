@@ -66,6 +66,7 @@ interface FixedRouteSlideData {
   columnScheduleData?: { label: string; arrivals: any[] }[];
   columnServiceSelections?: [ServiceSelection[], ServiceSelection[]];
   minArrivalMinutes?: number;
+  stopWheelchairBoarding?: 0 | 1 | 2;
 }
 
 interface SlideStore {
@@ -98,6 +99,7 @@ interface SlideStore {
   setMinArrivalMinutes: (slideId: string, minutes: number) => void;
   setColumnScheduleData: (slideId: string, data: { label: string; arrivals: any[] }[]) => void;
   setColumnServiceSelections: (slideId: string, data: [ServiceSelection[], ServiceSelection[]] | undefined) => void;
+  setStopWheelchairBoarding: (slideId: string, value: 0 | 1 | 2 | undefined) => void;
 }
 
 export const useFixedRouteStore = create<SlideStore>()(
@@ -326,6 +328,14 @@ export const useFixedRouteStore = create<SlideStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), columnServiceSelections: data },
+          },
+        })),
+
+      setStopWheelchairBoarding: (slideId, value) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), stopWheelchairBoarding: value },
           },
         })),
     }),
