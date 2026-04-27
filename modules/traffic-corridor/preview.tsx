@@ -98,7 +98,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           backgroundColor: tableHeaderColor,
           color: textColor,
           fontSize: headerFontSize,
-          minHeight: isEditor ? '40px' : undefined,
+          minHeight: isEditor ? (showSecondTable ? '28px' : '40px') : undefined,
           padding: headerPadding,
         }}
       >
@@ -116,7 +116,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
             backgroundColor: corridorIndex % 2 === 0 ? rowColor : `${rowColor}cc`,
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
-            minHeight: isEditor ? '36px' : undefined,
+            minHeight: isEditor ? (showSecondTable ? '26px' : '36px') : undefined,
             padding: rowPadding,
           }}
         >
@@ -162,7 +162,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
             backgroundColor: `${rowColor}aa`,
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
-            minHeight: isEditor ? '36px' : undefined,
+            minHeight: isEditor ? (showSecondTable ? '26px' : '36px') : undefined,
             padding: rowPadding,
           }}
         >
@@ -270,17 +270,21 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
 
       {/* Tables Area */}
       <div
-        className="flex-1 min-h-0 flex flex-col justify-center"
+        className="flex-1 min-h-0 flex flex-col justify-center overflow-hidden"
         style={{
-          padding: isEditor ? '1rem' : '3vh 4vw',
-          gap: isEditor ? '0.75rem' : '2.5vh',
+          padding: isEditor
+            ? (showSecondTable ? '0.5rem' : '1rem')
+            : (showSecondTable ? '1.5vh 4vw' : '3vh 4vw'),
+          gap: isEditor
+            ? (showSecondTable ? '0.4rem' : '0.75rem')
+            : (showSecondTable ? '1.2vh' : '2.5vh'),
         }}
       >
-        <div className="w-full">
+        <div className="w-full min-h-0 overflow-hidden">
           {renderTable(table0, 0)}
         </div>
         {showSecondTable && (
-          <div className="w-full">
+          <div className="w-full min-h-0 overflow-hidden">
             {renderTable(table1, 1)}
           </div>
         )}

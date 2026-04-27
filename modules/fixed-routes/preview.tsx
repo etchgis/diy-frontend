@@ -16,7 +16,7 @@ import { useMemo } from "react";
 import Footer from "@/components/shared-components/footer";
 
 
-export default function FixedRoutePreview({ slideId }: { slideId: string }) {
+export default function FixedRoutePreview({ slideId, previewMode = false }: { slideId: string; previewMode?: boolean }) {
   const stopName = useFixedRouteStore(
     (state) => state.slides[slideId]?.stopName || ""
   );
@@ -61,7 +61,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   );
 
   const pathname = usePathname();
-  const isEditor = pathname.includes("/editor");
+  const isEditor = pathname.includes("/editor") && !previewMode;
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
 
   const isLoading = useFixedRouteStore(

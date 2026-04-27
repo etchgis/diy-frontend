@@ -594,7 +594,7 @@ export default function EditorPage() {
           return <TransitDestinationPreview slideId={slideId} />;
         case "fixed-routes":
         case "stop-arrivals":
-          return <FixedRoutePreview slideId={slideId} />;
+          return <FixedRoutePreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "transit-routes":
           return <TransitRoutesPreview slideId={slideId} />;
         case "route-times":
@@ -625,6 +625,14 @@ export default function EditorPage() {
     }
 
     if (resolution === 'responsive') {
+      // In full preview always render at a fixed 1920×1080 frame so all slides appear the same size
+      if (isFullPreview) {
+        return (
+          <ResolutionFrame logicalW={1920} logicalH={1080} fontFamilyStyle={fontFamilyStyle} background="transparent">
+            {content}
+          </ResolutionFrame>
+        );
+      }
       return <div className="w-full h-full" style={fontFamilyStyle}>{content}</div>;
     }
 
@@ -844,14 +852,12 @@ export default function EditorPage() {
         const isPortrait = !isResponsive && modalLogicalH > modalLogicalW;
 
         const CONTROLS_H = 64;
-        const modalStyle: React.CSSProperties = isResponsive
-          ? { maxHeight: '90vh', width: '92vw' }
-          : {
-              aspectRatio: `${modalLogicalW} / ${modalLogicalH}`,
-              maxHeight: '90vh',
-              maxWidth: isPortrait ? '60vw' : '92vw',
-              width: isPortrait ? `calc((90vh - ${CONTROLS_H}px) * ${modalLogicalW / modalLogicalH})` : '100%',
-            };
+        const modalStyle: React.CSSProperties = {
+          aspectRatio: `${modalLogicalW} / ${modalLogicalH}`,
+          maxHeight: '90vh',
+          maxWidth: isPortrait ? '60vw' : '92vw',
+          width: isPortrait ? `calc((90vh - ${CONTROLS_H}px) * ${modalLogicalW / modalLogicalH})` : '100%',
+        };
         return (
           <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
             <div
