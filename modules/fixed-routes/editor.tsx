@@ -19,7 +19,7 @@ import {
   Pencil,
 } from "lucide-react";
 import FixedRoutePreview from "./preview";
-import { useEffect, useRef, useState, useCallback, JSXElementConstructor, ReactElement, ReactNode, ReactPortal, Key } from "react";
+import React, { useEffect, useRef, useState, useCallback, JSXElementConstructor, ReactElement, ReactNode, ReactPortal, Key } from "react";
 import { useFixedRouteStore, ServiceSelection, DirectionOption, RouteInfo } from "./store";
 import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
@@ -30,6 +30,10 @@ import { fetchRoutes } from "@/services/data-gathering/fetchRoutes";
 import { fetchRoutePatterns } from "@/services/route-times/routeDataFetcher";
 import { calculateDistance, formatDistance } from "@/utils/distance";
 import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop } from "@/types/nysdot-stops";
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY as string;
 
 // Stable empty array reference for Zustand selector
 const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
@@ -432,6 +436,104 @@ function deduplicateStops(stops: ExpandedStop[]): ExpandedStop[] {
   return Array.from(stopMap.values());
 }
 
+function NearbyStopMap({
+  nearbyStops,
+  coordinates,
+  mapContainerRef,
+  mapRef,
+  markersRef,
+  onSelectStop,
+}: {
+  nearbyStops: ExpandedStop[];
+  coordinates: { lat: number; lng: number };
+  mapContainerRef: React.RefObject<HTMLDivElement | null>;
+  mapRef: React.MutableRefObject<mapboxgl.Map | null>;
+  markersRef: React.MutableRefObject<mapboxgl.Marker[]>;
+  onSelectStop: (stop: ExpandedStop) => void;
+}) {
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    if (mapRef.current) return;
+
+    const center: [number, number] = coordinates.lng && coordinates.lat
+      ? [coordinates.lng, coordinates.lat]
+      : [-74.006, 40.7128];
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center,
+      zoom: 14,
+    });
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+    mapRef.current = map;
+
+    return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    nearbyStops.forEach((stop) => {
+      const lon = (stop as any).lon ?? (stop as any).lng;
+      const lat = (stop as any).lat;
+      if (lat == null || lon == null) return;
+
+      const el = document.createElement('div');
+      el.style.cssText = `
+        width: 28px; height: 28px;
+        background: #2563eb; border: 2px solid white;
+        border-radius: 50%; cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        display: flex; align-items: center; justify-content: center;
+      `;
+      const dot = document.createElement('div');
+      dot.style.cssText = 'width:8px;height:8px;background:white;border-radius:50%';
+      el.appendChild(dot);
+
+      const popup = new mapboxgl.Popup({ offset: 16, closeButton: false, maxWidth: '220px' })
+        .setHTML(`
+          <div style="font-size:13px;font-weight:600;color:#1e293b;line-height:1.3">${stop.name}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">${(stop as any).services?.[0]?.agencyName ?? ''}</div>
+          ${(stop as any).distance != null ? `<div style="font-size:11px;color:#94a3b8;margin-top:1px">${formatDistance((stop as any).distance)}</div>` : ''}
+          <button id="select-stop-btn" style="margin-top:6px;background:#2563eb;color:white;border:none;border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer;width:100%">Select this stop</button>
+        `);
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([lon, lat])
+        .setPopup(popup)
+        .addTo(map);
+
+      el.addEventListener('click', () => marker.togglePopup());
+
+      popup.on('open', () => {
+        setTimeout(() => {
+          const btn = document.getElementById('select-stop-btn');
+          if (btn) btn.addEventListener('click', () => onSelectStop(stop));
+        }, 0);
+      });
+
+      markersRef.current.push(marker);
+    });
+  }, [nearbyStops, onSelectStop]);
+
+  return (
+    <div className="rounded border border-[#cbd5e0] overflow-hidden" style={{ height: '280px' }}>
+      <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
+}
+
 export default function StopArrivalsSlide({
   slideId,
   handleDelete,
@@ -462,8 +564,8 @@ export default function StopArrivalsSlide({
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [linkedStops, setLinkedStops] = useState<ExpandedLinkedStop[]>([]); // Stops in same station complex
 
-  // Route-first search mode
-  const [routeSearchMode, setRouteSearchMode] = useState(false);
+  // Stop search mode: 'stop' | 'route' | 'nearby'
+  const [searchMode, setSearchMode] = useState<'stop' | 'route' | 'nearby'>('stop');
   const [routeQuery, setRouteQuery] = useState('');
   const [routeResults, setRouteResults] = useState<any[]>([]);
   const [isSearchingRoutes, setIsSearchingRoutes] = useState(false);
@@ -472,6 +574,11 @@ export default function StopArrivalsSlide({
   const [isLoadingRouteStops, setIsLoadingRouteStops] = useState(false);
   const routeSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const routeCacheRef = useRef<any[]>([]);
+
+  // Nearby map refs
+  const nearbyMapContainerRef = useRef<HTMLDivElement | null>(null);
+  const nearbyMapRef = useRef<mapboxgl.Map | null>(null);
+  const nearbyMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   const stopName = useFixedRouteStore(
     (state: { slides: { [x: string]: { stopName: any; }; }; }) => state.slides[slideId]?.stopName || ""
@@ -760,7 +867,7 @@ export default function StopArrivalsSlide({
       // nothing
     } finally {
       setIsLoadingRouteStops(false);
-      setRouteSearchMode(false);
+      setSearchMode('stop');
       setSelectedRouteForStop(null);
       setRouteStops([]);
       setRouteQuery('');
@@ -1291,33 +1398,33 @@ export default function StopArrivalsSlide({
                     <div className="flex rounded border border-[#cbd5e0] overflow-hidden text-xs">
                       <button
                         onClick={() => {
-                          if (routeSearchMode) {
-                            setRouteSearchMode(false);
-                            setRouteQuery('');
-                            setRouteResults([]);
-                            setSelectedRouteForStop(null);
-                            setRouteStops([]);
-                          }
+                          setSearchMode('stop');
+                          setRouteQuery('');
+                          setRouteResults([]);
+                          setSelectedRouteForStop(null);
+                          setRouteStops([]);
                         }}
-                        className={`px-3 py-1 transition-colors ${!routeSearchMode ? 'bg-blue-600 text-white' : 'bg-white text-[#4a5568] hover:bg-gray-50'}`}
+                        className={`px-3 py-1 transition-colors ${searchMode === 'stop' ? 'bg-blue-600 text-white' : 'bg-white text-[#4a5568] hover:bg-gray-50'}`}
                       >
                         Stop
                       </button>
                       <button
-                        onClick={() => {
-                          if (!routeSearchMode) {
-                            setRouteSearchMode(true);
-                          }
-                        }}
-                        className={`px-3 py-1 border-l border-[#cbd5e0] transition-colors ${routeSearchMode ? 'bg-blue-600 text-white' : 'bg-white text-[#4a5568] hover:bg-gray-50'}`}
+                        onClick={() => setSearchMode('route')}
+                        className={`px-3 py-1 border-l border-[#cbd5e0] transition-colors ${searchMode === 'route' ? 'bg-blue-600 text-white' : 'bg-white text-[#4a5568] hover:bg-gray-50'}`}
                       >
                         Route
+                      </button>
+                      <button
+                        onClick={() => setSearchMode('nearby')}
+                        className={`px-3 py-1 border-l border-[#cbd5e0] transition-colors ${searchMode === 'nearby' ? 'bg-blue-600 text-white' : 'bg-white text-[#4a5568] hover:bg-gray-50'}`}
+                      >
+                        Nearby
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {routeSearchMode ? (
+                {searchMode === 'route' ? (
                   <div className="space-y-3">
                     <div className="relative">
                       <Input
@@ -1390,6 +1497,18 @@ export default function StopArrivalsSlide({
                       </div>
                     )}
                   </div>
+                ) : searchMode === 'nearby' ? (
+                  <NearbyStopMap
+                    nearbyStops={nearbyStops}
+                    coordinates={coordinates}
+                    mapContainerRef={nearbyMapContainerRef}
+                    mapRef={nearbyMapRef}
+                    markersRef={nearbyMarkersRef}
+                    onSelectStop={(stop) => {
+                      handleSelectStop(stop);
+                      setSearchMode('stop');
+                    }}
+                  />
                 ) : (
                   <div className="relative">
                     <Input
