@@ -154,6 +154,55 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
         </div>
       ))}
 
+      {/* Transit Alternative Row */}
+      {tableData.showTransitAlternative && (
+        <div
+          className={isEditor ? 'flex items-center gap-2 px-3 py-2' : 'flex items-center gap-[0.6vw]'}
+          style={{
+            backgroundColor: `${rowColor}aa`,
+            borderTop: `1px solid ${tableHeaderColor}40`,
+            color: textColor,
+            minHeight: isEditor ? '36px' : undefined,
+            padding: rowPadding,
+          }}
+        >
+          <span style={{ fontSize: rowFontSize, flexShrink: 0 }}>Via Public Transportation</span>
+          <div className="flex items-center gap-1 flex-1 flex-wrap mx-2">
+            {(tableData.transitAlternative?.legs ?? [])
+              .filter((leg: any) => leg.mode !== 'WALK')
+              .map((leg: any, i: number) => {
+                const iconSrc = leg.mode === 'SUBWAY' ? '/images/subway-icon.png'
+                  : leg.mode === 'RAIL' || leg.mode === 'LIGHT RAIL' ? '/images/rail-icon.png'
+                  : '/images/bus-icon.png';
+                const iconSize = isEditor ? `${20 * contentSizeMultiplier}px` : `${3.2 * contentSizeMultiplier}vh`;
+                const badgeFontSize = isEditor ? `${12 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}vh`;
+                const badgePadding = isEditor ? `${1 * contentSizeMultiplier}px ${3 * contentSizeMultiplier}px` : '0.2vh 0.4vw';
+                return (
+                  <div key={i} className="flex items-center gap-0.5 flex-shrink-0">
+                    <img src={iconSrc} alt={leg.mode} style={{ height: iconSize, width: 'auto', objectFit: 'contain' }} />
+                    {leg.routeShortName && (
+                      <span
+                        className="rounded text-center leading-tight font-medium"
+                        style={{
+                          backgroundColor: leg.routeColor ? `#${leg.routeColor}` : 'white',
+                          color: leg.routeTextColor ? `#${leg.routeTextColor}` : 'black',
+                          fontSize: badgeFontSize,
+                          padding: badgePadding,
+                        }}
+                      >
+                        {leg.routeShortName}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+          <span className="font-semibold tabular-nums flex-shrink-0" style={{ fontSize: timeFontSize }}>
+            {tableData.transitAlternative?.travel ?? (isEditor ? '—' : '')}
+          </span>
+        </div>
+      )}
+
       {/* Add Corridor Button (editor only) */}
       {isEditor && tableData.corridors.length < 3 && (
         <button

@@ -8,6 +8,7 @@ import { useGeneralStore } from "@/stores/general"
 import { deleteImage } from "@/services/deleteImage"
 import { uploadImage } from "@/services/uploadImage"
 import { fetchTrafficData } from "@/services/data-gathering/fetchTrafficData"
+import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData"
 
 const DEFAULT_TABLES = [{ destination: '', corridors: [] }, { destination: '', corridors: [] }];
 
@@ -120,6 +121,34 @@ export default function TrafficCorridorSlide({
     setTables(slideId, newTables);
   };
 
+  const fetchTransitForTable = async (tableIndex: number, coords: [number, number]) => {
+    try {
+      const origin = { lat: coordinates.lat, lng: coordinates.lng };
+      // coords are [lng, lat] (Mapbox convention) — swap for Skids
+      const dest = { name: '', coordinates: { lat: coords[1], lng: coords[0] } };
+      const results = await fetchSkidsTransitData(origin, [dest]);
+      const result = results[0];
+      const transitAlternative = result?.travel
+        ? { route: result.route, travel: result.travel, legs: result.legs ?? [] }
+        : null;
+      const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
+      setTables(slideId, freshTables.map((t, i) => i === tableIndex ? { ...t, transitAlternative } : t));
+    } catch (err) {
+      console.error('Failed to fetch transit alternative:', err);
+    }
+  };
+
+  const handleTransitToggle = async (tableIndex: number, checked: boolean) => {
+    const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
+    setTables(slideId, freshTables.map((t, i) =>
+      i === tableIndex ? { ...t, showTransitAlternative: checked, transitAlternative: checked ? t.transitAlternative : undefined } : t
+    ));
+    if (checked) {
+      const coords = freshTables[tableIndex]?.coordinates;
+      if (coords) await fetchTransitForTable(tableIndex, coords);
+    }
+  };
+
   const handleSelect = async (tableIndex: number, feature: any) => {
     const name = feature.place_name || `${feature.properties?.name}, ${feature.properties?.full_address}`;
     const coords: [number, number] | undefined = feature.geometry?.coordinates ?? feature.center;
@@ -151,6 +180,11 @@ export default function TrafficCorridorSlide({
         // Read fresh tables from store to avoid stale closure
         const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tablesWithDest;
         setTables(slideId, freshTables.map((t, i) => i === tableIndex ? { ...t, corridors } : t));
+
+        // Also refresh transit alternative if enabled
+        if (freshTables[tableIndex]?.showTransitAlternative && coords) {
+          await fetchTransitForTable(tableIndex, coords);
+        }
       } catch (err) {
         console.error('Failed to fetch traffic data:', err);
       }
@@ -355,6 +389,32 @@ export default function TrafficCorridorSlide({
               Show Second Destination
             </label>
           </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={tables[0]?.showTransitAlternative ?? false}
+                onChange={(e) => handleTransitToggle(0, e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              Transit Alternative (Dest. 1)
+            </label>
+          </div>
+
+          {showSecondTable && (
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={tables[1]?.showTransitAlternative ?? false}
+                  onChange={(e) => handleTransitToggle(1, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Transit Alternative (Dest. 2)
+              </label>
+            </div>
+          )}
 
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>

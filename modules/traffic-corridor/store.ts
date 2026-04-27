@@ -6,10 +6,18 @@ export interface Corridor {
   time: string;
 }
 
+export interface TransitAlternative {
+  route: string | null;
+  travel: string | null;
+  legs?: any[];
+}
+
 export interface DestinationTable {
   destination: string;
   corridors: Corridor[];
   coordinates?: [number, number];
+  showTransitAlternative?: boolean;
+  transitAlternative?: TransitAlternative | null;
 }
 
 interface TrafficCorridorSlideData {
