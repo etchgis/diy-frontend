@@ -1836,7 +1836,7 @@ export default function StopArrivalsSlide({
                                         : opt.label;
                                       return (
                                         <button
-                                          key={`hs-${opt.headsignFilter}`}
+                                          key={`hs-${index}-${opt.headsignFilter}`}
                                           onClick={() => {
                                             const f = opt.headsignFilter!;
                                             let newFilters: string[];
