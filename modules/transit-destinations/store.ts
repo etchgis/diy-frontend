@@ -50,6 +50,7 @@ interface SlideStore {
   setMaxWalkDistance: (slideId: string, meters: number) => void;
   setDestinationModes: (slideId: string, destName: string, modes: string[]) => void;
   setDestinationPreferredItinerary: (slideId: string, destName: string, routeSignature: string[]) => void;
+  setDestinationMaxWalkDistance: (slideId: string, destName: string, meters: number | undefined) => void;
 }
 
 export const useTransitDestinationsStore = create<SlideStore>()(
@@ -300,6 +301,15 @@ export const useTransitDestinationsStore = create<SlideStore>()(
           const slide = state.slides[slideId] || {};
           const destinations = (slide.destinations || []).map((d: any) =>
             d.name === destName ? { ...d, preferredItinerary: routeSignature } : d
+          );
+          return { slides: { ...state.slides, [slideId]: { ...slide, destinations } } };
+        }),
+
+      setDestinationMaxWalkDistance: (slideId, destName, meters) =>
+        set((state) => {
+          const slide = state.slides[slideId] || {};
+          const destinations = (slide.destinations || []).map((d: any) =>
+            d.name === destName ? { ...d, maxWalkDistance: meters } : d
           );
           return { slides: { ...state.slides, [slideId]: { ...slide, destinations } } };
         }),

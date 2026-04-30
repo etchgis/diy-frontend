@@ -25,7 +25,7 @@ function selectBestItinerary<T extends { routeSignature: string[]; route: string
 }
 
 export async function getDestinationData(
-  destList: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[]; preferredItinerary?: string[] }[],
+  destList: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[]; preferredItinerary?: string[]; maxWalkDistance?: number }[],
   slideId: string,
   setDestinationData: (slideId: string, data: any[]) => void,
   setDataError: (slideId: string, error: boolean) => void,
@@ -52,80 +52,62 @@ export async function getDestinationData(
     setDestinationData(slideId, initialData);
   }
 
-  
-  // Always fetch per-destination when any dest has allowedModes or preferredItinerary set,
-  // so we can apply per-dest options and itinerary selection independently.
-  const anyPerDestOptions = destList.some(
-    (d) => (d.allowedModes && d.allowedModes.length > 0) || (d.preferredItinerary && d.preferredItinerary.length > 0)
-  );
+  const anyCustomWalk = destList.some((d) => d.maxWalkDistance != null);
+
+  const buildEnriched = (data: any, dest: typeof destList[0], index: number) => {
+    const chosen = data.allItineraries && dest.preferredItinerary?.length
+      ? selectBestItinerary(data.allItineraries, dest.preferredItinerary)
+      : null;
+    return {
+      name: data.name ?? dest.name,
+      route: chosen?.route ?? data.route ?? null,
+      departure: chosen?.departure ?? data.departure ?? null,
+      arrival: chosen?.arrival ?? data.arrival ?? null,
+      travel: chosen?.travel ?? data.travel ?? null,
+      legs: chosen?.legs ?? (Array.isArray(data.legs) ? data.legs : []),
+      coordinates: dest.coordinates,
+      dark: index % 2 === 0,
+      originStop: data.originStop ?? null,
+      allItineraries: data.allItineraries,
+      reason: data.reason,
+    };
+  };
 
   try {
     if (USE_SKIDS) {
-      if (anyPerDestOptions) {
+      let enrichedDestinations: any[];
+
+      if (anyCustomWalk) {
         const results = await Promise.allSettled(
           destList.map((dest) =>
             fetchSkidsTransitData(
               { lat: coordinates.lat, lng: coordinates.lng },
               [dest],
-              { allowedModes: dest.allowedModes, numItineraries: 3, maxWalkDistanceMeters: options?.maxWalkDistance }
+              { numItineraries: 3, maxWalkDistanceMeters: dest.maxWalkDistance ?? options?.maxWalkDistance }
             )
           )
         );
-
-        const enrichedDestinations = results.map((res, index) => {
+        enrichedDestinations = results.map((res, index) => {
           const dest = destList[index];
           if (res.status === 'fulfilled' && res.value.length > 0) {
-            const data = res.value[0];
-            const chosen = data.allItineraries && dest.preferredItinerary?.length
-              ? selectBestItinerary(data.allItineraries, dest.preferredItinerary)
-              : null;
-            return {
-              name: data.name ?? dest.name,
-              route: chosen?.route ?? data.route ?? null,
-              departure: chosen?.departure ?? data.departure ?? null,
-              arrival: chosen?.arrival ?? data.arrival ?? null,
-              travel: chosen?.travel ?? data.travel ?? null,
-              legs: chosen?.legs ?? (Array.isArray(data.legs) ? data.legs : []),
-              coordinates: dest.coordinates,
-              dark: index % 2 === 0,
-              originStop: data.originStop ?? null,
-              allItineraries: data.allItineraries,
-            };
+            return buildEnriched(res.value[0], dest, index);
           }
           return { name: dest.name, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: dest.coordinates, dark: index % 2 === 0 };
         });
-
-        const anySuccess = enrichedDestinations.some(
-          (d) => d.departure ?? d.arrival ?? d.travel ?? (Array.isArray(d.legs) && d.legs.length > 0)
-        );
-        setDataError(slideId, !anySuccess);
-        setDestinationData(slideId, enrichedDestinations);
       } else {
         const results = await fetchSkidsTransitData(
           { lat: coordinates.lat, lng: coordinates.lng },
           destList,
           { numItineraries: 3, maxWalkDistanceMeters: options?.maxWalkDistance }
         );
-
-        const enrichedDestinations = results.map((data, index) => ({
-          name: data.name ?? destList[index].name,
-          route: data.route ?? null,
-          departure: data.departure ?? null,
-          arrival: data.arrival ?? null,
-          travel: data.travel ?? null,
-          legs: Array.isArray(data.legs) ? data.legs : [],
-          coordinates: destList[index].coordinates,
-          dark: index % 2 === 0,
-          originStop: data.originStop ?? null,
-          allItineraries: data.allItineraries,
-        }));
-
-        const anySuccess = enrichedDestinations.some(
-          (d) => d.departure ?? d.arrival ?? d.travel ?? (Array.isArray(d.legs) && d.legs.length > 0)
-        );
-        setDataError(slideId, !anySuccess);
-        setDestinationData(slideId, enrichedDestinations);
+        enrichedDestinations = results.map((data, index) => buildEnriched(data, destList[index], index));
       }
+
+      const anySuccess = enrichedDestinations.some(
+        (d) => d.departure ?? d.arrival ?? d.travel ?? (Array.isArray(d.legs) && d.legs.length > 0)
+      );
+      setDataError(slideId, !anySuccess);
+      setDestinationData(slideId, enrichedDestinations);
     } else {
       // OTP: Original implementation (N separate requests)
       await fetchOtpDestinations(destList, slideId, setDestinationData, setDataError, coordinates, currentDestinationData, options);

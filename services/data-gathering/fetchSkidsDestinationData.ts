@@ -1,4 +1,5 @@
 const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
+const SKIDS_REGION = process.env.NEXT_PUBLIC_SKIDS_REGION;
 
 interface SkidsResponse {
   origin: {
@@ -66,15 +67,23 @@ interface SkidsTransferLeg {
   distanceMeters?: number;
 }
 
-type SkidsLeg = SkidsTransitLeg | SkidsTransferLeg;
+interface SkidsWalkLeg {
+  type: 'walk';
+  duration: number;
+  distanceMeters: number;
+  fromCoordinate: { lat: number; lon: number };
+  toCoordinate: { lat: number; lon: number };
+}
+
+type SkidsLeg = SkidsTransitLeg | SkidsTransferLeg | SkidsWalkLeg;
 
 /** Transformed leg format expected by the UI */
 export interface TransformedLeg {
   mode: string;
   duration: number;
   distanceMeters?: number;
-  from: { id: string; name: string };
-  to: { id: string; name: string };
+  from?: { id: string; name: string };
+  to?: { id: string; name: string };
   routeShortName?: string;
   routeColor?: string;
   routeTextColor?: string;
@@ -107,6 +116,7 @@ export interface TransformedDestination {
   dark: boolean;
   originStop?: { id: string; name: string; distanceMeters: number } | null;
   allItineraries?: TransformedItinerary[]; // populated when numItineraries > 1
+  reason?: string;
 }
 
 /**
@@ -138,17 +148,25 @@ function transformLeg(leg: SkidsLeg): TransformedLeg {
     };
   }
 
+  if (leg.type === 'walk') {
+    return {
+      mode: 'WALK',
+      duration: leg.duration,
+      distanceMeters: leg.distanceMeters,
+    };
+  }
+
   const duration = leg.alightTime - leg.boardTime;
 
   return {
     mode: leg.route.mode,
     duration,
     routeShortName: leg.route.shortName,
-    routeColor: leg.route.color,
-    routeTextColor: leg.route.textColor,
+    routeColor: leg.route.color?.replace(/^#/, ''),
+    routeTextColor: leg.route.textColor?.replace(/^#/, ''),
     routeType: leg.route.type,
-    agencyId: leg.route.agencyId,      // GTFS agency_id (e.g., "MTA NYCT")
-    agencyName: leg.route.agencyName,  // Full agency name
+    agencyId: leg.route.agencyId,
+    agencyName: leg.route.agencyName,
     from: leg.boardStop,
     to: leg.alightStop,
     headsign: leg.headsign,
@@ -173,28 +191,17 @@ function transformItinerary(
   rawLegs: SkidsLeg[],
   arrivalTime: number | undefined,
   duration: number | undefined,
-  allowedModes?: string[]
 ): TransformedItinerary | null {
   const allLegs = rawLegs.map(transformLeg);
-
-  const modeFilteredLegs = allowedModes && allowedModes.length > 0
-    ? allLegs.filter((l) => {
-        if (l.mode === 'WALK') return allowedModes.includes('WALK');
-        return allowedModes.some((m) => m.toUpperCase() === l.mode?.toUpperCase());
-      })
-    : allLegs;
-
-  const hasTransit = modeFilteredLegs.some((l) => l.mode !== 'WALK');
-  if (allowedModes && allowedModes.length > 0 && !hasTransit) return null;
-
-  const displayLegs = modeFilteredLegs.filter((l) => !(l.mode === 'WALK' && l.duration < 240));
+  const displayLegs = allLegs.filter((l) => l.duration > 0 && !(l.mode === 'WALK' && l.duration < 240));
   const routeStr = displayLegs.map((l) => (l.mode === 'WALK' ? 'Walk' : l.routeShortName)).join(' > ');
   const routeSignature = displayLegs
     .filter((l) => l.mode !== 'WALK' && l.routeShortName)
     .map((l) => l.routeShortName!);
 
   const firstTransitRaw = rawLegs.find((l) => l.type === 'transit') as SkidsTransitLeg | undefined;
-  const departure = firstTransitRaw?.boardTime != null ? formatSecondsAsTime(firstTransitRaw.boardTime) : null;
+  const departureSeconds = firstTransitRaw?.boardTime ?? (arrivalTime != null && duration != null ? arrivalTime - duration : undefined);
+  const departure = departureSeconds != null ? formatSecondsAsTime(departureSeconds) : null;
   const arrival = arrivalTime != null ? formatSecondsAsTime(arrivalTime) : null;
   const travel = duration != null ? formatDurationSeconds(duration) : null;
 
@@ -209,13 +216,12 @@ function transformItinerary(
 export function transformSkidsResponse(
   response: SkidsResponse,
   destinations: { name: string; coordinates: { lat: number; lng: number } }[],
-  allowedModes?: string[]
 ): TransformedDestination[] {
   return response.results.map((result, index) => {
     const destCoord = destinations[index]?.coordinates;
 
     if (!result.reachable) {
-      return { name: result.destinationName, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: destCoord, dark: index % 2 === 0 };
+      return { name: result.destinationName, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: destCoord, dark: index % 2 === 0, reason: result.reason };
     }
 
     const rawItineraries: { legs: SkidsLeg[]; arrivalTime?: number; duration?: number }[] =
@@ -224,7 +230,7 @@ export function transformSkidsResponse(
         : [{ legs: result.legs || [], arrivalTime: result.arrivalTime, duration: result.duration }];
 
     const transformedItineraries = rawItineraries
-      .map((it) => transformItinerary(it.legs, it.arrivalTime, it.duration, allowedModes))
+      .map((it) => transformItinerary(it.legs, it.arrivalTime, it.duration))
       .filter((it): it is TransformedItinerary => it !== null);
 
     if (transformedItineraries.length === 0) {
@@ -248,7 +254,6 @@ export function transformSkidsResponse(
 }
 
 export interface SkidsFetchOptions {
-  allowedModes?: string[];        // e.g. ['BUS', 'SUBWAY', 'WALK']
   numItineraries?: number;        // request multiple itineraries per destination (default 1)
   maxWalkDistanceMeters?: number;
 }
@@ -258,7 +263,7 @@ export interface SkidsFetchOptions {
  */
 export async function fetchSkidsTransitData(
   origin: { lat: number; lng: number },
-  destinations: { name: string; coordinates: { lat: number; lng: number } }[],
+  destinations: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[] }[],
   options?: SkidsFetchOptions
 ): Promise<TransformedDestination[]> {
   if (!SKIDS_URL) {
@@ -266,11 +271,11 @@ export async function fetchSkidsTransitData(
   }
 
   const apiOptions: any = { maxTransfers: 3 };
+  if (SKIDS_REGION) {
+    apiOptions.region = SKIDS_REGION;
+  }
   if (options?.maxWalkDistanceMeters != null) {
     apiOptions.maxWalkDistanceMeters = options.maxWalkDistanceMeters;
-  }
-  if (options?.allowedModes && options.allowedModes.length > 0) {
-    apiOptions.allowedModes = options.allowedModes;
   }
   if (options?.numItineraries && options.numItineraries > 1) {
     apiOptions.numItineraries = options.numItineraries;
@@ -284,6 +289,7 @@ export async function fetchSkidsTransitData(
       destinations: destinations.map((d) => ({
         name: d.name,
         coordinate: { lat: d.coordinates.lat, lon: d.coordinates.lng },
+        ...(d.allowedModes && d.allowedModes.length > 0 ? { allowedModes: d.allowedModes } : {}),
       })),
       options: apiOptions,
     }),
@@ -295,5 +301,8 @@ export async function fetchSkidsTransitData(
   }
 
   const data: SkidsResponse = await response.json();
-  return transformSkidsResponse(data, destinations, options?.allowedModes);
+  console.log('[SKIDS] raw response:', JSON.stringify(data, null, 2));
+  const transformed = transformSkidsResponse(data, destinations);
+  console.log('[SKIDS] transformed response:', JSON.stringify(transformed, null, 2));
+  return transformed;
 }

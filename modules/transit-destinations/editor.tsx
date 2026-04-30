@@ -17,6 +17,14 @@ const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
 const ALL_MODES = ['BUS', 'SUBWAY', 'RAIL', 'WALK'];
 const MODE_LABELS: Record<string, string> = { BUS: 'Bus', SUBWAY: 'Subway', RAIL: 'Rail', WALK: 'Walk' };
 const DEFAULT_MAX_WALK = 800; // meters
+const MAX_WALK_METERS = 4828; // 3 miles
+const WALK_STEP_METERS = 161; // ~0.1 miles
+
+function formatWalkDistance(meters: number): string {
+  const feet = Math.round(meters * 3.28084);
+  if (feet < 5280) return `${feet.toLocaleString()} ft`;
+  return `${(meters / 1609.344).toFixed(1)} mi`;
+}
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -118,6 +126,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const setMaxWalkDistance = useTransitDestinationsStore((state) => state.setMaxWalkDistance);
   const setDestinationModes = useTransitDestinationsStore((state) => state.setDestinationModes);
   const setDestinationPreferredItinerary = useTransitDestinationsStore((state) => state.setDestinationPreferredItinerary);
+  const setDestinationMaxWalkDistance = useTransitDestinationsStore((state) => state.setDestinationMaxWalkDistance);
 
 
 
@@ -609,25 +618,6 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
           </div>
 
           <div className="mb-4">
-            <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Max Walk Distance</h3>
-            <div className="flex items-center gap-2">
-              <input
-                type="range"
-                min={0}
-                max={3000}
-                step={100}
-                value={maxWalkDistance}
-                onChange={(e) => setMaxWalkDistance(slideId, Number(e.target.value))}
-                className="flex-1"
-              />
-              <span className="text-xs text-gray-500 w-16 text-right">
-                {maxWalkDistance >= 1000 ? `${(maxWalkDistance / 1000).toFixed(1)} km` : `${maxWalkDistance} m`}
-              </span>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">Changes take effect on next refetch.</p>
-          </div>
-
-          <div className="mb-4">
             <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Destinations</h3>
             <div className="space-y-2">
               {destinations.map((dest: any, index: number) => {
@@ -677,6 +667,38 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
                                 </button>
                               );
                             })}
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-xs text-gray-500">Max walk distance:</p>
+                              {dest.maxWalkDistance != null && (
+                                <button
+                                  className="text-xs text-gray-400 hover:text-gray-600"
+                                  onClick={() => setDestinationMaxWalkDistance(slideId, dest.name, undefined)}
+                                >
+                                  Reset
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min={0}
+                                max={MAX_WALK_METERS}
+                                step={WALK_STEP_METERS}
+                                value={dest.maxWalkDistance ?? maxWalkDistance}
+                                onChange={(e) => setDestinationMaxWalkDistance(slideId, dest.name, Number(e.target.value))}
+                                className="flex-1"
+                              />
+                              <span className="text-xs text-gray-500 w-14 text-right">
+                                {formatWalkDistance(dest.maxWalkDistance ?? maxWalkDistance)}
+                                {dest.maxWalkDistance == null && <span className="text-gray-300"> *</span>}
+                              </span>
+                            </div>
+                            {dest.maxWalkDistance == null && (
+                              <p className="text-xs text-gray-400 italic">Using global default</p>
+                            )}
                           </div>
 
                           {allItineraries.length > 1 && (
