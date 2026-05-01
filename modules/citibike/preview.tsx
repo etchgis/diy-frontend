@@ -1,4 +1,4 @@
-import { useCitibikeStore, type CitibikeStation } from "./store";
+import { useCitibikeStore, KNOWN_PROVIDERS, type RentalStation } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData";
 import { usePathname } from "next/navigation";
@@ -8,8 +8,9 @@ import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 import mapboxgl from "mapbox-gl";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY as string;
+mapboxgl.prewarm();
 
-const EMPTY_STATIONS: CitibikeStation[] = [];
+const EMPTY_STATIONS: RentalStation[] = [];
 
 export default function CitibikePreview({
   slideId,
@@ -48,8 +49,14 @@ export default function CitibikePreview({
   const stationData = useCitibikeStore(
     (state) => state.slides[slideId]?.stationData ?? EMPTY_STATIONS
   );
+  const selectedProvider = useCitibikeStore(
+    (state) => state.slides[slideId]?.selectedProvider ?? KNOWN_PROVIDERS[0]
+  );
   const dataError = useCitibikeStore(
     (state) => state.slides[slideId]?.dataError || false
+  );
+  const dataLoaded = useCitibikeStore(
+    (state) => state.slides[slideId]?.dataLoaded ?? false
   );
   const showTitle = useCitibikeStore(
     (state) => state.slides[slideId]?.showTitle !== false
@@ -76,60 +83,75 @@ export default function CitibikePreview({
     }
   }, [isEditor, coordinates, slideId]);
 
-  // Initialize map
+  // Initialize map — defer until the container has real pixel dimensions
   useEffect(() => {
     if (!mapContainerRef.current || !coordinates) return;
     if (mapRef.current) return;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/streets-v12",
-      center: [coordinates.lng, coordinates.lat],
-      zoom: 14,
-      attributionControl: false,
-    });
-
-    map.addControl(
-      new mapboxgl.AttributionControl({
-        compact: true,
-        customAttribution: "© Mapbox © OpenStreetMap",
-      }),
-      "top-right"
-    );
-
-    map.dragPan.disable();
-    map.scrollZoom.disable();
-    map.boxZoom.disable();
-    map.dragRotate.disable();
-    map.keyboard.disable();
-    map.doubleClickZoom.disable();
-    map.touchZoomRotate.disable();
-
-    map.on("load", () => {
-      isMapLoadedRef.current = true;
-      addMarkers();
-    });
-
-    mapRef.current = map;
-
-    // ResizeObserver
-    if (mapContainerRef.current && "ResizeObserver" in window) {
-      resizeObserverRef.current = new ResizeObserver(() => {
-        if (mapRef.current) {
-          setTimeout(() => mapRef.current?.resize(), 100);
-        }
-      });
-      resizeObserverRef.current.observe(mapContainerRef.current);
-    }
+    const container = mapContainerRef.current;
+    let initObserver: ResizeObserver | null = null;
 
     const handleWindowResize = () => {
-      if (mapRef.current) {
-        setTimeout(() => mapRef.current?.resize(), 100);
-      }
+      if (mapRef.current) setTimeout(() => mapRef.current?.resize(), 100);
     };
-    window.addEventListener("resize", handleWindowResize);
+
+    const initMap = () => {
+      if (mapRef.current) return;
+      const { width, height } = container.getBoundingClientRect();
+      if (width === 0 || height === 0) return;
+
+      initObserver?.disconnect();
+      initObserver = null;
+
+      const map = new mapboxgl.Map({
+        container,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [coordinates.lng, coordinates.lat],
+        zoom: 14,
+        attributionControl: false,
+      });
+
+      map.addControl(
+        new mapboxgl.AttributionControl({
+          compact: true,
+          customAttribution: "© Mapbox © OpenStreetMap",
+        }),
+        "top-right"
+      );
+
+      map.dragPan.disable();
+      map.scrollZoom.disable();
+      map.boxZoom.disable();
+      map.dragRotate.disable();
+      map.keyboard.disable();
+      map.doubleClickZoom.disable();
+      map.touchZoomRotate.disable();
+
+      map.on("load", () => {
+        isMapLoadedRef.current = true;
+        addMarkers();
+      });
+
+      mapRef.current = map;
+
+      if ("ResizeObserver" in window) {
+        resizeObserverRef.current = new ResizeObserver(() => {
+          if (mapRef.current) setTimeout(() => mapRef.current?.resize(), 100);
+        });
+        resizeObserverRef.current.observe(container);
+      }
+
+      window.addEventListener("resize", handleWindowResize);
+    };
+
+    initMap();
+    if (!mapRef.current && "ResizeObserver" in window) {
+      initObserver = new ResizeObserver(initMap);
+      initObserver.observe(container);
+    }
 
     return () => {
+      initObserver?.disconnect();
       resizeObserverRef.current?.disconnect();
       window.removeEventListener("resize", handleWindowResize);
       markersRef.current.forEach((m) => m.remove());
@@ -178,27 +200,46 @@ export default function CitibikePreview({
       .addTo(mapRef.current);
     markersRef.current.push(originMarker);
 
-    // Station markers
+    // Station/vehicle markers
+    const isScooter = selectedProvider.vehicleType === 'scooter';
     for (const station of stationData) {
-      const totalBikes = station.bikesAvailable;
-      const color = getMarkerColor(totalBikes);
       const el = document.createElement("div");
-      el.style.cssText = `
-        width: 28px;
-        height: 28px;
-        background: ${color};
-        border: 2px solid white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 11px;
-        color: white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        cursor: default;
-      `;
-      el.textContent = String(totalBikes);
+      if (isScooter) {
+        // const rangeMiles = station.currentRangeMeters != null
+        //   ? Math.round(station.currentRangeMeters / 1609.34)
+        //   : null;
+        el.style.cssText = `
+          width: 14px;
+          height: 14px;
+          background: #22C55E;
+          border: 2px solid white;
+          border-radius: 50%;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+          cursor: default;
+        `;
+        // if (rangeMiles != null) {
+        //   el.textContent = `${rangeMiles}mi`;
+        // }
+      } else {
+        const totalBikes = station.bikesAvailable;
+        const color = getMarkerColor(totalBikes);
+        el.style.cssText = `
+          width: 28px;
+          height: 28px;
+          background: ${color};
+          border: 2px solid white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 11px;
+          color: white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          cursor: default;
+        `;
+        el.textContent = String(totalBikes);
+      }
 
       const marker = new mapboxgl.Marker({
         element: el,
@@ -282,7 +323,7 @@ export default function CitibikePreview({
                   fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh`,
                 }}
               >
-                Unable to load Citibike data. Please check your location.
+                Unable to load {selectedProvider.name} data. Please check your location.
               </p>
             </div>
           ) : (
@@ -309,7 +350,68 @@ export default function CitibikePreview({
                 fontSize: isEditor ? `${12.8 * contentSizeMultiplier}px` : `${1.8 * contentSizeMultiplier}vh`,
               }}
             >
-              {coordinates ? "Loading stations..." : "No location set"}
+              {!coordinates
+                ? "No location set"
+                : !dataLoaded
+                ? "Loading..."
+                : `No ${selectedProvider.vehicleType === 'scooter' ? 'scooters' : 'stations'} found nearby. Try increasing the search radius.`}
+            </div>
+          ) : selectedProvider.vehicleType === 'scooter' ? (
+            <div className="p-2">
+              <div
+                className="font-medium mb-2 pb-1"
+                style={{
+                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh`,
+                  borderBottom: "1px solid rgba(255,255,255,0.2)",
+                }}
+              >
+                {selectedProvider.name}
+              </div>
+              <div
+                className="mt-3"
+                style={{ fontSize: isEditor ? `${40 * contentSizeMultiplier}px` : `${5 * contentSizeMultiplier}vh`, fontWeight: 700 }}
+              >
+                {stationData.length}
+              </div>
+              <div
+                style={{
+                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}vh`,
+                  opacity: 0.75,
+                  marginTop: "2px",
+                }}
+              >
+                scooters nearby
+              </div>
+              {stationData[0] && (
+                <div
+                  className="mt-3"
+                  style={{ fontSize: isEditor ? `${15 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}vh` }}
+                >
+                  <div style={{ opacity: 0.7 }}>Nearest</div>
+                  <div style={{ fontWeight: 600 }}>{stationData[0].distance} mi</div>
+                </div>
+              )}
+              <div
+                className="mt-3 pt-2"
+                style={{
+                  borderTop: "1px solid rgba(255,255,255,0.2)",
+                  fontSize: isEditor ? `${14 * contentSizeMultiplier}px` : `${1.9 * contentSizeMultiplier}vh`,
+                }}
+              >
+                {[
+                  { label: "Within 0.1 mi",         fn: (d: number) => d <= 0.1 },
+                  { label: "0.1 mi – 0.25 mi",       fn: (d: number) => d > 0.1 && d <= 0.25 },
+                  { label: "Further than 0.25 mi",   fn: (d: number) => d > 0.25 },
+                ].map(({ label, fn }) => {
+                  const count = stationData.filter((s) => fn(s.distance)).length;
+                  return (
+                    <div key={label} className="flex justify-between mb-1" style={{ opacity: 0.85 }}>
+                      <span>{label}</span>
+                      <span style={{ fontWeight: 600 }}>{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="p-2">
@@ -320,18 +422,16 @@ export default function CitibikePreview({
                   borderBottom: "1px solid rgba(255,255,255,0.2)",
                 }}
               >
-                Citibike
+                {selectedProvider.name}
               </div>
               {stationData.map((station) => {
-                const totalBikes = station.bikesAvailable;
+                const total = station.vehiclesAvailable ?? station.bikesAvailable;
                 const regularBikes = station.bikesAvailable - station.ebikesAvailable;
                 return (
                   <div
                     key={station.stationId}
                     className="mb-2 pb-2"
-                    style={{
-                      borderBottom: "1px solid rgba(255,255,255,0.1)",
-                    }}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}
                   >
                     <div
                       className="font-medium"
@@ -352,17 +452,12 @@ export default function CitibikePreview({
                       </div>
                       <div
                         style={{
-                          color:
-                            totalBikes === 0
-                              ? "#EF4444"
-                              : totalBikes <= 5
-                              ? "#EAB308"
-                              : "#22C55E",
+                          color: total === 0 ? "#EF4444" : total <= 5 ? "#EAB308" : "#22C55E",
                           fontWeight: 600,
                           marginTop: "2px",
                         }}
                       >
-                        Total: {totalBikes}
+                        Total: {total}
                       </div>
                     </div>
                   </div>

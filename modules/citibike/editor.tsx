@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input"
 import { ChevronRight } from "lucide-react"
 import CitibikePreview from "./preview"
 import { useEffect, useRef, useState } from "react"
-import { useCitibikeStore } from "./store"
+import { useCitibikeStore, KNOWN_PROVIDERS } from "./store"
 import { useGeneralStore } from "@/stores/general"
 import { deleteImage } from "@/services/deleteImage"
 import { uploadImage } from "@/services/uploadImage"
@@ -31,6 +31,8 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
   const setLogoImage = useCitibikeStore((state) => state.setLogoImage);
   const searchRadius = useCitibikeStore((state) => state.slides[slideId]?.searchRadius || 0.5);
   const setSearchRadius = useCitibikeStore((state) => state.setSearchRadius);
+  const selectedProvider = useCitibikeStore((state) => state.slides[slideId]?.selectedProvider ?? KNOWN_PROVIDERS[0]);
+  const setSelectedProvider = useCitibikeStore((state) => state.setSelectedProvider);
 
   const titleTextSize = useCitibikeStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const setTitleTextSize = useCitibikeStore((state) => state.setTitleTextSize);
@@ -121,11 +123,11 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
           <div className="flex items-center gap-2 text-[#4a5568] mb-4">
             <span>Home</span>
             <ChevronRight className="w-4 h-4" />
-            <span className="font-medium">Citibike Page</span>
+            <span className="font-medium">Rentals Page</span>
           </div>
 
           <p className="text-[#606061] mb-6">
-            Displays nearby Citibike stations and bike availability based on the screen&apos;s origin location.
+            Displays nearby rental stations and vehicle availability for the selected provider based on the screen&apos;s origin location.
           </p>
 
           {/* Preview Area */}
@@ -214,6 +216,28 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
               </div>
               <Input value={textColor} className="flex-1 text-xs" onChange={(e) => setTextColor(slideId, e.target.value)} />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Provider</label>
+            <select
+              value={selectedProvider.id}
+              onChange={(e) => {
+                const provider = KNOWN_PROVIDERS.find((p) => p.id === e.target.value);
+                if (provider) {
+                  setSelectedProvider(slideId, provider);
+                  fetchCitibikeData(slideId);
+                }
+              }}
+              className="provider-select w-full text-xs border border-[#e2e8f0] rounded bg-white text-[#4a5568]"
+            >
+              {KNOWN_PROVIDERS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.vehicleType})
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-gray-400 mt-1">Nearby providers will be detected automatically in production.</p>
           </div>
 
           <div>

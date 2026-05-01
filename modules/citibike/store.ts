@@ -1,7 +1,24 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export interface CitibikeStation {
+export type VehicleType = 'bike' | 'scooter' | 'car' | 'other';
+
+export interface GbfsProvider {
+  id: string;
+  name: string;
+  vehicleType: VehicleType;
+}
+
+export const KNOWN_PROVIDERS: GbfsProvider[] = [
+  { id: 'citibike-nyc',   name: 'Citi Bike NYC',        vehicleType: 'bike'    },
+  { id: 'citibike-jc',    name: 'Citi Bike Jersey City', vehicleType: 'bike'    },
+  { id: 'bird-new-york',  name: 'Bird New York',         vehicleType: 'scooter' },
+  { id: 'lime-new-york',  name: 'Lime New York',         vehicleType: 'scooter' },
+  { id: 'veo-bronx',      name: 'Veo Bronx',             vehicleType: 'scooter' },
+  { id: 'veo-queens',     name: 'Veo Queens',            vehicleType: 'scooter' },
+];
+
+export interface RentalStation {
   stationId: string;
   name: string;
   lat: number;
@@ -10,7 +27,12 @@ export interface CitibikeStation {
   ebikesAvailable: number;
   docksAvailable: number;
   distance: number;
+  vehiclesAvailable?: number;
+  currentRangeMeters?: number;
 }
+
+/** @deprecated use RentalStation */
+export type CitibikeStation = RentalStation;
 
 interface CitibikeSlideData {
   title: string;
@@ -21,10 +43,12 @@ interface CitibikeSlideData {
   textColor: string;
   logoImage: string;
   searchRadius: number;
-  stationData: CitibikeStation[];
+  stationData: RentalStation[];
   dataError: boolean;
+  dataLoaded: boolean;
   titleTextSize?: number;
   contentTextSize?: number;
+  selectedProvider: GbfsProvider;
 }
 
 interface CitibikeStore {
@@ -37,10 +61,12 @@ interface CitibikeStore {
   setTextColor: (slideId: string, color: string) => void;
   setLogoImage: (slideId: string, logoImage: string) => void;
   setSearchRadius: (slideId: string, radius: number) => void;
-  setStationData: (slideId: string, data: CitibikeStation[]) => void;
+  setStationData: (slideId: string, data: RentalStation[]) => void;
   setDataError: (slideId: string, error: boolean) => void;
+  setDataLoaded: (slideId: string, loaded: boolean) => void;
   setTitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
+  setSelectedProvider: (slideId: string, provider: GbfsProvider) => void;
 }
 
 export const useCitibikeStore = create<CitibikeStore>()(
@@ -141,6 +167,22 @@ export const useCitibikeStore = create<CitibikeStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), contentTextSize: size },
+          },
+        })),
+
+      setSelectedProvider: (slideId, provider) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), selectedProvider: provider, stationData: [], dataLoaded: false },
+          },
+        })),
+
+      setDataLoaded: (slideId, loaded) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), dataLoaded: loaded },
           },
         })),
     }),
