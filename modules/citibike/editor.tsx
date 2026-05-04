@@ -239,7 +239,7 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
                 </option>
               ))}
             </select>
-            <p className="text-[10px] text-gray-400 mt-1">Nearby providers will be detected automatically in production.</p>
+           
           </div>
 
           {selectedProvider.vehicleType !== 'bike' && (
