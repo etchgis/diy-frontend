@@ -49,6 +49,7 @@ interface CitibikeSlideData {
   titleTextSize?: number;
   contentTextSize?: number;
   selectedProvider: GbfsProvider;
+  vehicleMarkerColor: string;
 }
 
 interface CitibikeStore {
@@ -67,6 +68,7 @@ interface CitibikeStore {
   setTitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
   setSelectedProvider: (slideId: string, provider: GbfsProvider) => void;
+  setVehicleMarkerColor: (slideId: string, color: string) => void;
 }
 
 export const useCitibikeStore = create<CitibikeStore>()(
@@ -183,6 +185,14 @@ export const useCitibikeStore = create<CitibikeStore>()(
           slides: {
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), dataLoaded: loaded },
+          },
+        })),
+
+      setVehicleMarkerColor: (slideId, color) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), vehicleMarkerColor: color },
           },
         })),
     }),

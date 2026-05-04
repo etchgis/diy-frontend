@@ -33,6 +33,8 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
   const setSearchRadius = useCitibikeStore((state) => state.setSearchRadius);
   const selectedProvider = useCitibikeStore((state) => state.slides[slideId]?.selectedProvider ?? KNOWN_PROVIDERS[0]);
   const setSelectedProvider = useCitibikeStore((state) => state.setSelectedProvider);
+  const vehicleMarkerColor = useCitibikeStore((state) => state.slides[slideId]?.vehicleMarkerColor || '#22C55E');
+  const setVehicleMarkerColor = useCitibikeStore((state) => state.setVehicleMarkerColor);
 
   const titleTextSize = useCitibikeStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const setTitleTextSize = useCitibikeStore((state) => state.setTitleTextSize);
@@ -239,6 +241,23 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
             </select>
             <p className="text-[10px] text-gray-400 mt-1">Nearby providers will be detected automatically in production.</p>
           </div>
+
+          {selectedProvider.vehicleType !== 'bike' && (
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Vehicle Marker Color</label>
+              <div className="flex items-center gap-2">
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={vehicleMarkerColor}
+                    onChange={(e) => setVehicleMarkerColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={vehicleMarkerColor} className="flex-1 text-xs" onChange={(e) => setVehicleMarkerColor(slideId, e.target.value)} />
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Search Radius (miles)</label>

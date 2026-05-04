@@ -58,6 +58,9 @@ export default function CitibikePreview({
   const dataLoaded = useCitibikeStore(
     (state) => state.slides[slideId]?.dataLoaded ?? false
   );
+  const vehicleMarkerColor = useCitibikeStore(
+    (state) => state.slides[slideId]?.vehicleMarkerColor || '#22C55E'
+  );
   const showTitle = useCitibikeStore(
     (state) => state.slides[slideId]?.showTitle !== false
   );
@@ -162,12 +165,12 @@ export default function CitibikePreview({
     };
   }, [coordinates]);
 
-  // Update markers when station data changes
+  // Update markers when station data or marker color changes
   useEffect(() => {
     if (isMapLoadedRef.current) {
       addMarkers();
     }
-  }, [stationData]);
+  }, [stationData, vehicleMarkerColor]);
 
   function getMarkerColor(bikes: number): string {
     if (bikes === 0) return "#EF4444";
@@ -211,7 +214,7 @@ export default function CitibikePreview({
         el.style.cssText = `
           width: 14px;
           height: 14px;
-          background: #22C55E;
+          background: ${vehicleMarkerColor};
           border: 2px solid white;
           border-radius: 50%;
           box-shadow: 0 1px 4px rgba(0,0,0,0.4);
