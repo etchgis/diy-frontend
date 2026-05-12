@@ -20,6 +20,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const bgImage = slideData?.bgImage || '';
   const logoImage = slideData?.logoImage || '';
   const routeName = slideData?.routeName || '';
+  const displayName = slideData?.displayName || '';
   const showTitle = slideData?.showTitle !== false;
   const description = slideData?.description || '';
   const selectedRoute = slideData?.selectedRoute;
@@ -611,10 +612,10 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
                     </span>
                   )}
 
-                  <span>{selectedRoute.route_long_name || routeName}</span>
+                  <span>{displayName || selectedRoute.route_long_name || routeName}</span>
                 </>
               ) : (
-                routeName || 'Select a Route'
+                displayName || routeName || 'Select a Route'
               )}
             </h1>
             {description && (

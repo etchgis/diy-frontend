@@ -255,7 +255,7 @@ export function transformSkidsResponse(
 
 export interface SkidsFetchOptions {
   numItineraries?: number;        // request multiple itineraries per destination (default 1)
-  maxWalkDistanceMeters?: number;
+  maxWalkMeters?: number;
 }
 
 /**
@@ -274,8 +274,8 @@ export async function fetchSkidsTransitData(
   if (SKIDS_REGION) {
     apiOptions.region = SKIDS_REGION;
   }
-  if (options?.maxWalkDistanceMeters != null) {
-    apiOptions.maxWalkDistanceMeters = options.maxWalkDistanceMeters;
+  if (options?.maxWalkMeters != null) {
+    apiOptions.maxWalkMeters = options.maxWalkMeters;
   }
   if (options?.numItineraries && options.numItineraries > 1) {
     apiOptions.numItineraries = options.numItineraries;

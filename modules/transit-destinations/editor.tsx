@@ -260,7 +260,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
           const skidsResults = await fetchSkidsTransitData(
             { lat: coordinates.lat, lng: coordinates.lng },
             [newDestination],
-            { maxWalkDistanceMeters: maxWalkDistance }
+            { maxWalkMeters: maxWalkDistance }
           );
 
           if (skidsResults && skidsResults.length > 0) {

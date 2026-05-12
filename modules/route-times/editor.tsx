@@ -39,6 +39,7 @@ export default function RouteTimesSlide({
   const slideData = useRouteTimesStore((state) => state.slides[slideId]);
 
   const routeName = slideData?.routeName || '';
+  const displayName = slideData?.displayName ?? '';
   const selectedRoute = slideData?.selectedRoute || undefined;
   const description = slideData?.description || '';
   const viewMode = slideData?.viewMode || 'map';
@@ -50,6 +51,7 @@ export default function RouteTimesSlide({
   const logoImage = slideData?.logoImage || '';
 
   const setRouteName = useRouteTimesStore((state) => state.setRouteName);
+  const setDisplayName = useRouteTimesStore((state) => state.setDisplayName);
   const setSelectedRoute = useRouteTimesStore((state) => state.setSelectedRoute);
   const setDescription = useRouteTimesStore((state) => state.setDescription);
   const setViewMode = useRouteTimesStore((state) => state.setViewMode);
@@ -339,6 +341,19 @@ export default function RouteTimesSlide({
                   value={description}
                   onChange={(e) => setDescription?.(slideId, e.target.value)}
                 />
+              </div>
+
+              <div>
+                <label className="block text-[#4a5568] font-medium mb-2">Display Name Override</label>
+                <Input
+                  placeholder={selectedRoute?.route_long_name || routeName || 'Leave blank to use route name'}
+                  className="bg-white border-[#cbd5e0]"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(slideId, e.target.value)}
+                />
+                <p className="text-xs text-[#718096] mt-1">
+                  Override the route name shown on screen. Leave blank to use the agency-provided name.
+                </p>
               </div>
 
               {/* View Mode Toggle */}

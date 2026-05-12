@@ -31,6 +31,7 @@ interface RouteScheduleData {
 
 interface RouteTimesSlide {
   routeName: string;
+  displayName?: string;
   showTitle?: boolean;
   selectedRoute: Route | undefined;
   description: string;
@@ -58,6 +59,7 @@ interface RouteTimesStore {
     [slideId: string]: RouteTimesSlide;
   };
   setRouteName: (slideId: string, name: string) => void;
+  setDisplayName: (slideId: string, name: string) => void;
   setShowTitle: (slideId: string, show: boolean) => void;
   setSelectedRoute: (slideId: string, route: Route) => void;
   setDescription: (slideId: string, description: string) => void;
@@ -116,6 +118,18 @@ export const useRouteTimesStore = create<RouteTimesStore>()(
               ...getDefaultSlide(),
               ...state.slides[slideId],
               routeName: name,
+            },
+          },
+        })),
+
+      setDisplayName: (slideId, name) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: {
+              ...getDefaultSlide(),
+              ...state.slides[slideId],
+              displayName: name,
             },
           },
         })),
