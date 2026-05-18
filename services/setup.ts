@@ -1,16 +1,17 @@
-import { useTransitDestinationsStore } from "@/stores/transitDestinations";
-import { useFixedRouteStore } from "@/stores/fixedRoute";
-import { useQRStore } from '@/stores/qr';
+import { useTransitDestinationsStore } from "@/modules/transit-destinations/store";
+import { useFixedRouteStore } from "@/modules/fixed-routes/store";
+import { useQRStore } from '@/modules/qr/store';
 import { useGeneralStore } from '@/stores/general';
-import { useTransitRouteStore } from "@/stores/transitRoutes";
-import { useTemplate1Store } from "@/stores/template1";
-import { useTemplate2Store } from "@/stores/template2";
-import { useTemplate3Store } from "@/stores/template3";
-import { useRouteTimesStore } from "@/stores/routeTimes";
-import { useImageOnlyStore } from "@/stores/imageOnly";
-import { useWeatherStore } from "@/stores/weather";
-import { useCitibikeStore } from "@/stores/citibike";
-import { useTrafficCorridorStore } from "@/stores/trafficCorridor";
+import { useTransitRouteStore } from "@/modules/transit-routes/store";
+import { useTemplate1Store } from "@/modules/template-1/store";
+import { useTemplate2Store } from "@/modules/template-2/store";
+import { useTemplate3Store } from "@/modules/template-3/store";
+import { useRouteTimesStore } from "@/modules/route-times/store";
+import { useImageOnlyStore } from "@/modules/image-only/store";
+import { useWeatherStore } from "@/modules/weather/store";
+import { useCitibikeStore } from "@/modules/citibike/store";
+import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store";
+import { useWebEmbedStore } from "@/modules/web-embed/store";
 import { useFooterStore } from "@/stores/footer";
 import { migrateHeadsignFilters } from "@/lib/stop-arrivals-filters";
 
@@ -217,7 +218,9 @@ async function importData(setup: any) {
     setSlides,
     setShortcode,
     setRotationInterval,
+    setResolution,
     setPublishPassword,
+    setIsTempPassword,
     setDefaultBackgroundColor,
     setDefaultTitleColor,
     setDefaultTextColor,
@@ -230,7 +233,11 @@ async function importData(setup: any) {
   setAddress(setup.address || 'Albany, NY');
   setShortcode(setup.shortcode || '');
   setRotationInterval(setup.rotationInterval || 20);
+  if (setup.resolution) setResolution(setup.resolution);
+  console.log('[SETUP] publishPassword from backend:', setup.publishPassword ? `set (${setup.publishPassword.length} chars, starts: ${setup.publishPassword.substring(0, 20)})` : 'empty/null');
+  console.log('[SETUP] isTempPassword from backend:', setup.isTempPassword);
   setPublishPassword(setup.publishPassword || '');
+  setIsTempPassword(setup.isTempPassword === true);
 
   // Restore default styling settings
   if (setup.defaultBackgroundColor) {
@@ -253,7 +260,6 @@ async function importData(setup: any) {
   }
 
   if (setup.theme) {
-    const generalState = useGeneralStore.getState();
     // Directly set theme state without triggering applyThemeColorToAllSlides
     useGeneralStore.setState({
       theme: {
@@ -336,7 +342,10 @@ async function importData(setup: any) {
         setDestinations,
         setAlternateRowTextColor,
         setTitleTextSize,
-        setContentTextSize
+        setContentTextSize,
+        setMaxWalkDistance,
+        setOutageMessage: setTDOutageMessage,
+        setSkipOnError: setTDSkipOnError,
       } = useTransitDestinationsStore.getState();
 
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
@@ -345,9 +354,15 @@ async function importData(setup: any) {
       setTableHeaderTextColor(slide.id, slide.data.tableHeaderTextColor || '#ffffff');
       setTableTextColor(slide.id, slide.data.tableTextColor || '#ffffff');
       setAlternateRowTextColor(slide.id, slide.data.alternateRowTextColor || '#ffffff');
+      // Destinations include optional allowedModes per entry — pass through as-is
       setDestinations(slide.id, slide.data.destinations || []);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+      if (slide.data.maxWalkDistance != null) {
+        setMaxWalkDistance(slide.id, slide.data.maxWalkDistance);
+      }
+      setTDOutageMessage(slide.id, slide.data.outageMessage || '');
+      setTDSkipOnError(slide.id, slide.data.skipOnError ?? false);
       console.log('Destinations set for slide:', slide.id, slide.data.destinations || []);
     }
 
@@ -355,6 +370,7 @@ async function importData(setup: any) {
       const {
         setStopName,
         setDisplayName,
+        setShowTitle,
         setDescription,
         setBackgroundColor,
         setTitleColor,
@@ -365,16 +381,27 @@ async function importData(setup: any) {
         setSelectedStop,
         setServiceSelections,
         setTitleTextSize,
-        setContentTextSize
+        setContentTextSize,
+        setColumnMode,
+        setColumnLabels,
+        setShowColumnHeaders,
+        setColumnHeaderBgColor,
+        setColumnHeaderTextColor,
+        setColumnHeaderTextSize,
+        setMinArrivalMinutes,
+        setColumnServiceSelections,
+        setOutageMessage: setFROutageMessage,
+        setSkipOnError: setFRSkipOnError,
       } = useFixedRouteStore.getState();
 
       setStopName(slide.id, slide.data.stopName || '');
       setDisplayName(slide.id, slide.data.displayName || '');
+      setShowTitle(slide.id, slide.data.showTitle !== false);
       setDescription(slide.id, slide.data.description || '');
       setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
-      setTitleColor(slide.id, slide.data.slideTitleColor || '#ffffff');
-      setTableColor(slide.id, slide.data.tableColor || '#ffffff');
-      setTableTextColor(slide.id, slide.data.tableTextColor || '#000000');
+      setTitleColor(slide.id, slide.data.slideTitleColor || '#FFFFFF');
+      setTableColor(slide.id, slide.data.tableColor || '#78B1DD');
+      setTableTextColor(slide.id, slide.data.tableTextColor || '#FFFFFF');
       setBgImage(slide.id, slide.data.bgImage || '');
       setLogoImage(slide.id, slide.data.logoImage || '');
       // TEMPORARY MIGRATION: Apply migration for old stored format
@@ -384,6 +411,20 @@ async function importData(setup: any) {
       setServiceSelections(slide.id, migratedSelections);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+      setColumnMode(slide.id, slide.data.columnMode || false);
+      if (slide.data.columnLabels) {
+        setColumnLabels(slide.id, slide.data.columnLabels);
+      }
+      setShowColumnHeaders(slide.id, slide.data.showColumnHeaders ?? false);
+      if (slide.data.columnHeaderBgColor) setColumnHeaderBgColor(slide.id, slide.data.columnHeaderBgColor);
+      if (slide.data.columnHeaderTextColor) setColumnHeaderTextColor(slide.id, slide.data.columnHeaderTextColor);
+      if (slide.data.columnHeaderTextSize) setColumnHeaderTextSize(slide.id, slide.data.columnHeaderTextSize);
+      setMinArrivalMinutes(slide.id, slide.data.minArrivalMinutes ?? 0);
+      if (slide.data.columnServiceSelections) {
+        setColumnServiceSelections(slide.id, slide.data.columnServiceSelections);
+      }
+      setFROutageMessage(slide.id, slide.data.outageMessage || '');
+      setFRSkipOnError(slide.id, slide.data.skipOnError ?? false);
     }
 
     if (slide.type === 'transit-routes') {
@@ -630,7 +671,9 @@ async function importData(setup: any) {
         setBgImage,
         setLogoImage,
         setTitleTextSize,
-        setContentTextSize
+        setContentTextSize,
+        setOutageMessage: setRTOutageMessage,
+        setSkipOnError: setRTSkipOnError,
       } = useRouteTimesStore.getState();
 
       setRouteName(slide.id, slide.data.routeName || '');
@@ -645,6 +688,17 @@ async function importData(setup: any) {
       setLogoImage(slide.id, slide.data.logoImage || '');
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+      setRTOutageMessage(slide.id, slide.data.outageMessage || '');
+      setRTSkipOnError(slide.id, slide.data.skipOnError ?? false);
+    }
+
+    if (slide.type === 'web-embed') {
+      const { setUrl, setZoom, setScrollX, setScrollY, setRefreshInterval } = useWebEmbedStore.getState();
+      setUrl(slide.id, slide.data.url || '');
+      setZoom(slide.id, slide.data.zoom ?? 1.0);
+      setScrollX(slide.id, slide.data.scrollX ?? 0);
+      setScrollY(slide.id, slide.data.scrollY ?? 0);
+      setRefreshInterval(slide.id, slide.data.refreshInterval ?? 0);
     }
   });
 

@@ -5,7 +5,24 @@ if (!OTP_URL) {
   throw new Error('NEXT_PUBLIC_OTP_URL environment variable is not configured');
 }
 
-export async function fetchTransitData(fromPlace: string, toPlace: string): Promise<any> {
+const ALL_TRANSIT_MODES = ['BUS', 'SUBWAY', 'RAIL', 'TRAM'];
+
+function buildOtpModeString(allowedModes?: string[], includeWalk?: boolean): string {
+  const hasWalk = includeWalk !== false && (!allowedModes || allowedModes.includes('WALK'));
+  const transitModes = allowedModes
+    ? allowedModes.filter((m) => m !== 'WALK')
+    : ALL_TRANSIT_MODES;
+  const parts = [...transitModes];
+  if (hasWalk) parts.push('WALK');
+  return parts.length > 0 ? parts.join(',') : 'TRANSIT,WALK';
+}
+
+export async function fetchTransitData(
+  fromPlace: string,
+  toPlace: string,
+  allowedModes?: string[],
+  maxWalkDistance?: number
+): Promise<any> {
   try {
     const baseUrl = `${OTP_URL}?`;
 
@@ -15,10 +32,14 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
     const time = `${hours % 12 || 12}:${minutes < 10 ? `0${minutes}` : minutes}${hours >= 12 ? 'pm' : 'am'}`;
     const date = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()}`;
 
-    const query = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&numItineraries=5&mode=TRANSIT,WALK,SUBWAY`;
+    const modeString = buildOtpModeString(allowedModes);
+    const walkParam = maxWalkDistance != null ? `&maxWalkDistance=${maxWalkDistance}` : '';
+    const query = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&numItineraries=5&mode=${modeString}${walkParam}`;
 
-    // Query for WALK-only mode
-    const walkQuery = `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&mode=WALK`;
+    const walkAllowed = !allowedModes || allowedModes.includes('WALK');
+    const walkQuery = walkAllowed
+      ? `${baseUrl}fromPlace=${fromPlace}&toPlace=${toPlace}&time=${time}&date=${date}&arriveBy=false&showIntermediateStops=false&wheelchair=false&locale=en&walkSpeed=1.25&mode=WALK${walkParam}`
+      : null;
 
     const response = await fetch(query);
 
@@ -38,23 +59,23 @@ export async function fetchTransitData(fromPlace: string, toPlace: string): Prom
       allData.push(result);
     });
 
-    // Fetch WALK-only itinerary and add if under 20 minutes
+    // Fetch WALK-only itinerary and add if under 20 minutes (only when walk is allowed)
     let walkItinerary = null;
-    try {
-      const walkResponse = await fetch(walkQuery);
-      if (walkResponse.ok) {
-        const walkData = await walkResponse.json();
-        if (walkData?.plan?.itineraries && walkData.plan.itineraries.length > 0) {
-          walkItinerary = walkData.plan.itineraries[0];
-          // Check if duration is under 20 minutes (1200 seconds)
-          if (walkItinerary.duration < 1200) {
-            allData.push(walkItinerary);
+    if (walkQuery) {
+      try {
+        const walkResponse = await fetch(walkQuery);
+        if (walkResponse.ok) {
+          const walkData = await walkResponse.json();
+          if (walkData?.plan?.itineraries && walkData.plan.itineraries.length > 0) {
+            walkItinerary = walkData.plan.itineraries[0];
+            if (walkItinerary.duration < 1200) {
+              allData.push(walkItinerary);
+            }
           }
         }
+      } catch (walkError) {
+        console.warn('Walk-only query failed:', walkError);
       }
-    } catch (walkError) {
-      // Silently fail if walk query doesn't work, we still have transit data
-      console.warn('Walk-only query failed:', walkError);
     }
 
     if ((!data || !data.plan) && !walkItinerary ) {

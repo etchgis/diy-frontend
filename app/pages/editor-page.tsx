@@ -2,34 +2,36 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Upload, Settings, Edit } from "lucide-react"
-import QRSlide from "@/components/slides/qr"
-import TransitDestinationSlide from "@/components/slides/transit-destination"
+import { ChevronRight, Upload, Settings, Edit } from "lucide-react"
+import QRSlide from "@/modules/qr/editor"
+import TransitDestinationSlide from "@/modules/transit-destinations/editor"
 import { useEffect, useRef, useState } from "react"
 import { v4 as uuidv4 } from "uuid";
-import QRSlidePreview from "@/components/slide-previews/qr-slide-preview"
-import TransitDestinationPreview from "@/components/slide-previews/transit-destination-preview"
-import StopArrivalsSlide from "@/components/slides/stop-arrivals"
-import FixedRoutePreview from "@/components/slide-previews/fixed-route-preview"
-import TransitRoutesPreview from "@/components/slide-previews/transit-routes-preview"
-import TransitRoutesSlide from "@/components/slides/transit-routes"
-import RouteTimesSlide from "@/components/slides/route-times"
-import RouteTimesPreview from "@/components/slide-previews/route-times-preview"
+import QRSlidePreview from "@/modules/qr/preview"
+import TransitDestinationPreview from "@/modules/transit-destinations/preview"
+import StopArrivalsSlide from "@/modules/fixed-routes/editor"
+import FixedRoutePreview from "@/modules/fixed-routes/preview"
+import TransitRoutesPreview from "@/modules/transit-routes/preview"
+import TransitRoutesSlide from "@/modules/transit-routes/editor"
+import RouteTimesSlide from "@/modules/route-times/editor"
+import RouteTimesPreview from "@/modules/route-times/preview"
 import { useRouter } from 'next/navigation';
-import Template1Slide from "@/components/slides/template-1"
-import Template1Preview from "@/components/slide-previews/template-1-preview"
-import Template2Slide from "@/components/slides/template-2"
-import Template2Preview from "@/components/slide-previews/template-2-preview"
-import Template3Slide from "@/components/slides/template-3"
-import Template3Preview from "@/components/slide-previews/template-3-preview"
-import ImageOnlySlide from "@/components/slides/image-only"
-import ImageOnlyPreview from "@/components/slide-previews/image-only-preview"
-import WeatherSlide from "@/components/slides/weather"
-import WeatherPreview from "@/components/slide-previews/weather-preview"
-import CitibikeSlide from "@/components/slides/citibike"
-import CitibikePreview from "@/components/slide-previews/citibike-preview"
-import TrafficCorridorSlide from "@/components/slides/traffic-corridor"
-import TrafficCorridorPreview from "@/components/slide-previews/traffic-corridor-preview"
+import Template1Slide from "@/modules/template-1/editor"
+import Template1Preview from "@/modules/template-1/preview"
+import Template2Slide from "@/modules/template-2/editor"
+import Template2Preview from "@/modules/template-2/preview"
+import Template3Slide from "@/modules/template-3/editor"
+import Template3Preview from "@/modules/template-3/preview"
+import ImageOnlySlide from "@/modules/image-only/editor"
+import ImageOnlyPreview from "@/modules/image-only/preview"
+import WebEmbedEditor from "@/modules/web-embed/editor"
+import WebEmbedPreview from "@/modules/web-embed/preview"
+import WeatherSlide from "@/modules/weather/editor"
+import WeatherPreview from "@/modules/weather/preview"
+import CitibikeSlide from "@/modules/citibike/editor"
+import CitibikePreview from "@/modules/citibike/preview"
+import TrafficCorridorSlide from "@/modules/traffic-corridor/editor"
+import TrafficCorridorPreview from "@/modules/traffic-corridor/preview"
 import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -51,19 +53,20 @@ import {
 import { SortableSlide } from "@/components/sortable-slide"
 import { SetupSlides } from "@/services/setup"
 import { publish } from "@/services/publish"
-import { useTransitDestinationsStore } from "@/stores/transitDestinations"
+import { useTransitDestinationsStore } from "@/modules/transit-destinations/store"
 import { getDestinationData } from "@/services/data-gathering/getDestinationData"
-import { useQRStore } from "@/stores/qr"
-import { useTemplate1Store } from "@/stores/template1"
-import { useTemplate2Store } from "@/stores/template2"
-import { useTemplate3Store } from "@/stores/template3"
-import { useImageOnlyStore } from "@/stores/imageOnly"
-import { useWeatherStore } from "@/stores/weather"
-import { useCitibikeStore } from "@/stores/citibike"
-import { useRouteTimesStore } from "@/stores/routeTimes"
-import { useTrafficCorridorStore } from "@/stores/trafficCorridor"
-import { useFixedRouteStore } from "@/stores/fixedRoute"
+import { useQRStore } from "@/modules/qr/store"
+import { useTemplate1Store } from "@/modules/template-1/store"
+import { useTemplate2Store } from "@/modules/template-2/store"
+import { useTemplate3Store } from "@/modules/template-3/store"
+import { useImageOnlyStore } from "@/modules/image-only/store"
+import { useWeatherStore } from "@/modules/weather/store"
+import { useCitibikeStore } from "@/modules/citibike/store"
+import { useRouteTimesStore } from "@/modules/route-times/store"
+import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store"
+import { useFixedRouteStore } from "@/modules/fixed-routes/store"
 import { applyFontSizeToAllSlides } from "@/services/applyThemeToSlides"
+import { ResolutionFrame } from "@/components/resolution-frame"
 
 
 interface Slide {
@@ -87,6 +90,7 @@ export default function EditorPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [isChangingFromTemp, setIsChangingFromTemp] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const template = useGeneralStore((state) => state.template || '');
@@ -102,8 +106,13 @@ export default function EditorPage() {
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 0);
   const setRotationInterval = useGeneralStore((state) => state.setRotationInterval);
 
+  const resolution = useGeneralStore((state) => state.resolution || '1920x1080');
+  const setResolution = useGeneralStore((state) => state.setResolution);
+
   const publishPassword = useGeneralStore((state) => state.publishPassword || '');
   const setPublishPassword = useGeneralStore((state) => state.setPublishPassword);
+  const isTempPassword = useGeneralStore((state) => state.isTempPassword ?? false);
+  const setIsTempPassword = useGeneralStore((state) => state.setIsTempPassword);
 
   const defaultBackgroundColor = useGeneralStore((state) => state.defaultBackgroundColor || '#192F51');
   const setDefaultBackgroundColor = useGeneralStore((state) => state.setDefaultBackgroundColor);
@@ -140,6 +149,17 @@ export default function EditorPage() {
   const [tempThemeBodyText, setTempThemeBodyText] = useState(theme?.bodyText || '#ffffff');
   const [tempDefaultTitleTextSize, setTempDefaultTitleTextSize] = useState(defaultTitleTextSize);
   const [tempDefaultContentTextSize, setTempDefaultContentTextSize] = useState(defaultContentTextSize);
+
+  const PRESET_RESOLUTIONS = ['responsive', '1920x1080', '1080x1920', '1280x720'];
+  const [useCustomResolution, setUseCustomResolution] = useState(() => !PRESET_RESOLUTIONS.includes(resolution));
+  const [customW, setCustomW] = useState(() => {
+    const [w] = resolution.split('x').map(Number);
+    return w || 1920;
+  });
+  const [customH, setCustomH] = useState(() => {
+    const [, h] = resolution.split('x').map(Number);
+    return h || 1080;
+  });
   useEffect(() => {
     if (showSettings) {
       setTempRotationInterval(rotationInterval);
@@ -153,6 +173,13 @@ export default function EditorPage() {
       setTempThemeBodyText(theme?.bodyText || '#ffffff');
       setTempDefaultTitleTextSize(defaultTitleTextSize);
       setTempDefaultContentTextSize(defaultContentTextSize);
+      const isCustom = !PRESET_RESOLUTIONS.includes(resolution);
+      setUseCustomResolution(isCustom);
+      if (isCustom) {
+        const [w, h] = resolution.split('x').map(Number);
+        if (w) setCustomW(w);
+        if (h) setCustomH(h);
+      }
     }
   }, [showSettings]);
 
@@ -297,6 +324,23 @@ export default function EditorPage() {
     }
   }, []);
 
+  // On mount refresh publishPassword + isTempPassword from the backend so
+  useEffect(() => {
+    const shortcode = useGeneralStore.getState().shortcode;
+    if (!shortcode) return;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) return;
+    fetch(`${backendUrl}/config/${shortcode}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        const { setPublishPassword, setIsTempPassword } = useGeneralStore.getState();
+        setPublishPassword(data.publishPassword || '');
+        setIsTempPassword(data.isTempPassword === true);
+      })
+      .catch(() => {});
+  }, []);
+
   // Auto-create the first slide (transit-destinations) only for truly new screens
   const hasAutoCreatedSlide = useRef(false);
   useEffect(() => {
@@ -331,13 +375,21 @@ export default function EditorPage() {
     hasFetchedDestinations.current = true;
 
     for (const slide of transitSlides) {
-      const destinations = allSlidesState[slide.id]?.destinations || [];
-      console.log(destinations);
+      const slideState = allSlidesState[slide.id];
+      const destinations = slideState?.destinations || [];
+      const maxWalkDistance = slideState?.maxWalkDistance;
 
       try {
         setLoading(slide.id, true);
-        const currentDestinationData = allSlidesState[slide.id]?.destinationData || [];
-        await getDestinationData(destinations, slide.id, setDestinationData, setDataError, currentDestinationData);
+        const currentDestinationData = slideState?.destinationData || [];
+        await getDestinationData(
+          destinations,
+          slide.id,
+          setDestinationData,
+          setDataError,
+          currentDestinationData,
+          maxWalkDistance != null ? { maxWalkDistance } : undefined
+        );
       } finally {
         setLoading(slide.id, false);
       }
@@ -429,32 +481,48 @@ export default function EditorPage() {
     } else {
       setIsSettingPassword(false);
     }
+    setIsChangingFromTemp(false);
     setPasswordInput("");
     setErrorMessage("");
     setShowPasswordModal(true);
   };
 
   const handlePublish = async () => {
-    if (isSettingPassword) {
+    if (isSettingPassword || isChangingFromTemp) {
       if (!passwordInput.trim()) {
         setErrorMessage("Password cannot be empty.");
         return;
       }
       const hashed = await bcrypt.hash(passwordInput, 10);
       setPublishPassword(hashed);
+      setIsTempPassword(false);
       setShowPasswordModal(false);
+      setIsChangingFromTemp(false);
       setErrorMessage("");
-      alert("Password set successfully. Please publish again.");
-      return;
-    } else {
-      const match = await bcrypt.compare(passwordInput, publishPassword);
-      if (!match) {
-        setErrorMessage("Incorrect password. Please try again.");
-        return;
+      if (isChangingFromTemp) {
+        handlePublishingStep();
+      } else {
+        alert("Password set successfully. Please publish again.");
       }
-      setShowPasswordModal(false);
-      handlePublishingStep();
+      return;
     }
+
+    const match = await bcrypt.compare(passwordInput, publishPassword);
+    if (!match) {
+      setErrorMessage("Incorrect password. Please try again.");
+      return;
+    }
+
+    if (isTempPassword) {
+      setIsChangingFromTemp(true);
+      setIsSettingPassword(false);
+      setPasswordInput("");
+      setErrorMessage("");
+      return;
+    }
+
+    setShowPasswordModal(false);
+    handlePublishingStep();
   };
 
   const handlePublishingStep = async () => {
@@ -504,14 +572,18 @@ export default function EditorPage() {
         return <CitibikeSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       case "traffic-corridor":
         return <TrafficCorridorSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+      case "web-embed":
+        return <WebEmbedEditor slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
       default:
         return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
     }
   };
+  const parseResolution = (res: string): { w: number; h: number } => {
+    const [w, h] = res.split('x').map(Number);
+    return { w: w || 1920, h: h || 1080 };
+  };
 
   const renderSlidePreview = (type: string, slideId: string, noSizingDiv?: boolean, isFullPreview?: boolean) => {
-    // If noSizingDiv is not set, we're rendering in the sidebar thumbnail - always use preview mode
-    // If isFullPreview is true, we're in the modal preview - use preview mode
     const shouldUsePreviewMode = !noSizingDiv || isFullPreview;
 
     const content = (() => {
@@ -520,9 +592,9 @@ export default function EditorPage() {
           return <QRSlidePreview slideId={slideId} />;
         case "transit-destinations":
           return <TransitDestinationPreview slideId={slideId} />;
-        case "fixed-routes": // for backwards compatibility
+        case "fixed-routes":
         case "stop-arrivals":
-          return <FixedRoutePreview slideId={slideId} />;
+          return <FixedRoutePreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "transit-routes":
           return <TransitRoutesPreview slideId={slideId} />;
         case "route-times":
@@ -541,16 +613,41 @@ export default function EditorPage() {
           return <CitibikePreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "traffic-corridor":
           return <TrafficCorridorPreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
+        case "web-embed":
+          return <WebEmbedPreview slideId={slideId} />;
         default:
           return null;
       }
     })();
 
-    if (noSizingDiv) {
-      return <div style={fontFamilyStyle} className="h-full">{content}</div>;
+    if (!noSizingDiv) {
+      return <div className="h-[550px] rounded-lg" style={fontFamilyStyle}>{content}</div>;
     }
 
-    return <div className="h-[550px] rounded-lg" style={fontFamilyStyle}>{content}</div>;
+    if (resolution === 'responsive') {
+      // In full preview always render at a fixed 1920×1080 frame so all slides appear the same size
+      if (isFullPreview) {
+        return (
+          <ResolutionFrame logicalW={1920} logicalH={1080} fontFamilyStyle={fontFamilyStyle} background="transparent">
+            {content}
+          </ResolutionFrame>
+        );
+      }
+      return <div className="w-full h-full" style={fontFamilyStyle}>{content}</div>;
+    }
+
+    const { w: logicalW, h: logicalH } = parseResolution(resolution);
+
+    return (
+      <ResolutionFrame
+        logicalW={logicalW}
+        logicalH={logicalH}
+        fontFamilyStyle={fontFamilyStyle}
+        background="transparent"
+      >
+        {content}
+      </ResolutionFrame>
+    );
   };
 
 
@@ -670,6 +767,11 @@ export default function EditorPage() {
                     Traffic Corridor Page
                   </div>
                 </SelectItem>
+                <SelectItem value="web-embed">
+                  <div className="flex items-center gap-2 text-xs">
+                    Web Embed Page
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -728,9 +830,6 @@ export default function EditorPage() {
               />
             </div>
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6" onClick={handleEdit}>Edit</Button>
-            <Button variant="ghost" size="icon" className="text-[#2d3748]">
-              <HelpCircle className="w-5 h-5" />
-            </Button>
           </div>
         </header>
 
@@ -747,43 +846,59 @@ export default function EditorPage() {
 
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-          <div className="relative w-full max-w-6xl h-[630px] bg-white rounded shadow-lg overflow-hidden flex flex-col">
-            {/* Close button */}
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl z-50"
+      {showModal && (() => {
+        const isResponsive = resolution === 'responsive';
+        const { w: modalLogicalW, h: modalLogicalH } = isResponsive ? { w: 1920, h: 1080 } : parseResolution(resolution);
+        const isPortrait = !isResponsive && modalLogicalH > modalLogicalW;
+
+        const CONTROLS_H = 64;
+        const modalStyle: React.CSSProperties = {
+          aspectRatio: `${modalLogicalW} / ${modalLogicalH}`,
+          maxHeight: '90vh',
+          maxWidth: isPortrait ? '60vw' : '92vw',
+          width: isPortrait ? `calc((90vh - ${CONTROLS_H}px) * ${modalLogicalW / modalLogicalH})` : '100%',
+        };
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+            <div
+              className="relative bg-white rounded shadow-lg overflow-hidden flex flex-col"
+              style={modalStyle}
             >
-              ×
-            </button>
-
-            {/* Slide Preview */}
-            <div className="h-[550px] z-10">
-              {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true, true)}
-            </div>
-
-            {/* Controls */}
-            <div className="flex justify-between items-center p-4 border-t bg-gray-50">
-              <Button
-                onClick={() => setModalSlideIndex((prev) => Math.max(0, prev - 1))}
-                disabled={modalSlideIndex === 0}
+              {/* Close button */}
+              <button
+                onClick={() => setShowModal(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl z-50"
               >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600">
-                Slide {modalSlideIndex + 1} of {slides.length}
-              </span>
-              <Button
-                onClick={() => setModalSlideIndex((prev) => Math.min(slides.length - 1, prev + 1))}
-                disabled={modalSlideIndex === slides.length - 1}
-              >
-                Next
-              </Button>
+                ×
+              </button>
+
+              {/* Slide Preview */}
+              <div className="flex-1 min-h-0 z-10">
+                {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true, true)}
+              </div>
+
+              {/* Controls */}
+              <div className="flex justify-between items-center p-4 border-t bg-gray-50 flex-shrink-0">
+                <Button
+                  onClick={() => setModalSlideIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={modalSlideIndex === 0}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Slide {modalSlideIndex + 1} of {slides.length}
+                </span>
+                <Button
+                  onClick={() => setModalSlideIndex((prev) => Math.min(slides.length - 1, prev + 1))}
+                  disabled={modalSlideIndex === slides.length - 1}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {showSettings && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
@@ -824,6 +939,69 @@ export default function EditorPage() {
                     setTempRotationInterval(Number(e.target.value));
                   }}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Screen Resolution
+                </label>
+                <select
+                  value={useCustomResolution ? 'custom' : resolution}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      setUseCustomResolution(true);
+                      setResolution(`${customW}x${customH}`);
+                    } else {
+                      setUseCustomResolution(false);
+                      setResolution(e.target.value);
+                    }
+                  }}
+                  className="select-padded w-full h-7 text-sm border border-gray-300 rounded cursor-pointer"
+                >
+                  <option value="responsive">Responsive — fills any screen</option>
+                  <option value="1920x1080">1920×1080 — HD Landscape</option>
+                  <option value="1080x1920">1080×1920 — HD Portrait</option>
+                  <option value="1280x720">1280×720 — 720p Landscape</option>
+                  <option value="custom">Custom…</option>
+                </select>
+
+                {useCustomResolution && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-0.5">Width (px)</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={7680}
+                        value={customW}
+                        onChange={(e) => {
+                          const w = Math.max(1, Number(e.target.value) || 1);
+                          setCustomW(w);
+                          setResolution(`${w}x${customH}`);
+                        }}
+                        className="w-full text-sm"
+                      />
+                    </div>
+                    <span className="text-gray-400 mt-4">×</span>
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-0.5">Height (px)</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={7680}
+                        value={customH}
+                        onChange={(e) => {
+                          const h = Math.max(1, Number(e.target.value) || 1);
+                          setCustomH(h);
+                          setResolution(`${customW}x${h}`);
+                        }}
+                        className="w-full text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-400 mt-1">Affects the aspect ratio shown in the Preview.</p>
               </div>
 
               <div className="border-t pt-4">
@@ -887,13 +1065,13 @@ export default function EditorPage() {
 
               <div className="border-t pt-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Typography</h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Font Family</label>
                     <select
                       value={tempDefaultFontFamily}
                       onChange={(e) => setTempDefaultFontFamily(e.target.value)}
-                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                      className="select-padded h-7 w-40 text-sm border border-gray-300 rounded cursor-pointer"
                     >
                       <option value="System Default">System Default</option>
                       <option value="Arial">Arial</option>
@@ -911,7 +1089,7 @@ export default function EditorPage() {
                     <select
                       value={tempDefaultTitleTextSize}
                       onChange={(e) => setTempDefaultTitleTextSize(Number(e.target.value))}
-                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                      className="select-padded h-7 w-40 text-sm border border-gray-300 rounded cursor-pointer"
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((size) => (
                         <option key={size} value={size}>{size}</option>
@@ -923,7 +1101,7 @@ export default function EditorPage() {
                     <select
                       value={tempDefaultContentTextSize}
                       onChange={(e) => setTempDefaultContentTextSize(Number(e.target.value))}
-                      className="w-40 p-2 text-sm border border-gray-300 rounded cursor-pointer"
+                      className="select-padded h-7 w-40 text-sm border border-gray-300 rounded cursor-pointer"
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((size) => (
                         <option key={size} value={size}>{size}</option>
@@ -974,10 +1152,13 @@ export default function EditorPage() {
               ×
             </button>
 
-            <h2 className={`text-xl font-semibold ${publishPassword ? 'mb-6' : 'mb-1'}`}>
-              {isSettingPassword ? "Set Publishing Password" : "Enter Your Publishing Password"}
+            <h2 className={`text-xl font-semibold ${isChangingFromTemp ? 'mb-1' : publishPassword ? 'mb-6' : 'mb-1'}`}>
+              {isChangingFromTemp ? "Set a New Password" : isSettingPassword ? "Set Publishing Password" : "Enter Your Publishing Password"}
             </h2>
-            {!publishPassword && (
+            {isChangingFromTemp && (
+              <p className="mb-4 text-[#7e807f] text-sm">Your temporary password was accepted. Please set a permanent password to continue.</p>
+            )}
+            {!isChangingFromTemp && !publishPassword && (
               <p className="mb-4 text-[#7e807f] text-sm">Save this password somewhere safe</p>
             )}
 
@@ -985,7 +1166,7 @@ export default function EditorPage() {
               type="password"
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              placeholder={isSettingPassword ? "Create a password" : "Enter password"}
+              placeholder={isSettingPassword || isChangingFromTemp ? "Create a password" : "Enter password"}
               className="border border-gray-300 p-2 rounded w-full"
             />
 
@@ -1003,13 +1184,13 @@ export default function EditorPage() {
               </Button>
               <Button
                 variant="outline"
-                className="w-[120px] text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90 border-none"
+                className="min-w-[120px] text-[#000000] bg-transparent bg-[#face00] hover:bg-[#face00]/90 border-none"
                 onClick={() => {
                   handlePublish();
                 }}
               >
 
-                {publishPassword ? 'Continue' : 'Set Password'}
+                {isChangingFromTemp ? 'Set Password & Publish' : publishPassword ? 'Continue' : 'Set Password'}
               </Button>
             </div>
           </div>

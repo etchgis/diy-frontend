@@ -26,6 +26,7 @@ interface Store {
   rotationInterval?: number,
   firstPublish?: boolean;
   publishPassword?: string;
+  isTempPassword?: boolean;
   coordinates?: {
     lat: number;
     lng: number;
@@ -37,6 +38,8 @@ interface Store {
   defaultFontFamily?: string;
   defaultTitleTextSize?: number;
   defaultContentTextSize?: number;
+  resolution: string;
+  setResolution: (resolution: string) => void;
   // Theme settings
   theme: Theme;
   setThemePrimaryBackground: (color: string) => void;
@@ -53,6 +56,7 @@ interface Store {
   setRotationInterval: (interval: number) => void;
   setFirstPublish: (firstPublish: boolean) => void;
   setPublishPassword: (publishPassword: string) => void;
+  setIsTempPassword: (isTempPassword: boolean) => void;
   setDefaultBackgroundColor: (color: string) => void;
   setDefaultTitleColor: (color: string) => void;
   setDefaultTextColor: (color: string) => void;
@@ -66,6 +70,7 @@ export const useGeneralStore = create<Store>()(
   persist(
     (set, get) => ({
       slides: [],
+      resolution: '1920x1080',
       theme: {
         primaryBackground: '#192F51',
         secondaryAccent: '#78B1DD',
@@ -110,6 +115,9 @@ export const useGeneralStore = create<Store>()(
       setPublishPassword: (publishPassword) => set(() => ({
         publishPassword,
       })),
+      setIsTempPassword: (isTempPassword) => set(() => ({
+        isTempPassword,
+      })),
       setDefaultBackgroundColor: (color) => set(() => ({
         defaultBackgroundColor: color,
       })),
@@ -127,6 +135,9 @@ export const useGeneralStore = create<Store>()(
       })),
       setDefaultContentTextSize: (size) => set(() => ({
         defaultContentTextSize: size,
+      })),
+      setResolution: (resolution) => set(() => ({
+        resolution,
       })),
       setThemePrimaryBackground: (color) => {
         const oldColor = get().theme.primaryBackground;

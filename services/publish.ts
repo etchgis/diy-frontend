@@ -1,21 +1,22 @@
-import { useFixedRouteStore } from '@/stores/fixedRoute';
-import { useTransitDestinationsStore } from '@/stores/transitDestinations';
+import { useFixedRouteStore } from '@/modules/fixed-routes/store';
+import { useTransitDestinationsStore } from '@/modules/transit-destinations/store';
 import { useGeneralStore } from '@/stores/general';
-import { useQRStore } from '@/stores/qr';
-import { useTransitRouteStore } from '@/stores/transitRoutes';
-import { useTemplate1Store } from '@/stores/template1';
-import { useTemplate2Store } from '@/stores/template2';
-import { useTemplate3Store } from '@/stores/template3';
-import { useRouteTimesStore } from '@/stores/routeTimes';
-import { useImageOnlyStore } from '@/stores/imageOnly';
-import { useWeatherStore } from '@/stores/weather';
-import { useCitibikeStore } from '@/stores/citibike';
-import { useTrafficCorridorStore } from '@/stores/trafficCorridor';
+import { useQRStore } from '@/modules/qr/store';
+import { useTransitRouteStore } from '@/modules/transit-routes/store';
+import { useTemplate1Store } from '@/modules/template-1/store';
+import { useTemplate2Store } from '@/modules/template-2/store';
+import { useTemplate3Store } from '@/modules/template-3/store';
+import { useRouteTimesStore } from '@/modules/route-times/store';
+import { useImageOnlyStore } from '@/modules/image-only/store';
+import { useWeatherStore } from '@/modules/weather/store';
+import { useCitibikeStore } from '@/modules/citibike/store';
+import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
+import { useWebEmbedStore } from '@/modules/web-embed/store';
 import { useFooterStore } from '@/stores/footer';
 import { migrateHeadsignFilters } from '@/lib/stop-arrivals-filters';
 
 export async function publish() {
-  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme } = useGeneralStore.getState();
+  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, isTempPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
   const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
 
   console.log('[PUBLISH] Footer data being published:', {
@@ -37,6 +38,7 @@ export async function publish() {
     rotationInterval: rotationInterval,
     url: url,
     publishPassword: publishPassword,
+    isTempPassword: isTempPassword ?? false,
     defaultBackgroundColor: defaultBackgroundColor,
     defaultTitleColor: defaultTitleColor,
     defaultTextColor: defaultTextColor,
@@ -44,6 +46,7 @@ export async function publish() {
     defaultTitleTextSize: defaultTitleTextSize,
     defaultContentTextSize: defaultContentTextSize,
     theme: theme,
+    resolution: resolution || '1920x1080',
     footer: {
       leftImage: leftImage,
       middleImage: middleImage,
@@ -78,10 +81,10 @@ export async function publish() {
           destinations,
           alternateRowTextColor,
           titleTextSize,
-          contentTextSize
+          contentTextSize,
+          maxWalkDistance,
         } = slideData;
 
-        // Use the slide data as needed
         screenObj.data.backgroundColor = backgroundColor;
         screenObj.data.rowColor = rowColor;
         screenObj.data.alternatingRowColor = alternateRowColor;
@@ -91,9 +94,14 @@ export async function publish() {
         screenObj.data.destinations = destinations?.map((destination: any) => ({
           name: destination.name,
           coordinates: destination.coordinates,
+          allowedModes: destination.allowedModes ?? null,
+          preferredItinerary: destination.preferredItinerary ?? null,
         })) || [];
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+        screenObj.data.maxWalkDistance = maxWalkDistance ?? 800;
+        screenObj.data.outageMessage = slideData.outageMessage ?? '';
+        screenObj.data.skipOnError = slideData.skipOnError ?? false;
 
       } else {
       }
@@ -122,37 +130,77 @@ export async function publish() {
           selectedStop,
           serviceSelections,
           titleTextSize,
-          contentTextSize
+          contentTextSize,
+          showTitle,
+          columnMode,
+          columnLabels,
+          showColumnHeaders,
         } = slideData;
 
+        screenObj.data.stopName = stopName ?? '';
+        screenObj.data.displayName = displayName ?? '';
+        screenObj.data.description = description ?? '';
+        screenObj.data.backgroundColor = backgroundColor ?? '#192F51';
+        screenObj.data.slideTitleColor = titleColor ?? '#FFFFFF';
+        screenObj.data.tableColor = tableColor ?? '#78B1DD';
+        screenObj.data.tableTextColor = tableTextColor ?? '#FFFFFF';
+        screenObj.data.bgImage = bgImage ?? '';
+        screenObj.data.logoImage = logoImage ?? '';
+        screenObj.data.showTitle = showTitle !== false;
+        screenObj.data.columnMode = columnMode ?? false;
+        screenObj.data.columnLabels = columnLabels ?? ['Left', 'Right'];
+        screenObj.data.showColumnHeaders = showColumnHeaders ?? false;
+        screenObj.data.columnHeaderBgColor = slideData.columnHeaderBgColor ?? '#ffffff';
+        screenObj.data.columnHeaderTextColor = slideData.columnHeaderTextColor ?? '#78B1DD';
+        screenObj.data.columnHeaderTextSize = slideData.columnHeaderTextSize ?? 5;
+        screenObj.data.minArrivalMinutes = slideData.minArrivalMinutes ?? 0;
+        screenObj.data.titleTextSize = titleTextSize ?? 5;
+        screenObj.data.contentTextSize = contentTextSize ?? 5;
+        screenObj.data.outageMessage = slideData.outageMessage ?? '';
+        screenObj.data.skipOnError = slideData.skipOnError ?? false;
 
-        screenObj.data.stopName = stopName;
-        screenObj.data.displayName = displayName;
-        screenObj.data.description = description;
-        screenObj.data.backgroundColor = backgroundColor;
-        screenObj.data.slideTitleColor = titleColor;
-        screenObj.data.tableColor = tableColor;
-        screenObj.data.tableTextColor = tableTextColor;
-        screenObj.data.bgImage = bgImage;
-        screenObj.data.logoImage = logoImage;
-        screenObj.data.selectedStop = selectedStop;
-        // Canonicalize legacy slides on publish so the published page doesn't depend
-        // on the editor's allStops migration having run.
-        screenObj.data.serviceSelections = serviceSelections?.map((sel) => {
-          const allDir = sel.directionOptions?.find((o) => o.isAllDirections)?.stopId
-            || sel.directionOptions?.[0]?.stopId;
-          return {
-            ...sel,
-            selectedStopId: allDir ?? sel.selectedStopId,
-            selectedHeadsignFilters: migrateHeadsignFilters(
-              sel.selectedHeadsignFilters,
-              sel.routes,
-              sel.enabledRouteIds,
-            ),
+        if (selectedStop) {
+          screenObj.data.selectedStop = {
+            id: selectedStop.id,
+            name: selectedStop.name,
+            lat: selectedStop.lat,
+            lon: selectedStop.lon,
+            services: (selectedStop.services || []).map((svc: any) => ({
+              id: svc.id,
+              organizationId: svc.organizationId,
+              agencyName: svc.agencyName,
+            })),
           };
-        });
-        screenObj.data.titleTextSize = titleTextSize;
-        screenObj.data.contentTextSize = contentTextSize;
+        }
+
+        if (serviceSelections) {
+          screenObj.data.serviceSelections = serviceSelections.map((s: any) => ({
+            serviceId: s.serviceId,
+            organizationId: s.organizationId,
+            enabled: s.enabled,
+            selectedStopId: s.selectedStopId,
+            enabledRouteIds: s.enabledRouteIds,
+            selectedHeadsignFilters: s.selectedHeadsignFilters,
+            headsignAliases: s.headsignAliases,
+          }));
+        }
+
+        const { columnServiceSelections } = slideData;
+        if (columnServiceSelections) {
+          const stripSel = (s: any) => ({
+            serviceId: s.serviceId,
+            organizationId: s.organizationId,
+            enabled: s.enabled,
+            selectedStopId: s.selectedStopId,
+            enabledRouteIds: s.enabledRouteIds,
+            selectedHeadsignFilters: s.selectedHeadsignFilters,
+            headsignAliases: s.headsignAliases,
+          });
+          screenObj.data.columnServiceSelections = [
+            columnServiceSelections[0].map(stripSel),
+            columnServiceSelections[1].map(stripSel),
+          ];
+        }
       } else {
       }
     }
@@ -428,7 +476,26 @@ export async function publish() {
         screenObj.data.logoImage = logoImage;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+        screenObj.data.outageMessage = slideData.outageMessage ?? '';
+        screenObj.data.skipOnError = slideData.skipOnError ?? false;
       } else {
+      }
+    }
+
+    if (slide.type === 'web-embed') {
+      screenObj.type = 'web-embed';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useWebEmbedStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        screenObj.data.url = slideData.url;
+        screenObj.data.zoom = slideData.zoom;
+        screenObj.data.scrollX = slideData.scrollX;
+        screenObj.data.scrollY = slideData.scrollY;
+        screenObj.data.refreshInterval = slideData.refreshInterval ?? 0;
       }
     }
 
