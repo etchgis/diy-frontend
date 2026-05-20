@@ -137,9 +137,9 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
 
   return (
     <>
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         {/* Main Content */}
-        <div className="flex-1 bg-white">
+        <div className="flex-1 bg-white overflow-y-auto">
           <div className="p-6">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-[#4a5568] mb-4">
@@ -206,7 +206,7 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
+        <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 overflow-y-auto">
 
           {/* Customization Options */}
           <div className="space-y-3 mb-4">

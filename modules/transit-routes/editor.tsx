@@ -229,9 +229,9 @@ export default function TransitRoutesSlide({
 
   return (
     <>
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Main Content */}
-        <div className="flex-1 bg-white min-w-0">
+        <div className="flex-1 bg-white min-w-0 overflow-y-auto">
           <div className="p-6">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-[#4a5568] mb-4">
@@ -394,7 +394,7 @@ export default function TransitRoutesSlide({
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 flex-shrink-0">
+        <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 flex-shrink-0 overflow-y-auto">
           <div className="mb-4">
             <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">
               Destinations

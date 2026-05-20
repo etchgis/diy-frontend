@@ -526,7 +526,7 @@ export default function TrafficCorridorSlide({
   // Render
 
   return (
-    <div className="flex flex-1">
+    <div className="flex flex-1 overflow-hidden">
       {/* Main Content */}
       <div className="flex-1 bg-white overflow-y-auto">
         <div className="p-6">

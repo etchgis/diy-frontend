@@ -652,7 +652,7 @@ export default function EditorPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#e5eaef] flex">
+    <div className="h-screen bg-[#e5eaef] flex overflow-hidden">
       {/* Left Sidebar - Full Height */}
       <div className="w-[196px] bg-white border-r border-[#e2e8f0] flex flex-col">
         <div
@@ -812,7 +812,7 @@ export default function EditorPage() {
       </div>
 
       {/* Right Content Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Header */}
         <header className="bg-[#6e9ab5] px-6 py-4">
           <div className="flex items-center gap-4">
@@ -834,14 +834,16 @@ export default function EditorPage() {
         </header>
 
 
-        {isEditingFooter ? (
-          <EditFooter
-            handleCancel={handleCancelFooterEdit}
-            handleSave={handleSaveFooterEdit}
-          />
-        ) : (
-          activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)
-        )}
+        <div className="flex-1 min-h-0 flex overflow-hidden">
+          {isEditingFooter ? (
+            <EditFooter
+              handleCancel={handleCancelFooterEdit}
+              handleSave={handleSaveFooterEdit}
+            />
+          ) : (
+            activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)
+          )}
+        </div>
 
 
       </div>
