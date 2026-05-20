@@ -4,6 +4,7 @@ export interface TrafficAlternative {
   label: string;
   seconds: number;
   minutes: number;
+  pathCoords?: [number, number][];
 }
 
 export interface TrafficResult {
@@ -13,7 +14,8 @@ export interface TrafficResult {
 
 export async function fetchTrafficData(
   origin: [number, number],
-  destinations: [number, number][]
+  destinations: [number, number][],
+  includePath?: boolean
 ): Promise<TrafficResult[]> {
   const response = await fetch(TRAFFIC_URL, {
     method: 'POST',
@@ -21,6 +23,7 @@ export async function fetchTrafficData(
     body: JSON.stringify({
       origin,
       destinations: destinations.map((coords) => ({ coordinates: coords })),
+      ...(includePath ? { includePath: true } : {}),
     }),
   });
 

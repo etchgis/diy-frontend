@@ -2,15 +2,30 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ChevronRight } from "lucide-react"
 import TrafficCorridorPreview from "./preview"
-import { useEffect, useRef, useState } from "react"
-import { useTrafficCorridorStore, type Corridor } from "./store"
+import { useEffect, useRef, useState, useCallback } from "react"
+import { useTrafficCorridorStore, type Corridor, type TableLayout } from "./store"
 import { useGeneralStore } from "@/stores/general"
 import { deleteImage } from "@/services/deleteImage"
 import { uploadImage } from "@/services/uploadImage"
 import { fetchTrafficData } from "@/services/data-gathering/fetchTrafficData"
 import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData"
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 
-const DEFAULT_TABLES = [{ destination: '', corridors: [] }, { destination: '', corridors: [] }];
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY as string;
+
+const EMPTY_TABLE = { destination: '', corridors: [] };
+const DEFAULT_TABLES = [EMPTY_TABLE, EMPTY_TABLE, EMPTY_TABLE, EMPTY_TABLE];
+
+const TABLE_COLORS = ['#ef4444', '#3b82f6', '#8b5cf6', '#f59e0b'];
+
+type MapMode = 'origin' | 'dest-0' | 'dest-1' | 'dest-2' | 'dest-3';
+
+interface FetchedAlt {
+  label: string;
+  minutes: number;
+  pathCoords: [number, number][];
+}
 
 export default function TrafficCorridorSlide({
   slideId,
@@ -33,54 +48,66 @@ export default function TrafficCorridorSlide({
 
   const showTitle = useTrafficCorridorStore((state) => state.slides[slideId]?.showTitle !== false);
   const setShowTitle = useTrafficCorridorStore((state) => state.setShowTitle);
-
-  const showSecondTable = useTrafficCorridorStore((state) => state.slides[slideId]?.showSecondTable ?? false);
-  const setShowSecondTable = useTrafficCorridorStore((state) => state.setShowSecondTable);
-
   const backgroundColor = useTrafficCorridorStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
   const setBackgroundColor = useTrafficCorridorStore((state) => state.setBackgroundColor);
-
   const tableHeaderColor = useTrafficCorridorStore((state) => state.slides[slideId]?.tableHeaderColor || '#78B1DD');
   const setTableHeaderColor = useTrafficCorridorStore((state) => state.setTableHeaderColor);
-
   const rowColor = useTrafficCorridorStore((state) => state.slides[slideId]?.rowColor || '#192F51');
   const setRowColor = useTrafficCorridorStore((state) => state.setRowColor);
-
   const titleColor = useTrafficCorridorStore((state) => state.slides[slideId]?.titleColor || '#ffffff');
   const setTitleColor = useTrafficCorridorStore((state) => state.setTitleColor);
-
   const textColor = useTrafficCorridorStore((state) => state.slides[slideId]?.textColor || '#ffffff');
   const setTextColor = useTrafficCorridorStore((state) => state.setTextColor);
-
   const bgImage = useTrafficCorridorStore((state) => state.slides[slideId]?.bgImage || '');
   const setBgImage = useTrafficCorridorStore((state) => state.setBgImage);
-
   const logoImage = useTrafficCorridorStore((state) => state.slides[slideId]?.logoImage || '');
   const setLogoImage = useTrafficCorridorStore((state) => state.setLogoImage);
-
   const titleTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const setTitleTextSize = useTrafficCorridorStore((state) => state.setTitleTextSize);
-
   const contentTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.contentTextSize || 5);
   const setContentTextSize = useTrafficCorridorStore((state) => state.setContentTextSize);
-
   const tables = useTrafficCorridorStore((state) => state.slides[slideId]?.tables || DEFAULT_TABLES);
   const setTables = useTrafficCorridorStore((state) => state.setTables);
+  const storedOrigin = useTrafficCorridorStore((state) => state.slides[slideId]?.origin);
+  const setOrigin = useTrafficCorridorStore((state) => state.setOrigin);
+  const tableLayout: TableLayout = useTrafficCorridorStore((state) =>
+    state.slides[slideId]?.tableLayout ??
+    (state.slides[slideId]?.showSecondTable ? 'dual' : 'single')
+  );
+  const setTableLayout = useTrafficCorridorStore((state) => state.setTableLayout);
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const coordinates = useGeneralStore((state) => state.coordinates || { lat: 0, lng: 0 });
 
-  const [query1, setQuery1] = useState('');
-  const [suggestions1, setSuggestions1] = useState<any[]>([]);
-  const [query2, setQuery2] = useState('');
-  const [suggestions2, setSuggestions2] = useState<any[]>([]);
-  const justSelected1 = useRef(false);
-  const justSelected2 = useRef(false);
+  const tableCount = tableLayout === 'quad' ? 4 : tableLayout === 'dual' ? 2 : 1;
 
+  const [mapMode, setMapMode] = useState<MapMode>('dest-0');
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [fetchedAlts, setFetchedAlts] = useState<Record<number, FetchedAlt[]>>({});
+  const [isFetchingRoutes, setIsFetchingRoutes] = useState<Record<number, boolean>>({});
+  const [selectedAltIdx, setSelectedAltIdx] = useState<Record<number, number>>({}); // tableIdx -> selected alt index
+
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const originMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const destMarkersRef = useRef<(mapboxgl.Marker | null)[]>([null, null, null, null]);
+  const routeLayersRef = useRef<string[]>([]);
+  const mapModeRef = useRef<MapMode>(mapMode);
   const MAPBOX_KEY = process.env.NEXT_PUBLIC_MAPBOX_KEY;
   const NY_BBOX = '-79.7624,40.4774,-71.7517,45.0153';
 
-  const fetchSuggestions = async (query: string, signal: AbortSignal, setSuggestions: (s: any[]) => void) => {
+  const [queries, setQueries] = useState(() =>
+    [0, 1, 2, 3].map(i => tables[i]?.destination || '')
+  );
+  const [suggestions, setSuggestions] = useState<any[][]>([[], [], [], []]);
+  const justSelectedRef = useRef([false, false, false, false]);
+  const searchTimeoutsRef = useRef<(NodeJS.Timeout | null)[]>([null, null, null, null]);
+
+  useEffect(() => { mapModeRef.current = mapMode; }, [mapMode]);
+
+  // Geocoding
+
+  const fetchSuggestions = async (query: string, signal: AbortSignal, onResult: (s: any[]) => void) => {
     const poiUrl = `https://api.mapbox.com/search/searchbox/v1/forward?q=${encodeURIComponent(query)}&access_token=${MAPBOX_KEY}&limit=10&types=poi&proximity=-74.0060,40.7128`;
     const generalUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&bbox=${NY_BBOX}&limit=10&access_token=${MAPBOX_KEY}`;
     try {
@@ -94,37 +121,118 @@ export default function TrafficCorridorSlide({
         ...(poiData.features || []),
         ...(generalData.features || []).filter((f: any) => !(poiData.features || []).find((p: any) => p.id === f.id)),
       ];
-      setSuggestions(merged.slice(0, 5));
+      onResult(merged.slice(0, 5));
     } catch (err: any) {
       if (err.name !== 'AbortError') console.error(err);
     }
   };
 
-  useEffect(() => {
-    const controller = new AbortController();
-    if (query1.length < 3) { setSuggestions1([]); return; }
-    if (justSelected1.current) { justSelected1.current = false; return; }
-    fetchSuggestions(query1, controller.signal, setSuggestions1);
-    return () => controller.abort();
-  }, [query1]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    if (query2.length < 3) { setSuggestions2([]); return; }
-    if (justSelected2.current) { justSelected2.current = false; return; }
-    fetchSuggestions(query2, controller.signal, setSuggestions2);
-    return () => controller.abort();
-  }, [query2]);
-
-  const updateDestination = (tableIndex: number, destination: string) => {
-    const newTables = tables.map((t, i) => i === tableIndex ? { ...t, destination } : t);
-    setTables(slideId, newTables);
+  const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
+    try {
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_KEY}&limit=1`
+      );
+      const data = await res.json();
+      return data.features?.[0]?.place_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    } catch {
+      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    }
   };
 
-  const fetchTransitForTable = async (tableIndex: number, coords: [number, number]) => {
+  const handleQueryChange = (idx: number, value: string) => {
+    setQueries(prev => { const n = [...prev]; n[idx] = value; return n; });
+    if (searchTimeoutsRef.current[idx]) clearTimeout(searchTimeoutsRef.current[idx]!);
+    if (value.length < 3) {
+      setSuggestions(prev => { const n = [...prev]; n[idx] = []; return n; });
+      return;
+    }
+    justSelectedRef.current[idx] = false;
+    const controller = new AbortController();
+    searchTimeoutsRef.current[idx] = setTimeout(() =>
+      fetchSuggestions(value, controller.signal, (s) =>
+        setSuggestions(prev => { const n = [...prev]; n[idx] = s; return n; })
+      ), 300);
+  };
+
+  // Traffic routing 
+
+  const fetchRoutesForTable = useCallback(async (
+    tableIdx: number,
+    destCoords: [number, number],
+    overrideOrigin?: [number, number]
+  ) => {
+    const effectiveOrigin = overrideOrigin
+      ?? useTrafficCorridorStore.getState().slides[slideId]?.origin
+      ?? (coordinates.lat && coordinates.lng ? [coordinates.lng, coordinates.lat] as [number, number] : null);
+    if (!effectiveOrigin) return;
+
+    setIsFetchingRoutes(prev => ({ ...prev, [tableIdx]: true }));
+    try {
+      const results = await fetchTrafficData(effectiveOrigin, [destCoords], true);
+      const alternatives = results[0]?.alternatives ?? [];
+      setFetchedAlts(prev => ({
+        ...prev,
+        [tableIdx]: alternatives.map(alt => ({
+          label: alt.label,
+          minutes: alt.minutes,
+          pathCoords: alt.pathCoords ?? [],
+        })),
+      }));
+      setSelectedAltIdx(prev => ({ ...prev, [tableIdx]: 0 }));
+    } catch (err) {
+      console.error(`Failed to fetch routes for table ${tableIdx}:`, err);
+    } finally {
+      setIsFetchingRoutes(prev => ({ ...prev, [tableIdx]: false }));
+    }
+  }, [slideId, coordinates]);
+
+  const handleAddAlternative = (tableIdx: number, alt: FetchedAlt) => {
+    const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
+    const currentCorridors = freshTables[tableIdx]?.corridors ?? [];
+    if (currentCorridors.length >= 3) return;
+    const newCorridor: Corridor = {
+      name: alt.label,
+      time: `${alt.minutes} min`,
+      apiLabel: alt.label,
+    };
+    setTables(slideId, freshTables.map((t, i) =>
+      i === tableIdx ? { ...t, corridors: [...t.corridors, newCorridor] } : t
+    ));
+  };
+
+  // Destination select
+
+  const handleSelect = async (tableIdx: number, feature: any) => {
+    const name = feature.place_name || `${feature.properties?.name}, ${feature.properties?.full_address}`;
+    const coords: [number, number] | undefined = feature.geometry?.coordinates ?? feature.center;
+    justSelectedRef.current[tableIdx] = true;
+    setQueries(prev => { const n = [...prev]; n[tableIdx] = name; return n; });
+    setSuggestions(prev => { const n = [...prev]; n[tableIdx] = []; return n; });
+
+    const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? DEFAULT_TABLES;
+    const padded = freshTables.length >= 4 ? [...freshTables] : [...freshTables, ...DEFAULT_TABLES].slice(0, 4);
+    setTables(slideId, padded.map((t, i) =>
+      i === tableIdx ? { ...t, destination: name, coordinates: coords, corridors: [] } : t
+    ));
+
+    if (coords) {
+      // Place destination marker on map
+      placeDest(tableIdx, coords);
+      await fetchRoutesForTable(tableIdx, coords);
+      if (freshTables[tableIdx]?.showTransitAlternative) await fetchTransitForTable(tableIdx, coords);
+    }
+  };
+
+  const updateDestinationLabel = (tableIdx: number, destination: string) => {
+    const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? DEFAULT_TABLES;
+    setTables(slideId, freshTables.map((t, i) => i === tableIdx ? { ...t, destination } : t));
+  };
+
+  // Transit alternative
+
+  const fetchTransitForTable = async (tableIdx: number, coords: [number, number]) => {
     try {
       const origin = { lat: coordinates.lat, lng: coordinates.lng };
-      // coords are [lng, lat] (Mapbox convention) — swap for Skids
       const dest = { name: '', coordinates: { lat: coords[1], lng: coords[0] } };
       const results = await fetchSkidsTransitData(origin, [dest]);
       const result = results[0];
@@ -132,209 +240,409 @@ export default function TrafficCorridorSlide({
         ? { route: result.route, travel: result.travel, legs: result.legs ?? [] }
         : null;
       const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
-      setTables(slideId, freshTables.map((t, i) => i === tableIndex ? { ...t, transitAlternative } : t));
+      setTables(slideId, freshTables.map((t, i) => i === tableIdx ? { ...t, transitAlternative } : t));
     } catch (err) {
       console.error('Failed to fetch transit alternative:', err);
     }
   };
 
-  const handleTransitToggle = async (tableIndex: number, checked: boolean) => {
+  const handleTransitToggle = async (tableIdx: number, checked: boolean) => {
     const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
     setTables(slideId, freshTables.map((t, i) =>
-      i === tableIndex ? { ...t, showTransitAlternative: checked, transitAlternative: checked ? t.transitAlternative : undefined } : t
+      i === tableIdx ? { ...t, showTransitAlternative: checked, transitAlternative: checked ? t.transitAlternative : undefined } : t
     ));
     if (checked) {
-      const coords = freshTables[tableIndex]?.coordinates;
-      if (coords) await fetchTransitForTable(tableIndex, coords);
+      const coords = freshTables[tableIdx]?.coordinates;
+      if (coords) await fetchTransitForTable(tableIdx, coords);
     }
   };
 
-  const handleSelect = async (tableIndex: number, feature: any) => {
-    const name = feature.place_name || `${feature.properties?.name}, ${feature.properties?.full_address}`;
-    const coords: [number, number] | undefined = feature.geometry?.coordinates ?? feature.center;
+  // Map initialization
 
-    if (tableIndex === 0) { justSelected1.current = true; setQuery1(name); setSuggestions1([]); }
-    else { justSelected2.current = true; setQuery2(name); setSuggestions2([]); }
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
 
-    // Store destination + coordinates, clear corridors while fetching
-    const tablesWithDest = tables.map((t, i) =>
-      i === tableIndex ? { ...t, destination: name, coordinates: coords, corridors: [] } : t
-    );
-    setTables(slideId, tablesWithDest);
+    const center: [number, number] = storedOrigin
+      ? storedOrigin
+      : (coordinates.lng && coordinates.lat ? [coordinates.lng, coordinates.lat] : [-74.006, 40.712]);
 
-    // Fetch live corridor data from the traffic API
-    if (coords && coordinates.lat && coordinates.lng) {
-      try {
-        const origin: [number, number] = [coordinates.lng, coordinates.lat];
-        const results = await fetchTrafficData(origin, [coords]);
-        const alternatives = results[0]?.alternatives ?? [];
-        const seen = new Set<string>();
-        const corridors: Corridor[] = alternatives
-          .filter((alt) => {
-            if (seen.has(alt.label)) return false;
-            seen.add(alt.label);
-            return true;
-          })
-          .slice(0, 3)
-          .map((alt) => ({ name: alt.label, time: `${alt.minutes} min` }));
-        // Read fresh tables from store to avoid stale closure
-        const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tablesWithDest;
-        setTables(slideId, freshTables.map((t, i) => i === tableIndex ? { ...t, corridors } : t));
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center,
+      zoom: 11,
+      scrollZoom: false,
+    });
 
-        // Also refresh transit alternative if enabled
-        if (freshTables[tableIndex]?.showTransitAlternative && coords) {
-          await fetchTransitForTable(tableIndex, coords);
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+
+    map.on('click', async (e) => {
+      const { lng, lat } = e.lngLat;
+      const mode = mapModeRef.current;
+      if (mode === 'origin') {
+        const originCoords: [number, number] = [lng, lat];
+        setOrigin(slideId, originCoords);
+        placeOriginMarker(map, originCoords);
+        // Refetch all active destinations
+        const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
+        const count = tableLayout === 'quad' ? 4 : tableLayout === 'dual' ? 2 : 1;
+        for (let i = 0; i < count; i++) {
+          const destCoords = freshTables[i]?.coordinates;
+          if (destCoords) fetchRoutesForTable(i, destCoords, originCoords);
         }
-      } catch (err) {
-        console.error('Failed to fetch traffic data:', err);
+      } else {
+        const idx = parseInt(mode.replace('dest-', ''));
+        const destCoords: [number, number] = [lng, lat];
+        const name = await reverseGeocode(lng, lat);
+        setQueries(prev => { const n = [...prev]; n[idx] = name; return n; });
+        const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? DEFAULT_TABLES;
+        const padded = freshTables.length >= 4 ? [...freshTables] : [...freshTables, ...DEFAULT_TABLES].slice(0, 4);
+        setTables(slideId, padded.map((t, i) =>
+          i === idx ? { ...t, destination: name, coordinates: destCoords, corridors: [] } : t
+        ));
+        placeDest(idx, destCoords);
+        fetchRoutesForTable(idx, destCoords);
       }
+    });
+
+    map.on('load', () => setMapLoaded(true));
+    mapRef.current = map;
+
+    return () => {
+      destMarkersRef.current.forEach(m => m?.remove());
+      destMarkersRef.current = [null, null, null, null];
+      originMarkerRef.current?.remove();
+      originMarkerRef.current = null;
+      map.remove();
+      mapRef.current = null;
+      setMapLoaded(false);
+    };
+  }, []); 
+
+  // Marker helpers
+
+  const placeOriginMarker = (map: mapboxgl.Map, coords: [number, number]) => {
+    if (originMarkerRef.current) {
+      originMarkerRef.current.setLngLat(coords);
+    } else {
+      originMarkerRef.current = new mapboxgl.Marker({ color: '#22c55e' })
+        .setLngLat(coords)
+        .setDraggable(true)
+        .addTo(map);
+      originMarkerRef.current.on('dragend', () => {
+        const { lng, lat } = originMarkerRef.current!.getLngLat();
+        const newOrigin: [number, number] = [lng, lat];
+        setOrigin(slideId, newOrigin);
+        const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
+        const count = useTrafficCorridorStore.getState().slides[slideId]?.tableLayout === 'quad' ? 4
+          : useTrafficCorridorStore.getState().slides[slideId]?.tableLayout === 'dual' ? 2 : 1;
+        for (let i = 0; i < count; i++) {
+          const dc = freshTables[i]?.coordinates;
+          if (dc) fetchRoutesForTable(i, dc, newOrigin);
+        }
+      });
     }
   };
+
+  const placeDest = (idx: number, coords: [number, number]) => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (destMarkersRef.current[idx]) {
+      destMarkersRef.current[idx]!.setLngLat(coords);
+    } else {
+      destMarkersRef.current[idx] = new mapboxgl.Marker({ color: TABLE_COLORS[idx] })
+        .setLngLat(coords)
+        .setDraggable(true)
+        .addTo(map);
+      destMarkersRef.current[idx]!.on('dragend', () => {
+        const { lng, lat } = destMarkersRef.current[idx]!.getLngLat();
+        const dc: [number, number] = [lng, lat];
+        reverseGeocode(lng, lat).then(name => {
+          setQueries(prev => { const n = [...prev]; n[idx] = name; return n; });
+        });
+        const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? DEFAULT_TABLES;
+        const padded = freshTables.length >= 4 ? [...freshTables] : [...freshTables, ...DEFAULT_TABLES].slice(0, 4);
+        setTables(slideId, padded.map((t, i) =>
+          i === idx ? { ...t, coordinates: dc, corridors: [] } : t
+        ));
+        fetchRoutesForTable(idx, dc);
+      });
+    }
+    map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 11), duration: 600 });
+  };
+
+  // Sync persisted origin marker on mount
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !storedOrigin) return;
+    placeOriginMarker(map, storedOrigin);
+  }, [mapLoaded]); 
+
+  // Sync destination markers and re-fetch routes from stored tables on mount
+  useEffect(() => {
+    if (!mapLoaded) return;
+    tables.forEach((t, i) => {
+      if (t.coordinates && i < tableCount) {
+        placeDest(i, t.coordinates);
+        fetchRoutesForTable(i, t.coordinates);
+      }
+    });
+  }, [mapLoaded]); 
+
+  // Route polyline drawing
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    // Remove old layers 
+    routeLayersRef.current.forEach(id => {
+      try { if (map.getLayer(id)) map.removeLayer(id); } catch {}
+      try { if (map.getSource(id)) map.removeSource(id); } catch {}
+    });
+    routeLayersRef.current = [];
+
+    Object.entries(fetchedAlts).forEach(([tableIdxStr, alts]) => {
+      const tableIdx = parseInt(tableIdxStr);
+      const tableColor = TABLE_COLORS[tableIdx % 4];
+      const activeIdx = selectedAltIdx[tableIdx] ?? 0;
+      const alt = alts[activeIdx];
+      if (!alt?.pathCoords || alt.pathCoords.length < 2) return;
+
+      const sourceId = `route-${tableIdx}`;
+      const layerId = `route-layer-${tableIdx}`;
+      // pathCoords from API is [lat, lon] needs swap to [lon, lat] for Mapbox
+      const coords = alt.pathCoords.map(([lat, lon]) => [lon, lat]);
+      try {
+        map.addSource(sourceId, {
+          type: 'geojson',
+          data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } },
+        });
+        map.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': tableColor, 'line-width': 5, 'line-opacity': 0.9 },
+        });
+        routeLayersRef.current.push(layerId, sourceId);
+      } catch (e) {
+        console.warn('Route draw error:', e);
+      }
+    });
+  }, [fetchedAlts, selectedAltIdx, mapLoaded]);
+
+  // Layout change helper
+
+  const handleSetLayout = (layout: TableLayout) => {
+    setTableLayout(slideId, layout);
+    const targetCount = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
+    const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? DEFAULT_TABLES;
+    const padded = [...freshTables];
+    while (padded.length < targetCount) padded.push({ destination: '', corridors: [] });
+    setTables(slideId, padded);
+    // Remove destination markers that exceed new count
+    for (let i = targetCount; i < 4; i++) {
+      destMarkersRef.current[i]?.remove();
+      destMarkersRef.current[i] = null;
+    }
+  };
+
+  // Save status
 
   useEffect(() => {
     renderCount.current += 1;
     const isDev = process.env.NODE_ENV === 'development';
-
-    if (isDev && renderCount.current <= 2) {
-      setSaveStatus('saved');
-      return;
-    }
-    if (!isDev && renderCount.current === 1) {
-      setSaveStatus('saved');
-      return;
-    }
-
+    if (isDev && renderCount.current <= 2) { setSaveStatus('saved'); return; }
+    if (!isDev && renderCount.current === 1) { setSaveStatus('saved'); return; }
     setSaveStatus('saving');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => setSaveStatus('saved'), 600);
-  }, [showTitle, showSecondTable, backgroundColor, tableHeaderColor, rowColor, titleColor, textColor, bgImage, logoImage, titleTextSize, contentTextSize]);
+  }, [showTitle, tableLayout, backgroundColor, tableHeaderColor, rowColor, titleColor, textColor, bgImage, logoImage, titleTextSize, contentTextSize]);
+
+  // Image upload
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (target === 'bg' && fileInputRef.current) fileInputRef.current.value = '';
     else if (target === 'logo' && logoInputRef.current) logoInputRef.current.value = '';
-
     const currentImage = target === 'bg' ? bgImage : logoImage;
     const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
     const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
-
     setLoadingFn(true);
     uploadImage(shortcode, file).then((data) => {
-      if (currentImage) {
-        deleteImage(currentImage).catch((err) => console.error('Failed to delete previous image:', err));
-      }
+      if (currentImage) deleteImage(currentImage).catch(console.error);
       setImageFn(slideId, data.url);
-    }).catch((err) => {
-      console.error('Image upload failed:', err);
-    }).finally(() => {
-      setLoadingFn(false);
-    });
+    }).catch(console.error).finally(() => setLoadingFn(false));
   };
 
   const handleRemoveImage = (target: 'bg' | 'logo') => {
     const currentImage = target === 'bg' ? bgImage : logoImage;
     const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
     const inputRef = target === 'bg' ? fileInputRef : logoInputRef;
-
     if (currentImage) {
       deleteImage(currentImage).then(() => {
         setImageFn(slideId, '');
         if (inputRef.current) inputRef.current.value = '';
-      }).catch((err) => console.error('Failed to delete image:', err));
+      }).catch(console.error);
     }
   };
+
+  // Render
 
   return (
     <div className="flex flex-1">
       {/* Main Content */}
-      <div className="flex-1 bg-white">
+      <div className="flex-1 bg-white overflow-y-auto">
         <div className="p-6">
-          {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-[#4a5568] mb-4">
             <span>Home</span>
             <ChevronRight className="w-4 h-4" />
             <span className="font-medium">Traffic Corridor</span>
           </div>
 
-          <p className="text-[#606061] mb-4">
-            Displays drive times to user-defined destinations via different highway corridors. Enter destination names below — corridors auto-populate and can be edited directly in the preview.
+          <p className="text-[#606061] mb-4 text-sm">
+            Set an origin and destination on the map to fetch route alternatives. Pick corridors from the alternatives panel and label them how you want. You can move the origin to get different routing paths for the same destination.
           </p>
 
-          {/* Destination Inputs */}
-          <div className="mb-5 space-y-4">
-            <div>
-              <div className="relative">
-                <label className="block text-[#4a5568] font-medium mb-1 text-sm">Destination 1</label>
-                <Input
-                  placeholder="Search for a location..."
-                  value={query1}
-                  onChange={(e) => setQuery1(e.target.value)}
-                  autoComplete="off"
-                />
-                {suggestions1.length > 0 && (
-                  <ul className="absolute z-20 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
-                    {suggestions1.map((feature: any, idx) => (
-                      <li
-                        key={idx}
-                        onClick={() => handleSelect(0, feature)}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black text-sm"
-                      >
-                        {feature.place_name || `${feature.properties?.name}, ${feature.properties?.full_address}`}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <div className="mt-1.5">
-                <label className="block text-[#4a5568] text-xs mb-1">Table header label</label>
-                <Input
-                  placeholder="Edit how the destination appears in the table..."
-                  value={tables[0]?.destination || ''}
-                  onChange={(e) => updateDestination(0, e.target.value)}
-                  className="text-sm"
-                />
-              </div>
-            </div>
-            {showSecondTable && (
-              <div>
-                <div className="relative">
-                  <label className="block text-[#4a5568] font-medium mb-1 text-sm">Destination 2</label>
-                  <Input
-                    placeholder="Search for a location..."
-                    value={query2}
-                    onChange={(e) => setQuery2(e.target.value)}
-                    autoComplete="off"
-                  />
-                  {suggestions2.length > 0 && (
-                    <ul className="absolute z-20 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
-                      {suggestions2.map((feature: any, idx) => (
-                        <li
-                          key={idx}
-                          onClick={() => handleSelect(1, feature)}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black text-sm"
-                        >
-                          {feature.place_name || `${feature.properties?.name}, ${feature.properties?.full_address}`}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <div className="mt-1.5">
-                  <label className="block text-[#4a5568] text-xs mb-1">Table header label</label>
-                  <Input
-                    placeholder="Edit how the destination appears in the table..."
-                    value={tables[1]?.destination || ''}
-                    onChange={(e) => updateDestination(1, e.target.value)}
-                    className="text-sm"
-                  />
-                </div>
-              </div>
-            )}
+          {/* Map Mode Selector */}
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+            <span className="text-xs text-gray-500">Click map to set:</span>
+            <button
+              onClick={() => setMapMode('origin')}
+              className={`text-xs px-2.5 py-1 rounded border transition-colors ${
+                mapMode === 'origin'
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              ✦ Origin
+            </button>
+            {Array.from({ length: tableCount }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setMapMode(`dest-${i}` as MapMode)}
+                className={`text-xs px-2.5 py-1 rounded border transition-colors ${
+                  mapMode === `dest-${i}`
+                    ? 'text-white border-transparent'
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                }`}
+                style={mapMode === `dest-${i}` ? { backgroundColor: TABLE_COLORS[i] } : {}}
+              >
+                ● Dest {i + 1}
+              </button>
+            ))}
           </div>
 
-          {/* Preview Area */}
+          {/* Mapbox Map */}
+          <div className="rounded border border-[#e2e8f0] overflow-hidden mb-4" style={{ height: '300px' }}>
+            <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+          </div>
+
+          {/* Destination Inputs + Alternatives */}
+          <div className="space-y-5 mb-5">
+            {Array.from({ length: tableCount }, (_, i) => {
+              const alts = fetchedAlts[i] ?? [];
+              const currentCorridors = tables[i]?.corridors ?? [];
+              return (
+                <div key={i} className="border border-[#e2e8f0] rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: TABLE_COLORS[i] }} />
+                    <span className="text-sm font-medium text-[#4a5568]">Destination {i + 1}</span>
+                  </div>
+
+                  {/* Search input */}
+                  <div className="relative mb-2">
+                    <Input
+                      placeholder="Search for a location..."
+                      value={queries[i]}
+                      onChange={(e) => handleQueryChange(i, e.target.value)}
+                      onBlur={() => setTimeout(() => setSuggestions(prev => { const n = [...prev]; n[i] = []; return n; }), 200)}
+                      autoComplete="off"
+                      className="text-sm"
+                    />
+                    {suggestions[i].length > 0 && (
+                      <ul className="absolute z-20 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                        {suggestions[i].map((feature: any, idx: number) => (
+                          <li
+                            key={idx}
+                            onMouseDown={() => handleSelect(i, feature)}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black text-sm"
+                          >
+                            {feature.place_name || `${feature.properties?.name}, ${feature.properties?.full_address}`}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Table header label */}
+                  <Input
+                    placeholder="Table header label (how it appears on screen)..."
+                    value={tables[i]?.destination || ''}
+                    onChange={(e) => updateDestinationLabel(i, e.target.value)}
+                    className="text-sm mb-3"
+                  />
+
+                  {/* Alternatives Panel */}
+                  {isFetchingRoutes[i] && (
+                    <div className="flex items-center gap-2 py-2 text-xs text-gray-500">
+                      <div className="animate-spin w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                      Fetching routes...
+                    </div>
+                  )}
+                  {!isFetchingRoutes[i] && alts.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1.5 font-medium">Route alternatives:</p>
+                      {alts.map((alt, altIdx) => {
+                        const canAdd = currentCorridors.length < 3;
+                        const isActive = (selectedAltIdx[i] ?? 0) === altIdx;
+                        return (
+                          <div
+                            key={altIdx}
+                            onClick={() => setSelectedAltIdx(prev => ({ ...prev, [i]: altIdx }))}
+                            className={`flex items-center gap-2 p-2 mb-1.5 rounded border cursor-pointer transition-colors ${
+                              isActive ? 'border-transparent bg-white shadow-sm ring-2' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            style={isActive ? { ringColor: TABLE_COLORS[i], boxShadow: `0 0 0 2px ${TABLE_COLORS[i]}` } : {}}
+                          >
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: TABLE_COLORS[i] }} />
+                            <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+                              <span className="text-sm text-gray-800 truncate">{alt.label}</span>
+                              <span className="text-xs text-gray-400 flex-shrink-0">{alt.minutes} min</span>
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleAddAlternative(i, alt); }}
+                              disabled={!canAdd}
+                              className={`text-xs px-2 py-1 rounded flex-shrink-0 transition-colors ${
+                                !canAdd
+                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                            >
+                              + Add
+                            </button>
+                          </div>
+                        );
+                      })}
+                      {currentCorridors.length >= 3 && (
+                        <p className="text-xs text-amber-600">Max 3 corridors reached, remove one in the preview to add more.</p>
+                      )}
+                    </div>
+                  )}
+                  {!isFetchingRoutes[i] && alts.length === 0 && tables[i]?.coordinates && (
+                    <p className="text-xs text-gray-400 italic">No routes returned for this destination.</p>
+                  )}
+                  {!tables[i]?.coordinates && (
+                    <p className="text-xs text-gray-400 italic">Search above or click the map to set this destination.</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Preview */}
           <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
             <TrafficCorridorPreview slideId={slideId} />
           </div>
@@ -344,17 +652,11 @@ export default function TrafficCorridorSlide({
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
             {saveStatus !== 'idle' && (
-              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+              <div className="flex items-center text-xs text-gray-500 ml-2">
                 {saveStatus === 'saving' ? (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
-                    Saving...
-                  </>
+                  <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
                 ) : (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                    Saved Locally
-                  </>
+                  <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
                 )}
               </div>
             )}
@@ -363,7 +665,7 @@ export default function TrafficCorridorSlide({
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4">
+      <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 overflow-y-auto">
         <div className="space-y-3 mb-4">
 
           <div>
@@ -378,54 +680,47 @@ export default function TrafficCorridorSlide({
             </label>
           </div>
 
+          {/* Layout Selector */}
           <div>
-            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showSecondTable}
-                onChange={(e) => setShowSecondTable(slideId, e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300"
-              />
-              Show Second Destination
-            </label>
+            <label className="block text-[#4a5568] font-medium mb-1.5 text-xs">Table Layout</label>
+            <div className="flex gap-1">
+              {(['single', 'dual', 'quad'] as TableLayout[]).map((layout) => (
+                <button
+                  key={layout}
+                  onClick={() => handleSetLayout(layout)}
+                  className={`text-xs px-2 py-1.5 rounded border flex-1 transition-colors ${
+                    tableLayout === layout
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {layout === 'single' ? '1' : layout === 'dual' ? '2' : '2×2'}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
-              <input
-                type="checkbox"
-                checked={tables[0]?.showTransitAlternative ?? false}
-                onChange={(e) => handleTransitToggle(0, e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300"
-              />
-              Transit Alternative (Dest. 1)
-            </label>
-          </div>
-
-          {showSecondTable && (
-            <div>
+          {/* Transit Alternatives */}
+          {Array.from({ length: tableCount }, (_, i) => (
+            <div key={i}>
               <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={tables[1]?.showTransitAlternative ?? false}
-                  onChange={(e) => handleTransitToggle(1, e.target.checked)}
+                  checked={tables[i]?.showTransitAlternative ?? false}
+                  onChange={(e) => handleTransitToggle(i, e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300"
                 />
-                Transit Alternative (Dest. 2)
+                Transit Alt. (Dest. {i + 1})
               </label>
             </div>
-          )}
+          ))}
 
+          {/* Colors */}
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
             <div className="flex items-center gap-2">
               <div className="colorContainer">
-                <input
-                  type="color"
-                  value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(slideId, e.target.value)}
-                  className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
-                />
+                <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(slideId, e.target.value)} className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none" />
               </div>
               <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => setBackgroundColor(slideId, e.target.value)} />
             </div>
@@ -435,12 +730,7 @@ export default function TrafficCorridorSlide({
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Header Color</label>
             <div className="flex items-center gap-2">
               <div className="colorContainer">
-                <input
-                  type="color"
-                  value={tableHeaderColor}
-                  onChange={(e) => setTableHeaderColor(slideId, e.target.value)}
-                  className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
-                />
+                <input type="color" value={tableHeaderColor} onChange={(e) => setTableHeaderColor(slideId, e.target.value)} className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none" />
               </div>
               <Input value={tableHeaderColor} className="flex-1 text-xs" onChange={(e) => setTableHeaderColor(slideId, e.target.value)} />
             </div>
@@ -450,12 +740,7 @@ export default function TrafficCorridorSlide({
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Row Color</label>
             <div className="flex items-center gap-2">
               <div className="colorContainer">
-                <input
-                  type="color"
-                  value={rowColor}
-                  onChange={(e) => setRowColor(slideId, e.target.value)}
-                  className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
-                />
+                <input type="color" value={rowColor} onChange={(e) => setRowColor(slideId, e.target.value)} className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none" />
               </div>
               <Input value={rowColor} className="flex-1 text-xs" onChange={(e) => setRowColor(slideId, e.target.value)} />
             </div>
@@ -465,12 +750,7 @@ export default function TrafficCorridorSlide({
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Color</label>
             <div className="flex items-center gap-2">
               <div className="colorContainer">
-                <input
-                  type="color"
-                  value={titleColor}
-                  onChange={(e) => setTitleColor(slideId, e.target.value)}
-                  className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
-                />
+                <input type="color" value={titleColor} onChange={(e) => setTitleColor(slideId, e.target.value)} className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none" />
               </div>
               <Input value={titleColor} className="flex-1 text-xs" onChange={(e) => setTitleColor(slideId, e.target.value)} />
             </div>
@@ -480,128 +760,62 @@ export default function TrafficCorridorSlide({
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Text Color</label>
             <div className="flex items-center gap-2">
               <div className="colorContainer">
-                <input
-                  type="color"
-                  value={textColor}
-                  onChange={(e) => setTextColor(slideId, e.target.value)}
-                  className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
-                />
+                <input type="color" value={textColor} onChange={(e) => setTextColor(slideId, e.target.value)} className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none" />
               </div>
               <Input value={textColor} className="flex-1 text-xs" onChange={(e) => setTextColor(slideId, e.target.value)} />
             </div>
           </div>
 
+          {/* Text Sizes */}
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Size: {titleTextSize}</label>
+            <input type="range" min="1" max="10" value={titleTextSize} onChange={(e) => setTitleTextSize(slideId, Number(e.target.value))} className="w-full h-1.5 accent-blue-600" />
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Content Size: {contentTextSize}</label>
+            <input type="range" min="1" max="10" value={contentTextSize} onChange={(e) => setContentTextSize(slideId, Number(e.target.value))} className="w-full h-1.5 accent-blue-600" />
+          </div>
+
+          {/* Background Image */}
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                {isBgUploading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                ) : bgImage ? (
-                  <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
-                )}
+            {bgImage ? (
+              <div className="flex items-center gap-2">
+                <img src={bgImage} alt="bg" className="w-10 h-7 object-cover rounded" />
+                <button onClick={() => handleRemoveImage('bg')} className="text-xs text-red-500 hover:text-red-700">Remove</button>
               </div>
-              <div className="flex gap-1">
-                <input type="file" accept="image/*" ref={fileInputRef} onChange={(e) => handleImageUpload(e, 'bg')} className="hidden" />
-                <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => fileInputRef.current?.click()}>
-                  Change
-                </Button>
-                {bgImage && (
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => handleRemoveImage('bg')}>
-                    Remove
-                  </Button>
-                )}
-              </div>
-            </div>
+            ) : (
+              <button onClick={() => fileInputRef.current?.click()} disabled={isBgUploading} className="w-full text-xs py-1.5 border border-dashed border-gray-300 rounded text-gray-500 hover:bg-gray-50">
+                {isBgUploading ? 'Uploading...' : '+ Upload'}
+              </button>
+            )}
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bg')} />
           </div>
 
+          {/* Logo Image */}
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Logo Image</label>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                {isLogoUploading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                ) : logoImage ? (
-                  <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
-                )}
+            {logoImage ? (
+              <div className="flex items-center gap-2">
+                <img src={logoImage} alt="logo" className="w-10 h-7 object-contain rounded" />
+                <button onClick={() => handleRemoveImage('logo')} className="text-xs text-red-500 hover:text-red-700">Remove</button>
               </div>
-              <div className="flex gap-1">
-                <input type="file" accept="image/*" ref={logoInputRef} onChange={(e) => handleImageUpload(e, 'logo')} className="hidden" />
-                <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => logoInputRef.current?.click()}>
-                  Change
-                </Button>
-                {logoImage && (
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => handleRemoveImage('logo')}>
-                    Remove
-                  </Button>
-                )}
-              </div>
-            </div>
+            ) : (
+              <button onClick={() => logoInputRef.current?.click()} disabled={isLogoUploading} className="w-full text-xs py-1.5 border border-dashed border-gray-300 rounded text-gray-500 hover:bg-gray-50">
+                {isLogoUploading ? 'Uploading...' : '+ Upload'}
+              </button>
+            )}
+            <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} />
           </div>
 
-          <div>
-            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Title Text Size</label>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-8 h-8 p-0 text-lg"
-                onClick={() => setTitleTextSize(slideId, Math.max(1, titleTextSize - 1))}
-                disabled={titleTextSize <= 1}
-              >
-                −
-              </Button>
-              <span className="w-6 text-center text-sm font-medium">{titleTextSize}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-8 h-8 p-0 text-lg"
-                onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
-                disabled={titleTextSize >= 10}
-              >
-                +
-              </Button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Content Text Size</label>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-8 h-8 p-0 text-lg"
-                onClick={() => setContentTextSize(slideId, Math.max(1, contentTextSize - 1))}
-                disabled={contentTextSize <= 1}
-              >
-                −
-              </Button>
-              <span className="w-6 text-center text-sm font-medium">{contentTextSize}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-8 h-8 p-0 text-lg"
-                onClick={() => setContentTextSize(slideId, Math.min(10, contentTextSize + 1))}
-                disabled={contentTextSize >= 10}
-              >
-                +
-              </Button>
-            </div>
-          </div>
-
-        </div>
-
-        <div className="mt-auto">
-          <Button
-            className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2"
+          {/* Delete */}
+          <button
             onClick={() => handleDelete(slideId)}
+            className="w-full text-xs py-1.5 border border-red-200 rounded text-red-500 hover:bg-red-50 mt-2"
           >
             Delete Screen
-          </Button>
+          </button>
         </div>
       </div>
     </div>

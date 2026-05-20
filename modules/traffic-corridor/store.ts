@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 export interface Corridor {
   name: string;
   time: string;
+  apiLabel?: string; 
 }
 
 export interface TransitAlternative {
@@ -20,6 +21,8 @@ export interface DestinationTable {
   transitAlternative?: TransitAlternative | null;
 }
 
+export type TableLayout = 'single' | 'dual' | 'quad';
+
 interface TrafficCorridorSlideData {
   title: string;
   showTitle: boolean;
@@ -32,6 +35,8 @@ interface TrafficCorridorSlideData {
   rowColor: string;
   tables: DestinationTable[];
   showSecondTable: boolean;
+  tableLayout?: TableLayout;
+  origin?: [number, number];
   titleTextSize: number;
   contentTextSize: number;
 }
@@ -49,6 +54,8 @@ interface TrafficCorridorStore {
   setRowColor: (slideId: string, color: string) => void;
   setTables: (slideId: string, tables: DestinationTable[]) => void;
   setShowSecondTable: (slideId: string, show: boolean) => void;
+  setTableLayout: (slideId: string, layout: TableLayout) => void;
+  setOrigin: (slideId: string, origin: [number, number] | undefined) => void;
   setTitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
 }
@@ -111,6 +118,16 @@ export const useTrafficCorridorStore = create<TrafficCorridorStore>()(
       setShowSecondTable: (slideId, show) =>
         set((state) => ({
           slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), showSecondTable: show } },
+        })),
+
+      setTableLayout: (slideId, layout) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), tableLayout: layout } },
+        })),
+
+      setOrigin: (slideId, origin) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), origin } },
         })),
 
       setTitleTextSize: (slideId, size) =>

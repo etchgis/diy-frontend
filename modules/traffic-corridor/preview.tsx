@@ -5,7 +5,7 @@ import Footer from "@/components/shared-components/footer";
 import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 
 const DEFAULT_TABLE: DestinationTable = { destination: '', corridors: [] };
-const DEFAULT_TABLES: DestinationTable[] = [DEFAULT_TABLE, DEFAULT_TABLE];
+const DEFAULT_TABLES: DestinationTable[] = [DEFAULT_TABLE, DEFAULT_TABLE, DEFAULT_TABLE, DEFAULT_TABLE];
 
 export default function TrafficCorridorPreview({
   slideId,
@@ -29,7 +29,12 @@ export default function TrafficCorridorPreview({
   const rowColor = useTrafficCorridorStore((state) => state.slides[slideId]?.rowColor || "#192F51");
   const tables = useTrafficCorridorStore((state) => state.slides[slideId]?.tables || DEFAULT_TABLES);
   const setTables = useTrafficCorridorStore((state) => state.setTables);
-  const showSecondTable = useTrafficCorridorStore((state) => state.slides[slideId]?.showSecondTable ?? false);
+  const tableLayout = useTrafficCorridorStore((state) =>
+    state.slides[slideId]?.tableLayout ??
+    (state.slides[slideId]?.showSecondTable ? 'dual' : 'single')
+  );
+  const isQuad = tableLayout === 'quad';
+  const showSecondTable = tableLayout === 'dual' || tableLayout === 'quad';
   const titleTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const contentTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.contentTextSize || 5);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
@@ -39,6 +44,8 @@ export default function TrafficCorridorPreview({
 
   const table0 = tables[0] ?? DEFAULT_TABLE;
   const table1 = tables[1] ?? DEFAULT_TABLE;
+  const table2 = tables[2] ?? DEFAULT_TABLE;
+  const table3 = tables[3] ?? DEFAULT_TABLE;
 
 const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name' | 'time', value: string) => {
     const newTables = tables.map((t, i) => {
@@ -98,7 +105,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           backgroundColor: tableHeaderColor,
           color: textColor,
           fontSize: headerFontSize,
-          minHeight: isEditor ? (showSecondTable ? '28px' : '40px') : undefined,
+          minHeight: isEditor ? (isQuad ? '22px' : showSecondTable ? '28px' : '40px') : undefined,
           padding: headerPadding,
         }}
       >
@@ -116,7 +123,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
             backgroundColor: corridorIndex % 2 === 0 ? rowColor : `${rowColor}cc`,
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
-            minHeight: isEditor ? (showSecondTable ? '26px' : '36px') : undefined,
+            minHeight: isEditor ? (isQuad ? '20px' : showSecondTable ? '26px' : '36px') : undefined,
             padding: rowPadding,
           }}
         >
@@ -162,7 +169,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
             backgroundColor: `${rowColor}aa`,
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
-            minHeight: isEditor ? (showSecondTable ? '26px' : '36px') : undefined,
+            minHeight: isEditor ? (isQuad ? '20px' : showSecondTable ? '26px' : '36px') : undefined,
             padding: rowPadding,
           }}
         >
@@ -270,14 +277,14 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
 
       {/* Tables Area */}
       <div
-        className="flex-1 min-h-0 flex flex-col justify-center overflow-hidden"
+        className={`flex-1 min-h-0 overflow-hidden ${isQuad ? 'grid grid-cols-2' : 'flex flex-col justify-center'}`}
         style={{
           padding: isEditor
-            ? (showSecondTable ? '0.5rem' : '1rem')
-            : (showSecondTable ? '1.5vh 4vw' : '3vh 4vw'),
+            ? (isQuad ? '0.3rem' : showSecondTable ? '0.5rem' : '1rem')
+            : (isQuad ? '1vh 2vw' : showSecondTable ? '1.5vh 4vw' : '3vh 4vw'),
           gap: isEditor
-            ? (showSecondTable ? '0.4rem' : '0.75rem')
-            : (showSecondTable ? '1.2vh' : '2.5vh'),
+            ? (isQuad ? '0.3rem' : showSecondTable ? '0.4rem' : '0.75rem')
+            : (isQuad ? '0.8vh' : showSecondTable ? '1.2vh' : '2.5vh'),
         }}
       >
         <div className="w-full min-h-0 overflow-hidden">
@@ -287,6 +294,16 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           <div className="w-full min-h-0 overflow-hidden">
             {renderTable(table1, 1)}
           </div>
+        )}
+        {isQuad && (
+          <>
+            <div className="w-full min-h-0 overflow-hidden">
+              {renderTable(table2, 2)}
+            </div>
+            <div className="w-full min-h-0 overflow-hidden">
+              {renderTable(table3, 3)}
+            </div>
+          </>
         )}
       </div>
 

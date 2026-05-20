@@ -513,16 +513,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         const results = await fetchTrafficData(originCoords, destinations);
         const newTables = tables.map((table: any, i: number) => {
           const alternatives = results[i]?.alternatives ?? [];
-          const seen = new Set<string>();
-          const corridors = alternatives
-            .filter((alt: any) => {
-              if (seen.has(alt.label)) return false;
-              seen.add(alt.label);
-              return true;
-            })
-            .slice(0, 3)
-            .map((alt: any) => ({ name: alt.label, time: `${alt.minutes} min` }));
-          return { ...table, corridors };
+          // Only update the time on existing corridors
+          const updatedCorridors = (table.corridors ?? []).map((corridor: any) => {
+            const match = alternatives.find((alt: any) => alt.label === corridor.apiLabel);
+            return match ? { ...corridor, time: `${match.minutes} min` } : corridor;
+          });
+          return { ...table, corridors: updatedCorridors };
         });
         useTrafficCorridorStore.getState().setTables(slide.id, newTables);
         console.log(`[DATA UPDATE] Traffic corridor updated for slide ${slide.id}`);
