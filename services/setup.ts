@@ -639,6 +639,8 @@ async function importData(setup: any) {
         setRowColor,
         setTables,
         setShowSecondTable,
+        setTableLayout,
+        setOrigin,
         setTitleTextSize,
         setContentTextSize,
       } = useTrafficCorridorStore.getState();
@@ -654,6 +656,8 @@ async function importData(setup: any) {
       setRowColor(slide.id, slide.data.rowColor || '#192F51');
       setTables(slide.id, slide.data.tables || [{ destination: '', corridors: [] }, { destination: '', corridors: [] }]);
       setShowSecondTable(slide.id, slide.data.showSecondTable || false);
+      if (slide.data.tableLayout) setTableLayout(slide.id, slide.data.tableLayout);
+      if (slide.data.origin) setOrigin(slide.id, slide.data.origin);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
     }

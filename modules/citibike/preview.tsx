@@ -8,7 +8,7 @@ import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 import mapboxgl from "mapbox-gl";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY as string;
-mapboxgl.prewarm();
+if (typeof window !== 'undefined') mapboxgl.prewarm();
 
 const EMPTY_STATIONS: RentalStation[] = [];
 

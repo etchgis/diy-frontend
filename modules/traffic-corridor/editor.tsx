@@ -262,9 +262,9 @@ export default function TrafficCorridorSlide({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    const center: [number, number] = storedOrigin
-      ? storedOrigin
-      : (coordinates.lng && coordinates.lat ? [coordinates.lng, coordinates.lat] : [-74.006, 40.712]);
+    const freshOrigin = useTrafficCorridorStore.getState().slides[slideId]?.origin;
+    const center: [number, number] = freshOrigin
+      ?? (coordinates.lng && coordinates.lat ? [coordinates.lng, coordinates.lat] : [-74.006, 40.712]);
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
@@ -285,7 +285,8 @@ export default function TrafficCorridorSlide({
         placeOriginMarker(map, originCoords);
         // Refetch all active destinations
         const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
-        const count = tableLayout === 'quad' ? 4 : tableLayout === 'dual' ? 2 : 1;
+        const freshLayout = useTrafficCorridorStore.getState().slides[slideId]?.tableLayout ?? 'single';
+        const count = freshLayout === 'quad' ? 4 : freshLayout === 'dual' ? 2 : 1;
         for (let i = 0; i < count; i++) {
           const destCoords = freshTables[i]?.coordinates;
           if (destCoords) fetchRoutesForTable(i, destCoords, originCoords);
@@ -305,7 +306,24 @@ export default function TrafficCorridorSlide({
       }
     });
 
-    map.on('load', () => setMapLoaded(true));
+    map.on('load', () => {
+      setMapLoaded(true);
+
+      const slide = useTrafficCorridorStore.getState().slides[slideId];
+      const origin = slide?.origin;
+      const layout = slide?.tableLayout ?? (slide?.showSecondTable ? 'dual' : 'single');
+      const count = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
+      const savedTables = slide?.tables ?? DEFAULT_TABLES;
+
+      if (origin) {
+        placeOriginMarker(map, origin);
+        map.setCenter(origin);
+      }
+
+      savedTables.forEach((t, i) => {
+        if (t.coordinates && i < count) placeDest(i, t.coordinates);
+      });
+    });
     mapRef.current = map;
 
     return () => {
@@ -371,23 +389,27 @@ export default function TrafficCorridorSlide({
     map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 11), duration: 600 });
   };
 
-  // Sync persisted origin marker on mount
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !storedOrigin) return;
     placeOriginMarker(map, storedOrigin);
-  }, [mapLoaded]); 
+    if (!originMarkerRef.current) map.setCenter(storedOrigin);
+  }, [mapLoaded, storedOrigin]);
 
-  // Sync destination markers and re-fetch routes from stored tables on mount
+
   useEffect(() => {
     if (!mapLoaded) return;
-    tables.forEach((t, i) => {
-      if (t.coordinates && i < tableCount) {
+    const slide = useTrafficCorridorStore.getState().slides[slideId];
+    const layout = slide?.tableLayout ?? (slide?.showSecondTable ? 'dual' : 'single');
+    const count = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
+    (slide?.tables ?? DEFAULT_TABLES).forEach((t, i) => {
+      if (t.coordinates && i < count) {
         placeDest(i, t.coordinates);
         fetchRoutesForTable(i, t.coordinates);
       }
     });
-  }, [mapLoaded]); 
+  }, [mapLoaded, tableLayout]);
 
   // Route polyline drawing
 
@@ -402,6 +424,8 @@ export default function TrafficCorridorSlide({
     });
     routeLayersRef.current = [];
 
+    const allCoords: [number, number][] = [];
+
     Object.entries(fetchedAlts).forEach(([tableIdxStr, alts]) => {
       const tableIdx = parseInt(tableIdxStr);
       const tableColor = TABLE_COLORS[tableIdx % 4];
@@ -412,7 +436,9 @@ export default function TrafficCorridorSlide({
       const sourceId = `route-${tableIdx}`;
       const layerId = `route-layer-${tableIdx}`;
       // pathCoords from API is [lat, lon] needs swap to [lon, lat] for Mapbox
-      const coords = alt.pathCoords.map(([lat, lon]) => [lon, lat]);
+      const coords = alt.pathCoords.map(([lat, lon]) => [lon, lat] as [number, number]);
+      allCoords.push(...coords);
+
       try {
         map.addSource(sourceId, {
           type: 'geojson',
@@ -430,6 +456,14 @@ export default function TrafficCorridorSlide({
         console.warn('Route draw error:', e);
       }
     });
+
+    if (allCoords.length > 1) {
+      const bounds = allCoords.reduce(
+        (b, c) => b.extend(c),
+        new mapboxgl.LngLatBounds(allCoords[0], allCoords[0])
+      );
+      map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 600 });
+    }
   }, [fetchedAlts, selectedAltIdx, mapLoaded]);
 
   // Layout change helper

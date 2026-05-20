@@ -422,7 +422,7 @@ export async function publish() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        const { title, showTitle, backgroundColor, bgImage, logoImage, titleColor, textColor, tableHeaderColor, rowColor, tables, showSecondTable, titleTextSize, contentTextSize } = slideData;
+        const { title, showTitle, backgroundColor, bgImage, logoImage, titleColor, textColor, tableHeaderColor, rowColor, tables, showSecondTable, tableLayout, origin, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.showTitle = showTitle;
@@ -435,6 +435,8 @@ export async function publish() {
         screenObj.data.rowColor = rowColor;
         screenObj.data.tables = tables;
         screenObj.data.showSecondTable = showSecondTable;
+        screenObj.data.tableLayout = tableLayout;
+        screenObj.data.origin = origin;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
       }
