@@ -836,7 +836,7 @@ export default function EditorPage() {
         </header>
 
 
-        <div className="flex-1 min-h-0 flex overflow-hidden">
+        <div key={activeSlide?.id ?? 'footer'} className="flex-1 min-h-0 flex overflow-hidden">
           {isEditingFooter ? (
             <EditFooter
               handleCancel={handleCancelFooterEdit}

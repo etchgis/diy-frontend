@@ -19,6 +19,9 @@ const DEFAULT_TABLES = [EMPTY_TABLE, EMPTY_TABLE, EMPTY_TABLE, EMPTY_TABLE];
 
 const TABLE_COLORS = ['#ef4444', '#3b82f6', '#8b5cf6', '#f59e0b'];
 
+const routeAltCache: Record<string, Record<number, { label: string; minutes: number; pathCoords: [number, number][] }[]>> = {};
+const selectedAltCache: Record<string, Record<number, number>> = {};
+
 type MapMode = 'origin' | 'dest-0' | 'dest-1' | 'dest-2' | 'dest-3';
 
 interface FetchedAlt {
@@ -83,9 +86,9 @@ export default function TrafficCorridorSlide({
 
   const [mapMode, setMapMode] = useState<MapMode>('dest-0');
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [fetchedAlts, setFetchedAlts] = useState<Record<number, FetchedAlt[]>>({});
+  const [fetchedAlts, setFetchedAlts] = useState<Record<number, FetchedAlt[]>>(() => routeAltCache[slideId] ?? {});
   const [isFetchingRoutes, setIsFetchingRoutes] = useState<Record<number, boolean>>({});
-  const [selectedAltIdx, setSelectedAltIdx] = useState<Record<number, number>>({}); // tableIdx -> selected alt index
+  const [selectedAltIdx, setSelectedAltIdx] = useState<Record<number, number>>(() => selectedAltCache[slideId] ?? {});
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -170,15 +173,21 @@ export default function TrafficCorridorSlide({
     try {
       const results = await fetchTrafficData(effectiveOrigin, [destCoords], true);
       const alternatives = results[0]?.alternatives ?? [];
-      setFetchedAlts(prev => ({
-        ...prev,
-        [tableIdx]: alternatives.map(alt => ({
-          label: alt.label,
-          minutes: alt.minutes,
-          pathCoords: alt.pathCoords ?? [],
-        })),
+      const alts = alternatives.map(alt => ({
+        label: alt.label,
+        minutes: alt.minutes,
+        pathCoords: alt.pathCoords ?? [],
       }));
-      setSelectedAltIdx(prev => ({ ...prev, [tableIdx]: 0 }));
+      setFetchedAlts(prev => {
+        const next = { ...prev, [tableIdx]: alts };
+        routeAltCache[slideId] = next;
+        return next;
+      });
+      setSelectedAltIdx(prev => {
+        const next = { ...prev, [tableIdx]: 0 };
+        selectedAltCache[slideId] = next;
+        return next;
+      });
     } catch (err) {
       console.error(`Failed to fetch routes for table ${tableIdx}:`, err);
     } finally {
@@ -200,6 +209,13 @@ export default function TrafficCorridorSlide({
     ));
   };
 
+  const handleRemoveAlternative = (tableIdx: number, apiLabel: string) => {
+    const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
+    setTables(slideId, freshTables.map((t, i) =>
+      i === tableIdx ? { ...t, corridors: t.corridors.filter(c => c.apiLabel !== apiLabel) } : t
+    ));
+  };
+
   // Destination select
 
   const handleSelect = async (tableIdx: number, feature: any) => {
@@ -216,10 +232,9 @@ export default function TrafficCorridorSlide({
     ));
 
     if (coords) {
-      // Place destination marker on map
       placeDest(tableIdx, coords);
       await fetchRoutesForTable(tableIdx, coords);
-      if (freshTables[tableIdx]?.showTransitAlternative) await fetchTransitForTable(tableIdx, coords);
+      fetchTransitForTable(tableIdx, coords);
     }
   };
 
@@ -241,8 +256,11 @@ export default function TrafficCorridorSlide({
         : null;
       const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
       setTables(slideId, freshTables.map((t, i) => i === tableIdx ? { ...t, transitAlternative } : t));
-    } catch (err) {
-      console.error('Failed to fetch transit alternative:', err);
+    } catch (err: any) {
+      const noStops = err?.message?.includes('No stops found') || err?.message?.includes('400');
+      if (!noStops) console.error('Failed to fetch transit alternative:', err);
+      const freshTables2 = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
+      setTables(slideId, freshTables2.map((t, i) => i === tableIdx ? { ...t, transitAlternative: null } : t));
     }
   };
 
@@ -275,6 +293,12 @@ export default function TrafficCorridorSlide({
     });
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+
+    const container = mapContainerRef.current!;
+    const enableScroll = () => map.scrollZoom.enable();
+    const disableScroll = () => map.scrollZoom.disable();
+    container.addEventListener('mouseenter', enableScroll);
+    container.addEventListener('mouseleave', disableScroll);
 
     map.on('click', async (e) => {
       const { lng, lat } = e.lngLat;
@@ -310,15 +334,16 @@ export default function TrafficCorridorSlide({
       setMapLoaded(true);
 
       const slide = useTrafficCorridorStore.getState().slides[slideId];
-      const origin = slide?.origin;
+      const freshCoords = useGeneralStore.getState().coordinates;
+      const origin: [number, number] = slide?.origin
+        ?? (freshCoords?.lng && freshCoords?.lat ? [freshCoords.lng, freshCoords.lat] : [-74.006, 40.712]);
       const layout = slide?.tableLayout ?? (slide?.showSecondTable ? 'dual' : 'single');
       const count = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
       const savedTables = slide?.tables ?? DEFAULT_TABLES;
 
-      if (origin) {
-        placeOriginMarker(map, origin);
-        map.setCenter(origin);
-      }
+      placeOriginMarker(map, origin);
+      map.setCenter(origin);
+      if (!slide?.origin) setOrigin(slideId, origin);
 
       savedTables.forEach((t, i) => {
         if (t.coordinates && i < count) placeDest(i, t.coordinates);
@@ -327,6 +352,8 @@ export default function TrafficCorridorSlide({
     mapRef.current = map;
 
     return () => {
+      container.removeEventListener('mouseenter', enableScroll);
+      container.removeEventListener('mouseleave', disableScroll);
       destMarkersRef.current.forEach(m => m?.remove());
       destMarkersRef.current = [null, null, null, null];
       originMarkerRef.current?.remove();
@@ -335,7 +362,7 @@ export default function TrafficCorridorSlide({
       mapRef.current = null;
       setMapLoaded(false);
     };
-  }, []); 
+  }, []);
 
   // Marker helpers
 
@@ -392,9 +419,11 @@ export default function TrafficCorridorSlide({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded || !storedOrigin) return;
-    placeOriginMarker(map, storedOrigin);
-    if (!originMarkerRef.current) map.setCenter(storedOrigin);
+    if (!map || !mapLoaded) return;
+    const origin: [number, number] = storedOrigin
+      ?? (coordinates.lng && coordinates.lat ? [coordinates.lng, coordinates.lat] : [-74.006, 40.712]);
+    placeOriginMarker(map, origin);
+    if (!storedOrigin) setOrigin(slideId, origin);
   }, [mapLoaded, storedOrigin]);
 
 
@@ -403,10 +432,11 @@ export default function TrafficCorridorSlide({
     const slide = useTrafficCorridorStore.getState().slides[slideId];
     const layout = slide?.tableLayout ?? (slide?.showSecondTable ? 'dual' : 'single');
     const count = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
+    const hasCached = routeAltCache[slideId] && Object.keys(routeAltCache[slideId]).length > 0;
     (slide?.tables ?? DEFAULT_TABLES).forEach((t, i) => {
       if (t.coordinates && i < count) {
         placeDest(i, t.coordinates);
-        fetchRoutesForTable(i, t.coordinates);
+        if (!hasCached) fetchRoutesForTable(i, t.coordinates);
       }
     });
   }, [mapLoaded, tableLayout]);
@@ -523,6 +553,19 @@ export default function TrafficCorridorSlide({
     }
   };
 
+  const handleRefreshRoutes = () => {
+    delete routeAltCache[slideId];
+    delete selectedAltCache[slideId];
+    setFetchedAlts({});
+    setSelectedAltIdx({});
+    const slide = useTrafficCorridorStore.getState().slides[slideId];
+    const layout = slide?.tableLayout ?? 'single';
+    const count = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
+    (slide?.tables ?? DEFAULT_TABLES).forEach((t, i) => {
+      if (t.coordinates && i < count) fetchRoutesForTable(i, t.coordinates);
+    });
+  };
+
   // Render
 
   return (
@@ -543,6 +586,12 @@ export default function TrafficCorridorSlide({
           {/* Map Mode Selector */}
           <div className="flex items-center gap-1.5 mb-2 flex-wrap">
             <span className="text-xs text-gray-500">Click map to set:</span>
+            <button
+              onClick={handleRefreshRoutes}
+              className="text-xs px-2.5 py-1 rounded border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 ml-auto"
+            >
+              ↻ Refresh Routes
+            </button>
             <button
               onClick={() => setMapMode('origin')}
               className={`text-xs px-2.5 py-1 rounded border transition-colors ${
@@ -612,8 +661,9 @@ export default function TrafficCorridorSlide({
                   </div>
 
                   {/* Table header label */}
+                  <p className="text-xs text-gray-500 mb-1">Header label:</p>
                   <Input
-                    placeholder="Table header label (how it appears on screen)..."
+                    placeholder="Table header label..."
                     value={tables[i]?.destination || ''}
                     onChange={(e) => updateDestinationLabel(i, e.target.value)}
                     className="text-sm mb-3"
@@ -629,40 +679,94 @@ export default function TrafficCorridorSlide({
                   {!isFetchingRoutes[i] && alts.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500 mb-1.5 font-medium">Route alternatives:</p>
-                      {alts.map((alt, altIdx) => {
-                        const canAdd = currentCorridors.length < 3;
-                        const isActive = (selectedAltIdx[i] ?? 0) === altIdx;
+                      {(() => {
+                        const transitEnabled = tables[i]?.showTransitAlternative ?? false;
+                        const totalRows = currentCorridors.length + (transitEnabled ? 1 : 0);
                         return (
-                          <div
-                            key={altIdx}
-                            onClick={() => setSelectedAltIdx(prev => ({ ...prev, [i]: altIdx }))}
-                            className={`flex items-center gap-2 p-2 mb-1.5 rounded border cursor-pointer transition-colors ${
-                              isActive ? 'border-transparent bg-white shadow-sm ring-2' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                            }`}
-                            style={isActive ? { ringColor: TABLE_COLORS[i], boxShadow: `0 0 0 2px ${TABLE_COLORS[i]}` } : {}}
-                          >
-                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: TABLE_COLORS[i] }} />
-                            <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-                              <span className="text-sm text-gray-800 truncate">{alt.label}</span>
-                              <span className="text-xs text-gray-400 flex-shrink-0">{alt.minutes} min</span>
-                            </div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleAddAlternative(i, alt); }}
-                              disabled={!canAdd}
-                              className={`text-xs px-2 py-1 rounded flex-shrink-0 transition-colors ${
-                                !canAdd
-                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                  : 'bg-blue-600 text-white hover:bg-blue-700'
-                              }`}
-                            >
-                              + Add
-                            </button>
-                          </div>
+                          <>
+                            {alts.map((alt, altIdx) => {
+                              const isAlreadyAdded = currentCorridors.some(c => c.apiLabel === alt.label);
+                              const canAdd = !isAlreadyAdded && totalRows < 3;
+                              const isActive = (selectedAltIdx[i] ?? 0) === altIdx;
+                              return (
+                                <div
+                                  key={altIdx}
+                                  onClick={() => setSelectedAltIdx(prev => ({ ...prev, [i]: altIdx }))}
+                                  className={`flex items-center gap-2 p-2 mb-1.5 rounded border cursor-pointer transition-colors ${
+                                    isActive ? 'border-transparent bg-white shadow-sm ring-2' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                  style={isActive ? { boxShadow: `0 0 0 2px ${TABLE_COLORS[i]}` } : {}}
+                                >
+                                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: TABLE_COLORS[i] }} />
+                                  <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+                                    <span className="text-sm text-gray-800 truncate">{alt.label}</span>
+                                    <span className="text-xs text-gray-400 flex-shrink-0">{alt.minutes} min</span>
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isAlreadyAdded) handleRemoveAlternative(i, alt.label);
+                                      else if (canAdd) handleAddAlternative(i, alt);
+                                    }}
+                                    disabled={!isAlreadyAdded && !canAdd}
+                                    className={`text-xs px-2 py-1 rounded flex-shrink-0 transition-colors ${
+                                      isAlreadyAdded
+                                        ? 'bg-gray-200 text-gray-500 hover:bg-red-100 hover:text-red-600'
+                                        : canAdd
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    {isAlreadyAdded ? 'Added' : '+ Add'}
+                                  </button>
+                                </div>
+                              );
+                            })}
+
+                            {/* Transit alternative row */}
+                            {(() => {
+                              const transitAlt = tables[i]?.transitAlternative;
+                              const transitUnavailable = transitAlt === null;
+                              return (
+                                <div className={`p-2 mb-1.5 rounded border border-gray-200 ${transitUnavailable ? 'bg-gray-50 opacity-60' : 'bg-gray-50'}`}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+                                      <span className="text-sm text-gray-800">Transit Alternative</span>
+                                      {transitAlt?.travel && (
+                                        <span className="text-xs text-gray-400 flex-shrink-0">{transitAlt.travel}</span>
+                                      )}
+                                      {transitUnavailable && (
+                                        <span className="text-xs text-gray-400 flex-shrink-0 italic">Not available</span>
+                                      )}
+                                    </div>
+                                    {transitUnavailable ? (
+                                      <span className="text-xs text-gray-400 flex-shrink-0">—</span>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleTransitToggle(i, !transitEnabled); }}
+                                        disabled={!transitEnabled && totalRows >= 3}
+                                        className={`text-xs px-2 py-1 rounded flex-shrink-0 transition-colors ${
+                                          transitEnabled
+                                            ? 'bg-gray-200 text-gray-500 hover:bg-red-100 hover:text-red-600'
+                                            : totalRows >= 3
+                                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                                        }`}
+                                      >
+                                        {transitEnabled ? 'Added' : '+ Add'}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {totalRows >= 3 && (
+                              <p className="text-xs text-amber-600">Max 3 rows reached. Remove one in the preview to add more.</p>
+                            )}
+                          </>
                         );
-                      })}
-                      {currentCorridors.length >= 3 && (
-                        <p className="text-xs text-amber-600">Max 3 corridors reached, remove one in the preview to add more.</p>
-                      )}
+                      })()}
                     </div>
                   )}
                   {!isFetchingRoutes[i] && alts.length === 0 && tables[i]?.coordinates && (
@@ -733,21 +837,6 @@ export default function TrafficCorridorSlide({
               ))}
             </div>
           </div>
-
-          {/* Transit Alternatives */}
-          {Array.from({ length: tableCount }, (_, i) => (
-            <div key={i}>
-              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={tables[i]?.showTransitAlternative ?? false}
-                  onChange={(e) => handleTransitToggle(i, e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                Transit Alt. (Dest. {i + 1})
-              </label>
-            </div>
-          ))}
 
           {/* Colors */}
           <div>
