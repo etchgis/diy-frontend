@@ -160,6 +160,7 @@ export default function EditorPage() {
     const [, h] = resolution.split('x').map(Number);
     return h || 1080;
   });
+  const [tempResolution, setTempResolution] = useState(resolution);
   useEffect(() => {
     if (showSettings) {
       setTempRotationInterval(rotationInterval);
@@ -173,6 +174,7 @@ export default function EditorPage() {
       setTempThemeBodyText(theme?.bodyText || '#ffffff');
       setTempDefaultTitleTextSize(defaultTitleTextSize);
       setTempDefaultContentTextSize(defaultContentTextSize);
+      setTempResolution(resolution);
       const isCustom = !PRESET_RESOLUTIONS.includes(resolution);
       setUseCustomResolution(isCustom);
       if (isCustom) {
@@ -909,6 +911,8 @@ export default function EditorPage() {
               onClick={() => {
                 setShowSettings(false);
                 setTempRotationInterval(rotationInterval);
+                setTempResolution(resolution);
+                setUseCustomResolution(!PRESET_RESOLUTIONS.includes(resolution));
                 setTempDefaultBackgroundColor(defaultBackgroundColor);
                 setTempDefaultTitleColor(defaultTitleColor);
                 setTempDefaultTextColor(defaultTextColor);
@@ -948,14 +952,14 @@ export default function EditorPage() {
                   Screen Resolution
                 </label>
                 <select
-                  value={useCustomResolution ? 'custom' : resolution}
+                  value={useCustomResolution ? 'custom' : tempResolution}
                   onChange={(e) => {
                     if (e.target.value === 'custom') {
                       setUseCustomResolution(true);
-                      setResolution(`${customW}x${customH}`);
+                      setTempResolution(`${customW}x${customH}`);
                     } else {
                       setUseCustomResolution(false);
-                      setResolution(e.target.value);
+                      setTempResolution(e.target.value);
                     }
                   }}
                   className="select-padded w-full h-7 text-sm border border-gray-300 rounded cursor-pointer"
@@ -979,7 +983,7 @@ export default function EditorPage() {
                         onChange={(e) => {
                           const w = Math.max(1, Number(e.target.value) || 1);
                           setCustomW(w);
-                          setResolution(`${w}x${customH}`);
+                          setTempResolution(`${w}x${customH}`);
                         }}
                         className="w-full text-sm"
                       />
@@ -995,7 +999,7 @@ export default function EditorPage() {
                         onChange={(e) => {
                           const h = Math.max(1, Number(e.target.value) || 1);
                           setCustomH(h);
-                          setResolution(`${customW}x${h}`);
+                          setTempResolution(`${customW}x${h}`);
                         }}
                         className="w-full text-sm"
                       />
@@ -1117,6 +1121,7 @@ export default function EditorPage() {
                 <Button
                   onClick={() => {
                     setRotationInterval(tempRotationInterval);
+                    setResolution(tempResolution);
                     // Apply theme to all slides
                     setThemePrimaryBackground(tempThemePrimaryBackground);
                     setThemeSecondaryAccent(tempThemeSecondaryAccent);

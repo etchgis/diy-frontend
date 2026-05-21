@@ -39,9 +39,9 @@ export const SortableSlide = ({
         slide.id === activeSlideId ? "ring-2 ring-blue-500" : ""
       } ${slide.hidden ? "opacity-40" : ""}`}
     >
-      <div className="w-full h-20 overflow-hidden relative bg-gray-100 rounded">
-        <div className="absolute top-0 left-0 origin-top-left scale-[0.15] w-[650%]">
-          {renderSlidePreview(slide.type, slide.id)}
+      <div className="w-full aspect-video overflow-hidden relative bg-gray-100 rounded">
+        <div className="absolute inset-0">
+          {renderSlidePreview(slide.type, slide.id, true, true)}
         </div>
         {slide.hidden && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
