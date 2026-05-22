@@ -34,7 +34,8 @@ export default function TrafficCorridorPreview({
     (state.slides[slideId]?.showSecondTable ? 'dual' : 'single')
   );
   const isQuad = tableLayout === 'quad';
-  const showSecondTable = tableLayout === 'dual' || tableLayout === 'quad';
+  const isTriple = tableLayout === 'triple';
+  const showSecondTable = tableLayout === 'dual' || tableLayout === 'triple' || tableLayout === 'quad';
   const titleTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const contentTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.contentTextSize || 5);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
@@ -105,7 +106,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           backgroundColor: tableHeaderColor,
           color: textColor,
           fontSize: headerFontSize,
-          minHeight: isEditor ? (isQuad ? '22px' : showSecondTable ? '28px' : '40px') : undefined,
+          minHeight: isEditor ? (isQuad ? '22px' : isTriple ? '24px' : showSecondTable ? '28px' : '40px') : undefined,
           padding: headerPadding,
         }}
       >
@@ -123,7 +124,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
             backgroundColor: corridorIndex % 2 === 0 ? rowColor : `${rowColor}cc`,
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
-            minHeight: isEditor ? (isQuad ? '20px' : showSecondTable ? '26px' : '36px') : undefined,
+            minHeight: isEditor ? (isQuad ? '20px' : isTriple ? '22px' : showSecondTable ? '26px' : '36px') : undefined,
             padding: rowPadding,
           }}
         >
@@ -169,7 +170,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
             backgroundColor: `${rowColor}aa`,
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
-            minHeight: isEditor ? (isQuad ? '20px' : showSecondTable ? '26px' : '36px') : undefined,
+            minHeight: isEditor ? (isQuad ? '20px' : isTriple ? '22px' : showSecondTable ? '26px' : '36px') : undefined,
             padding: rowPadding,
           }}
         >
@@ -276,36 +277,54 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
       )}
 
       {/* Tables Area */}
-      <div
-        className={`flex-1 min-h-0 overflow-hidden ${isQuad ? 'grid grid-cols-2' : 'flex flex-col justify-center'}`}
-        style={{
-          padding: isEditor
-            ? (isQuad ? '0.3rem' : showSecondTable ? '0.5rem' : '1rem')
-            : (isQuad ? '1vh 2vw' : showSecondTable ? '1.5vh 4vw' : '3vh 4vw'),
-          gap: isEditor
-            ? (isQuad ? '0.3rem' : showSecondTable ? '0.4rem' : '0.75rem')
-            : (isQuad ? '0.8vh' : showSecondTable ? '1.2vh' : '2.5vh'),
-        }}
-      >
-        <div className="w-full min-h-0 overflow-hidden">
-          {renderTable(table0, 0)}
-        </div>
-        {showSecondTable && (
-          <div className="w-full min-h-0 overflow-hidden">
-            {renderTable(table1, 1)}
+      {isTriple ? (
+        <div
+          className="flex-1 min-h-0 overflow-hidden flex flex-col"
+          style={{
+            padding: isEditor ? '0.4rem' : '1.2vh 3vw',
+            gap: isEditor ? '0.4rem' : '1vh',
+          }}
+        >
+          <div className="flex min-h-0 overflow-hidden" style={{ gap: isEditor ? '0.4rem' : '1vw', flex: 1 }}>
+            <div className="flex-1 min-w-0 overflow-hidden">{renderTable(table0, 0)}</div>
+            <div className="flex-1 min-w-0 overflow-hidden">{renderTable(table1, 1)}</div>
           </div>
-        )}
-        {isQuad && (
-          <>
+          <div className="flex justify-center min-h-0 overflow-hidden" style={{ flex: 1 }}>
+            <div className="w-1/2 min-w-0 overflow-hidden">{renderTable(table2, 2)}</div>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`flex-1 min-h-0 overflow-hidden ${isQuad ? 'grid grid-cols-2' : 'flex flex-col justify-center'}`}
+          style={{
+            padding: isEditor
+              ? (isQuad ? '0.3rem' : showSecondTable ? '0.5rem' : '1rem')
+              : (isQuad ? '1vh 2vw' : showSecondTable ? '1.5vh 4vw' : '3vh 4vw'),
+            gap: isEditor
+              ? (isQuad ? '0.3rem' : showSecondTable ? '0.4rem' : '0.75rem')
+              : (isQuad ? '0.8vh' : showSecondTable ? '1.2vh' : '2.5vh'),
+          }}
+        >
+          <div className="w-full min-h-0 overflow-hidden">
+            {renderTable(table0, 0)}
+          </div>
+          {showSecondTable && (
             <div className="w-full min-h-0 overflow-hidden">
-              {renderTable(table2, 2)}
+              {renderTable(table1, 1)}
             </div>
-            <div className="w-full min-h-0 overflow-hidden">
-              {renderTable(table3, 3)}
-            </div>
-          </>
-        )}
-      </div>
+          )}
+          {isQuad && (
+            <>
+              <div className="w-full min-h-0 overflow-hidden">
+                {renderTable(table2, 2)}
+              </div>
+              <div className="w-full min-h-0 overflow-hidden">
+                {renderTable(table3, 3)}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <Footer />
     </div>

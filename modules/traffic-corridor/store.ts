@@ -21,7 +21,7 @@ export interface DestinationTable {
   transitAlternative?: TransitAlternative | null;
 }
 
-export type TableLayout = 'single' | 'dual' | 'quad';
+export type TableLayout = 'single' | 'dual' | 'triple' | 'quad';
 
 interface TrafficCorridorSlideData {
   title: string;

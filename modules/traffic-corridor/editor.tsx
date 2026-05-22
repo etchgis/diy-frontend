@@ -82,7 +82,7 @@ export default function TrafficCorridorSlide({
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const coordinates = useGeneralStore((state) => state.coordinates || { lat: 0, lng: 0 });
 
-  const tableCount = tableLayout === 'quad' ? 4 : tableLayout === 'dual' ? 2 : 1;
+  const tableCount = tableLayout === 'quad' ? 4 : tableLayout === 'triple' ? 3 : tableLayout === 'dual' ? 2 : 1;
 
   const [mapMode, setMapMode] = useState<MapMode>('dest-0');
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -96,6 +96,7 @@ export default function TrafficCorridorSlide({
   const destMarkersRef = useRef<(mapboxgl.Marker | null)[]>([null, null, null, null]);
   const routeLayersRef = useRef<string[]>([]);
   const mapModeRef = useRef<MapMode>(mapMode);
+  const handleOriginChangeRef = useRef<((newOrigin: [number, number]) => void) | null>(null);
   const MAPBOX_KEY = process.env.NEXT_PUBLIC_MAPBOX_KEY;
   const NY_BBOX = '-79.7624,40.4774,-71.7517,45.0153';
 
@@ -275,6 +276,33 @@ export default function TrafficCorridorSlide({
     }
   };
 
+  handleOriginChangeRef.current = (newOrigin: [number, number]) => {
+    setOrigin(slideId, newOrigin);
+    const slide = useTrafficCorridorStore.getState().slides[slideId];
+    const freshTables = slide?.tables ?? DEFAULT_TABLES;
+    const layout = slide?.tableLayout ?? 'single';
+    const count = layout === 'quad' ? 4 : layout === 'triple' ? 3 : layout === 'dual' ? 2 : 1;
+
+    const updatedTables = freshTables.map((t, i) => {
+      if (i >= count || !t.coordinates) return t;
+      if ((t.corridors?.length ?? 0) > 0) {
+        destMarkersRef.current[i]?.remove();
+        destMarkersRef.current[i] = null;
+        if (routeAltCache[slideId]) delete routeAltCache[slideId][i];
+        if (selectedAltCache[slideId]) delete selectedAltCache[slideId][i];
+        setFetchedAlts(prev => { const n = { ...prev }; delete n[i]; return n; });
+        setSelectedAltIdx(prev => { const n = { ...prev }; delete n[i]; return n; });
+        return { destination: '', corridors: [] };
+      } else {
+        fetchRoutesForTable(i, t.coordinates, newOrigin);
+        return t;
+      }
+    });
+
+    setTables(slideId, updatedTables);
+    setQueries(prev => updatedTables.map((t, i) => t.coordinates ? prev[i] : ''));
+  };
+
   // Map initialization
 
   useEffect(() => {
@@ -305,16 +333,8 @@ export default function TrafficCorridorSlide({
       const mode = mapModeRef.current;
       if (mode === 'origin') {
         const originCoords: [number, number] = [lng, lat];
-        setOrigin(slideId, originCoords);
         placeOriginMarker(map, originCoords);
-        // Refetch all active destinations
-        const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
-        const freshLayout = useTrafficCorridorStore.getState().slides[slideId]?.tableLayout ?? 'single';
-        const count = freshLayout === 'quad' ? 4 : freshLayout === 'dual' ? 2 : 1;
-        for (let i = 0; i < count; i++) {
-          const destCoords = freshTables[i]?.coordinates;
-          if (destCoords) fetchRoutesForTable(i, destCoords, originCoords);
-        }
+        handleOriginChangeRef.current!(originCoords);
       } else {
         const idx = parseInt(mode.replace('dest-', ''));
         const destCoords: [number, number] = [lng, lat];
@@ -338,7 +358,7 @@ export default function TrafficCorridorSlide({
       const origin: [number, number] = slide?.origin
         ?? (freshCoords?.lng && freshCoords?.lat ? [freshCoords.lng, freshCoords.lat] : [-74.006, 40.712]);
       const layout = slide?.tableLayout ?? (slide?.showSecondTable ? 'dual' : 'single');
-      const count = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
+      const count = layout === 'quad' ? 4 : layout === 'triple' ? 3 : layout === 'dual' ? 2 : 1;
       const savedTables = slide?.tables ?? DEFAULT_TABLES;
 
       placeOriginMarker(map, origin);
@@ -366,25 +386,75 @@ export default function TrafficCorridorSlide({
 
   // Marker helpers
 
+  const makeMarkerEl = (label: string, color: string, icon?: string) => {
+   
+    const PH = 24; 
+    const TH = 9;  
+    const H = PH + TH;
+    const W = Math.max(label.length * 7 + (icon ? 34 : 26), 56);
+    const cx = W / 2;
+
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', String(W));
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.style.cssText = 'cursor:grab;display:block;overflow:visible;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));';
+
+    // pill background
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', '0'); rect.setAttribute('y', '0');
+    rect.setAttribute('width', String(W)); rect.setAttribute('height', String(PH));
+    rect.setAttribute('rx', '10'); rect.setAttribute('fill', color);
+    svg.appendChild(rect);
+
+    // triangle
+    const tri = document.createElementNS(ns, 'polygon');
+    tri.setAttribute('points', `${cx - 7},${PH} ${cx + 7},${PH} ${cx},${H}`);
+    tri.setAttribute('fill', color);
+    svg.appendChild(tri);
+
+    // icons
+    if (icon) {
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('x', '8'); t.setAttribute('y', String(PH / 2));
+      t.setAttribute('dominant-baseline', 'central');
+      t.setAttribute('fill', 'rgba(255,255,255,0.9)');
+      t.setAttribute('font-size', '10'); t.setAttribute('font-family', 'sans-serif');
+      t.textContent = icon;
+      svg.appendChild(t);
+    } else {
+      const dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', '10'); dot.setAttribute('cy', String(PH / 2));
+      dot.setAttribute('r', '3.5'); dot.setAttribute('fill', 'rgba(255,255,255,0.85)');
+      svg.appendChild(dot);
+    }
+
+    // label text
+    const txt = document.createElementNS(ns, 'text');
+    txt.setAttribute('x', String(icon ? 21 : 18)); txt.setAttribute('y', String(PH / 2));
+    txt.setAttribute('dominant-baseline', 'central');
+    txt.setAttribute('fill', 'white'); txt.setAttribute('font-size', '11');
+    txt.setAttribute('font-weight', '700'); txt.setAttribute('font-family', 'sans-serif');
+    txt.textContent = label;
+    svg.appendChild(txt);
+
+    svg.addEventListener('mousedown', () => { svg.style.cursor = 'grabbing'; });
+    svg.addEventListener('mouseup', () => { svg.style.cursor = 'grab'; });
+    return svg as unknown as HTMLElement;
+  };
+
   const placeOriginMarker = (map: mapboxgl.Map, coords: [number, number]) => {
     if (originMarkerRef.current) {
       originMarkerRef.current.setLngLat(coords);
     } else {
-      originMarkerRef.current = new mapboxgl.Marker({ color: '#22c55e' })
+      originMarkerRef.current = new mapboxgl.Marker({ element: makeMarkerEl('Origin', '#22c55e', '✦'), anchor: 'bottom' })
         .setLngLat(coords)
         .setDraggable(true)
         .addTo(map);
       originMarkerRef.current.on('dragend', () => {
         const { lng, lat } = originMarkerRef.current!.getLngLat();
-        const newOrigin: [number, number] = [lng, lat];
-        setOrigin(slideId, newOrigin);
-        const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? tables;
-        const count = useTrafficCorridorStore.getState().slides[slideId]?.tableLayout === 'quad' ? 4
-          : useTrafficCorridorStore.getState().slides[slideId]?.tableLayout === 'dual' ? 2 : 1;
-        for (let i = 0; i < count; i++) {
-          const dc = freshTables[i]?.coordinates;
-          if (dc) fetchRoutesForTable(i, dc, newOrigin);
-        }
+        handleOriginChangeRef.current!([lng, lat]);
       });
     }
   };
@@ -395,7 +465,7 @@ export default function TrafficCorridorSlide({
     if (destMarkersRef.current[idx]) {
       destMarkersRef.current[idx]!.setLngLat(coords);
     } else {
-      destMarkersRef.current[idx] = new mapboxgl.Marker({ color: TABLE_COLORS[idx] })
+      destMarkersRef.current[idx] = new mapboxgl.Marker({ element: makeMarkerEl(`Dest ${idx + 1}`, TABLE_COLORS[idx]), anchor: 'bottom' })
         .setLngLat(coords)
         .setDraggable(true)
         .addTo(map);
@@ -431,12 +501,11 @@ export default function TrafficCorridorSlide({
     if (!mapLoaded) return;
     const slide = useTrafficCorridorStore.getState().slides[slideId];
     const layout = slide?.tableLayout ?? (slide?.showSecondTable ? 'dual' : 'single');
-    const count = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
-    const hasCached = routeAltCache[slideId] && Object.keys(routeAltCache[slideId]).length > 0;
+    const count = layout === 'quad' ? 4 : layout === 'triple' ? 3 : layout === 'dual' ? 2 : 1;
     (slide?.tables ?? DEFAULT_TABLES).forEach((t, i) => {
       if (t.coordinates && i < count) {
         placeDest(i, t.coordinates);
-        if (!hasCached) fetchRoutesForTable(i, t.coordinates);
+        if (!routeAltCache[slideId]?.[i]) fetchRoutesForTable(i, t.coordinates);
       }
     });
   }, [mapLoaded, tableLayout]);
@@ -500,15 +569,19 @@ export default function TrafficCorridorSlide({
 
   const handleSetLayout = (layout: TableLayout) => {
     setTableLayout(slideId, layout);
-    const targetCount = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
+    const targetCount = layout === 'quad' ? 4 : layout === 'triple' ? 3 : layout === 'dual' ? 2 : 1;
     const freshTables = useTrafficCorridorStore.getState().slides[slideId]?.tables ?? DEFAULT_TABLES;
     const padded = [...freshTables];
     while (padded.length < targetCount) padded.push({ destination: '', corridors: [] });
     setTables(slideId, padded);
-    // Remove destination markers that exceed new count
     for (let i = targetCount; i < 4; i++) {
+      // Remove marker
       destMarkersRef.current[i]?.remove();
       destMarkersRef.current[i] = null;
+      setFetchedAlts(prev => { const n = { ...prev }; delete n[i]; return n; });
+      setSelectedAltIdx(prev => { const n = { ...prev }; delete n[i]; return n; });
+      if (routeAltCache[slideId]) delete routeAltCache[slideId][i];
+      if (selectedAltCache[slideId]) delete selectedAltCache[slideId][i];
     }
   };
 
@@ -560,7 +633,7 @@ export default function TrafficCorridorSlide({
     setSelectedAltIdx({});
     const slide = useTrafficCorridorStore.getState().slides[slideId];
     const layout = slide?.tableLayout ?? 'single';
-    const count = layout === 'quad' ? 4 : layout === 'dual' ? 2 : 1;
+    const count = layout === 'quad' ? 4 : layout === 'triple' ? 3 : layout === 'dual' ? 2 : 1;
     (slide?.tables ?? DEFAULT_TABLES).forEach((t, i) => {
       if (t.coordinates && i < count) fetchRoutesForTable(i, t.coordinates);
     });
@@ -579,63 +652,82 @@ export default function TrafficCorridorSlide({
             <span className="font-medium">Traffic Corridor</span>
           </div>
 
-          <p className="text-[#606061] mb-4 text-sm">
-            Set an origin and destination on the map to fetch route alternatives. Pick corridors from the alternatives panel and label them how you want. You can move the origin to get different routing paths for the same destination.
+          <p className="text-[#606061] mb-3 text-sm">
+            Set an origin and destination on the map to fetch route alternatives. Pick corridors from the alternatives panel and label them how you want.
           </p>
 
-          {/* Map Mode Selector */}
-          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-            <span className="text-xs text-gray-500">Click map to set:</span>
-            <button
-              onClick={handleRefreshRoutes}
-              className="text-xs px-2.5 py-1 rounded border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 ml-auto"
-            >
-              ↻ Refresh Routes
-            </button>
-            <button
-              onClick={() => setMapMode('origin')}
-              className={`text-xs px-2.5 py-1 rounded border transition-colors ${
-                mapMode === 'origin'
-                  ? 'bg-green-600 text-white border-green-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              ✦ Origin
-            </button>
-            {Array.from({ length: tableCount }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => setMapMode(`dest-${i}` as MapMode)}
-                className={`text-xs px-2.5 py-1 rounded border transition-colors ${
-                  mapMode === `dest-${i}`
-                    ? 'text-white border-transparent'
-                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                }`}
-                style={mapMode === `dest-${i}` ? { backgroundColor: TABLE_COLORS[i] } : {}}
-              >
-                ● Dest {i + 1}
-              </button>
-            ))}
-          </div>
+          {/* Map + Destinations split */}
+          <div className="flex gap-4 mb-5" style={{ height: '500px' }}>
 
-          {/* Mapbox Map */}
-          <div className="rounded border border-[#e2e8f0] overflow-hidden mb-4" style={{ height: '300px' }}>
-            <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
-          </div>
+            {/* Left: map mode buttons + map */}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                <span className="text-xs text-gray-500">Click map to set:</span>
+                <button
+                  onClick={handleRefreshRoutes}
+                  className="text-xs px-2.5 py-1 rounded border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 ml-auto"
+                >
+                  ↻ Refresh Routes
+                </button>
+                <button
+                  onClick={() => setMapMode('origin')}
+                  className={`text-xs px-2.5 py-1 rounded border transition-colors ${
+                    mapMode === 'origin'
+                      ? 'bg-green-600 text-white border-green-600'
+                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  ✦ Origin
+                </button>
+                {Array.from({ length: tableCount }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setMapMode(`dest-${i}` as MapMode)}
+                    className={`text-xs px-2.5 py-1 rounded border transition-colors ${
+                      mapMode === `dest-${i}`
+                        ? 'text-white border-transparent'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                    style={mapMode === `dest-${i}` ? { backgroundColor: TABLE_COLORS[i] } : {}}
+                  >
+                    ● Dest {i + 1}
+                  </button>
+                ))}
+              </div>
+              <div className="rounded border border-[#e2e8f0] overflow-hidden flex-1">
+                <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+              </div>
+            </div>
 
-          {/* Destination Inputs + Alternatives */}
-          <div className="space-y-5 mb-5">
+            {/* Right: destination inputs + alternatives, independently scrollable */}
+            <div className="w-[410px] flex-shrink-0 overflow-y-auto flex flex-col gap-3 pr-0.5">
             {Array.from({ length: tableCount }, (_, i) => {
               const alts = fetchedAlts[i] ?? [];
               const currentCorridors = tables[i]?.corridors ?? [];
+              const isCommitted = currentCorridors.length > 0;
               return (
-                <div key={i} className="border border-[#e2e8f0] rounded-lg p-3">
+                <div
+                  key={i}
+                  className={`rounded-lg p-3 border transition-colors ${
+                    isCommitted
+                      ? 'border-l-[3px] border-l-green-500 border-t-[#e2e8f0] border-r-[#e2e8f0] border-b-[#e2e8f0]'
+                      : 'border border-[#e2e8f0]'
+                  }`}
+                >
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: TABLE_COLORS[i] }} />
                     <span className="text-sm font-medium text-[#4a5568]">Destination {i + 1}</span>
+                    {isCommitted && (
+                      <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="2,9 6,13 14,4" />
+                        </svg>
+                        Set
+                      </span>
+                    )}
                   </div>
 
-                  {/* Search input */}
+                  {/* Search input*/}
                   <div className="relative mb-2">
                     <Input
                       placeholder="Search for a location..."
@@ -643,7 +735,8 @@ export default function TrafficCorridorSlide({
                       onChange={(e) => handleQueryChange(i, e.target.value)}
                       onBlur={() => setTimeout(() => setSuggestions(prev => { const n = [...prev]; n[i] = []; return n; }), 200)}
                       autoComplete="off"
-                      className="text-sm"
+                      disabled={isCommitted}
+                      className={`text-sm ${isCommitted ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''}`}
                     />
                     {suggestions[i].length > 0 && (
                       <ul className="absolute z-20 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
@@ -778,6 +871,7 @@ export default function TrafficCorridorSlide({
                 </div>
               );
             })}
+            </div>
           </div>
 
           {/* Preview */}
@@ -822,7 +916,7 @@ export default function TrafficCorridorSlide({
           <div>
             <label className="block text-[#4a5568] font-medium mb-1.5 text-xs">Table Layout</label>
             <div className="flex gap-1">
-              {(['single', 'dual', 'quad'] as TableLayout[]).map((layout) => (
+              {(['single', 'dual', 'triple', 'quad'] as TableLayout[]).map((layout) => (
                 <button
                   key={layout}
                   onClick={() => handleSetLayout(layout)}
@@ -832,7 +926,7 @@ export default function TrafficCorridorSlide({
                       : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  {layout === 'single' ? '1' : layout === 'dual' ? '2' : '2×2'}
+                  {layout === 'single' ? '1' : layout === 'dual' ? '2' : layout === 'triple' ? '3' : '4'}
                 </button>
               ))}
             </div>
