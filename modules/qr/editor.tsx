@@ -69,29 +69,18 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
             <p className="text-[#606061] mb-6">This template is configured to show a large QR code for riders.</p>
 
             {/* QR Code Configuration */}
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-[#4a5568] font-medium mb-2">URL for QR Code</label>
-                <div className="flex gap-3">
-                  <Input
-                    placeholder="http://www.nysdot.gov"
-                    className="flex-1 bg-white border-[#cbd5e0]"
-                    value={tempQR}
-                    onChange={(e) => setTempQR(e.target.value)}
-                  />
-                  <Button className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white font-medium px-6" onClick={handleGenerateQR}>Generate</Button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[#4a5568] font-medium mb-2">Text to display under QR Code</label>
+            <div className="mb-6">
+              <label className="block text-[#4a5568] font-medium mb-2">URL for QR Code</label>
+              <div className="flex gap-3">
                 <Input
-                  placeholder="Enter text here..."
-                  className="bg-white border-[#cbd5e0]"
-                  onChange={(e) => setText(slideId, e.target.value)}
-                  value={text}
+                  placeholder="http://www.nysdot.gov"
+                  className="flex-1 bg-white border-[#cbd5e0]"
+                  value={tempQR}
+                  onChange={(e) => setTempQR(e.target.value)}
                 />
+                <Button className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white font-medium px-6" onClick={handleGenerateQR}>Generate</Button>
               </div>
+              <p className="text-xs text-[#718096] mt-2">Click the text below the QR code in the preview to edit it directly.</p>
             </div>
 
             {/* QR Code Preview */}
