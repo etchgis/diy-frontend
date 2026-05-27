@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { HelpCircle, ChevronRight, Plus } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import RouteTimesPreview from './preview';
 import { useEffect, useRef, useState } from 'react';
 import { useRouteTimesStore } from './store';
-import { deleteImage } from '@/services/deleteImage';
-import { uploadImage } from '@/services/uploadImage';
 import { useGeneralStore } from '@/stores/general';
+import { useLocalSaveStatus } from '@/hooks/useLocalSaveStatus';
+import { useImageUploadField } from '@/hooks/useImageUploadField';
 import { fetchRoutes } from '@/services/data-gathering/fetchRoutes';
 import { fetchCompleteRouteData } from '@/services/route-times/routeDataFetcher';
 
@@ -21,13 +21,6 @@ export default function RouteTimesSlide({
   handlePreview: () => void,
   handlePublish: () => void
 }) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [isBgUploading, setIsBgUploading] = useState(false);
-  const [isLogoUploading, setIsLogoUploading] = useState(false);
-  const renderCount = useRef(0);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
   const [allRoutes, setAllRoutes] = useState<any[]>([]);
   const [filteredRoutes, setFilteredRoutes] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -187,76 +180,9 @@ export default function RouteTimesSlide({
     }
   }, [selectedRoute]);
 
-  useEffect(() => {
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === 'development';
-    const shouldSkip =
-      (isDev && renderCount.current <= 2) || (!isDev && renderCount.current === 1);
-
-    if (shouldSkip) {
-      setSaveStatus('saved');
-      return;
-    }
-
-    setSaveStatus('saving');
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      setSaveStatus('saved');
-    }, 600);
-  }, [routeName, description, viewMode, backgroundColor, titleColor, tableColor, tableTextColor, titleTextSize, contentTextSize]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    if (target === 'bg' && fileInputRef.current) {
-      fileInputRef.current.value = '';
-    } else if (target === 'logo' && logoInputRef.current) {
-      logoInputRef.current.value = '';
-    }
-
-    const currentImage = target === 'bg' ? bgImage : logoImage;
-    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
-    const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
-
-    setLoadingFn(true);
-    uploadImage(shortcode, file).then((data) => {
-      if (currentImage) {
-        deleteImage(currentImage).then(() => {
-        }).catch((err) => {
-          console.error('Failed to delete previous image:', err);
-        });
-      }
-      setImageFn(slideId, data.url);
-    }).catch((err) => {
-      console.error('Image upload failed:', err);
-    }).finally(() => {
-      setLoadingFn(false);
-    });
-  };
-
-  const handleRemoveImage = (target: 'bg' | 'logo') => {
-    const currentImage = target === 'bg' ? bgImage : logoImage;
-    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
-    const inputRef = target === 'bg' ? fileInputRef : logoInputRef;
-
-    if (currentImage) {
-      deleteImage(currentImage).then(() => {
-        setImageFn(slideId, '');
-        if (inputRef.current) {
-          inputRef.current.value = '';
-        }
-      }).catch((err) => {
-        console.error('Failed to delete image:', err);
-      });
-    }
-  };
+  const saveStatus = useLocalSaveStatus(useRouteTimesStore, slideId);
+  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
 
   return (
     <>
@@ -391,21 +317,19 @@ export default function RouteTimesSlide({
             <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
-              {saveStatus !== 'idle' && (
-                <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
-                  {saveStatus === 'saving' ? (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                      Saved Locally
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+                {saveStatus === 'saving' ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                    Saved Locally
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -490,40 +414,15 @@ export default function RouteTimesSlide({
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {isBgUploading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                  ) : bgImage ? (
-                    <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
-                  )}
+                  {bg.isUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" /> : bgImage ? <img src={bgImage} alt="BG" className="w-full h-full object-cover" /> : <div className="w-4 h-4 bg-[#cbd5e0] rounded" />}
                 </div>
-                <div className="flex gap-1">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    onChange={(e) => handleImageUpload(e, 'bg')}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Change
-                  </Button>
-                  {bgImage && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs bg-transparent px-2 py-1"
-                      onClick={() => handleRemoveImage('bg')}
-                    >
-                      Remove
-                    </Button>
-                  )}
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <input type="file" accept="image/*" ref={bg.inputRef} onChange={bg.handleUpload} className="hidden" />
+                    <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => bg.inputRef.current?.click()}>Change</Button>
+                    {bgImage && <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={bg.handleRemove}>Remove</Button>}
+                  </div>
+                  {bg.uploadError && <p className="text-xs text-red-500">{bg.uploadError}</p>}
                 </div>
               </div>
             </div>
@@ -532,40 +431,15 @@ export default function RouteTimesSlide({
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Logo Image</label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {isLogoUploading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                  ) : logoImage ? (
-                    <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
-                  )}
+                  {logo.isUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" /> : logoImage ? <img src={logoImage} alt="Logo" className="w-full h-full object-cover" /> : <div className="w-4 h-4 bg-[#cbd5e0] rounded" />}
                 </div>
-                <div className="flex gap-1">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={logoInputRef}
-                    onChange={(e) => handleImageUpload(e, 'logo')}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => logoInputRef.current?.click()}
-                  >
-                    Change
-                  </Button>
-                  {logoImage && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs bg-transparent px-2 py-1"
-                      onClick={() => handleRemoveImage('logo')}
-                    >
-                      Remove
-                    </Button>
-                  )}
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <input type="file" accept="image/*" ref={logo.inputRef} onChange={logo.handleUpload} className="hidden" />
+                    <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => logo.inputRef.current?.click()}>Change</Button>
+                    {logoImage && <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={logo.handleRemove}>Remove</Button>}
+                  </div>
+                  {logo.uploadError && <p className="text-xs text-red-500">{logo.uploadError}</p>}
                 </div>
               </div>
             </div>

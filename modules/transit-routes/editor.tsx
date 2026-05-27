@@ -4,7 +4,8 @@ import { ChevronRight, Plus, X } from "lucide-react";
 import TransitRoutesPreview from "./preview";
 import { useTransitRouteStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus";
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData";
 import { formatTime, formatDuration } from "@/utils/formats";
 
@@ -24,12 +25,8 @@ export default function TransitRoutesSlide({
 }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
-    "idle"
-  );
   const [selectedFeature, setSelectedFeature] = useState<any>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const renderCount = useRef(0);
+  const saveStatus = useLocalSaveStatus(useTransitRouteStore, slideId);
 
   const destination = useTransitRouteStore(
     (state) => state.slides[slideId]?.destination || ""
@@ -62,38 +59,6 @@ export default function TransitRoutesSlide({
   const coordinates = useGeneralStore(
     (state) => state.coordinates ?? { lng: -73.7562, lat: 42.6526 }
   );
-
-  const prevValuesRef = useRef({ destination: "" });
-
-  useEffect(() => {
-    if (prevValuesRef.current.destination === destination) {
-      return;
-    }
-
-    prevValuesRef.current = { destination };
-
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === "development";
-
-    if (isDev && renderCount.current <= 2) {
-      setSaveStatus("saved");
-      return;
-    }
-    if (!isDev && renderCount.current === 1) {
-      setSaveStatus("saved");
-      return;
-    }
-
-    setSaveStatus("saving");
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      setSaveStatus("saved");
-    }, 600);
-  }, [destination]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -375,21 +340,19 @@ export default function TransitRoutesSlide({
             >
               Publish Screens
             </Button>
-            {saveStatus !== "idle" && (
-              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
-                {saveStatus === "saving" ? (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                    Saved Locally
-                  </>
-                )}
-              </div>
-            )}
+            <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+              {saveStatus === "saving" ? (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                  Saved Locally
+                </>
+              )}
+            </div>
           </div>
         </div>
 

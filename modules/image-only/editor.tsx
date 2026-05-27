@@ -3,14 +3,10 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ChevronRight } from "lucide-react"
 import ImageOnlyPreview from "./preview"
-import { useEffect, useRef, useState } from "react"
 import { useImageOnlyStore } from "./store"
+import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus"
 
 export default function ImageOnlySlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const renderCount = useRef(0);
-
-  const image = useImageOnlyStore((state) => state.slides[slideId]?.image || null);
 
   const imageObjectFit = useImageOnlyStore((state) => state.slides[slideId]?.imageObjectFit || 'cover');
   const setImageObjectFit = useImageOnlyStore((state) => state.setImageObjectFit);
@@ -27,27 +23,7 @@ export default function ImageOnlySlide({ slideId, handleDelete, handlePreview, h
   const imageHeight = useImageOnlyStore((state) => state.slides[slideId]?.imageHeight || 400);
   const setImageHeight = useImageOnlyStore((state) => state.setImageHeight);
 
-  useEffect(() => {
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === 'development';
-
-    if (isDev && renderCount.current <= 2) {
-      setSaveStatus('saved');
-      return;
-    }
-    if (!isDev && renderCount.current === 1) {
-      setSaveStatus('saved');
-      return;
-    }
-
-    setSaveStatus('saving');
-
-    const timeout = setTimeout(() => {
-      setSaveStatus('saved');
-    }, 600);
-
-    return () => clearTimeout(timeout);
-  }, [image, imageObjectFit, backgroundColor, fullScreen, imageWidth, imageHeight]);
+  const saveStatus = useLocalSaveStatus(useImageOnlyStore, slideId);
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -74,21 +50,19 @@ export default function ImageOnlySlide({ slideId, handleDelete, handlePreview, h
           <div className="flex gap-3 mt-4">
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
-            {saveStatus !== 'idle' && (
-              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
-                {saveStatus === 'saving' ? (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                    Saved Locally
-                  </>
-                )}
-              </div>
-            )}
+            <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+              {saveStatus === 'saving' ? (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                  Saved Locally
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

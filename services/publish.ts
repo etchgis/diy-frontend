@@ -15,6 +15,15 @@ import { useWebEmbedStore } from '@/modules/web-embed/store';
 import { useFooterStore } from '@/stores/footer';
 import { migrateHeadsignFilters } from '@/lib/stop-arrivals-filters';
 
+export class PublishDataMissingError extends Error {
+  missingSlides: string[];
+  constructor(missingSlides: string[]) {
+    super(`Data missing for slides: ${missingSlides.join(', ')}. Open each slide in the editor at least once before publishing.`);
+    this.name = 'PublishDataMissingError';
+    this.missingSlides = missingSlides;
+  }
+}
+
 export async function publish() {
   const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, isTempPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
   const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
@@ -29,6 +38,8 @@ export async function publish() {
     backgroundColor,
     timeTextColor
   });
+
+  const missingSlides: string[] = [];
 
   const json = {
     location: location,
@@ -104,6 +115,7 @@ export async function publish() {
         screenObj.data.skipOnError = slideData.skipOnError ?? false;
 
       } else {
+        missingSlides.push(`transit-destinations (${slide.id})`);
       }
     }
 
@@ -202,6 +214,7 @@ export async function publish() {
           ];
         }
       } else {
+        missingSlides.push(`fixed-routes (${slide.id})`);
       }
     }
 
@@ -221,6 +234,7 @@ export async function publish() {
         screenObj.data.location = location;
         screenObj.data.routes = routes;
       } else {
+        missingSlides.push(`transit-routes (${slide.id})`);
       }
     }
 
@@ -251,6 +265,7 @@ export async function publish() {
         screenObj.data.qrSize = qrSize;
         screenObj.data.textSize = textSize;
       } else {
+        missingSlides.push(`qr (${slide.id})`);
       }
 
     }
@@ -285,6 +300,7 @@ export async function publish() {
         screenObj.data.contentTextSize = contentTextSize;
 
       } else {
+        missingSlides.push(`template-1 (${slide.id})`);
       }
     }
 
@@ -317,6 +333,7 @@ export async function publish() {
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
       } else {
+        missingSlides.push(`template-2 (${slide.id})`);
       }
     }
 
@@ -344,6 +361,7 @@ export async function publish() {
         screenObj.data.imageObjectFit = imageObjectFit;
         screenObj.data.titleTextSize = titleTextSize;
       } else {
+        missingSlides.push(`template-3 (${slide.id})`);
       }
     }
 
@@ -364,6 +382,8 @@ export async function publish() {
         screenObj.data.fullScreen = fullScreen;
         screenObj.data.imageWidth = imageWidth;
         screenObj.data.imageHeight = imageHeight;
+      } else {
+        missingSlides.push(`image-only (${slide.id})`);
       }
     }
 
@@ -387,6 +407,8 @@ export async function publish() {
         screenObj.data.logoImage = logoImage;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+      } else {
+        missingSlides.push(`weather (${slide.id})`);
       }
     }
 
@@ -410,6 +432,8 @@ export async function publish() {
         screenObj.data.searchRadius = searchRadius;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+      } else {
+        missingSlides.push(`citibike (${slide.id})`);
       }
     }
 
@@ -439,6 +463,8 @@ export async function publish() {
         screenObj.data.origin = origin;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+      } else {
+        missingSlides.push(`traffic-corridor (${slide.id})`);
       }
     }
 
@@ -481,6 +507,7 @@ export async function publish() {
         screenObj.data.outageMessage = slideData.outageMessage ?? '';
         screenObj.data.skipOnError = slideData.skipOnError ?? false;
       } else {
+        missingSlides.push(`route-times (${slide.id})`);
       }
     }
 
@@ -498,11 +525,17 @@ export async function publish() {
         screenObj.data.scrollX = slideData.scrollX;
         screenObj.data.scrollY = slideData.scrollY;
         screenObj.data.refreshInterval = slideData.refreshInterval ?? 0;
+      } else {
+        missingSlides.push(`web-embed (${slide.id})`);
       }
     }
 
     json.screens.push(screenObj);
   });
+
+  if (missingSlides.length > 0) {
+    throw new PublishDataMissingError(missingSlides);
+  }
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 

@@ -6,6 +6,7 @@ import TransitDestinationPreview from "./preview"
 import { useTransitDestinationsStore } from "./store"
 import { useEffect, useRef, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
+import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus"
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData"
 import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData"
 import { formatTime, formatDuration } from "@/utils/formats"
@@ -27,10 +28,7 @@ function formatWalkDistance(meters: number): string {
 }
 
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const renderCount = useRef(0);
   const [expandedDest, setExpandedDest] = useState<string | null>(null);
   const [refetchingDest, setRefetchingDest] = useState<string | null>(null);
 
@@ -94,31 +92,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
 
 
-  useEffect(() => {
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === 'development';
-
-    if (isDev && renderCount.current <= 2) {
-      setSaveStatus('saved');
-      return;
-    }
-    if (!isDev && renderCount.current === 1) {
-      setSaveStatus('saved');
-      return;
-    }
-
-    setSaveStatus('saving');
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      setSaveStatus('saved');
-    }, 600);
-  }, [backgroundColor, rowColor, alternateRowColor, tableHeaderTextColor, tableTextColor, titleTextSize, contentTextSize]);
-
-
+  const saveStatus = useLocalSaveStatus(useTransitDestinationsStore, slideId);
 
   const destinations = useTransitDestinationsStore((state) => state.slides[slideId]?.destinations || mockDestinations);
   const setDestinations = useTransitDestinationsStore((state) => state.setDestinations);
@@ -451,21 +425,19 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
             <div className="flex gap-3 mt-4">
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
               <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
-              {saveStatus !== 'idle' && (
-                <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
-                  {saveStatus === 'saving' ? (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                      Saved Locally
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+                {saveStatus === 'saving' ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                    Saved Locally
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

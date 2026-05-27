@@ -5,8 +5,8 @@ import TrafficCorridorPreview from "./preview"
 import { useEffect, useRef, useState, useCallback } from "react"
 import { useTrafficCorridorStore, type Corridor, type TableLayout } from "./store"
 import { useGeneralStore } from "@/stores/general"
-import { deleteImage } from "@/services/deleteImage"
-import { uploadImage } from "@/services/uploadImage"
+import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus"
+import { useImageUploadField } from "@/hooks/useImageUploadField"
 import { fetchTrafficData } from "@/services/data-gathering/fetchTrafficData"
 import { fetchSkidsTransitData } from "@/services/data-gathering/fetchSkidsDestinationData"
 import mapboxgl from 'mapbox-gl'
@@ -41,14 +41,6 @@ export default function TrafficCorridorSlide({
   handlePreview: () => void;
   handlePublish: () => void;
 }) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [isBgUploading, setIsBgUploading] = useState(false);
-  const [isLogoUploading, setIsLogoUploading] = useState(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const renderCount = useRef(0);
-
   const showTitle = useTrafficCorridorStore((state) => state.slides[slideId]?.showTitle !== false);
   const setShowTitle = useTrafficCorridorStore((state) => state.setShowTitle);
   const backgroundColor = useTrafficCorridorStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
@@ -585,46 +577,9 @@ export default function TrafficCorridorSlide({
     }
   };
 
-  // Save status
-
-  useEffect(() => {
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === 'development';
-    if (isDev && renderCount.current <= 2) { setSaveStatus('saved'); return; }
-    if (!isDev && renderCount.current === 1) { setSaveStatus('saved'); return; }
-    setSaveStatus('saving');
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => setSaveStatus('saved'), 600);
-  }, [showTitle, tableLayout, backgroundColor, tableHeaderColor, rowColor, titleColor, textColor, bgImage, logoImage, titleTextSize, contentTextSize]);
-
-  // Image upload
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (target === 'bg' && fileInputRef.current) fileInputRef.current.value = '';
-    else if (target === 'logo' && logoInputRef.current) logoInputRef.current.value = '';
-    const currentImage = target === 'bg' ? bgImage : logoImage;
-    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
-    const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
-    setLoadingFn(true);
-    uploadImage(shortcode, file).then((data) => {
-      if (currentImage) deleteImage(currentImage).catch(console.error);
-      setImageFn(slideId, data.url);
-    }).catch(console.error).finally(() => setLoadingFn(false));
-  };
-
-  const handleRemoveImage = (target: 'bg' | 'logo') => {
-    const currentImage = target === 'bg' ? bgImage : logoImage;
-    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
-    const inputRef = target === 'bg' ? fileInputRef : logoInputRef;
-    if (currentImage) {
-      deleteImage(currentImage).then(() => {
-        setImageFn(slideId, '');
-        if (inputRef.current) inputRef.current.value = '';
-      }).catch(console.error);
-    }
-  };
+  const saveStatus = useLocalSaveStatus(useTrafficCorridorStore, slideId);
+  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
 
   const handleRefreshRoutes = () => {
     delete routeAltCache[slideId];
@@ -883,15 +838,13 @@ export default function TrafficCorridorSlide({
           <div className="flex gap-3 mt-4">
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
-            {saveStatus !== 'idle' && (
-              <div className="flex items-center text-xs text-gray-500 ml-2">
-                {saveStatus === 'saving' ? (
-                  <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
-                ) : (
-                  <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
-                )}
-              </div>
-            )}
+            <div className="flex items-center text-xs text-gray-500 ml-2">
+              {saveStatus === 'saving' ? (
+                <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
+              ) : (
+                <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1000,14 +953,15 @@ export default function TrafficCorridorSlide({
             {bgImage ? (
               <div className="flex items-center gap-2">
                 <img src={bgImage} alt="bg" className="w-10 h-7 object-cover rounded" />
-                <button onClick={() => handleRemoveImage('bg')} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                <button onClick={bg.handleRemove} className="text-xs text-red-500 hover:text-red-700">Remove</button>
               </div>
             ) : (
-              <button onClick={() => fileInputRef.current?.click()} disabled={isBgUploading} className="w-full text-xs py-1.5 border border-dashed border-gray-300 rounded text-gray-500 hover:bg-gray-50">
-                {isBgUploading ? 'Uploading...' : '+ Upload'}
+              <button onClick={() => bg.inputRef.current?.click()} disabled={bg.isUploading} className="w-full text-xs py-1.5 border border-dashed border-gray-300 rounded text-gray-500 hover:bg-gray-50">
+                {bg.isUploading ? 'Uploading...' : '+ Upload'}
               </button>
             )}
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bg')} />
+            {bg.uploadError && <p className="text-xs text-red-500 mt-1">{bg.uploadError}</p>}
+            <input ref={bg.inputRef} type="file" accept="image/*" className="hidden" onChange={bg.handleUpload} />
           </div>
 
           {/* Logo Image */}
@@ -1016,14 +970,15 @@ export default function TrafficCorridorSlide({
             {logoImage ? (
               <div className="flex items-center gap-2">
                 <img src={logoImage} alt="logo" className="w-10 h-7 object-contain rounded" />
-                <button onClick={() => handleRemoveImage('logo')} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                <button onClick={logo.handleRemove} className="text-xs text-red-500 hover:text-red-700">Remove</button>
               </div>
             ) : (
-              <button onClick={() => logoInputRef.current?.click()} disabled={isLogoUploading} className="w-full text-xs py-1.5 border border-dashed border-gray-300 rounded text-gray-500 hover:bg-gray-50">
-                {isLogoUploading ? 'Uploading...' : '+ Upload'}
+              <button onClick={() => logo.inputRef.current?.click()} disabled={logo.isUploading} className="w-full text-xs py-1.5 border border-dashed border-gray-300 rounded text-gray-500 hover:bg-gray-50">
+                {logo.isUploading ? 'Uploading...' : '+ Upload'}
               </button>
             )}
-            <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} />
+            {logo.uploadError && <p className="text-xs text-red-500 mt-1">{logo.uploadError}</p>}
+            <input ref={logo.inputRef} type="file" accept="image/*" className="hidden" onChange={logo.handleUpload} />
           </div>
 
           {/* Delete */}

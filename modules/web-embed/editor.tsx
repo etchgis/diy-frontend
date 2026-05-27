@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import WebEmbedPreview from './preview';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useWebEmbedStore } from './store';
+import { useLocalSaveStatus } from '@/hooks/useLocalSaveStatus';
 
 export default function WebEmbedEditor({
   slideId,
@@ -17,9 +18,8 @@ export default function WebEmbedEditor({
   handlePreview: () => void;
   handlePublish: () => void;
 }) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [urlInput, setUrlInput] = useState('');
-  const renderCount = useRef(0);
+  const saveStatus = useLocalSaveStatus(useWebEmbedStore, slideId);
 
   const url = useWebEmbedStore((state) => state.slides[slideId]?.url || '');
   const setUrl = useWebEmbedStore((state) => state.setUrl);
@@ -40,16 +40,6 @@ export default function WebEmbedEditor({
   useEffect(() => {
     setUrlInput(url);
   }, [url]);
-
-  useEffect(() => {
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === 'development';
-    if (isDev && renderCount.current <= 2) { setSaveStatus('saved'); return; }
-    if (!isDev && renderCount.current === 1) { setSaveStatus('saved'); return; }
-    setSaveStatus('saving');
-    const t = setTimeout(() => setSaveStatus('saved'), 600);
-    return () => clearTimeout(t);
-  }, [url, zoom, scrollX, scrollY, refreshInterval]);
 
   const applyUrl = () => {
     let normalized = urlInput.trim();
@@ -120,15 +110,13 @@ export default function WebEmbedEditor({
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={handlePublish}>
               Publish Screens
             </Button>
-            {saveStatus !== 'idle' && (
-              <div className="flex items-center text-xs text-gray-500 ml-2">
-                {saveStatus === 'saving' ? (
-                  <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
-                ) : (
-                  <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
-                )}
-              </div>
-            )}
+            <div className="flex items-center text-xs text-gray-500 ml-2">
+              {saveStatus === 'saving' ? (
+                <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
+              ) : (
+                <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
+              )}
+            </div>
           </div>
         </div>
       </div>
