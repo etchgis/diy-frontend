@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react"
 import ImageOnlyPreview from "./preview"
 import { useImageOnlyStore } from "./store"
 import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus"
+import { useGeneralStore } from "@/stores/general"
 
 export default function ImageOnlySlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
 
@@ -22,6 +23,9 @@ export default function ImageOnlySlide({ slideId, handleDelete, handlePreview, h
 
   const imageHeight = useImageOnlyStore((state) => state.slides[slideId]?.imageHeight || 400);
   const setImageHeight = useImageOnlyStore((state) => state.setImageHeight);
+
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
 
   const saveStatus = useLocalSaveStatus(useImageOnlyStore, slideId);
 
@@ -70,6 +74,18 @@ export default function ImageOnlySlide({ slideId, handleDelete, handlePreview, h
       {/* Right Sidebar */}
       <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 overflow-y-auto">
         <div className="space-y-3 mb-4">
+          <div>
+            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showFooter}
+                onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              Show Footer
+            </label>
+          </div>
+
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
             <div className="flex items-center gap-2">

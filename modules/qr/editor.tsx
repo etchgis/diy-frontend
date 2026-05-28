@@ -37,6 +37,9 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
   const textSize = useQRStore((state) => state.slides[slideId]?.textSize || 5);
   const setTextSize = useQRStore((state) => state.setTextSize);
 
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const saveStatus = useLocalSaveStatus(useQRStore, slideId);
   const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
@@ -109,6 +112,18 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
 
           {/* Customization Options */}
           <div className="space-y-3 mb-4">
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showFooter}
+                  onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Show Footer
+              </label>
+            </div>
+
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
               <div className="flex items-center gap-2">

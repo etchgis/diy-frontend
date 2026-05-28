@@ -60,6 +60,9 @@ export default function TransitRoutesSlide({
     (state) => state.coordinates ?? { lng: -73.7562, lat: 42.6526 }
   );
 
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
+
   useEffect(() => {
     const controller = new AbortController();
     if (query?.length < 3) return;
@@ -358,6 +361,20 @@ export default function TransitRoutesSlide({
 
         {/* Right Sidebar */}
         <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 flex-shrink-0 overflow-y-auto">
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showFooter}
+                  onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Show Footer
+              </label>
+            </div>
+          </div>
+
           <div className="mb-4">
             <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">
               Destinations

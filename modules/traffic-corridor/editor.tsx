@@ -71,6 +71,9 @@ export default function TrafficCorridorSlide({
   );
   const setTableLayout = useTrafficCorridorStore((state) => state.setTableLayout);
 
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const coordinates = useGeneralStore((state) => state.coordinates || { lat: 0, lng: 0 });
 
@@ -862,6 +865,18 @@ export default function TrafficCorridorSlide({
                 className="w-4 h-4 rounded border-gray-300"
               />
               Show Title
+            </label>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showFooter}
+                onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              Show Footer
             </label>
           </div>
 

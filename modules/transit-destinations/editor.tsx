@@ -33,6 +33,9 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const [refetchingDest, setRefetchingDest] = useState<string | null>(null);
 
 
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
+
   const slides = useGeneralStore((state) => state.slides);
   const setSlides = useGeneralStore((state) => state.setSlides);
 
@@ -447,6 +450,18 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
 
           {/* Color Customization */}
           <div className="space-y-3 mb-4">
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showFooter}
+                  onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Show Footer
+              </label>
+            </div>
+
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">Table Header Color</label>
               <div className="flex items-center gap-2">

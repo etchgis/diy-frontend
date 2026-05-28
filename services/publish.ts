@@ -72,7 +72,7 @@ export async function publish() {
   }
 
   slides.forEach((slide) => {
-    const screenObj: any = { hidden: slide.hidden ?? false };
+    const screenObj: any = { hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true };
     if (slide.type === 'transit-destinations') {
       screenObj.type = 'transit-destinations';
       screenObj.id = slide.id;
@@ -519,15 +519,11 @@ export async function publish() {
       const { slides } = useWebEmbedStore.getState();
       const slideData = slides[slide.id];
 
-      if (slideData) {
-        screenObj.data.url = slideData.url;
-        screenObj.data.zoom = slideData.zoom;
-        screenObj.data.scrollX = slideData.scrollX;
-        screenObj.data.scrollY = slideData.scrollY;
-        screenObj.data.refreshInterval = slideData.refreshInterval ?? 0;
-      } else {
-        missingSlides.push(`web-embed (${slide.id})`);
-      }
+      screenObj.data.url = slideData?.url ?? '';
+      screenObj.data.zoom = slideData?.zoom ?? 1.0;
+      screenObj.data.scrollX = slideData?.scrollX ?? 0;
+      screenObj.data.scrollY = slideData?.scrollY ?? 0;
+      screenObj.data.refreshInterval = slideData?.refreshInterval ?? 0;
     }
 
     json.screens.push(screenObj);

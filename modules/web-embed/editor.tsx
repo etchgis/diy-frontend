@@ -6,6 +6,7 @@ import WebEmbedPreview from './preview';
 import { useEffect, useState } from 'react';
 import { useWebEmbedStore } from './store';
 import { useLocalSaveStatus } from '@/hooks/useLocalSaveStatus';
+import { useGeneralStore } from '@/stores/general';
 
 export default function WebEmbedEditor({
   slideId,
@@ -35,6 +36,9 @@ export default function WebEmbedEditor({
 
   const refreshInterval = useWebEmbedStore((state) => state.slides[slideId]?.refreshInterval ?? 0);
   const setRefreshInterval = useWebEmbedStore((state) => state.setRefreshInterval);
+
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
 
   // Keep local input in sync with store (e.g. on load)
   useEffect(() => {
@@ -123,6 +127,18 @@ export default function WebEmbedEditor({
 
       {/* Right Sidebar */}
       <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 space-y-4 overflow-y-auto">
+        <div>
+          <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showFooter}
+              onChange={(e) => setShowFooter(slideId, e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300"
+            />
+            Show Footer
+          </label>
+        </div>
+
         <div>
           <label className="block text-[#4a5568] font-medium mb-1 text-xs">Zoom</label>
           <div className="flex items-center gap-2">

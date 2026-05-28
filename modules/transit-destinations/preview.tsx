@@ -47,6 +47,7 @@ export default function TransitDestinationPreview({
     (state) => state.slides[slideId]?.outageMessage || ''
   );
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
 
   const mockDestinations: any = [];
   const destinationData = useTransitDestinationsStore(
@@ -640,7 +641,7 @@ export default function TransitDestinationPreview({
         )}
       </div>
 
-      <Footer />
+      {showFooter && <Footer />}
 
       {dataError && (
         <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/80 text-white text-center px-4 py-3 text-base font-medium">

@@ -58,6 +58,7 @@ export default function WeatherPreview({
 
   const coordinates = useGeneralStore((state) => state.coordinates);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
@@ -247,7 +248,7 @@ export default function WeatherPreview({
       </div>
 
       {/* Footer */}
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 }

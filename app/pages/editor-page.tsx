@@ -761,7 +761,7 @@ export default function EditorPage() {
                 </SelectItem>
                 <SelectItem value="citibike">
                   <div className="flex items-center gap-2 text-xs">
-                    Citibike Page
+                    Micromobility Page
                   </div>
                 </SelectItem>
                 <SelectItem value="traffic-corridor">

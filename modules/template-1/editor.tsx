@@ -46,6 +46,9 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
   const showTitle = useTemplate1Store((state) => state.slides[slideId]?.showTitle !== false);
   const setShowTitle = useTemplate1Store((state) => state.setShowTitle);
 
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const saveStatus = useLocalSaveStatus(useTemplate1Store, slideId);
   const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
@@ -109,6 +112,18 @@ export default function Template1Slide({ slideId, handleDelete, handlePreview, h
                 className="w-4 h-4 rounded border-gray-300"
               />
               Show Title
+            </label>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showFooter}
+                onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              Show Footer
             </label>
           </div>
 

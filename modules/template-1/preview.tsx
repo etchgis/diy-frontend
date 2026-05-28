@@ -96,6 +96,7 @@ export default function Template1Preview({
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     if (!isEditor) return;
@@ -310,7 +311,7 @@ export default function Template1Preview({
       </div>
 
       {/* Footer */}
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 }
