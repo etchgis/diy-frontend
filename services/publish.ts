@@ -24,7 +24,7 @@ export class PublishDataMissingError extends Error {
   }
 }
 
-export async function publish() {
+export function buildPublishPayload() {
   const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, isTempPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
   const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
 
@@ -533,32 +533,24 @@ export async function publish() {
     throw new PublishDataMissingError(missingSlides);
   }
 
+  return json;
+}
+
+export async function sendPublishPayload(json: any) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (!backendUrl) throw new Error('Missing backend URL');
 
-  if (!backendUrl) {
-    return Promise.reject(new Error('Missing backend URL'));
-  }
+  const response = await fetch(`${backendUrl}/upload/${json.shortcode}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(json),
+  });
 
-  try {
-    const endpoint = `/upload/${shortcode}`;
+  if (!response.ok) throw new Error(`Failed to publish: ${response.statusText}`);
+  return response.json();
+}
 
-    const response = await fetch(`${backendUrl}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(json),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to publish: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    return data;
-  } catch (error) {
-    throw error;
-  }
-
+export async function publish() {
+  const json = buildPublishPayload();
+  return sendPublishPayload(json);
 }

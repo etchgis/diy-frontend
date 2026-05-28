@@ -52,7 +52,8 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableSlide } from "@/components/sortable-slide"
 import { SetupSlides } from "@/services/setup"
-import { publish } from "@/services/publish"
+import { buildPublishPayload, sendPublishPayload, publish } from "@/services/publish"
+import { computePublishDiff, hasAnyChanges, savePublishedScreens, formatScreenType, type PublishDiff } from "@/services/publishDiff"
 import { useTransitDestinationsStore } from "@/modules/transit-destinations/store"
 import { getDestinationData } from "@/services/data-gathering/getDestinationData"
 import { useQRStore } from "@/modules/qr/store"
@@ -65,6 +66,8 @@ import { useCitibikeStore } from "@/modules/citibike/store"
 import { useRouteTimesStore } from "@/modules/route-times/store"
 import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store"
 import { useFixedRouteStore } from "@/modules/fixed-routes/store"
+import { useTransitRouteStore } from "@/modules/transit-routes/store"
+import { useWebEmbedStore } from "@/modules/web-embed/store"
 import { applyFontSizeToAllSlides } from "@/services/applyThemeToSlides"
 import { ResolutionFrame } from "@/components/resolution-frame"
 
@@ -86,6 +89,9 @@ export default function EditorPage() {
   const [publishStatus, setPublishStatus] = useState<'success' | 'error' | null>(null);
   const [publishMessage, setPublishMessage] = useState('');
   const [publishUrl, setPublishUrl] = useState('');
+
+  const [pendingPublishPayload, setPendingPublishPayload] = useState<any>(null);
+  const [currentDiff, setCurrentDiff] = useState<PublishDiff | null>(null);
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
@@ -431,6 +437,16 @@ export default function EditorPage() {
     }
   }
 
+  const deleteSlide = (slideId: string) => {
+    const filteredSlides: any = slides?.filter((slide: any) => slide.id !== slideId);
+    setSlides(filteredSlides);
+    if (filteredSlides.length > 0) {
+      setActiveSlideId(filteredSlides[0].id);
+    } else {
+      setActiveSlideId('');
+    }
+  }
+
   const handlePreview = () => {
 
     setModalSlideIndex(0);
@@ -479,6 +495,17 @@ export default function EditorPage() {
   };
 
   const openPasswordModal = () => {
+    let payload: any;
+    try {
+      payload = buildPublishPayload();
+    } catch (err: any) {
+      setPublishStatus("error");
+      setPublishMessage(err.message || "Failed to prepare publish.");
+      return;
+    }
+    setPendingPublishPayload(payload);
+    setCurrentDiff(computePublishDiff(payload.screens));
+
     if (!publishPassword) {
       setIsSettingPassword(true);
     } else {
@@ -503,7 +530,15 @@ export default function EditorPage() {
       setIsChangingFromTemp(false);
       setErrorMessage("");
       if (isChangingFromTemp) {
-        handlePublishingStep();
+        let freshPayload: any;
+        try {
+          freshPayload = buildPublishPayload();
+        } catch (err: any) {
+          setPublishStatus("error");
+          setPublishMessage(err.message || "Failed to prepare publish.");
+          return;
+        }
+        handlePublishingStep(freshPayload);
       } else {
         alert("Password set successfully. Please publish again.");
       }
@@ -525,17 +560,18 @@ export default function EditorPage() {
     }
 
     setShowPasswordModal(false);
-    handlePublishingStep();
+    handlePublishingStep(pendingPublishPayload);
   };
 
-  const handlePublishingStep = async () => {
+  const handlePublishingStep = async (payload: any) => {
     setPublishing(true);
     setPublishStatus(null);
     setPublishMessage("");
     setPublishUrl("");
 
     try {
-      const response = await publish();
+      const response = await sendPublishPayload(payload);
+      savePublishedScreens(payload.screens);
       setPublishStatus("success");
       setPublishMessage("Mobility Screen published successfully!");
       setPublishUrl(response.url);
@@ -545,6 +581,62 @@ export default function EditorPage() {
     } finally {
       setPublishing(false);
     }
+  };
+
+  const duplicateSlide = (sourceSlideId: string) => {
+    const currentSlides = useGeneralStore.getState().slides;
+    const sourceSlide = currentSlides.find((s: any) => s.id === sourceSlideId);
+    if (!sourceSlide) return;
+
+    const newId = uuidv4();
+
+    const copyModuleData = (store: any) => {
+      const data = store.getState().slides?.[sourceSlideId];
+      if (data) {
+        try {
+          const cloned = JSON.parse(JSON.stringify(data));
+          store.setState((state: any) => ({
+            slides: { ...state.slides, [newId]: cloned },
+          }));
+        } catch {
+          
+        }
+      }
+    };
+
+    switch (sourceSlide.type) {
+      case 'qr': copyModuleData(useQRStore); break;
+      case 'transit-destinations': copyModuleData(useTransitDestinationsStore); break;
+      case 'fixed-routes':
+      case 'stop-arrivals': copyModuleData(useFixedRouteStore); break;
+      case 'transit-routes': copyModuleData(useTransitRouteStore); break;
+      case 'route-times': copyModuleData(useRouteTimesStore); break;
+      case 'template-1': copyModuleData(useTemplate1Store); break;
+      case 'template-2': copyModuleData(useTemplate2Store); break;
+      case 'template-3': copyModuleData(useTemplate3Store); break;
+      case 'image-only': copyModuleData(useImageOnlyStore); break;
+      case 'weather': copyModuleData(useWeatherStore); break;
+      case 'citibike': copyModuleData(useCitibikeStore); break;
+      case 'traffic-corridor': copyModuleData(useTrafficCorridorStore); break;
+      case 'web-embed': copyModuleData(useWebEmbedStore); break;
+    }
+
+    const newSlide: any = {
+      id: newId,
+      type: sourceSlide.type,
+      hidden: sourceSlide.hidden,
+      showFooter: sourceSlide.showFooter,
+      schedule: sourceSlide.schedule ? { ...sourceSlide.schedule } : undefined,
+    };
+
+    const sourceIndex = currentSlides.findIndex((s: any) => s.id === sourceSlideId);
+    const newSlides = [
+      ...currentSlides.slice(0, sourceIndex + 1),
+      newSlide,
+      ...currentSlides.slice(sourceIndex + 1),
+    ];
+    useGeneralStore.getState().setSlides(newSlides);
+    setActiveSlideId(newId);
   };
 
 
@@ -697,6 +789,8 @@ export default function EditorPage() {
                     renderSlidePreview={renderSlidePreview}
                     toggleSlideHidden={toggleSlideHidden}
                     setSchedule={setSchedule}
+                    duplicateSlide={duplicateSlide}
+                    deleteSlide={deleteSlide}
                   />
                 ))}
               </div>
@@ -1161,7 +1255,11 @@ export default function EditorPage() {
               ×
             </button>
 
-            <h2 className={`text-xl font-semibold ${isChangingFromTemp ? 'mb-1' : publishPassword ? 'mb-6' : 'mb-1'}`}>
+            <h2 className={`text-xl font-semibold ${
+              !isChangingFromTemp && !isSettingPassword && publishPassword && (!currentDiff || !hasAnyChanges(currentDiff))
+                ? 'mb-5'
+                : 'mb-1'
+            }`}>
               {isChangingFromTemp ? "Set a New Password" : isSettingPassword ? "Set Publishing Password" : "Enter Your Publishing Password"}
             </h2>
             {isChangingFromTemp && (
@@ -1171,6 +1269,23 @@ export default function EditorPage() {
               <p className="mb-4 text-[#7e807f] text-sm">Save this password somewhere safe</p>
             )}
 
+            {!isSettingPassword && !isChangingFromTemp && currentDiff && hasAnyChanges(currentDiff) && (
+              <div className="mb-4 rounded border border-gray-100 bg-gray-50 p-3 space-y-1">
+                <p className="text-xs font-medium text-gray-400 mb-1.5">Changes since last publish</p>
+                {currentDiff.added.length > 0 && (
+                  <p className="text-xs text-green-700">+ {currentDiff.added.length} screen{currentDiff.added.length > 1 ? 's' : ''} added ({currentDiff.added.map((s) => formatScreenType(s.type)).join(', ')})</p>
+                )}
+                {currentDiff.removed.length > 0 && (
+                  <p className="text-xs text-red-700">− {currentDiff.removed.length} screen{currentDiff.removed.length > 1 ? 's' : ''} removed ({currentDiff.removed.map((s) => formatScreenType(s.type)).join(', ')})</p>
+                )}
+                {currentDiff.modified.length > 0 && (
+                  <p className="text-xs text-blue-700">~ {currentDiff.modified.length} screen{currentDiff.modified.length > 1 ? 's' : ''} modified ({currentDiff.modified.map((s) => formatScreenType(s.type)).join(', ')})</p>
+                )}
+                {currentDiff.reordered && (
+                  <p className="text-xs text-orange-700">↕ Screen order changed</p>
+                )}
+              </div>
+            )}
             <input
               type="password"
               value={passwordInput}

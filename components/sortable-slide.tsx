@@ -1,9 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Eye, EyeOff, Clock } from "lucide-react";
+import { EyeOff, Settings2 } from "lucide-react";
 import { useState } from "react";
-import ScheduleModal from "./schedule-modal";
-import type { SlideSchedule } from "@/stores/general";
+import SlideSettingsModal from "./slide-settings-modal";
 
 export const SortableSlide = ({
   slide,
@@ -12,6 +11,8 @@ export const SortableSlide = ({
   renderSlidePreview,
   toggleSlideHidden,
   setSchedule,
+  duplicateSlide,
+  deleteSlide,
 }: any) => {
   const {
     attributes,
@@ -22,16 +23,12 @@ export const SortableSlide = ({
     isDragging,
   } = useSortable({ id: slide.id });
 
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-  };
-
-  const handleClick = () => {
-    setActiveSlideId(slide.id);
   };
 
   const hasActiveSchedule = slide.schedule?.enabled;
@@ -43,7 +40,7 @@ export const SortableSlide = ({
         style={style}
         {...attributes}
         {...listeners}
-        onClick={handleClick}
+        onClick={() => setActiveSlideId(slide.id)}
         className={`cursor-pointer rounded border bg-white p-1 relative ${
           slide.id === activeSlideId ? "ring-2 ring-blue-500" : ""
         } ${slide.hidden ? "opacity-40" : ""}`}
@@ -59,39 +56,34 @@ export const SortableSlide = ({
           )}
         </div>
 
-        {/* Visibility toggle */}
+        {/* Settings button */}
         <button
           className="absolute top-1.5 right-1.5 z-10 p-0.5 rounded bg-white/80 hover:bg-white text-gray-500 hover:text-gray-800 shadow-sm"
           onClick={(e) => {
             e.stopPropagation();
-            toggleSlideHidden?.(slide.id);
+            setShowSettingsModal(true);
           }}
-          title={slide.hidden ? "Show on published screen" : "Hide from published screen"}
+          title="Screen settings"
         >
-          {slide.hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-        </button>
-
-        {/* Schedule button */}
-        <button
-          className={`absolute top-1.5 right-7 z-10 p-0.5 rounded bg-white/80 hover:bg-white shadow-sm ${
-            hasActiveSchedule ? "text-blue-500 hover:text-blue-700" : "text-gray-500 hover:text-gray-800"
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowScheduleModal(true);
-          }}
-          title={hasActiveSchedule ? `Scheduled: ${slide.schedule.startTime}–${slide.schedule.endTime}` : "Set visibility schedule"}
-        >
-          <Clock className="w-3.5 h-3.5" />
+          <Settings2 className="w-3.5 h-3.5" />
+          {hasActiveSchedule && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full" />
+          )}
         </button>
       </div>
 
-      {showScheduleModal && (
-        <ScheduleModal
-          schedule={slide.schedule}
-          onSave={(s: SlideSchedule) => setSchedule?.(slide.id, s)}
-          onClear={() => setSchedule?.(slide.id, null)}
-          onClose={() => setShowScheduleModal(false)}
+      {showSettingsModal && (
+        <SlideSettingsModal
+          slide={slide}
+          onSaveVisibility={(hidden) => {
+            if (hidden !== (slide.hidden ?? false)) {
+              toggleSlideHidden?.(slide.id);
+            }
+          }}
+          onSaveSchedule={(schedule) => setSchedule?.(slide.id, schedule)}
+          onDuplicate={() => duplicateSlide?.(slide.id)}
+          onDelete={() => deleteSlide?.(slide.id)}
+          onClose={() => setShowSettingsModal(false)}
         />
       )}
     </>
