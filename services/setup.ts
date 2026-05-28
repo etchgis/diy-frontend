@@ -331,7 +331,7 @@ async function importData(setup: any) {
   const slides: any = [];
 
   setup.screens.forEach((slide: any) => {
-    slides.push({ id: slide.id, type: slide.type, hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true });
+    slides.push({ id: slide.id, type: slide.type, hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true, schedule: slide.schedule ?? undefined });
     if (slide.type === 'transit-destinations') {
       const {
         setBackgroundColor,

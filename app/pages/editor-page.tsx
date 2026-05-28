@@ -99,6 +99,7 @@ export default function EditorPage() {
   const slides: any = useGeneralStore((state) => state.slides || []);
   const setSlides = useGeneralStore((state) => state.setSlides);
   const toggleSlideHidden = useGeneralStore((state) => state.toggleSlideHidden);
+  const setSchedule = useGeneralStore((state) => state.setSchedule);
 
   const url = useGeneralStore((state) => state.url || '');
   const setUrl = useGeneralStore((state) => state.setUrl);
@@ -695,6 +696,7 @@ export default function EditorPage() {
                     setActiveSlideId={setActiveSlideId}
                     renderSlidePreview={renderSlidePreview}
                     toggleSlideHidden={toggleSlideHidden}
+                    setSchedule={setSchedule}
                   />
                 ))}
               </div>

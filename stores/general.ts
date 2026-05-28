@@ -9,11 +9,18 @@ interface Theme {
   bodyText: string;
 }
 
+export interface SlideSchedule {
+  enabled: boolean;
+  startTime: string; 
+  endTime: string; 
+}
+
 interface Slide {
   id: string;
   type: string;
   hidden?: boolean;
   showFooter?: boolean;
+  schedule?: SlideSchedule;
   data?: any;
 }
 
@@ -66,6 +73,7 @@ interface Store {
   setDefaultContentTextSize: (size: number) => void;
   toggleSlideHidden: (id: string) => void;
   setShowFooter: (id: string, show: boolean) => void;
+  setSchedule: (id: string, schedule: SlideSchedule | null) => void;
 }
 
 export const useGeneralStore = create<Store>()(
@@ -179,6 +187,12 @@ export const useGeneralStore = create<Store>()(
         set((state) => ({
           slides: state.slides.map((s) =>
             s.id === id ? { ...s, showFooter: show } : s
+          ),
+        })),
+      setSchedule: (id, schedule) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, schedule: schedule ?? undefined } : s
           ),
         })),
     }),

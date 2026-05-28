@@ -30,12 +30,31 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 
+function isSlideVisible(slide: any, now: Date): boolean {
+  if (slide.hidden) return false;
+  const schedule = slide.schedule;
+  if (!schedule?.enabled) return true;
+
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const [startH, startM] = (schedule.startTime || '00:00').split(':').map(Number);
+  const [endH, endM] = (schedule.endTime || '23:59').split(':').map(Number);
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+
+  if (startMinutes <= endMinutes) {
+    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+  }
+  return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+}
+
 export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const searchParams = useSearchParams();
   const isTvMode = searchParams.get('mode') === 'tv';
 
+  const [now, setNow] = useState(() => new Date());
+
   const allSlides = useGeneralStore((state) => state.slides);
-  const slides = allSlides.filter((s: any) => !s.hidden);
+  const slides = allSlides.filter((s: any) => isSlideVisible(s, now));
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
   const resolution = useGeneralStore((state) => state.resolution || '1920x1080');
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
@@ -111,6 +130,17 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     },
     [slides.length, isTvMode]
   );
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (slides.length > 0 && activeIndex >= slides.length) {
+      setActiveIndex(0);
+    }
+  }, [slides.length]);
 
   useEffect(() => {
     if (!isTvMode) return;

@@ -72,7 +72,7 @@ export async function publish() {
   }
 
   slides.forEach((slide) => {
-    const screenObj: any = { hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true };
+    const screenObj: any = { hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true, schedule: slide.schedule ?? null };
     if (slide.type === 'transit-destinations') {
       screenObj.type = 'transit-destinations';
       screenObj.id = slide.id;
