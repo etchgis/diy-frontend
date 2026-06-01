@@ -331,8 +331,6 @@ export async function fetchSkidsTransitData(
   }
 
   const data: SkidsResponse = await response.json();
-  console.log('[SKIDS] raw response:', JSON.stringify(data, null, 2));
   const transformed = transformSkidsResponse(data, destinations);
-  console.log('[SKIDS] transformed response:', JSON.stringify(transformed, null, 2));
   return transformed;
 }

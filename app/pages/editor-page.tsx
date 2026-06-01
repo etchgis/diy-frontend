@@ -51,6 +51,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableSlide } from "@/components/sortable-slide"
+import SlideSettingsModal from "@/components/slide-settings-modal"
 import { SetupSlides } from "@/services/setup"
 import { buildPublishPayload, sendPublishPayload, publish } from "@/services/publish"
 import { computePublishDiff, hasAnyChanges, savePublishedScreens, formatScreenType, type PublishDiff } from "@/services/publishDiff"
@@ -93,6 +94,8 @@ export default function EditorPage() {
   const [pendingPublishPayload, setPendingPublishPayload] = useState<any>(null);
   const [currentDiff, setCurrentDiff] = useState<PublishDiff | null>(null);
 
+  const [editorSettingsSlideId, setEditorSettingsSlideId] = useState<string | null>(null);
+
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [isSettingPassword, setIsSettingPassword] = useState(false);
@@ -106,6 +109,8 @@ export default function EditorPage() {
   const setSlides = useGeneralStore((state) => state.setSlides);
   const toggleSlideHidden = useGeneralStore((state) => state.toggleSlideHidden);
   const setSchedule = useGeneralStore((state) => state.setSchedule);
+  const setSlideLabel = useGeneralStore((state) => state.setSlideLabel);
+  const setSlideDuration = useGeneralStore((state) => state.setSlideDuration);
 
   const url = useGeneralStore((state) => state.url || '');
   const setUrl = useGeneralStore((state) => state.setUrl);
@@ -504,7 +509,7 @@ export default function EditorPage() {
       return;
     }
     setPendingPublishPayload(payload);
-    setCurrentDiff(computePublishDiff(payload.screens));
+    setCurrentDiff(computePublishDiff(payload.screens, payload.footer));
 
     if (!publishPassword) {
       setIsSettingPassword(true);
@@ -571,7 +576,7 @@ export default function EditorPage() {
 
     try {
       const response = await sendPublishPayload(payload);
-      savePublishedScreens(payload.screens);
+      savePublishedScreens(payload.screens, payload.footer);
       setPublishStatus("success");
       setPublishMessage("Mobility Screen published successfully!");
       setPublishUrl(response.url);
@@ -641,36 +646,37 @@ export default function EditorPage() {
 
 
   const renderSlideComponent = (type: string, slideId: string) => {
+    const openSettings = () => setEditorSettingsSlideId(slideId);
     switch (type) {
       case "qr":
-        return <QRSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <QRSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "transit-destinations":
-        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <TransitDestinationSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "fixed-routes": // for backwards compatibility
       case "stop-arrivals":
-        return <StopArrivalsSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <StopArrivalsSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "transit-routes":
-        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <TransitRoutesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "route-times":
-        return <RouteTimesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <RouteTimesSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "template-1":
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "template-2":
-        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <Template2Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "template-3":
-        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <Template3Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "image-only":
-        return <ImageOnlySlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <ImageOnlySlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "weather":
-        return <WeatherSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <WeatherSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "citibike":
-        return <CitibikeSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <CitibikeSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "traffic-corridor":
-        return <TrafficCorridorSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <TrafficCorridorSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "web-embed":
-        return <WebEmbedEditor slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <WebEmbedEditor slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       default:
-        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} />;
+        return <Template1Slide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
     }
   };
   const parseResolution = (res: string): { w: number; h: number } => {
@@ -789,6 +795,9 @@ export default function EditorPage() {
                     renderSlidePreview={renderSlidePreview}
                     toggleSlideHidden={toggleSlideHidden}
                     setSchedule={setSchedule}
+                    setSlideLabel={setSlideLabel}
+                    setSlideDuration={setSlideDuration}
+                    globalDuration={rotationInterval || 20}
                     duplicateSlide={duplicateSlide}
                     deleteSlide={deleteSlide}
                   />
@@ -904,7 +913,7 @@ export default function EditorPage() {
             }}
           >
             <FontAwesomeIcon icon={faGear} className="w-4 h-4 mr-2" />
-            Screen Settings
+            Settings
           </Button>
         </div>
       </div>
@@ -1026,7 +1035,7 @@ export default function EditorPage() {
             >
               ×
             </button>
-            <h2 className="text-xl font-semibold mb-4">Screen Settings</h2>
+            <h2 className="text-xl font-semibold mb-4">Settings</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1245,6 +1254,26 @@ export default function EditorPage() {
         </div>
       )}
 
+      {editorSettingsSlideId && (() => {
+        const settingsSlide = slides.find((s: any) => s.id === editorSettingsSlideId);
+        if (!settingsSlide) return null;
+        return (
+          <SlideSettingsModal
+            slide={settingsSlide}
+            globalDuration={rotationInterval || 20}
+            onSaveLabel={(label) => setSlideLabel(settingsSlide.id, label)}
+            onSaveDuration={(duration) => setSlideDuration(settingsSlide.id, duration)}
+            onSaveVisibility={(hidden) => {
+              if (hidden !== (settingsSlide.hidden ?? false)) toggleSlideHidden(settingsSlide.id);
+            }}
+            onSaveSchedule={(schedule) => setSchedule(settingsSlide.id, schedule)}
+            onDuplicate={() => duplicateSlide(settingsSlide.id)}
+            onDelete={() => { deleteSlide(settingsSlide.id); setEditorSettingsSlideId(null); }}
+            onClose={() => setEditorSettingsSlideId(null)}
+          />
+        );
+      })()}
+
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative">
@@ -1283,6 +1312,9 @@ export default function EditorPage() {
                 )}
                 {currentDiff.reordered && (
                   <p className="text-xs text-orange-700">↕ Screen order changed</p>
+                )}
+                {currentDiff.footerChanged && (
+                  <p className="text-xs text-blue-700">~ Footer updated</p>
                 )}
               </div>
             )}

@@ -15,11 +15,13 @@ export default function RouteTimesSlide({
   handleDelete,
   handlePreview,
   handlePublish,
+  handleOpenSettings,
 }: {
   slideId: string,
   handleDelete: (id: string) => void,
   handlePreview: () => void,
   handlePublish: () => void
+  handleOpenSettings: () => void
 }) {
   const [allRoutes, setAllRoutes] = useState<any[]>([]);
   const [filteredRoutes, setFilteredRoutes] = useState<any[]>([]);
@@ -536,6 +538,10 @@ export default function RouteTimesSlide({
             </div>
 
             <div className="mt-auto">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
               <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId); }}>
                 Delete Screen
               </Button>

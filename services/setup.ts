@@ -234,8 +234,6 @@ async function importData(setup: any) {
   setShortcode(setup.shortcode || '');
   setRotationInterval(setup.rotationInterval || 20);
   if (setup.resolution) setResolution(setup.resolution);
-  console.log('[SETUP] publishPassword from backend:', setup.publishPassword ? `set (${setup.publishPassword.length} chars, starts: ${setup.publishPassword.substring(0, 20)})` : 'empty/null');
-  console.log('[SETUP] isTempPassword from backend:', setup.isTempPassword);
   setPublishPassword(setup.publishPassword || '');
   setIsTempPassword(setup.isTempPassword === true);
 
@@ -279,6 +277,9 @@ async function importData(setup: any) {
     setLeftType,
     setMiddleType,
     setRightType,
+    setLeftText,
+    setMiddleText,
+    setRightText,
     setBackgroundColor,
     setTimeTextColor
   } = useFooterStore.getState();
@@ -308,30 +309,22 @@ async function importData(setup: any) {
     ? setup.footer.timeTextColor
     : '#000000';
 
-  console.log('[SETUP] Setting footer data:', {
-    leftImageValue,
-    middleImageValue,
-    rightImageValue,
-    leftTypeValue,
-    middleTypeValue,
-    rightTypeValue,
-    backgroundColorValue,
-    timeTextColorValue
-  });
-
   setLeftImage(leftImageValue);
   setMiddleImage(middleImageValue);
   setRightImage(rightImageValue);
   setLeftType(leftTypeValue);
   setMiddleType(middleTypeValue);
   setRightType(rightTypeValue);
+  setLeftText(setup.footer?.leftText ?? '');
+  setMiddleText(setup.footer?.middleText ?? '');
+  setRightText(setup.footer?.rightText ?? '');
   setBackgroundColor(backgroundColorValue);
   setTimeTextColor(timeTextColorValue);
 
   const slides: any = [];
 
   setup.screens.forEach((slide: any) => {
-    slides.push({ id: slide.id, type: slide.type, hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true, schedule: slide.schedule ?? undefined });
+    slides.push({ id: slide.id, type: slide.type, hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true, schedule: slide.schedule ?? undefined, label: slide.label ?? undefined, duration: slide.duration ?? undefined });
     if (slide.type === 'transit-destinations') {
       const {
         setBackgroundColor,
@@ -363,7 +356,6 @@ async function importData(setup: any) {
       }
       setTDOutageMessage(slide.id, slide.data.outageMessage || '');
       setTDSkipOnError(slide.id, slide.data.skipOnError ?? false);
-      console.log('Destinations set for slide:', slide.id, slide.data.destinations || []);
     }
 
     if (slide.type === 'fixed-routes') {

@@ -539,11 +539,13 @@ export default function StopArrivalsSlide({
   handleDelete,
   handlePreview,
   handlePublish,
+  handleOpenSettings,
 }: {
   slideId: string;
   handleDelete: (id: string) => void;
   handlePreview: () => void;
   handlePublish: () => void;
+  handleOpenSettings: () => void;
 }) {
   const allStopsRefreshedRef = useRef(false);
   const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1667,7 +1669,14 @@ export default function StopArrivalsSlide({
                             {/* Direction toggles row */}
                             {selection.enabled && (selection.directionOptions?.length ?? 0) > 1 && (() => {
                               const allOpts = selection.directionOptions || [];
-                              const headsignOpts = allOpts.filter((o: DirectionOption) => !o.isAllDirections && o.headsignFilter);
+                              const _headsignOptsRaw = allOpts.filter((o: DirectionOption) => !o.isAllDirections && o.headsignFilter);
+                              const _seenHs = new Set<string>();
+                              const headsignOpts = _headsignOptsRaw.filter((o: DirectionOption) => {
+                                const k = o.headsignFilter!;
+                                if (_seenHs.has(k)) return false;
+                                _seenHs.add(k);
+                                return true;
+                              });
                               const groupOpts = allOpts.filter((o: DirectionOption) => !o.isAllDirections && !o.headsignFilter && o.groupHeadsigns);
                               const topOpts = allOpts.filter((o: DirectionOption) => o.isAllDirections || (!o.headsignFilter && !o.groupHeadsigns));
                               // Show top-level options + group shortcuts on first row; individual headsigns on second row
@@ -1732,7 +1741,7 @@ export default function StopArrivalsSlide({
                                       );
                                     })}
                                     {/* Individual headsign buttons (second row when grouped, or inline for plain headsigns) */}
-                                    {headsignOpts.map((opt: DirectionOption) => {
+                                    {headsignOpts.map((opt: DirectionOption, hsIdx: number) => {
                                       const currentFilters = selection.selectedHeadsignFilters || [];
                                       const isSelected = opt.headsignFilter ? currentFilters.includes(opt.headsignFilter) : false;
                                       const savedAlias = opt.headsignFilter
@@ -1745,7 +1754,7 @@ export default function StopArrivalsSlide({
                                         : opt.label;
                                       return (
                                         <button
-                                          key={`hs-${index}-${opt.headsignFilter}`}
+                                          key={`hs-${index}-${hsIdx}`}
                                           onClick={() => {
                                             const f = opt.headsignFilter!;
                                             let newFilters: string[];
@@ -2377,6 +2386,10 @@ export default function StopArrivalsSlide({
             </div>
 
             <div className="mt-auto">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
               <Button
                 className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2"
                 onClick={() => {

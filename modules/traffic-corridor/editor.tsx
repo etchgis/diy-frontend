@@ -35,11 +35,13 @@ export default function TrafficCorridorSlide({
   handleDelete,
   handlePreview,
   handlePublish,
+  handleOpenSettings,
 }: {
   slideId: string;
   handleDelete: (id: string) => void;
   handlePreview: () => void;
   handlePublish: () => void;
+  handleOpenSettings: () => void;
 }) {
   const showTitle = useTrafficCorridorStore((state) => state.slides[slideId]?.showTitle !== false);
   const setShowTitle = useTrafficCorridorStore((state) => state.setShowTitle);

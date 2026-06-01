@@ -155,21 +155,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   // Auto-rotation effect - only in TV mode
   useEffect(() => {
-    if (!isTvMode) {return;}
-
-    // Only start auto-rotation if we have slides and a valid rotation interval
-    if (slides.length > 1 && rotationInterval > 0) {
-      intervalRef.current = setInterval(() => {
-        goToNextSlide();
-      }, rotationInterval * 1000);
-
-      return () => {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
-      };
-    }
-  }, [slides.length, rotationInterval, goToNextSlide, isTvMode]);
+    if (!isTvMode || slides.length <= 1) return;
+    const slideDuration = (slides[activeIndex]?.duration ?? rotationInterval);
+    if (slideDuration <= 0) return;
+    const timer = setTimeout(goToNextSlide, slideDuration * 1000);
+    return () => clearTimeout(timer);
+  }, [isTvMode, slides.length, activeIndex, rotationInterval, goToNextSlide]);
 
   useEffect(() => {
     const loadSlides = async () => {
@@ -281,15 +272,10 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   };
 
   const getFixedRouteData = async () => {
-    console.log('[DATA UPDATE] Fetching fixed route data...', new Date().toLocaleTimeString());
-    // Get current slides from store to avoid stale closure
     const currentSlides = useGeneralStore.getState().slides;
     const fixedRouteSlides = currentSlides.filter((slide: any) => slide.type === 'fixed-routes');
 
-    if (!fixedRouteSlides.length) {
-      console.log('[DATA UPDATE] No fixed route slides found');
-      return;
-    }
+    if (!fixedRouteSlides.length) return;
 
     for (const slide of fixedRouteSlides) {
       const currentState = useFixedRouteStore.getState().slides;
@@ -300,6 +286,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const minArrivalMinutes = currentState[slide.id]?.minArrivalMinutes ?? 0;
 
       if (!selectedStop?.id || !selectedStop?.services?.length || !serviceSelections?.length) {
+        console.warn('[STOP ARRIVALS] Skipping slide', slide.id, '— missing stop/service data. selectedStop:', selectedStop?.id, 'services:', selectedStop?.services?.length, 'selections:', serviceSelections?.length);
         continue;
       }
 
@@ -326,6 +313,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       }
 
       const queries = Array.from(queryMap.values());
+      console.log('[STOP ARRIVALS] Querying', queries.length, 'stop(s) for slide', slide.id, ':', queries.map(q => `${q.stopId}@${q.serviceId}`).join(', '));
       if (queries.length === 0) {
         setScheduleData(slide.id, []);
         setFixedRouteDataError(slide.id, false);
@@ -333,11 +321,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       }
 
       try {
-        // Fetch queries sequentially to avoid overwhelming the API
         const allArrivals: any[] = [];
         for (const q of queries) {
           try {
             const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId);
+            if (!data) console.warn('[STOP ARRIVALS] No data returned for stop', q.stopId, '(likely 4xx from API)');
             const tagged = (data?.trains || []).map((item: any) => ({
               destination: item.destination,
               routeId: item.routeId,

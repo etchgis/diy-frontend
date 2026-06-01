@@ -21,6 +21,8 @@ interface Slide {
   hidden?: boolean;
   showFooter?: boolean;
   schedule?: SlideSchedule;
+  label?: string;
+  duration?: number; 
   data?: any;
 }
 
@@ -74,6 +76,8 @@ interface Store {
   toggleSlideHidden: (id: string) => void;
   setShowFooter: (id: string, show: boolean) => void;
   setSchedule: (id: string, schedule: SlideSchedule | null) => void;
+  setSlideLabel: (id: string, label: string) => void;
+  setSlideDuration: (id: string, duration: number | undefined) => void;
 }
 
 export const useGeneralStore = create<Store>()(
@@ -193,6 +197,18 @@ export const useGeneralStore = create<Store>()(
         set((state) => ({
           slides: state.slides.map((s) =>
             s.id === id ? { ...s, schedule: schedule ?? undefined } : s
+          ),
+        })),
+      setSlideLabel: (id, label) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, label: label || undefined } : s
+          ),
+        })),
+      setSlideDuration: (id, duration) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, duration } : s
           ),
         })),
     }),

@@ -1,13 +1,15 @@
 const STORAGE_KEY = 'last-published-screens';
+const FOOTER_STORAGE_KEY = 'last-published-footer';
 
 export interface PublishDiff {
   added: Array<{ type: string }>;
   removed: Array<{ type: string }>;
   modified: Array<{ type: string }>;
   reordered: boolean;
+  footerChanged: boolean;
 }
 
-export function computePublishDiff(newScreens: any[]): PublishDiff | null {
+export function computePublishDiff(newScreens: any[], newFooter?: any): PublishDiff | null {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
 
@@ -32,15 +34,22 @@ export function computePublishDiff(newScreens: any[]): PublishDiff | null {
   const sharedNew = newScreens.map((s) => s.id).filter((id) => prevById.has(id));
   const reordered = JSON.stringify(sharedPrev) !== JSON.stringify(sharedNew);
 
-  return { added, removed, modified, reordered };
+  const prevFooterRaw = localStorage.getItem(FOOTER_STORAGE_KEY);
+  const prevFooter = prevFooterRaw ? JSON.parse(prevFooterRaw) : null;
+  const footerChanged = newFooter != null && JSON.stringify(newFooter) !== JSON.stringify(prevFooter);
+
+  return { added, removed, modified, reordered, footerChanged };
 }
 
 export function hasAnyChanges(diff: PublishDiff): boolean {
-  return diff.added.length > 0 || diff.removed.length > 0 || diff.modified.length > 0 || diff.reordered;
+  return diff.added.length > 0 || diff.removed.length > 0 || diff.modified.length > 0 || diff.reordered || diff.footerChanged;
 }
 
-export function savePublishedScreens(screens: any[]): void {
+export function savePublishedScreens(screens: any[], footer?: any): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(screens));
+  if (footer != null) {
+    localStorage.setItem(FOOTER_STORAGE_KEY, JSON.stringify(footer));
+  }
 }
 
 export function formatScreenType(type: string): string {

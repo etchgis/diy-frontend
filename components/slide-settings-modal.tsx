@@ -6,6 +6,9 @@ import type { SlideSchedule } from '@/stores/general';
 
 interface Props {
   slide: any;
+  globalDuration: number;
+  onSaveLabel: (label: string) => void;
+  onSaveDuration: (duration: number | undefined) => void;
   onSaveVisibility: (hidden: boolean) => void;
   onSaveSchedule: (schedule: SlideSchedule | null) => void;
   onDuplicate: () => void;
@@ -13,7 +16,9 @@ interface Props {
   onClose: () => void;
 }
 
-export default function SlideSettingsModal({ slide, onSaveVisibility, onSaveSchedule, onDuplicate, onDelete, onClose }: Props) {
+export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel, onSaveDuration, onSaveVisibility, onSaveSchedule, onDuplicate, onDelete, onClose }: Props) {
+  const [label, setLabel] = useState(slide.label ?? '');
+  const [durationInput, setDurationInput] = useState(slide.duration != null ? String(slide.duration) : '');
   const [hidden, setHidden] = useState(slide.hidden ?? false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(slide.schedule?.enabled ?? false);
@@ -23,6 +28,9 @@ export default function SlideSettingsModal({ slide, onSaveVisibility, onSaveSche
   const isOvernight = scheduleEnabled && startTime > endTime;
 
   const handleSave = () => {
+    onSaveLabel(label.trim());
+    const parsed = parseFloat(durationInput);
+    onSaveDuration(!isNaN(parsed) && parsed > 0 ? parsed : undefined);
     onSaveVisibility(hidden);
     onSaveSchedule(scheduleEnabled ? { enabled: true, startTime, endTime } : null);
     onClose();
@@ -44,8 +52,38 @@ export default function SlideSettingsModal({ slide, onSaveVisibility, onSaveSche
           </button>
         </div>
 
-        {/* Visibility */}
+        {/* Label */}
         <div className="mb-4">
+          <p className="text-xs font-medium text-[#4a5568] uppercase tracking-wide mb-2">Label</p>
+          <input
+            type="text"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="e.g. Morning Shuttle Schedule"
+            className="w-full border border-[#cbd5e0] rounded px-3 py-1.5 text-sm"
+            maxLength={60}
+          />
+        </div>
+
+        {/* Duration */}
+        <div className="mb-4 border-t pt-4">
+          <p className="text-xs font-medium text-[#4a5568] uppercase tracking-wide mb-2">Display Duration</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={durationInput}
+              onChange={(e) => setDurationInput(e.target.value)}
+              placeholder={`Global (${globalDuration}s)`}
+              min={1}
+              className="w-full border border-[#cbd5e0] rounded px-3 py-1.5 text-sm"
+            />
+            <span className="text-xs text-[#4a5568] shrink-0">sec</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">Leave blank to use the global rotation interval.</p>
+        </div>
+
+        {/* Visibility */}
+        <div className="mb-4 border-t pt-4">
           <p className="text-xs font-medium text-[#4a5568] uppercase tracking-wide mb-2">Visibility</p>
           <label className="flex items-center gap-2 cursor-pointer">
             <input

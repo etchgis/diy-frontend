@@ -7,7 +7,7 @@ import { useGeneralStore } from "@/stores/general"
 import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus"
 import { useImageUploadField } from "@/hooks/useImageUploadField"
 
-export default function WeatherSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
+export default function WeatherSlide({ slideId, handleDelete, handlePreview, handlePublish, handleOpenSettings }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void, handleOpenSettings: () => void }) {
 
   const title = useWeatherStore((state) => state.slides[slideId]?.title || '');
   const backgroundColor = useWeatherStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
@@ -254,6 +254,10 @@ export default function WeatherSlide({ slideId, handleDelete, handlePreview, han
         </div>
 
         <div className="mt-auto">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
           <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => handleDelete(slideId)}>
             Delete Screen
           </Button>

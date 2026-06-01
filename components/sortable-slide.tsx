@@ -11,8 +11,11 @@ export const SortableSlide = ({
   renderSlidePreview,
   toggleSlideHidden,
   setSchedule,
+  setSlideLabel,
+  setSlideDuration,
   duplicateSlide,
   deleteSlide,
+  globalDuration,
 }: any) => {
   const {
     attributes,
@@ -70,11 +73,19 @@ export const SortableSlide = ({
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full" />
           )}
         </button>
+
+        {/* Label */}
+        {slide.label && (
+          <p className="mt-1 text-xs text-[#4a5568] truncate px-0.5 leading-tight">{slide.label}</p>
+        )}
       </div>
 
       {showSettingsModal && (
         <SlideSettingsModal
           slide={slide}
+          globalDuration={globalDuration ?? 20}
+          onSaveLabel={(label) => setSlideLabel?.(slide.id, label)}
+          onSaveDuration={(duration) => setSlideDuration?.(slide.id, duration)}
           onSaveVisibility={(hidden) => {
             if (hidden !== (slide.hidden ?? false)) {
               toggleSlideHidden?.(slide.id);

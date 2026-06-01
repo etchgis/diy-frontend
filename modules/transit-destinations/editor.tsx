@@ -27,7 +27,7 @@ function formatWalkDistance(meters: number): string {
   return `${(meters / 1609.344).toFixed(1)} mi`;
 }
 
-export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
+export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish, handleOpenSettings }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void, handleOpenSettings: () => void }) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [expandedDest, setExpandedDest] = useState<string | null>(null);
   const [refetchingDest, setRefetchingDest] = useState<string | null>(null);
@@ -779,6 +779,10 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
           </div>
 
           <div className="mt-auto">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
             <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
               Delete Screen
             </Button>

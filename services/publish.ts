@@ -26,7 +26,7 @@ export class PublishDataMissingError extends Error {
 
 export function buildPublishPayload() {
   const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, isTempPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
-  const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
+  const { leftImage, middleImage, rightImage, leftType, middleType, rightType, leftText, middleText, rightText, backgroundColor, timeTextColor } = useFooterStore.getState();
 
   console.log('[PUBLISH] Footer data being published:', {
     leftImage,
@@ -65,6 +65,9 @@ export function buildPublishPayload() {
       leftType: leftType,
       middleType: middleType,
       rightType: rightType,
+      leftText: leftText,
+      middleText: middleText,
+      rightText: rightText,
       backgroundColor: backgroundColor,
       timeTextColor: timeTextColor,
     },
@@ -72,7 +75,7 @@ export function buildPublishPayload() {
   }
 
   slides.forEach((slide) => {
-    const screenObj: any = { hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true, schedule: slide.schedule ?? null };
+    const screenObj: any = { hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true, schedule: slide.schedule ?? null, label: slide.label ?? null, duration: slide.duration ?? null };
     if (slide.type === 'transit-destinations') {
       screenObj.type = 'transit-destinations';
       screenObj.id = slide.id;

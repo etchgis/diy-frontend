@@ -30,13 +30,9 @@ export async function fetchCitibikeData(slideId: string) {
 
     const data = await response.json();
 
-    console.log(data);
-
     useCitibikeStore.getState().setStationData(slideId, data.stations);
     useCitibikeStore.getState().setDataError(slideId, false);
     useCitibikeStore.getState().setDataLoaded(slideId, true);
-
-    console.log(`[CITIBIKE] Data fetched: ${data.stations.length} stations within ${searchRadius} mi for slide ${slideId}`);
   } catch (error) {
     console.error("[CITIBIKE] Failed to fetch citibike data:", error);
     useCitibikeStore.getState().setDataError(slideId, true);
