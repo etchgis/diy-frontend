@@ -33,8 +33,8 @@ export interface ServiceSelection {
   selectedHeadsignFilters?: string[];  // Filter arrivals by headsigns (multi-select, exact match)
   directionOptions: DirectionOption[];  // Available direction choices for this service
   enabledRouteIds?: string[];       // Which routes are enabled (undefined = all enabled)
-  columnIndex?: 0 | 1;             // Which column this service belongs to in split-view mode
-  headsignAliases?: Record<string, string>;  // headsignFilter value → custom display name
+  columnIndex?: 0 | 1;          
+  headsignAliases?: Record<string, string>; 
 }
 
 interface FixedRouteSlideData {
