@@ -64,6 +64,7 @@ export default function TransitRoutesPreview({
     (state) => state.coordinates ?? DEFAULT_COORDINATES
   );
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
 
   const mockRoutes: any = [];
   const routes = useTransitRouteStore(
@@ -494,7 +495,7 @@ export default function TransitRoutesPreview({
       </div>
 
 
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 }

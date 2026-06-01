@@ -2,21 +2,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ChevronRight } from "lucide-react"
 import CitibikePreview from "./preview"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import { useCitibikeStore, KNOWN_PROVIDERS } from "./store"
 import { useGeneralStore } from "@/stores/general"
-import { deleteImage } from "@/services/deleteImage"
-import { uploadImage } from "@/services/uploadImage"
 import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData"
+import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus"
+import { useImageUploadField } from "@/hooks/useImageUploadField"
 
-export default function CitibikeSlide({ slideId, handleDelete, handlePreview, handlePublish }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void }) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [isBgUploading, setIsBgUploading] = useState(false);
-  const [isLogoUploading, setIsLogoUploading] = useState(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const renderCount = useRef(0);
+export default function CitibikeSlide({ slideId, handleDelete, handlePreview, handlePublish, handleOpenSettings }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void, handleOpenSettings: () => void }) {
 
   const title = useCitibikeStore((state) => state.slides[slideId]?.title || '');
   const backgroundColor = useCitibikeStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
@@ -45,26 +38,13 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
   const showTitle = useCitibikeStore((state) => state.slides[slideId]?.showTitle !== false);
   const setShowTitle = useCitibikeStore((state) => state.setShowTitle);
 
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
+
   const shortcode = useGeneralStore((state) => state.shortcode || '');
-
-  useEffect(() => {
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === 'development';
-
-    if (isDev && renderCount.current <= 2) {
-      setSaveStatus('saved');
-      return;
-    }
-    if (!isDev && renderCount.current === 1) {
-      setSaveStatus('saved');
-      return;
-    }
-
-    setSaveStatus('saving');
-
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => setSaveStatus('saved'), 600);
-  }, [title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius, titleTextSize, contentTextSize, showTitle]);
+  const saveStatus = useLocalSaveStatus(useCitibikeStore, slideId);
+  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
 
   // Re-fetch when search radius changes
   const radiusChangeRef = useRef(false);
@@ -79,43 +59,6 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
     return () => clearTimeout(timeout);
   }, [searchRadius, slideId]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'bg' | 'logo') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (target === 'bg' && fileInputRef.current) fileInputRef.current.value = '';
-    else if (target === 'logo' && logoInputRef.current) logoInputRef.current.value = '';
-
-    const currentImage = target === 'bg' ? bgImage : logoImage;
-    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
-    const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
-
-    setLoadingFn(true);
-    uploadImage(shortcode, file).then((data) => {
-      if (currentImage) {
-        deleteImage(currentImage).catch((err) => console.error('Failed to delete previous image:', err));
-      }
-      setImageFn(slideId, data.url);
-    }).catch((err) => {
-      console.error('Image upload failed:', err);
-    }).finally(() => {
-      setLoadingFn(false);
-    });
-  };
-
-  const handleRemoveImage = (target: 'bg' | 'logo') => {
-    const currentImage = target === 'bg' ? bgImage : logoImage;
-    const setImageFn = target === 'bg' ? setBgImage : setLogoImage;
-    const inputRef = target === 'bg' ? fileInputRef : logoInputRef;
-
-    if (currentImage) {
-      deleteImage(currentImage).then(() => {
-        setImageFn(slideId, '');
-        if (inputRef.current) inputRef.current.value = '';
-      }).catch((err) => console.error('Failed to delete image:', err));
-    }
-  };
-
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Main Content */}
@@ -125,7 +68,7 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
           <div className="flex items-center gap-2 text-[#4a5568] mb-4">
             <span>Home</span>
             <ChevronRight className="w-4 h-4" />
-            <span className="font-medium">Rentals Page</span>
+            <span className="font-medium">Micromobility Page</span>
           </div>
 
           <p className="text-[#606061] mb-6">
@@ -141,21 +84,13 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
           <div className="flex gap-3 mt-4">
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
-            {saveStatus !== 'idle' && (
-              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
-                {saveStatus === 'saving' ? (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                    Saved Locally
-                  </>
-                )}
-              </div>
-            )}
+            <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+              {saveStatus === 'saving' ? (
+                <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
+              ) : (
+                <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -172,6 +107,18 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
                 className="w-4 h-4 rounded border-gray-300"
               />
               Show Title
+            </label>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showFooter}
+                onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              Show Footer
             </label>
           </div>
 
@@ -276,24 +223,15 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                {isBgUploading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                ) : bgImage ? (
-                  <img src={bgImage} alt="BG" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
-                )}
+                {bg.isUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" /> : bgImage ? <img src={bgImage} alt="BG" className="w-full h-full object-cover" /> : <div className="w-4 h-4 bg-[#cbd5e0] rounded" />}
               </div>
-              <div className="flex gap-1">
-                <input type="file" accept="image/*" ref={fileInputRef} onChange={(e) => handleImageUpload(e, 'bg')} className="hidden" />
-                <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => fileInputRef.current?.click()}>
-                  Change
-                </Button>
-                {bgImage && (
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => handleRemoveImage('bg')}>
-                    Remove
-                  </Button>
-                )}
+              <div className="flex flex-col gap-1">
+                <div className="flex gap-1">
+                  <input type="file" accept="image/*" ref={bg.inputRef} onChange={bg.handleUpload} className="hidden" />
+                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => bg.inputRef.current?.click()}>Change</Button>
+                  {bgImage && <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={bg.handleRemove}>Remove</Button>}
+                </div>
+                {bg.uploadError && <p className="text-xs text-red-500">{bg.uploadError}</p>}
               </div>
             </div>
           </div>
@@ -302,24 +240,15 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Logo Image</label>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                {isLogoUploading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                ) : logoImage ? (
-                  <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
-                )}
+                {logo.isUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" /> : logoImage ? <img src={logoImage} alt="Logo" className="w-full h-full object-cover" /> : <div className="w-4 h-4 bg-[#cbd5e0] rounded" />}
               </div>
-              <div className="flex gap-1">
-                <input type="file" accept="image/*" ref={logoInputRef} onChange={(e) => handleImageUpload(e, 'logo')} className="hidden" />
-                <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => logoInputRef.current?.click()}>
-                  Change
-                </Button>
-                {logoImage && (
-                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => handleRemoveImage('logo')}>
-                    Remove
-                  </Button>
-                )}
+              <div className="flex flex-col gap-1">
+                <div className="flex gap-1">
+                  <input type="file" accept="image/*" ref={logo.inputRef} onChange={logo.handleUpload} className="hidden" />
+                  <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => logo.inputRef.current?.click()}>Change</Button>
+                  {logoImage && <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={logo.handleRemove}>Remove</Button>}
+                </div>
+                {logo.uploadError && <p className="text-xs text-red-500">{logo.uploadError}</p>}
               </div>
             </div>
           </div>
@@ -376,6 +305,10 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
         </div>
 
         <div className="mt-auto">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
           <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => handleDelete(slideId)}>
             Delete Screen
           </Button>

@@ -3,23 +3,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import WebEmbedPreview from './preview';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useWebEmbedStore } from './store';
+import { useLocalSaveStatus } from '@/hooks/useLocalSaveStatus';
+import { useGeneralStore } from '@/stores/general';
 
 export default function WebEmbedEditor({
   slideId,
   handleDelete,
   handlePreview,
   handlePublish,
+  handleOpenSettings,
 }: {
   slideId: string;
   handleDelete: (id: string) => void;
   handlePreview: () => void;
   handlePublish: () => void;
+  handleOpenSettings: () => void;
 }) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [urlInput, setUrlInput] = useState('');
-  const renderCount = useRef(0);
+  const saveStatus = useLocalSaveStatus(useWebEmbedStore, slideId);
 
   const url = useWebEmbedStore((state) => state.slides[slideId]?.url || '');
   const setUrl = useWebEmbedStore((state) => state.setUrl);
@@ -36,20 +39,13 @@ export default function WebEmbedEditor({
   const refreshInterval = useWebEmbedStore((state) => state.slides[slideId]?.refreshInterval ?? 0);
   const setRefreshInterval = useWebEmbedStore((state) => state.setRefreshInterval);
 
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
+
   // Keep local input in sync with store (e.g. on load)
   useEffect(() => {
     setUrlInput(url);
   }, [url]);
-
-  useEffect(() => {
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === 'development';
-    if (isDev && renderCount.current <= 2) { setSaveStatus('saved'); return; }
-    if (!isDev && renderCount.current === 1) { setSaveStatus('saved'); return; }
-    setSaveStatus('saving');
-    const t = setTimeout(() => setSaveStatus('saved'), 600);
-    return () => clearTimeout(t);
-  }, [url, zoom, scrollX, scrollY, refreshInterval]);
 
   const applyUrl = () => {
     let normalized = urlInput.trim();
@@ -120,21 +116,31 @@ export default function WebEmbedEditor({
             <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={handlePublish}>
               Publish Screens
             </Button>
-            {saveStatus !== 'idle' && (
-              <div className="flex items-center text-xs text-gray-500 ml-2">
-                {saveStatus === 'saving' ? (
-                  <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
-                ) : (
-                  <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
-                )}
-              </div>
-            )}
+            <div className="flex items-center text-xs text-gray-500 ml-2">
+              {saveStatus === 'saving' ? (
+                <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
+              ) : (
+                <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Right Sidebar */}
       <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 space-y-4 overflow-y-auto">
+        <div>
+          <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showFooter}
+              onChange={(e) => setShowFooter(slideId, e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300"
+            />
+            Show Footer
+          </label>
+        </div>
+
         <div>
           <label className="block text-[#4a5568] font-medium mb-1 text-xs">Zoom</label>
           <div className="flex items-center gap-2">
@@ -197,6 +203,10 @@ export default function WebEmbedEditor({
         </div>
 
         <div className="mt-auto pt-4">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
           <Button
             className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs"
             onClick={() => handleDelete(slideId)}

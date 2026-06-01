@@ -63,6 +63,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor") && !previewMode;
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
 
   const isLoading = useFixedRouteStore(
     (state) => state.slides[slideId]?.isLoading
@@ -769,7 +770,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
           )}
         </div>
         {/* Footer */}
-      <Footer />
+      {showFooter && <Footer />}
 
       {dataError && (
         <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/80 text-white text-center px-4 py-3 text-base font-medium">

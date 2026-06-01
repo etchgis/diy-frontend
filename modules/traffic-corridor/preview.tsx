@@ -39,6 +39,7 @@ export default function TrafficCorridorPreview({
   const titleTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const contentTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.contentTextSize || 5);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
 
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
@@ -326,7 +327,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
         </div>
       )}
 
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 }

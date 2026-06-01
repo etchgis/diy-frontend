@@ -21,9 +21,9 @@ import {
 import FixedRoutePreview from "./preview";
 import React, { useEffect, useRef, useState, useCallback, JSXElementConstructor, ReactElement, ReactNode, ReactPortal, Key } from "react";
 import { useFixedRouteStore, ServiceSelection, DirectionOption, RouteInfo } from "./store";
-import { deleteImage } from "@/services/deleteImage";
-import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
+import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus";
+import { useImageUploadField } from "@/hooks/useImageUploadField";
 import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { fetchRoutes } from "@/services/data-gathering/fetchRoutes";
@@ -539,23 +539,16 @@ export default function StopArrivalsSlide({
   handleDelete,
   handlePreview,
   handlePublish,
+  handleOpenSettings,
 }: {
   slideId: string;
   handleDelete: (id: string) => void;
   handlePreview: () => void;
   handlePublish: () => void;
+  handleOpenSettings: () => void;
 }) {
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
-    "idle"
-  );
   const allStopsRefreshedRef = useRef(false);
   const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isBgUploading, setIsBgUploading] = useState(false);
-  const [isLogoUploading, setIsLogoUploading] = useState(false);
-  const renderCount = useRef(0);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const bgInputRef = useRef<HTMLInputElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
   const [allStops, setAllStops] = useState<ExpandedStop[]>([]);
   const [filteredStops, setFilteredStops] = useState<ExpandedStop[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -683,6 +676,9 @@ export default function StopArrivalsSlide({
   const minArrivalMinutes = useFixedRouteStore((state: any) => state.slides[slideId]?.minArrivalMinutes ?? 0);
   const setMinArrivalMinutes = useFixedRouteStore((state: any) => state.setMinArrivalMinutes);
 
+
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
   const coordinates = useGeneralStore(
@@ -1259,94 +1255,9 @@ export default function StopArrivalsSlide({
   }, [selectedStop, serviceSelections, fetchData]);
 
 
-  useEffect(() => {
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === "development";
-    const shouldSkip =
-      (isDev && renderCount.current <= 2) ||
-      (!isDev && renderCount.current === 1);
-
-    if (shouldSkip) {
-      setSaveStatus("saved");
-      return;
-    }
-
-    setSaveStatus("saving");
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      setSaveStatus("saved");
-    }, 600);
-  }, [
-    stopName,
-    description,
-    backgroundColor,
-    titleColor,
-    tableColor,
-    tableTextColor,
-    titleTextSize,
-    contentTextSize,
-  ]);
-
-  type ImageTarget = "bg" | "logo";
-
-  const imageTargetMap = {
-    bg: {
-      get: () => bgImage,
-      set: (url: string) => setBgImage(slideId, url),
-    },
-    logo: {
-      get: () => logoImage,
-      set: (url: string) => setLogoImage(slideId, url),
-    },
-  };
-
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    target: ImageTarget
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const currentImage = imageTargetMap[target].get();
-    const setLoadingFn = target === 'bg' ? setIsBgUploading : setIsLogoUploading;
-
-    setLoadingFn(true);
-    try {
-      const data = await uploadImage(shortcode, file);
-
-      if (currentImage) {
-        await deleteImage(currentImage);
-      }
-
-      imageTargetMap[target].set(data.url);
-
-      if (target === 'bg') bgInputRef.current!.value = '';
-      if (target === 'logo') logoInputRef.current!.value = '';
-    } catch (err) {
-      console.error('Image upload failed:', err);
-    } finally {
-      setLoadingFn(false);
-    }
-  };
-
-  const handleRemoveImage = async (target: ImageTarget) => {
-    const currentImage = imageTargetMap[target].get();
-    if (!currentImage) return;
-
-    try {
-      await deleteImage(currentImage);
-      imageTargetMap[target].set('');
-
-      if (target === 'bg' && bgInputRef.current) bgInputRef.current.value = '';
-      if (target === 'logo' && logoInputRef.current) logoInputRef.current.value = '';
-    } catch (err) {
-      console.error('Failed to delete image:', err);
-    }
-  };
+  const saveStatus = useLocalSaveStatus(useFixedRouteStore, slideId);
+  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
 
   const selectedRouteIds = new Set(
     serviceSelections.flatMap((s: { routes: any; }) => (s.routes || []).map((r: RouteInfo) => r.id ?? (r as any).route_id))
@@ -1758,7 +1669,14 @@ export default function StopArrivalsSlide({
                             {/* Direction toggles row */}
                             {selection.enabled && (selection.directionOptions?.length ?? 0) > 1 && (() => {
                               const allOpts = selection.directionOptions || [];
-                              const headsignOpts = allOpts.filter((o: DirectionOption) => !o.isAllDirections && o.headsignFilter);
+                              const _headsignOptsRaw = allOpts.filter((o: DirectionOption) => !o.isAllDirections && o.headsignFilter);
+                              const _seenHs = new Set<string>();
+                              const headsignOpts = _headsignOptsRaw.filter((o: DirectionOption) => {
+                                const k = o.headsignFilter!;
+                                if (_seenHs.has(k)) return false;
+                                _seenHs.add(k);
+                                return true;
+                              });
                               const groupOpts = allOpts.filter((o: DirectionOption) => !o.isAllDirections && !o.headsignFilter && o.groupHeadsigns);
                               const topOpts = allOpts.filter((o: DirectionOption) => o.isAllDirections || (!o.headsignFilter && !o.groupHeadsigns));
                               // Show top-level options + group shortcuts on first row; individual headsigns on second row
@@ -1823,7 +1741,7 @@ export default function StopArrivalsSlide({
                                       );
                                     })}
                                     {/* Individual headsign buttons (second row when grouped, or inline for plain headsigns) */}
-                                    {headsignOpts.map((opt: DirectionOption) => {
+                                    {headsignOpts.map((opt: DirectionOption, hsIdx: number) => {
                                       const currentFilters = selection.selectedHeadsignFilters || [];
                                       const isSelected = opt.headsignFilter ? currentFilters.includes(opt.headsignFilter) : false;
                                       const savedAlias = opt.headsignFilter
@@ -1836,7 +1754,7 @@ export default function StopArrivalsSlide({
                                         : opt.label;
                                       return (
                                         <button
-                                          key={`hs-${index}-${opt.headsignFilter}`}
+                                          key={`hs-${index}-${hsIdx}`}
                                           onClick={() => {
                                             const f = opt.headsignFilter!;
                                             let newFilters: string[];
@@ -2072,21 +1990,19 @@ export default function StopArrivalsSlide({
               >
                 Publish Screens
               </Button>
-              {saveStatus !== "idle" && (
-                <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
-                  {saveStatus === "saving" ? (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                      Saved Locally
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+                {saveStatus === "saving" ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                    Saved Locally
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -2104,6 +2020,18 @@ export default function StopArrivalsSlide({
                   className="w-4 h-4 rounded border-gray-300"
                 />
                 Show Title
+              </label>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showFooter}
+                  onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Show Footer
               </label>
             </div>
 
@@ -2314,45 +2242,15 @@ export default function StopArrivalsSlide({
               </label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {isBgUploading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                  ) : bgImage ? (
-                    <img
-                      src={bgImage}
-                      alt="BG"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
-                  )}
+                  {bg.isUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" /> : bgImage ? <img src={bgImage} alt="BG" className="w-full h-full object-cover" /> : <div className="w-4 h-4 bg-[#cbd5e0] rounded" />}
                 </div>
-                <div className="flex gap-1">
-                  {/* Hidden input */}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={bgInputRef}
-                    onChange={(e) => handleImageUpload(e, 'bg')}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => bgInputRef.current?.click()}
-                  >
-                    Change
-                  </Button>
-                  {bgImage && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs bg-transparent px-2 py-1"
-                      onClick={() => handleRemoveImage('bg')}
-                    >
-                      Remove
-                    </Button>
-                  )}
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <input type="file" accept="image/*" ref={bg.inputRef} onChange={bg.handleUpload} className="hidden" />
+                    <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => bg.inputRef.current?.click()}>Change</Button>
+                    {bgImage && <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={bg.handleRemove}>Remove</Button>}
+                  </div>
+                  {bg.uploadError && <p className="text-xs text-red-500">{bg.uploadError}</p>}
                 </div>
               </div>
             </div>
@@ -2363,45 +2261,15 @@ export default function StopArrivalsSlide({
               </label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
-                  {isLogoUploading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                  ) : logoImage ? (
-                    <img
-                      src={logoImage}
-                      alt="BG"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-4 h-4 bg-[#cbd5e0] rounded" />
-                  )}
+                  {logo.isUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" /> : logoImage ? <img src={logoImage} alt="Logo" className="w-full h-full object-cover" /> : <div className="w-4 h-4 bg-[#cbd5e0] rounded" />}
                 </div>
-                <div className="flex gap-1">
-                  {/* Hidden input */}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={logoInputRef}
-                    onChange={(e) => handleImageUpload(e, 'logo')}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs bg-transparent px-2 py-1"
-                    onClick={() => logoInputRef.current?.click()}
-                  >
-                    Change
-                  </Button>
-                  {logoImage && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs bg-transparent px-2 py-1"
-                      onClick={() => handleRemoveImage('logo')}
-                    >
-                      Remove
-                    </Button>
-                  )}
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <input type="file" accept="image/*" ref={logo.inputRef} onChange={logo.handleUpload} className="hidden" />
+                    <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => logo.inputRef.current?.click()}>Change</Button>
+                    {logoImage && <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={logo.handleRemove}>Remove</Button>}
+                  </div>
+                  {logo.uploadError && <p className="text-xs text-red-500">{logo.uploadError}</p>}
                 </div>
               </div>
             </div>
@@ -2518,6 +2386,10 @@ export default function StopArrivalsSlide({
             </div>
 
             <div className="mt-auto">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
               <Button
                 className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2"
                 onClick={() => {

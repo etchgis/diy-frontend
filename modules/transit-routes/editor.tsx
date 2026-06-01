@@ -4,7 +4,8 @@ import { ChevronRight, Plus, X } from "lucide-react";
 import TransitRoutesPreview from "./preview";
 import { useTransitRouteStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus";
 import { fetchTransitData } from "@/services/data-gathering/fetchTransitDestinationData";
 import { formatTime, formatDuration } from "@/utils/formats";
 
@@ -16,20 +17,18 @@ export default function TransitRoutesSlide({
   handleDelete,
   handlePreview,
   handlePublish,
+  handleOpenSettings,
 }: {
   slideId: string;
   handleDelete: (id: string) => void;
   handlePreview: () => void;
   handlePublish: () => void;
+  handleOpenSettings: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
-    "idle"
-  );
   const [selectedFeature, setSelectedFeature] = useState<any>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const renderCount = useRef(0);
+  const saveStatus = useLocalSaveStatus(useTransitRouteStore, slideId);
 
   const destination = useTransitRouteStore(
     (state) => state.slides[slideId]?.destination || ""
@@ -63,37 +62,8 @@ export default function TransitRoutesSlide({
     (state) => state.coordinates ?? { lng: -73.7562, lat: 42.6526 }
   );
 
-  const prevValuesRef = useRef({ destination: "" });
-
-  useEffect(() => {
-    if (prevValuesRef.current.destination === destination) {
-      return;
-    }
-
-    prevValuesRef.current = { destination };
-
-    renderCount.current += 1;
-    const isDev = process.env.NODE_ENV === "development";
-
-    if (isDev && renderCount.current <= 2) {
-      setSaveStatus("saved");
-      return;
-    }
-    if (!isDev && renderCount.current === 1) {
-      setSaveStatus("saved");
-      return;
-    }
-
-    setSaveStatus("saving");
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      setSaveStatus("saved");
-    }, 600);
-  }, [destination]);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -375,26 +345,38 @@ export default function TransitRoutesSlide({
             >
               Publish Screens
             </Button>
-            {saveStatus !== "idle" && (
-              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
-                {saveStatus === "saving" ? (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                    Saved Locally
-                  </>
-                )}
-              </div>
-            )}
+            <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+              {saveStatus === "saving" ? (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                  Saved Locally
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Right Sidebar */}
         <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 flex-shrink-0 overflow-y-auto">
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showFooter}
+                  onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Show Footer
+              </label>
+            </div>
+          </div>
+
           <div className="mb-4">
             <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">
               Destinations
@@ -429,6 +411,10 @@ export default function TransitRoutesSlide({
             )}
           </div>
           <div className="mt-auto">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
             <Button
               className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2"
               onClick={() => {

@@ -52,8 +52,6 @@ export async function fetchTransitData(
 
     const data = await response.json();
 
-    console.log(data);
-
     const allData: any = [];
     data.plan.itineraries.forEach((result: any) => {
       allData.push(result);

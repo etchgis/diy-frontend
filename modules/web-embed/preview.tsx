@@ -1,8 +1,11 @@
 'use client';
 import { useWebEmbedStore } from './store';
 import { useEffect, useRef, useState } from 'react';
+import Footer from "@/components/shared-components/footer";
+import { useGeneralStore } from "@/stores/general";
 
 export default function WebEmbedPreview({ slideId }: { slideId: string }) {
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const url = useWebEmbedStore((state) => state.slides[slideId]?.url || '');
   const zoom = useWebEmbedStore((state) => state.slides[slideId]?.zoom ?? 1.0);
   const scrollX = useWebEmbedStore((state) => state.slides[slideId]?.scrollX ?? 0);
@@ -98,6 +101,11 @@ export default function WebEmbedPreview({ slideId }: { slideId: string }) {
           />
         ) : null
       ))}
+      {showFooter && (
+        <div className="absolute bottom-0 left-0 right-0 z-10">
+          <Footer />
+        </div>
+      )}
     </div>
   );
 }

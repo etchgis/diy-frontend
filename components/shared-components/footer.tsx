@@ -12,6 +12,9 @@ export default function Footer() {
   const leftType = useFooterStore((state) => state.leftType);
   const middleType = useFooterStore((state) => state.middleType);
   const rightType = useFooterStore((state) => state.rightType);
+  const leftText = useFooterStore((state) => state.leftText);
+  const middleText = useFooterStore((state) => state.middleText);
+  const rightText = useFooterStore((state) => state.rightText);
   const backgroundColor = useFooterStore((state) => state.backgroundColor);
   const timeTextColor = useFooterStore((state) => state.timeTextColor);
 
@@ -37,6 +40,7 @@ export default function Footer() {
   const renderSection = (
     type: string,
     image: string,
+    text: string,
     altText: string,
     imageClass: string,
     placeholderClass: string
@@ -52,6 +56,14 @@ export default function Footer() {
           {currentTime}
         </div>
       );
+    } else if (type === "text") {
+      return (
+        <div
+          className={`${placeholderClass} flex items-center`}
+          style={{ color: timeTextColor }}
+          dangerouslySetInnerHTML={{ __html: text }}
+        />
+      );
     } else if (image) {
       return <img src={image} alt={altText} className={`${imageClass} object-contain`} />;
     } else {
@@ -61,32 +73,20 @@ export default function Footer() {
 
   return (
     <div
-      className={`p-3 flex items-center justify-between ${
+      className={`p-3 flex items-center gap-4 ${
         isEditor ? "rounded-b-lg" : "flex-shrink-0"
       }`}
       style={{ backgroundColor }}
     >
-      {renderSection(
-        leftType,
-        leftImage,
-        "Left Footer",
-        "h-[25px] w-[246px]",
-        "h-[25px] w-[246px]"
-      )}
-      {renderSection(
-        middleType,
-        middleImage,
-        "Middle Footer",
-        "h-[25px] w-[246px]",
-        "h-[25px] w-[246px]"
-      )}
-      {renderSection(
-        rightType,
-        rightImage,
-        "Right Footer",
-        "h-8",
-        "h-8 w-[100px]"
-      )}
+      <div className="flex-1 min-w-0 flex items-center">
+        {renderSection(leftType, leftImage, leftText, "Left Footer", "h-[25px] max-h-full", "h-[25px]")}
+      </div>
+      <div className="flex-1 min-w-0 flex items-center justify-center">
+        {renderSection(middleType, middleImage, middleText, "Middle Footer", "h-[25px] max-h-full", "h-[25px]")}
+      </div>
+      <div className="flex-1 min-w-0 flex items-center justify-end">
+        {renderSection(rightType, rightImage, rightText, "Right Footer", "h-8 max-h-full", "h-8")}
+      </div>
     </div>
   );
 }

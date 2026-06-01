@@ -15,9 +15,18 @@ import { useWebEmbedStore } from '@/modules/web-embed/store';
 import { useFooterStore } from '@/stores/footer';
 import { migrateHeadsignFilters } from '@/lib/stop-arrivals-filters';
 
-export async function publish() {
+export class PublishDataMissingError extends Error {
+  missingSlides: string[];
+  constructor(missingSlides: string[]) {
+    super(`Data missing for slides: ${missingSlides.join(', ')}. Open each slide in the editor at least once before publishing.`);
+    this.name = 'PublishDataMissingError';
+    this.missingSlides = missingSlides;
+  }
+}
+
+export function buildPublishPayload() {
   const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, isTempPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
-  const { leftImage, middleImage, rightImage, leftType, middleType, rightType, backgroundColor, timeTextColor } = useFooterStore.getState();
+  const { leftImage, middleImage, rightImage, leftType, middleType, rightType, leftText, middleText, rightText, backgroundColor, timeTextColor } = useFooterStore.getState();
 
   console.log('[PUBLISH] Footer data being published:', {
     leftImage,
@@ -29,6 +38,8 @@ export async function publish() {
     backgroundColor,
     timeTextColor
   });
+
+  const missingSlides: string[] = [];
 
   const json = {
     location: location,
@@ -54,6 +65,9 @@ export async function publish() {
       leftType: leftType,
       middleType: middleType,
       rightType: rightType,
+      leftText: leftText,
+      middleText: middleText,
+      rightText: rightText,
       backgroundColor: backgroundColor,
       timeTextColor: timeTextColor,
     },
@@ -61,7 +75,7 @@ export async function publish() {
   }
 
   slides.forEach((slide) => {
-    const screenObj: any = { hidden: slide.hidden ?? false };
+    const screenObj: any = { hidden: slide.hidden ?? false, showFooter: slide.showFooter ?? true, schedule: slide.schedule ?? null, label: slide.label ?? null, duration: slide.duration ?? null };
     if (slide.type === 'transit-destinations') {
       screenObj.type = 'transit-destinations';
       screenObj.id = slide.id;
@@ -104,6 +118,7 @@ export async function publish() {
         screenObj.data.skipOnError = slideData.skipOnError ?? false;
 
       } else {
+        missingSlides.push(`transit-destinations (${slide.id})`);
       }
     }
 
@@ -202,6 +217,7 @@ export async function publish() {
           ];
         }
       } else {
+        missingSlides.push(`fixed-routes (${slide.id})`);
       }
     }
 
@@ -221,6 +237,7 @@ export async function publish() {
         screenObj.data.location = location;
         screenObj.data.routes = routes;
       } else {
+        missingSlides.push(`transit-routes (${slide.id})`);
       }
     }
 
@@ -251,6 +268,7 @@ export async function publish() {
         screenObj.data.qrSize = qrSize;
         screenObj.data.textSize = textSize;
       } else {
+        missingSlides.push(`qr (${slide.id})`);
       }
 
     }
@@ -285,6 +303,7 @@ export async function publish() {
         screenObj.data.contentTextSize = contentTextSize;
 
       } else {
+        missingSlides.push(`template-1 (${slide.id})`);
       }
     }
 
@@ -317,6 +336,7 @@ export async function publish() {
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
       } else {
+        missingSlides.push(`template-2 (${slide.id})`);
       }
     }
 
@@ -344,6 +364,7 @@ export async function publish() {
         screenObj.data.imageObjectFit = imageObjectFit;
         screenObj.data.titleTextSize = titleTextSize;
       } else {
+        missingSlides.push(`template-3 (${slide.id})`);
       }
     }
 
@@ -364,6 +385,8 @@ export async function publish() {
         screenObj.data.fullScreen = fullScreen;
         screenObj.data.imageWidth = imageWidth;
         screenObj.data.imageHeight = imageHeight;
+      } else {
+        missingSlides.push(`image-only (${slide.id})`);
       }
     }
 
@@ -387,6 +410,8 @@ export async function publish() {
         screenObj.data.logoImage = logoImage;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+      } else {
+        missingSlides.push(`weather (${slide.id})`);
       }
     }
 
@@ -410,6 +435,8 @@ export async function publish() {
         screenObj.data.searchRadius = searchRadius;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+      } else {
+        missingSlides.push(`citibike (${slide.id})`);
       }
     }
 
@@ -439,6 +466,8 @@ export async function publish() {
         screenObj.data.origin = origin;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+      } else {
+        missingSlides.push(`traffic-corridor (${slide.id})`);
       }
     }
 
@@ -481,6 +510,7 @@ export async function publish() {
         screenObj.data.outageMessage = slideData.outageMessage ?? '';
         screenObj.data.skipOnError = slideData.skipOnError ?? false;
       } else {
+        missingSlides.push(`route-times (${slide.id})`);
       }
     }
 
@@ -492,44 +522,38 @@ export async function publish() {
       const { slides } = useWebEmbedStore.getState();
       const slideData = slides[slide.id];
 
-      if (slideData) {
-        screenObj.data.url = slideData.url;
-        screenObj.data.zoom = slideData.zoom;
-        screenObj.data.scrollX = slideData.scrollX;
-        screenObj.data.scrollY = slideData.scrollY;
-        screenObj.data.refreshInterval = slideData.refreshInterval ?? 0;
-      }
+      screenObj.data.url = slideData?.url ?? '';
+      screenObj.data.zoom = slideData?.zoom ?? 1.0;
+      screenObj.data.scrollX = slideData?.scrollX ?? 0;
+      screenObj.data.scrollY = slideData?.scrollY ?? 0;
+      screenObj.data.refreshInterval = slideData?.refreshInterval ?? 0;
     }
 
     json.screens.push(screenObj);
   });
 
+  if (missingSlides.length > 0) {
+    throw new PublishDataMissingError(missingSlides);
+  }
+
+  return json;
+}
+
+export async function sendPublishPayload(json: any) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (!backendUrl) throw new Error('Missing backend URL');
 
-  if (!backendUrl) {
-    return Promise.reject(new Error('Missing backend URL'));
-  }
+  const response = await fetch(`${backendUrl}/upload/${json.shortcode}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(json),
+  });
 
-  try {
-    const endpoint = `/upload/${shortcode}`;
+  if (!response.ok) throw new Error(`Failed to publish: ${response.statusText}`);
+  return response.json();
+}
 
-    const response = await fetch(`${backendUrl}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(json),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to publish: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    return data;
-  } catch (error) {
-    throw error;
-  }
-
+export async function publish() {
+  const json = buildPublishPayload();
+  return sendPublishPayload(json);
 }

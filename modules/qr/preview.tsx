@@ -3,9 +3,11 @@ import { useGeneralStore } from "@/stores/general";
 import QRCode from "react-qr-code";
 import Footer from "@/components/shared-components/footer";
 import { usePathname } from "next/navigation";
+import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 
 export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || "");
+  const setText = useQRStore((state) => state.setText);
   const url = useQRStore((state) => state.slides[slideId]?.url || "");
   const backgroundColor = useQRStore(
     (state) => state.slides[slideId]?.backgroundColor || "#192F51"
@@ -25,6 +27,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor");
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const textSizeMultiplier = 0.5 + textSize * 0.1;
@@ -71,18 +74,28 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
           </div>
         </div>
         <div
-          className="font-medium text-center"
+          className={`font-medium text-center w-full max-w-lg ${isEditor ? "border-2 border-[#11d1f7] rounded px-2 py-1" : ""}`}
           style={{
             color: textColor,
             fontSize: isEditor ? `${18 * textSizeMultiplier}px` : `${4 * textSizeMultiplier}vh`,
           }}
         >
-          {text}
+          {isEditor ? (
+            <HtmlTextEditor
+              content={text}
+              onChange={(html) => setText(slideId, html)}
+              textColor={textColor}
+              fontSize={Math.round(18 * textSizeMultiplier)}
+              minHeight="1.4em"
+            />
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: text || "" }} />
+          )}
         </div>
       </div>
 
       {/* Footer */}
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 }

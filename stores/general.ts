@@ -9,10 +9,20 @@ interface Theme {
   bodyText: string;
 }
 
+export interface SlideSchedule {
+  enabled: boolean;
+  startTime: string; 
+  endTime: string; 
+}
+
 interface Slide {
   id: string;
   type: string;
   hidden?: boolean;
+  showFooter?: boolean;
+  schedule?: SlideSchedule;
+  label?: string;
+  duration?: number; 
   data?: any;
 }
 
@@ -64,6 +74,10 @@ interface Store {
   setDefaultTitleTextSize: (size: number) => void;
   setDefaultContentTextSize: (size: number) => void;
   toggleSlideHidden: (id: string) => void;
+  setShowFooter: (id: string, show: boolean) => void;
+  setSchedule: (id: string, schedule: SlideSchedule | null) => void;
+  setSlideLabel: (id: string, label: string) => void;
+  setSlideDuration: (id: string, duration: number | undefined) => void;
 }
 
 export const useGeneralStore = create<Store>()(
@@ -171,6 +185,30 @@ export const useGeneralStore = create<Store>()(
         set((state) => ({
           slides: state.slides.map((s) =>
             s.id === id ? { ...s, hidden: !s.hidden } : s
+          ),
+        })),
+      setShowFooter: (id, show) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, showFooter: show } : s
+          ),
+        })),
+      setSchedule: (id, schedule) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, schedule: schedule ?? undefined } : s
+          ),
+        })),
+      setSlideLabel: (id, label) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, label: label || undefined } : s
+          ),
+        })),
+      setSlideDuration: (id, duration) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, duration } : s
           ),
         })),
     }),
