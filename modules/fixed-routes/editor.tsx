@@ -252,19 +252,21 @@ function computeDirectionOptions(
   // This works when a single stop serves multiple destinations
   const stopIdDataWithHeadsigns = service._stopIdData as Record<string, { routes: ExpandedRoute[], locationType: number }> | undefined;
   if (stopIdDataWithHeadsigns && stopIds.length > 0) {
-    // Collect unique headsigns from enabled routes only
-    // Use Map to deduplicate by lowercase key while preserving original for display
-    const headsignMap = new Map<string, string>(); // lowercase -> original
+    // Build per-(routeShortName, headsign) pairs so each route gets its own rename card
+    const headsignPairs: Array<{ original: string; normalized: string; routeShortName: string }> = [];
+    const seenPairs = new Set<string>();
     for (const stopId of stopIds) {
       const data = stopIdDataWithHeadsigns[stopId];
       if (data?.routes) {
         for (const route of data.routes) {
-          // Only include headsigns from enabled routes (or all if no filter)
           if (!enabledRouteIds || enabledRouteIds.includes(route.id)) {
+            const rsn = route.shortName || '';
             for (const headsign of route.headsigns || []) {
-              const key = headsign.toLowerCase().trim();
-              if (!headsignMap.has(key)) {
-                headsignMap.set(key, headsign);
+              const normalized = headsign.toLowerCase().trim();
+              const pairKey = `${rsn}|${normalized}`;
+              if (!seenPairs.has(pairKey)) {
+                seenPairs.add(pairKey);
+                headsignPairs.push({ original: headsign, normalized, routeShortName: rsn });
               }
             }
           }
@@ -272,21 +274,24 @@ function computeDirectionOptions(
       }
     }
 
-    // If we have multiple headsigns, offer them as direction options
-    if (headsignMap.size > 1) {
+    const uniqueHeadsigns = new Set(headsignPairs.map(p => p.normalized));
+    if (uniqueHeadsigns.size > 1) {
       options.push({
         stopId: stopIds.join(','),
         label: 'All Directions',
         isAllDirections: true
       });
 
-      const sortedHeadsigns = Array.from(headsignMap.values()).sort();
-      for (const headsign of sortedHeadsigns) {
+      const sortedPairs = [...headsignPairs].sort((a, b) =>
+        a.routeShortName.localeCompare(b.routeShortName) || a.normalized.localeCompare(b.normalized)
+      );
+      for (const { original, normalized, routeShortName } of sortedPairs) {
         options.push({
           stopId: stopIds.join(','),
-          label: headsign,
+          label: original,
           isAllDirections: false,
-          headsignFilter: headsign.toLowerCase().trim()
+          headsignFilter: normalized,
+          routeShortName: routeShortName || undefined,
         });
       }
       return options;
@@ -1612,15 +1617,8 @@ export default function StopArrivalsSlide({
                                             ? currentEnabled.filter((id: string) => id !== route.id)
                                             : [...currentEnabled, route.id];
 
-                                          // Recalculate direction options based on new enabled routes
-                                          const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
-                                          const newDirOptions = svc ? computeDirectionOptions(svc, allStops, newEnabled) : selection.directionOptions;
-                                          // Remove any headsign filters that are no longer valid
-                                          const validHeadsigns = new Set(newDirOptions.map((o: { headsignFilter: any; }) => o.headsignFilter).filter(Boolean));
-                                          const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter((h: unknown) => validHeadsigns.has(h));
-
                                           const updated = activeSels.map((s: any, i: any) =>
-                                            i === index ? { ...s, enabledRouteIds: newEnabled, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
+                                            i === index ? { ...s, enabledRouteIds: newEnabled } : s
                                           );
                                           setActiveSels(updated);
                                         }}
@@ -1641,15 +1639,10 @@ export default function StopArrivalsSlide({
                                   {selection.enabled && selection.routes.length > 3 && (
                                     <button
                                       onClick={() => {
-                                        const allRouteIds = selection.routes!.map((r: RouteInfo) => r.id);
-                                        // Recalculate direction options with all routes enabled
-                                        const svc = selectedStop.services?.find((f: any) => f.id === selection.serviceId);
-                                        const newDirOptions = svc ? computeDirectionOptions(svc, allStops, allRouteIds) : selection.directionOptions;
-                                        // Keep headsign filters that are still valid
-                                        const validHeadsigns = new Set(newDirOptions.map((o: { headsignFilter: any; }) => o.headsignFilter).filter(Boolean));
-                                        const newHeadsignFilters = (selection.selectedHeadsignFilters || []).filter((h: unknown) => validHeadsigns.has(h));
+                                        // Only reset enabledRouteIds — don't recompute directionOptions,
+                                        // which can return the fallback (1 option) and hide the whole section.
                                         const updated = activeSels.map((s: any, i: any) =>
-                                          i === index ? { ...s, enabledRouteIds: allRouteIds, directionOptions: newDirOptions, selectedHeadsignFilters: newHeadsignFilters.length > 0 ? newHeadsignFilters : undefined } : s
+                                          i === index ? { ...s, enabledRouteIds: undefined } : s
                                         );
                                         setActiveSels(updated);
                                       }}
@@ -1666,17 +1659,44 @@ export default function StopArrivalsSlide({
                               )}
                             </div>
 
-                            {/* Direction toggles row */}
-                            {selection.enabled && (selection.directionOptions?.length ?? 0) > 1 && (() => {
+                            {/* Direction toggles + rename row */}
+                            {(() => {
                               const allOpts = selection.directionOptions || [];
-                              const _headsignOptsRaw = allOpts.filter((o: DirectionOption) => !o.isAllDirections && o.headsignFilter);
-                              const _seenHs = new Set<string>();
-                              const headsignOpts = _headsignOptsRaw.filter((o: DirectionOption) => {
+                              const _liveHeadsigns = (() => {
+                                const seen = new Set<string>();
+                                const opts: DirectionOption[] = [];
+                                for (const route of (selection.routes || []) as RouteInfo[]) {
+                                  if (selection.enabledRouteIds && !selection.enabledRouteIds.includes(route.id)) continue;
+                                  const rsn = route.shortName || '';
+                                  for (const headsign of (route.headsigns || []) as string[]) {
+                                    const normalized = headsign.toLowerCase().trim();
+                                    const key = rsn ? `${rsn}|${normalized}` : normalized;
+                                    if (!seen.has(key)) {
+                                      seen.add(key);
+                                      opts.push({ stopId: '', label: headsign, isAllDirections: false, headsignFilter: normalized, routeShortName: rsn || undefined });
+                                    }
+                                  }
+                                }
+                                return opts;
+                              })();
+                              const hasDirectionToggles = allOpts.length > 1 || _liveHeadsigns.length > 0;
+                              // Toggle buttons: deduplicate by headsignFilter only (one toggle per unique destination)
+                              const _seenHsToggle = new Set<string>();
+                              const headsignOpts = _liveHeadsigns.filter((o: DirectionOption) => {
                                 const k = o.headsignFilter!;
-                                if (_seenHs.has(k)) return false;
-                                _seenHs.add(k);
+                                if (_seenHsToggle.has(k)) return false;
+                                _seenHsToggle.add(k);
                                 return true;
                               });
+                              const _seenHsRename = new Set<string>();
+                              const headsignRenameOpts = _liveHeadsigns.filter((o: DirectionOption) => {
+                                const k = o.routeShortName ? `${o.routeShortName}|${o.headsignFilter!}` : o.headsignFilter!;
+                                if (_seenHsRename.has(k)) return false;
+                                _seenHsRename.add(k);
+                                return true;
+                              });
+                              const getAliasKey = (o: DirectionOption) =>
+                                o.routeShortName ? `${o.routeShortName}|${o.headsignFilter!}` : o.headsignFilter!;
                               const groupOpts = allOpts.filter((o: DirectionOption) => !o.isAllDirections && !o.headsignFilter && o.groupHeadsigns);
                               const topOpts = allOpts.filter((o: DirectionOption) => o.isAllDirections || (!o.headsignFilter && !o.groupHeadsigns));
                               // Show top-level options + group shortcuts on first row; individual headsigns on second row
@@ -1684,7 +1704,7 @@ export default function StopArrivalsSlide({
                               const isEditing = editingHeadsignsFor === selection.serviceId;
                               return (
                                 <>
-                                  <div className="flex items-center gap-1.5 ml-6 flex-wrap mt-2">
+                                  {hasDirectionToggles && <div className="flex items-center gap-1.5 ml-6 flex-wrap mt-2">
                                     {firstRowOpts.map((opt: DirectionOption) => {
                                       const currentFilters = selection.selectedHeadsignFilters || [];
                                       const normalizeIds = (s: string) =>
@@ -1745,13 +1765,17 @@ export default function StopArrivalsSlide({
                                       const currentFilters = selection.selectedHeadsignFilters || [];
                                       const isSelected = opt.headsignFilter ? currentFilters.includes(opt.headsignFilter) : false;
                                       const savedAlias = opt.headsignFilter
-                                        ? (serviceSelections || []).find((s: any) => s.serviceId === selection.serviceId)?.headsignAliases?.[opt.headsignFilter]
+                                        ? (() => {
+                                          const aliases = (serviceSelections || []).find((s: any) => s.serviceId === selection.serviceId)?.headsignAliases;
+                                          if (!aliases) return undefined;
+                                          if (opt.routeShortName) {
+                                            const ck = `${opt.routeShortName}|${opt.headsignFilter}`;
+                                            if (aliases[ck] !== undefined) return aliases[ck];
+                                          }
+                                          return aliases[opt.headsignFilter];
+                                        })()
                                         : undefined;
-                                      const displayLabel = opt.headsignFilter
-                                        ? (isEditing && headsignDraft[opt.headsignFilter] !== undefined
-                                          ? (headsignDraft[opt.headsignFilter] || opt.headsignFilter)
-                                          : (savedAlias || opt.headsignFilter))
-                                        : opt.label;
+                                      const displayLabel = savedAlias || opt.label || opt.headsignFilter;
                                       return (
                                         <button
                                           key={`hs-${index}-${hsIdx}`}
@@ -1781,49 +1805,72 @@ export default function StopArrivalsSlide({
                                         </button>
                                       );
                                     })}
-                                    {/* Rename button — only show if there are headsign options */}
-                                    {headsignOpts.length > 0 && (
+                                  </div>}
+                                  {/* Rename + reset buttons — always show when there are headsigns to alias */}
+                                  {headsignRenameOpts.length > 0 && (
+                                    <div className="flex items-center ml-6 mt-1.5 gap-1">
                                       <button
                                         onClick={() => {
                                           if (isEditing) {
                                             setEditingHeadsignsFor(null);
                                           } else {
-                                            // Read current aliases directly from serviceSelections to avoid stale merge
                                             const baseSel = (serviceSelections || []).find((s: any) => s.serviceId === selection.serviceId);
                                             const draft: Record<string, string> = {};
-                                            headsignOpts.forEach((o: DirectionOption) => {
-                                              draft[o.headsignFilter!] = baseSel?.headsignAliases?.[o.headsignFilter!] ?? o.headsignFilter!;
+                                            headsignRenameOpts.forEach((o: DirectionOption) => {
+                                              const k = getAliasKey(o);
+                                              draft[k] = baseSel?.headsignAliases?.[k] ?? o.label ?? o.headsignFilter!;
                                             });
                                             setHeadsignDraft(draft);
                                             setEditingHeadsignsFor(selection.serviceId);
                                           }
                                         }}
-                                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 ml-1"
+                                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
                                         title="Rename headsigns"
                                       >
                                         <Pencil className="w-3 h-3" />
                                       </button>
-                                    )}
-                                  </div>
+                                      {(serviceSelections || []).find((s: any) => s.serviceId === selection.serviceId)?.headsignAliases && (
+                                        <button
+                                          onClick={() => {
+                                            const updatedBase = (serviceSelections || []).map((s: any) =>
+                                              s.serviceId === selection.serviceId ? { ...s, headsignAliases: undefined } : s
+                                            );
+                                            setServiceSelections(slideId, updatedBase);
+                                            setHeadsignDraft({});
+                                          }}
+                                          className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600"
+                                          title="Reset all aliases"
+                                        >
+                                          Reset
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                   {/* Inline headsign rename form */}
-                                  {isEditing && headsignOpts.length > 0 && (
+                                  {isEditing && headsignRenameOpts.length > 0 && (
                                     <div className="ml-6 mt-2 space-y-1">
-                                      {headsignOpts.map((opt: DirectionOption) => (
-                                        <div key={opt.headsignFilter} className="flex items-center gap-1.5">
-                                          <span className="text-xs text-gray-400 w-24 truncate shrink-0" title={opt.headsignFilter}>{opt.headsignFilter}</span>
-                                          <span className="text-xs text-gray-300">→</span>
+                                      {headsignRenameOpts.map((opt: DirectionOption) => {
+                                        const k = getAliasKey(opt);
+                                        const cardLabel = opt.routeShortName
+                                          ? `${opt.routeShortName}: ${opt.label || opt.headsignFilter}`
+                                          : (opt.label || opt.headsignFilter);
+                                        return (
+                                        <div key={k} className="flex items-center gap-1.5">
+                                          <span className="text-xs text-gray-400 shrink min-w-0 break-words leading-tight">{cardLabel} <span className="text-gray-300">→</span></span>
                                           <input
                                             type="text"
-                                            value={headsignDraft[opt.headsignFilter!] ?? opt.headsignFilter ?? ''}
+                                            value={headsignDraft[k] ?? opt.label ?? opt.headsignFilter ?? ''}
                                             onChange={(e) => {
-                                              const newDraft = { ...headsignDraft, [opt.headsignFilter!]: e.target.value };
+                                              const newDraft = { ...headsignDraft, [k]: e.target.value };
                                               setHeadsignDraft(newDraft);
-                                              // Save to store immediately so toggle labels and preview update live
+                                              // Save to store immediately so preview updates live
                                               const newAliases: Record<string, string> = {};
-                                              headsignOpts.forEach((o: DirectionOption) => {
-                                                const val = (newDraft[o.headsignFilter!] ?? '').trim();
-                                                if (val && val !== o.headsignFilter) {
-                                                  newAliases[o.headsignFilter!] = val;
+                                              headsignRenameOpts.forEach((o: DirectionOption) => {
+                                                const ok = getAliasKey(o);
+                                                const val = (newDraft[ok] ?? '').trim();
+                                                const isDefault = !val || val === o.headsignFilter || val === o.label;
+                                                if (!isDefault) {
+                                                  newAliases[ok] = val;
                                                 }
                                               });
                                               const aliases = Object.keys(newAliases).length > 0 ? newAliases : undefined;
@@ -1835,10 +1882,12 @@ export default function StopArrivalsSlide({
                                             onBlur={() => {
                                               // Final save on blur (trim whitespace edge cases)
                                               const newAliases: Record<string, string> = {};
-                                              headsignOpts.forEach((o: DirectionOption) => {
-                                                const val = (headsignDraft[o.headsignFilter!] ?? '').trim();
-                                                if (val && val !== o.headsignFilter) {
-                                                  newAliases[o.headsignFilter!] = val;
+                                              headsignRenameOpts.forEach((o: DirectionOption) => {
+                                                const ok = getAliasKey(o);
+                                                const val = (headsignDraft[ok] ?? '').trim();
+                                                const isDefault = !val || val === o.headsignFilter || val === o.label;
+                                                if (!isDefault) {
+                                                  newAliases[ok] = val;
                                                 }
                                               });
                                               const aliases = Object.keys(newAliases).length > 0 ? newAliases : undefined;
@@ -1848,10 +1897,11 @@ export default function StopArrivalsSlide({
                                               setServiceSelections(slideId, updatedBase);
                                             }}
                                             className="flex-1 min-w-0 text-xs border rounded px-1.5 py-0.5 h-6 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                            placeholder={opt.headsignFilter ?? ''}
+                                            placeholder={opt.label ?? opt.headsignFilter ?? ''}
                                           />
                                         </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </>

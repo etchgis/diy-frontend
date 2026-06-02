@@ -109,8 +109,12 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
     return map;
   }, [serviceSelections]);
 
-  const applyAlias = (destination: string) => {
+  const applyAlias = (destination: string, routeShortName?: string) => {
     const key = (destination || '').toLowerCase().trim();
+    if (routeShortName) {
+      const routeKey = `${routeShortName.toLowerCase().trim()}|${key}`;
+      if (headsignAliasMap[routeKey] !== undefined) return headsignAliasMap[routeKey];
+    }
     return headsignAliasMap[key] ?? destination;
   };
 
@@ -473,7 +477,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   fontSize: `${12 * contentSizeMultiplier}px`,
                                 }}
                               >
-                                {applyAlias(item.destination)}
+                                {applyAlias(item.destination, item.routeShortName)}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
@@ -540,7 +544,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   }vh,2.5rem)`,
                                 }}
                               >
-                                {applyAlias(item.destination)}
+                                {applyAlias(item.destination, item.routeShortName)}
                               </span>
                             </div>
                             <div
@@ -618,7 +622,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               fontSize: `${14 * contentSizeMultiplier}px`,
                             }}
                           >
-                            {applyAlias(item.destination)}
+                            {applyAlias(item.destination, item.routeShortName)}
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
@@ -703,7 +707,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               }vh, 3rem)`,
                             }}
                           >
-                            {applyAlias(item.destination)}
+                            {applyAlias(item.destination, item.routeShortName)}
                           </span>
                         </div>
                         {/* Right-side columns — em widths track font size so nothing ever clips */}

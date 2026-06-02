@@ -14,12 +14,13 @@ export interface RouteInfo {
 
 // Direction option for a stop (e.g., "Northbound", "All Directions")
 export interface DirectionOption {
-  stopId: string;      
-  label: string;        
+  stopId: string;
+  label: string;
   isAllDirections: boolean;
   headsignFilter?: string;  // If set, filter arrivals to only show this headsign (e.g., "Jamaica", "Hempstead")
   directionGroup?: string;  // Which N/S/E/W group this headsign belongs to (e.g., "Northbound")
   groupHeadsigns?: string[]; // For group buttons: the headsignFilter values to bulk-select/deselect
+  routeShortName?: string;   // Route short name, used to create per-route rename cards
 }
 
 // Service selection state for multi-select UI
