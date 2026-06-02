@@ -123,11 +123,12 @@ function ScreenCard({
   resetLoading: string | null;
   resetSuccess: string | null;
   onResetClick: (shortcode: string) => void;
-  onResetConfirm: (shortcode: string) => void;
+  onResetConfirm: (shortcode: string, tempPassword: string) => void;
   onResetCancel: () => void;
   isCustom?: boolean;
 }) {
   const [showGraph, setShowGraph] = useState(false);
+  const [tempPassword, setTempPassword] = useState("");
   const m = screen.metrics ?? { screen_views: 0, qr_visits: 0, heartbeats: 0 };
 
   return (
@@ -178,22 +179,31 @@ function ScreenCard({
 
             {!isCustom && (
               confirmReset === screen.shortcode ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#9ca3af]">Reset publish password?</span>
-                  <Button
-                    onClick={() => onResetConfirm(screen.shortcode)}
-                    disabled={resetLoading === screen.shortcode}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs h-auto"
-                  >
-                    {resetLoading === screen.shortcode ? 'Resetting...' : 'Confirm'}
-                  </Button>
-                  <Button onClick={onResetCancel} variant="outline" className="px-3 py-1 text-xs h-auto">
-                    Cancel
-                  </Button>
+                <div className="flex flex-col items-end gap-2">
+                  <span className="text-xs text-[#9ca3af]">Set a temporary password for the user:</span>
+                  <Input
+                    type="text"
+                    placeholder="Temporary password"
+                    value={tempPassword}
+                    onChange={(e) => setTempPassword(e.target.value)}
+                    className="text-xs h-7 w-48"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => { onResetConfirm(screen.shortcode, tempPassword); setTempPassword(""); }}
+                      disabled={resetLoading === screen.shortcode || !tempPassword.trim()}
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs h-auto"
+                    >
+                      {resetLoading === screen.shortcode ? 'Resetting...' : 'Confirm'}
+                    </Button>
+                    <Button onClick={() => { onResetCancel(); setTempPassword(""); }} variant="outline" className="px-3 py-1 text-xs h-auto">
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
               ) : resetSuccess === screen.shortcode ? (
                 <span className="text-xs text-green-600 font-medium">
-                  Password reset — user will be prompted to set a new one on next publish.
+                  Temporary password set, the user will be prompted to create a new one on next publish.
                 </span>
               ) : (
                 <Button
@@ -273,20 +283,23 @@ export default function AdminPage() {
     }
   }, [isAuthenticated, authPassword, screens.length, fetchScreens]);
 
-  const handleResetPassword = async (shortcode: string) => {
+  const handleResetPassword = async (shortcode: string, tempPassword: string) => {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const url = `${backendUrl}/admin/reset-password/${shortcode}`;
     setResetLoading(shortcode);
     setResetSuccess(null);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/admin/reset-password/${shortcode}`, {
+      const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${authPassword}` },
+        headers: { 'Authorization': `Bearer ${authPassword}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempPassword }),
       });
-      if (!response.ok) throw new Error('Reset failed');
+      const responseText = await response.text();
+      if (!response.ok) throw new Error(`Reset failed: ${response.status} ${responseText}`);
       setResetSuccess(shortcode);
-      setTimeout(() => setResetSuccess(null), 4000);
+      setTimeout(() => setResetSuccess(null), 7000);
     } catch (err) {
-      console.error('Error resetting password:', err);
+      console.error(err);
     } finally {
       setResetLoading(null);
       setConfirmReset(null);

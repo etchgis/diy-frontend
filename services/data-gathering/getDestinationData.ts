@@ -6,18 +6,31 @@ import { formatTime, formatDuration } from "@/utils/formats";
 // use Skids API by default, set to 'false' to use OTP
 const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
 
-export interface GetDestinationDataOptions {
-  /** Include shape geometry for map visualization (transit-routes slides) */
-  includeGeometry?: boolean;
+export interface DestinationFetchOptions {
+  maxWalkDistance?: number; 
+}
+
+function scoreItinerary(itinerary: { routeSignature: string[] }, preferred: string[]): number {
+  return preferred.filter((p) => itinerary.routeSignature.includes(p)).length;
+}
+
+function selectBestItinerary<T extends { routeSignature: string[]; route: string | null; departure: string | null; arrival: string | null; travel: string | null; legs: any[] }>(
+  itineraries: T[],
+  preferred: string[]
+): T {
+  if (!preferred.length || itineraries.length <= 1) return itineraries[0];
+  return itineraries.reduce((best, it) =>
+    scoreItinerary(it, preferred) >= scoreItinerary(best, preferred) ? it : best
+  );
 }
 
 export async function getDestinationData(
-  destList: { name: string; coordinates: { lat: number; lng: number } }[],
+  destList: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[]; preferredItinerary?: string[]; maxWalkDistance?: number }[],
   slideId: string,
   setDestinationData: (slideId: string, data: any[]) => void,
   setDataError: (slideId: string, error: boolean) => void,
   currentDestinationData: any[] = [],
-  options?: GetDestinationDataOptions
+  options?: DestinationFetchOptions
 ) {
   if (!Array.isArray(currentDestinationData)) currentDestinationData = [];
   if (destList.length === 0) return;
@@ -39,37 +52,65 @@ export async function getDestinationData(
     setDestinationData(slideId, initialData);
   }
 
+  const anyCustomWalk = destList.some((d) => d.maxWalkDistance != null);
+
+  const buildEnriched = (data: any, dest: typeof destList[0], index: number) => {
+    const chosen = data.allItineraries && dest.preferredItinerary?.length
+      ? selectBestItinerary(data.allItineraries, dest.preferredItinerary)
+      : null;
+    return {
+      name: data.name ?? dest.name,
+      route: chosen?.route ?? data.route ?? null,
+      departure: chosen?.departure ?? data.departure ?? null,
+      arrival: chosen?.arrival ?? data.arrival ?? null,
+      travel: chosen?.travel ?? data.travel ?? null,
+      legs: chosen?.legs ?? (Array.isArray(data.legs) ? data.legs : []),
+      coordinates: dest.coordinates,
+      dark: index % 2 === 0,
+      originStop: data.originStop ?? null,
+      allItineraries: data.allItineraries,
+      reason: data.reason,
+    };
+  };
+
   try {
     if (USE_SKIDS) {
-      // Skids provides single request for all destinations
-      // Response already has pre-formatted departure/arrival/travel strings
-      const results = await fetchSkidsTransitData(
-        { lat: coordinates.lat, lng: coordinates.lng },
-        destList,
-        { includeGeometry: options?.includeGeometry }
-      );
+      let enrichedDestinations: any[];
 
-      const enrichedDestinations = results.map((data, index) => ({
-        name: data.name ?? destList[index].name,
-        route: data.route ?? null,
-        departure: data.departure ?? null,
-        arrival: data.arrival ?? null,
-        travel: data.travel ?? null,
-        legs: Array.isArray(data.legs) ? data.legs : [],
-        coordinates: destList[index].coordinates,
-        dark: index % 2 === 0,
-        originStop: data.originStop ?? null,
-      }));
+      if (anyCustomWalk) {
+        const results = await Promise.allSettled(
+          destList.map((dest) =>
+            fetchSkidsTransitData(
+              { lat: coordinates.lat, lng: coordinates.lng },
+              [dest],
+              { numItineraries: 3, maxWalkMeters: dest.maxWalkDistance ?? options?.maxWalkDistance }
+            )
+          )
+        );
+        enrichedDestinations = results.map((res, index) => {
+          const dest = destList[index];
+          if (res.status === 'fulfilled' && res.value.length > 0) {
+            return buildEnriched(res.value[0], dest, index);
+          }
+          return { name: dest.name, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: dest.coordinates, dark: index % 2 === 0 };
+        });
+      } else {
+        const results = await fetchSkidsTransitData(
+          { lat: coordinates.lat, lng: coordinates.lng },
+          destList,
+          { numItineraries: 3, maxWalkMeters: options?.maxWalkDistance }
+        );
+        enrichedDestinations = results.map((data, index) => buildEnriched(data, destList[index], index));
+      }
 
       const anySuccess = enrichedDestinations.some(
         (d) => d.departure ?? d.arrival ?? d.travel ?? (Array.isArray(d.legs) && d.legs.length > 0)
       );
-
       setDataError(slideId, !anySuccess);
       setDestinationData(slideId, enrichedDestinations);
     } else {
       // OTP: Original implementation (N separate requests)
-      await fetchOtpDestinations(destList, slideId, setDestinationData, setDataError, coordinates, currentDestinationData);
+      await fetchOtpDestinations(destList, slideId, setDestinationData, setDataError, coordinates, currentDestinationData, options);
     }
   } catch (error) {
     console.error('Skids fetch failed:', error);
@@ -78,7 +119,7 @@ export async function getDestinationData(
     if (USE_SKIDS) {
       try {
         console.log('Falling back to OTP...');
-        await fetchOtpDestinations(destList, slideId, setDestinationData, setDataError, coordinates, currentDestinationData);
+        await fetchOtpDestinations(destList, slideId, setDestinationData, setDataError, coordinates, currentDestinationData, options);
         return;
       } catch (otpError) {
         console.error('OTP fallback also failed:', otpError);
@@ -93,18 +134,19 @@ export async function getDestinationData(
  * Original OTP implementation is used as fallback or when Skids is disabled
  */
 async function fetchOtpDestinations(
-  destList: { name: string; coordinates: { lat: number; lng: number } }[],
+  destList: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[] }[],
   slideId: string,
   setDestinationData: (slideId: string, data: any[]) => void,
   setDataError: (slideId: string, error: boolean) => void,
   coordinates: { lat: number; lng: number },
-  currentDestinationData: any[] = []
+  currentDestinationData: any[] = [],
+  options?: DestinationFetchOptions
 ) {
   const results = await Promise.allSettled(
     destList.map(async (dest) => {
       const origin = `${coordinates.lat},${coordinates.lng}`;
       const destination = `${dest.coordinates.lat},${dest.coordinates.lng}`;
-      return fetchTransitData(origin, destination);
+      return fetchTransitData(origin, destination, dest.allowedModes, options?.maxWalkDistance);
     })
   );
 

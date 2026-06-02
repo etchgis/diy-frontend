@@ -99,7 +99,6 @@ async function fetchStopById(stopId: string, serviceId: string, organizationId: 
     'X-Organization-Id': organizationId,
     'X-Skids-Route-Key': serviceId,
   };
-  console.log(endpoint, headers);
   return fetch(endpoint, { method: 'GET', headers });
 }
 
@@ -121,16 +120,12 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
 
   if (!response.ok) {
     if (response.status >= 400 && response.status < 500) {
+      const body = await response.text().catch(() => '');
       return undefined;
     }
     throw new Error(`Failed to fetch stop data: ${response.status} ${response.statusText}`);
   }
 
   const result = await response.json();
-
-  console.log(result);
-  const formattedData = formatBusData(result);
-  console.log(formattedData);
-
-  return formattedData;
+  return formatBusData(result);
 }

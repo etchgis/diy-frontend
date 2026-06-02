@@ -1,0 +1,258 @@
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ChevronRight } from "lucide-react"
+import QRSlidePreview from "./preview"
+import { useQRStore } from "./store"
+import { useEffect, useState } from "react"
+import QRCode from 'react-qr-code';
+import { useGeneralStore } from "@/stores/general"
+import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus"
+import { useImageUploadField } from "@/hooks/useImageUploadField"
+
+
+export default function QRSlide({ slideId, handleDelete, handlePreview, handlePublish, handleOpenSettings }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void, handleOpenSettings: () => void }) {
+
+  const text = useQRStore((state) => state.slides[slideId]?.text || '');
+  const setText = useQRStore((state) => state.setText);
+
+  const url = useQRStore((state) => state.slides[slideId]?.url || '');
+  const setUrl = useQRStore((state) => state.setUrl);
+
+  const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
+  const setQrSize = useQRStore((state) => state.setQRSize);
+
+  const backgroundColor = useQRStore((state) => state.slides[slideId]?.backgroundColor || '#192F51');
+  const setBackgroundColor = useQRStore((state) => state.setBackgroundColor);
+
+  const textColor = useQRStore((state) => state.slides[slideId]?.textColor || '#ffffff');
+  const setTextColor = useQRStore((state) => state.setTextColor);
+
+  const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || '');
+  const setBgImage = useQRStore((state) => state.setBgImage);
+
+  const logoImage = useQRStore((state) => state.slides[slideId]?.logoImage || '');
+  const setLogoImage = useQRStore((state) => state.setLogoImage);
+
+  const textSize = useQRStore((state) => state.slides[slideId]?.textSize || 5);
+  const setTextSize = useQRStore((state) => state.setTextSize);
+
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const setShowFooter = useGeneralStore((state) => state.setShowFooter);
+
+  const shortcode = useGeneralStore((state) => state.shortcode || '');
+  const saveStatus = useLocalSaveStatus(useQRStore, slideId);
+  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
+
+  const [tempQR, setTempQR] = useState(url);
+
+  useEffect(() => {
+    if (!text) setText(slideId, 'See this on your phone!');
+  }, []);
+
+  const handleGenerateQR = () => {
+    if (!tempQR.trim()) return;
+    setUrl(slideId, tempQR);
+  };
+
+  return (
+    <>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Main Content */}
+        <div className="flex-1 bg-white overflow-y-auto">
+          <div className="p-6">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-[#4a5568] mb-4">
+              <span>Home</span>
+              <ChevronRight className="w-4 h-4" />
+              <span className="font-medium">QR Code</span>
+            </div>
+
+            <p className="text-[#606061] mb-6">This template is configured to show a large QR code for riders.</p>
+
+            {/* QR Code Configuration */}
+            <div className="mb-6">
+              <label className="block text-[#4a5568] font-medium mb-2">URL for QR Code</label>
+              <div className="flex gap-3">
+                <Input
+                  placeholder="http://www.nysdot.gov"
+                  className="flex-1 bg-white border-[#cbd5e0]"
+                  value={tempQR}
+                  onChange={(e) => setTempQR(e.target.value)}
+                />
+                <Button className="bg-[#0b5583] hover:bg-[#0b5583]/90 text-white font-medium px-6" onClick={handleGenerateQR}>Generate</Button>
+              </div>
+              <p className="text-xs text-[#718096] mt-2">Click the text below the QR code in the preview to edit it directly.</p>
+            </div>
+
+            {/* QR Code Preview */}
+            <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
+              <QRSlidePreview slideId={slideId} />
+            </div>
+
+
+            {/* Footer Buttons */}
+            <div className="flex gap-3 mt-4">
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePreview()}>Preview Screens</Button>
+              <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={() => handlePublish()}>Publish Screens</Button>
+              <div className="flex items-center text-xs text-gray-500 ml-2 animate-fade-in">
+                {saveStatus === 'saving' ? (
+                  <><div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-2" />Saving...</>
+                ) : (
+                  <><div className="w-2 h-2 rounded-full bg-green-500 mr-2" />Saved Locally</>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar */}
+        <div className="w-[230px] bg-white border-l border-[#e2e8f0] p-4 overflow-y-auto">
+
+          {/* Customization Options */}
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showFooter}
+                  onChange={(e) => setShowFooter(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Show Footer
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Color</label>
+              <div className="flex items-center gap-2">
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={backgroundColor} className="flex-1 text-xs" onChange={(e) => setBackgroundColor(slideId, e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Text Color</label>
+              <div className="flex items-center gap-2">
+                <div className="colorContainer">
+                  <input
+                    type="color"
+                    value={textColor}
+                    onChange={(e) => setTextColor(slideId, e.target.value)}
+                    className="w-5 h-6 p-0  border-none rounded cursor-pointer appearance-none"
+                  />
+                </div>
+                <Input value={textColor} className="flex-1 text-xs" onChange={(e) => setTextColor(slideId, e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Background Image</label>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
+                  {bg.isUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" /> : bgImage ? <img src={bgImage} alt="BG" className="w-full h-full object-cover" /> : <div className="w-4 h-4 bg-[#cbd5e0] rounded" />}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <input type="file" accept="image/*" ref={bg.inputRef} onChange={bg.handleUpload} className="hidden" />
+                    <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => bg.inputRef.current?.click()}>Change</Button>
+                    {bgImage && <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={bg.handleRemove}>Remove</Button>}
+                  </div>
+                  {bg.uploadError && <p className="text-xs text-red-500">{bg.uploadError}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Alignment of Text on Page</label>
+              <Select>
+                <SelectTrigger className="w-full text-xs">
+                  <SelectValue placeholder="Center" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="center">Center</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                </SelectContent>
+              </Select>
+            </div> */}
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-sm">QR Code Size</label>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={qrSize !== undefined && qrSize !== null ? qrSize : 5}
+                onChange={(e) => setQrSize(slideId, Number(e.target.value))}
+                className="text-xs border border-gray-300 rounded px-2.5 py-2.5 w-28"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Text Size</label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTextSize(slideId, Math.max(1, textSize - 1))}
+                  disabled={textSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{textSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setTextSize(slideId, Math.min(10, textSize + 1))}
+                  disabled={textSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Logo Image</label>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#f4f4f4] rounded border flex items-center justify-center overflow-hidden">
+                  {logo.isUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" /> : logoImage ? <img src={logoImage} alt="Logo" className="w-full h-full object-cover" /> : <div className="w-4 h-4 bg-[#cbd5e0] rounded" />}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <input type="file" accept="image/*" ref={logo.inputRef} onChange={logo.handleUpload} className="hidden" />
+                    <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={() => logo.inputRef.current?.click()}>Change</Button>
+                    {logoImage && <Button variant="outline" size="sm" className="text-xs bg-transparent px-2 py-1" onClick={logo.handleRemove}>Remove</Button>}
+                  </div>
+                  {logo.uploadError && <p className="text-xs text-red-500">{logo.uploadError}</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-auto">
+          <Button className="w-full bg-[#e2e8f0] hover:bg-[#cbd5e0] text-[#4a5568] font-medium text-xs mt-2" onClick={handleOpenSettings}>
+            Screen Settings
+          </Button>
+
+            <Button className="w-full bg-[#ff4013] hover:bg-[#ff4013]/90 text-white font-medium text-xs mt-2" onClick={() => { handleDelete(slideId) }}>
+              Delete Screen
+            </Button>
+          </div>
+        </div>
+      </div>
+
+    </>
+
+  )
+}

@@ -9,10 +9,20 @@ interface Theme {
   bodyText: string;
 }
 
+export interface SlideSchedule {
+  enabled: boolean;
+  startTime: string; 
+  endTime: string; 
+}
+
 interface Slide {
   id: string;
   type: string;
   hidden?: boolean;
+  showFooter?: boolean;
+  schedule?: SlideSchedule;
+  label?: string;
+  duration?: number; 
   data?: any;
 }
 
@@ -26,6 +36,7 @@ interface Store {
   rotationInterval?: number,
   firstPublish?: boolean;
   publishPassword?: string;
+  isTempPassword?: boolean;
   coordinates?: {
     lat: number;
     lng: number;
@@ -37,6 +48,8 @@ interface Store {
   defaultFontFamily?: string;
   defaultTitleTextSize?: number;
   defaultContentTextSize?: number;
+  resolution: string;
+  setResolution: (resolution: string) => void;
   // Theme settings
   theme: Theme;
   setThemePrimaryBackground: (color: string) => void;
@@ -53,6 +66,7 @@ interface Store {
   setRotationInterval: (interval: number) => void;
   setFirstPublish: (firstPublish: boolean) => void;
   setPublishPassword: (publishPassword: string) => void;
+  setIsTempPassword: (isTempPassword: boolean) => void;
   setDefaultBackgroundColor: (color: string) => void;
   setDefaultTitleColor: (color: string) => void;
   setDefaultTextColor: (color: string) => void;
@@ -60,12 +74,17 @@ interface Store {
   setDefaultTitleTextSize: (size: number) => void;
   setDefaultContentTextSize: (size: number) => void;
   toggleSlideHidden: (id: string) => void;
+  setShowFooter: (id: string, show: boolean) => void;
+  setSchedule: (id: string, schedule: SlideSchedule | null) => void;
+  setSlideLabel: (id: string, label: string) => void;
+  setSlideDuration: (id: string, duration: number | undefined) => void;
 }
 
 export const useGeneralStore = create<Store>()(
   persist(
     (set, get) => ({
       slides: [],
+      resolution: '1920x1080',
       theme: {
         primaryBackground: '#192F51',
         secondaryAccent: '#78B1DD',
@@ -110,6 +129,9 @@ export const useGeneralStore = create<Store>()(
       setPublishPassword: (publishPassword) => set(() => ({
         publishPassword,
       })),
+      setIsTempPassword: (isTempPassword) => set(() => ({
+        isTempPassword,
+      })),
       setDefaultBackgroundColor: (color) => set(() => ({
         defaultBackgroundColor: color,
       })),
@@ -127,6 +149,9 @@ export const useGeneralStore = create<Store>()(
       })),
       setDefaultContentTextSize: (size) => set(() => ({
         defaultContentTextSize: size,
+      })),
+      setResolution: (resolution) => set(() => ({
+        resolution,
       })),
       setThemePrimaryBackground: (color) => {
         const oldColor = get().theme.primaryBackground;
@@ -160,6 +185,30 @@ export const useGeneralStore = create<Store>()(
         set((state) => ({
           slides: state.slides.map((s) =>
             s.id === id ? { ...s, hidden: !s.hidden } : s
+          ),
+        })),
+      setShowFooter: (id, show) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, showFooter: show } : s
+          ),
+        })),
+      setSchedule: (id, schedule) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, schedule: schedule ?? undefined } : s
+          ),
+        })),
+      setSlideLabel: (id, label) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, label: label || undefined } : s
+          ),
+        })),
+      setSlideDuration: (id, duration) =>
+        set((state) => ({
+          slides: state.slides.map((s) =>
+            s.id === id ? { ...s, duration } : s
           ),
         })),
     }),

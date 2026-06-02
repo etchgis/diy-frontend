@@ -25,6 +25,9 @@ export default function EditFooter({
   const storeLeftType = useFooterStore((state) => state.leftType);
   const storeMiddleType = useFooterStore((state) => state.middleType);
   const storeRightType = useFooterStore((state) => state.rightType);
+  const storeLeftText = useFooterStore((state) => state.leftText);
+  const storeMiddleText = useFooterStore((state) => state.middleText);
+  const storeRightText = useFooterStore((state) => state.rightText);
   const storeBackgroundColor = useFooterStore((state) => state.backgroundColor);
   const storeTimeTextColor = useFooterStore((state) => state.timeTextColor);
 
@@ -35,6 +38,9 @@ export default function EditFooter({
   const [leftType, setLeftType] = useState(storeLeftType);
   const [middleType, setMiddleType] = useState(storeMiddleType);
   const [rightType, setRightType] = useState(storeRightType);
+  const [leftText, setLeftText] = useState(storeLeftText);
+  const [middleText, setMiddleText] = useState(storeMiddleText);
+  const [rightText, setRightText] = useState(storeRightText);
   const [backgroundColor, setBackgroundColor] = useState(storeBackgroundColor);
   const [timeTextColor, setTimeTextColor] = useState(storeTimeTextColor);
 
@@ -68,6 +74,7 @@ export default function EditFooter({
   const renderSection = (
     type: string,
     image: string,
+    text: string,
     altText: string,
     imageClass: string,
     placeholderClass: string
@@ -82,6 +89,14 @@ export default function EditFooter({
         >
           {currentTime}
         </div>
+      );
+    } else if (type === "text") {
+      return (
+        <div
+          className={`${placeholderClass} flex items-center`}
+          style={{ color: timeTextColor }}
+          dangerouslySetInnerHTML={{ __html: text }}
+        />
       );
     } else if (image) {
       return <img src={image} alt={altText} className={imageClass} />;
@@ -99,6 +114,9 @@ export default function EditFooter({
       setLeftType: storeSetLeftType,
       setMiddleType: storeSetMiddleType,
       setRightType: storeSetRightType,
+      setLeftText: storeSetLeftText,
+      setMiddleText: storeSetMiddleText,
+      setRightText: storeSetRightText,
       setBackgroundColor: storeSetBackgroundColor,
       setTimeTextColor: storeSetTimeTextColor,
     } = useFooterStore.getState();
@@ -109,6 +127,9 @@ export default function EditFooter({
     storeSetLeftType(leftType);
     storeSetMiddleType(middleType);
     storeSetRightType(rightType);
+    storeSetLeftText(leftText);
+    storeSetMiddleText(middleText);
+    storeSetRightText(rightText);
     storeSetBackgroundColor(backgroundColor);
     storeSetTimeTextColor(timeTextColor);
 
@@ -233,30 +254,18 @@ export default function EditFooter({
             {/* Footer Preview */}
             <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden flex flex-col justify-end">
               <div
-                className="p-3 flex items-center justify-between rounded-b-lg"
+                className="p-3 flex items-center gap-4 rounded-b-lg"
                 style={{ backgroundColor }}
               >
-                {renderSection(
-                  leftType,
-                  leftImage,
-                  "Left Footer",
-                  "h-[25px] w-[246px]",
-                  "h-[25px] w-[246px]"
-                )}
-                {renderSection(
-                  middleType,
-                  middleImage,
-                  "Middle Footer",
-                  "h-[25px] w-[246px]",
-                  "h-[25px] w-[246px]"
-                )}
-                {renderSection(
-                  rightType,
-                  rightImage,
-                  "Right Footer",
-                  "h-8",
-                  "h-8 w-[100px]"
-                )}
+                <div className="flex-1 min-w-0 flex items-center">
+                  {renderSection(leftType, leftImage, leftText, "Left Footer", "h-[25px] max-h-full", "h-[25px]")}
+                </div>
+                <div className="flex-1 min-w-0 flex items-center justify-center">
+                  {renderSection(middleType, middleImage, middleText, "Middle Footer", "h-[25px] max-h-full", "h-[25px]")}
+                </div>
+                <div className="flex-1 min-w-0 flex items-center justify-end">
+                  {renderSection(rightType, rightImage, rightText, "Right Footer", "h-8 max-h-full", "h-8")}
+                </div>
               </div>
             </div>
 
@@ -325,14 +334,31 @@ export default function EditFooter({
               </label>
               <select
                 value={leftType}
-                onChange={(e) => setLeftType(e.target.value as "image" | "time" | "none")}
+                onChange={(e) => setLeftType(e.target.value as "image" | "time" | "text" | "none")}
                 className="w-full px-2 py-1 text-xs border rounded"
               >
                 <option value="image">Image</option>
                 <option value="time">Time</option>
+                <option value="text">Text</option>
                 <option value="none">None</option>
               </select>
             </div>
+
+            {leftType === "text" && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[#4a5568] font-medium text-xs">Left Footer Text</label>
+                  <span className="text-[10px] text-gray-400 font-mono bg-gray-100 px-1 rounded">&lt;/&gt; HTML</span>
+                </div>
+                <textarea
+                  value={leftText}
+                  onChange={(e) => setLeftText(e.target.value)}
+                  placeholder="e.g. For questions reach out to…"
+                  rows={3}
+                  className="w-full px-2 py-1 text-xs border rounded resize-y"
+                />
+              </div>
+            )}
 
             {leftType === "image" && (
               <div>
@@ -399,14 +425,31 @@ export default function EditFooter({
               </label>
               <select
                 value={middleType}
-                onChange={(e) => setMiddleType(e.target.value as "image" | "time" | "none")}
+                onChange={(e) => setMiddleType(e.target.value as "image" | "time" | "text" | "none")}
                 className="w-full px-2 py-1 text-xs border rounded"
               >
                 <option value="image">Image</option>
                 <option value="time">Time</option>
+                <option value="text">Text</option>
                 <option value="none">None</option>
               </select>
             </div>
+
+            {middleType === "text" && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[#4a5568] font-medium text-xs">Middle Footer Text</label>
+                  <span className="text-[10px] text-gray-400 font-mono bg-gray-100 px-1 rounded">&lt;/&gt; HTML</span>
+                </div>
+                <textarea
+                  value={middleText}
+                  onChange={(e) => setMiddleText(e.target.value)}
+                  placeholder="e.g. For questions reach out to…"
+                  rows={3}
+                  className="w-full px-2 py-1 text-xs border rounded resize-y"
+                />
+              </div>
+            )}
 
             {middleType === "image" && (
               <div>
@@ -473,14 +516,31 @@ export default function EditFooter({
               </label>
               <select
                 value={rightType}
-                onChange={(e) => setRightType(e.target.value as "image" | "time" | "none")}
+                onChange={(e) => setRightType(e.target.value as "image" | "time" | "text" | "none")}
                 className="w-full px-2 py-1 text-xs border rounded"
               >
                 <option value="image">Image</option>
                 <option value="time">Time</option>
+                <option value="text">Text</option>
                 <option value="none">None</option>
               </select>
             </div>
+
+            {rightType === "text" && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[#4a5568] font-medium text-xs">Right Footer Text</label>
+                  <span className="text-[10px] text-gray-400 font-mono bg-gray-100 px-1 rounded">&lt;/&gt; HTML</span>
+                </div>
+                <textarea
+                  value={rightText}
+                  onChange={(e) => setRightText(e.target.value)}
+                  placeholder="e.g. For questions reach out to…"
+                  rows={3}
+                  className="w-full px-2 py-1 text-xs border rounded resize-y"
+                />
+              </div>
+            )}
 
             {rightType === "image" && (
               <div>
