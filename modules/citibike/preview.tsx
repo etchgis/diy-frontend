@@ -74,6 +74,9 @@ export default function CitibikePreview({
   const coordinates = useGeneralStore((state) => state.coordinates);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
+  const resolution = useGeneralStore((state) => state.resolution);
+  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
@@ -309,7 +312,8 @@ export default function CitibikePreview({
             <img
               src={logoImage}
               alt="Logo"
-              className="max-h-16 object-contain ml-4 flex-shrink-0"
+              className="object-contain ml-4 flex-shrink-0"
+              style={{ maxHeight: logoHeight }}
             />
           )}
         </div>
@@ -473,7 +477,7 @@ export default function CitibikePreview({
       </div>
 
       {/* Footer */}
-      {showFooter && <Footer />}
+      {showFooter && <Footer previewMode={previewMode} />}
     </div>
   );
 }

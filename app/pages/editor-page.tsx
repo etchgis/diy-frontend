@@ -34,6 +34,7 @@ import TrafficCorridorSlide from "@/modules/traffic-corridor/editor"
 import TrafficCorridorPreview from "@/modules/traffic-corridor/preview"
 import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
+import { useFooterStore } from "@/stores/footer"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faTimesCircle, faGear } from '@fortawesome/free-solid-svg-icons';
 import bcrypt from "bcryptjs";
@@ -120,6 +121,10 @@ export default function EditorPage() {
 
   const resolution = useGeneralStore((state) => state.resolution || '1920x1080');
   const setResolution = useGeneralStore((state) => state.setResolution);
+  const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
+  const setLogoBaseHeight = useGeneralStore((state) => state.setLogoBaseHeight);
+  const footerBaseHeight = useFooterStore((state) => state.footerBaseHeight);
+  const setFooterBaseHeight = useFooterStore((state) => state.setFooterBaseHeight);
 
   const publishPassword = useGeneralStore((state) => state.publishPassword || '');
   const setPublishPassword = useGeneralStore((state) => state.setPublishPassword);
@@ -143,6 +148,8 @@ export default function EditorPage() {
   const setThemeBodyText = useGeneralStore((state) => state.setThemeBodyText);
 
   const [tempRotationInterval, setTempRotationInterval] = useState(rotationInterval);
+  const [tempLogoBaseHeight, setTempLogoBaseHeight] = useState(logoBaseHeight);
+  const [tempFooterBaseHeight, setTempFooterBaseHeight] = useState(footerBaseHeight);
   const [tempDefaultBackgroundColor, setTempDefaultBackgroundColor] = useState(defaultBackgroundColor);
   const [tempDefaultTitleColor, setTempDefaultTitleColor] = useState(defaultTitleColor);
   const [tempDefaultTextColor, setTempDefaultTextColor] = useState(defaultTextColor);
@@ -176,6 +183,8 @@ export default function EditorPage() {
   useEffect(() => {
     if (showSettings) {
       setTempRotationInterval(rotationInterval);
+      setTempLogoBaseHeight(logoBaseHeight);
+      setTempFooterBaseHeight(footerBaseHeight);
       setTempDefaultBackgroundColor(defaultBackgroundColor);
       setTempDefaultTitleColor(defaultTitleColor);
       setTempDefaultTextColor(defaultTextColor);
@@ -956,6 +965,7 @@ export default function EditorPage() {
       </div>
 
       {showModal && (() => {
+        const visibleSlides = slides.filter((s: any) => !s.hidden);
         const isResponsive = resolution === 'responsive';
         const { w: modalLogicalW, h: modalLogicalH } = isResponsive ? { w: 1920, h: 1080 } : parseResolution(resolution);
         const isPortrait = !isResponsive && modalLogicalH > modalLogicalW;
@@ -983,7 +993,7 @@ export default function EditorPage() {
 
               {/* Slide Preview */}
               <div className="flex-1 min-h-0 z-10">
-                {renderSlidePreview(slides[modalSlideIndex].type, slides[modalSlideIndex].id, true, true)}
+                {visibleSlides[modalSlideIndex] && renderSlidePreview(visibleSlides[modalSlideIndex].type, visibleSlides[modalSlideIndex].id, true, true)}
               </div>
 
               {/* Controls */}
@@ -995,11 +1005,11 @@ export default function EditorPage() {
                   Previous
                 </Button>
                 <span className="text-sm text-gray-600">
-                  Slide {modalSlideIndex + 1} of {slides.length}
+                  Slide {modalSlideIndex + 1} of {visibleSlides.length}
                 </span>
                 <Button
-                  onClick={() => setModalSlideIndex((prev) => Math.min(slides.length - 1, prev + 1))}
-                  disabled={modalSlideIndex === slides.length - 1}
+                  onClick={() => setModalSlideIndex((prev) => Math.min(visibleSlides.length - 1, prev + 1))}
+                  disabled={modalSlideIndex === visibleSlides.length - 1}
                 >
                   Next
                 </Button>
@@ -1116,6 +1126,36 @@ export default function EditorPage() {
               </div>
 
               <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Sizing</h3>
+                {/* <p className="text-xs text-gray-500 mb-1">Adjust the sizes of </p> */}
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-3">These settings only take effect on the published page and in preview mode, the editor always uses default sizes.</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Logo Height (px)</label>
+                    <input
+                      type="number"
+                      min={16}
+                      max={200}
+                      value={tempLogoBaseHeight}
+                      onChange={(e) => setTempLogoBaseHeight(Number(e.target.value))}
+                      className="h-7 w-20 text-sm border border-gray-300 rounded px-2"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-700">Footer Height (px)</label>
+                    <input
+                      type="number"
+                      min={20}
+                      max={200}
+                      value={tempFooterBaseHeight}
+                      onChange={(e) => setTempFooterBaseHeight(Number(e.target.value))}
+                      className="h-7 w-20 text-sm border border-gray-300 rounded px-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Theme</h3>
                 <p className="text-xs text-gray-500 mb-3">Changes apply to all existing and new slides.</p>
 
@@ -1123,12 +1163,14 @@ export default function EditorPage() {
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Primary Background</label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={tempThemePrimaryBackground}
-                        onChange={(e) => setTempThemePrimaryBackground(e.target.value)}
-                        className="w-8 h-8 p-0 border-none rounded cursor-pointer appearance-none"
-                      />
+                      <div className="w-6 h-6 rounded border border-gray-300 overflow-hidden flex-shrink-0">
+                        <input
+                          type="color"
+                          value={tempThemePrimaryBackground}
+                          onChange={(e) => setTempThemePrimaryBackground(e.target.value)}
+                          className="w-9 h-9 -m-2 cursor-pointer border-none appearance-none p-0"
+                        />
+                      </div>
                       <span className="text-xs text-gray-500 w-16">{tempThemePrimaryBackground}</span>
                     </div>
                   </div>
@@ -1136,12 +1178,14 @@ export default function EditorPage() {
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Secondary/Accent</label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={tempThemeSecondaryAccent}
-                        onChange={(e) => setTempThemeSecondaryAccent(e.target.value)}
-                        className="w-8 h-8 p-0 border-none rounded cursor-pointer appearance-none"
-                      />
+                      <div className="w-6 h-6 rounded border border-gray-300 overflow-hidden flex-shrink-0">
+                        <input
+                          type="color"
+                          value={tempThemeSecondaryAccent}
+                          onChange={(e) => setTempThemeSecondaryAccent(e.target.value)}
+                          className="w-9 h-9 -m-2 cursor-pointer border-none appearance-none p-0"
+                        />
+                      </div>
                       <span className="text-xs text-gray-500 w-16">{tempThemeSecondaryAccent}</span>
                     </div>
                   </div>
@@ -1149,12 +1193,14 @@ export default function EditorPage() {
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Title Text</label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={tempThemeTitleText}
-                        onChange={(e) => setTempThemeTitleText(e.target.value)}
-                        className="w-8 h-8 p-0 border-none rounded cursor-pointer appearance-none"
-                      />
+                      <div className="w-6 h-6 rounded border border-gray-300 overflow-hidden flex-shrink-0">
+                        <input
+                          type="color"
+                          value={tempThemeTitleText}
+                          onChange={(e) => setTempThemeTitleText(e.target.value)}
+                          className="w-9 h-9 -m-2 cursor-pointer border-none appearance-none p-0"
+                        />
+                      </div>
                       <span className="text-xs text-gray-500 w-16">{tempThemeTitleText}</span>
                     </div>
                   </div>
@@ -1162,12 +1208,14 @@ export default function EditorPage() {
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Body Text</label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={tempThemeBodyText}
-                        onChange={(e) => setTempThemeBodyText(e.target.value)}
-                        className="w-8 h-8 p-0 border-none rounded cursor-pointer appearance-none"
-                      />
+                      <div className="w-6 h-6 rounded border border-gray-300 overflow-hidden flex-shrink-0">
+                        <input
+                          type="color"
+                          value={tempThemeBodyText}
+                          onChange={(e) => setTempThemeBodyText(e.target.value)}
+                          className="w-9 h-9 -m-2 cursor-pointer border-none appearance-none p-0"
+                        />
+                      </div>
                       <span className="text-xs text-gray-500 w-16">{tempThemeBodyText}</span>
                     </div>
                   </div>
@@ -1227,6 +1275,8 @@ export default function EditorPage() {
                   onClick={() => {
                     setRotationInterval(tempRotationInterval);
                     setResolution(tempResolution);
+                    setLogoBaseHeight(tempLogoBaseHeight);
+                    setFooterBaseHeight(tempFooterBaseHeight);
                     // Apply theme to all slides
                     setThemePrimaryBackground(tempThemePrimaryBackground);
                     setThemeSecondaryAccent(tempThemeSecondaryAccent);

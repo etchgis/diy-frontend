@@ -1,10 +1,11 @@
 import { usePathname } from "next/navigation";
 import { useFooterStore } from "@/stores/footer";
+import { useGeneralStore } from "@/stores/general";
 import { useState, useEffect } from "react";
 
-export default function Footer() {
+export default function Footer({ previewMode = false }: { previewMode?: boolean }) {
   const pathname = usePathname();
-  const isEditor = pathname.includes("/editor");
+  const isEditor = pathname.includes("/editor") && !previewMode;
 
   const leftImage = useFooterStore((state) => state.leftImage);
   const middleImage = useFooterStore((state) => state.middleImage);
@@ -17,6 +18,14 @@ export default function Footer() {
   const rightText = useFooterStore((state) => state.rightText);
   const backgroundColor = useFooterStore((state) => state.backgroundColor);
   const timeTextColor = useFooterStore((state) => state.timeTextColor);
+  const footerBaseHeight = useFooterStore((state) => state.footerBaseHeight);
+
+  const resolution = useGeneralStore((state) => state.resolution);
+  const resScale = (() => {
+    const h = parseInt(resolution?.split('x')[1] || '1080', 10);
+    return h / 1080;
+  })();
+  const footerHeight = isEditor ? 50 : footerBaseHeight * resScale;
 
   const [currentTime, setCurrentTime] = useState("");
 
@@ -37,55 +46,57 @@ export default function Footer() {
     return () => clearInterval(interval);
   }, []);
 
-  const renderSection = (
-    type: string,
-    image: string,
-    text: string,
-    altText: string,
-    imageClass: string,
-    placeholderClass: string
-  ) => {
+  const imgMaxHeight = footerHeight * 0.72;
+  const fontSize = Math.max(10, footerHeight * 0.38);
+
+  const renderSection = (type: string, image: string, text: string, altText: string) => {
     if (type === "none") {
-      return <div className={placeholderClass} />;
+      return null;
     } else if (type === "time") {
       return (
-        <div
-          className={`font-medium ${placeholderClass}`}
-          style={{ color: timeTextColor }}
-        >
+        <div style={{ color: timeTextColor, fontSize, fontWeight: 500, lineHeight: 1 }}>
           {currentTime}
         </div>
       );
     } else if (type === "text") {
       return (
         <div
-          className={`${placeholderClass} flex items-center`}
-          style={{ color: timeTextColor }}
+          style={{ color: timeTextColor, fontSize }}
           dangerouslySetInnerHTML={{ __html: text }}
         />
       );
     } else if (image) {
-      return <img src={image} alt={altText} className={`${imageClass} object-contain`} />;
-    } else {
-      return <div className={placeholderClass} />;
+      return (
+        <img
+          src={image}
+          alt={altText}
+          style={{ maxHeight: imgMaxHeight, width: "auto", objectFit: "contain" }}
+        />
+      );
     }
+    return null;
   };
 
   return (
     <div
-      className={`p-3 flex items-center gap-4 ${
+      className={`flex items-center gap-4 overflow-hidden ${
         isEditor ? "rounded-b-lg" : "flex-shrink-0"
       }`}
-      style={{ backgroundColor }}
+      style={{
+        backgroundColor,
+        height: footerHeight,
+        paddingLeft: footerHeight * 0.24,
+        paddingRight: footerHeight * 0.24,
+      }}
     >
       <div className="flex-1 min-w-0 flex items-center">
-        {renderSection(leftType, leftImage, leftText, "Left Footer", "h-[25px] max-h-full", "h-[25px]")}
+        {renderSection(leftType, leftImage, leftText, "Left Footer")}
       </div>
       <div className="flex-1 min-w-0 flex items-center justify-center">
-        {renderSection(middleType, middleImage, middleText, "Middle Footer", "h-[25px] max-h-full", "h-[25px]")}
+        {renderSection(middleType, middleImage, middleText, "Middle Footer")}
       </div>
       <div className="flex-1 min-w-0 flex items-center justify-end">
-        {renderSection(rightType, rightImage, rightText, "Right Footer", "h-8 max-h-full", "h-8")}
+        {renderSection(rightType, rightImage, rightText, "Right Footer")}
       </div>
     </div>
   );

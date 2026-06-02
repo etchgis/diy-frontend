@@ -64,6 +64,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const isEditor = pathname.includes("/editor") && !previewMode;
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
+  const resolution = useGeneralStore((state) => state.resolution);
+  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
 
   const isLoading = useFixedRouteStore(
     (state) => state.slides[slideId]?.isLoading
@@ -288,7 +291,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                   <img
                     src={logoImage}
                     alt="Logo"
-                    className="max-h-16 object-contain ml-4 flex-shrink-0"
+                    className="object-contain ml-4 flex-shrink-0"
+                    style={{ maxHeight: logoHeight }}
                   />
                 )}
               </div>
@@ -374,7 +378,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                   <img
                     src={logoImage}
                     alt="Logo"
-                    className="max-h-16 object-contain ml-4 flex-shrink-0"
+                    className="object-contain ml-4 flex-shrink-0"
+                    style={{ maxHeight: logoHeight }}
                   />
                 )}
               </div>
@@ -770,7 +775,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
           )}
         </div>
         {/* Footer */}
-      {showFooter && <Footer />}
+      {showFooter && <Footer previewMode={previewMode} />}
 
       {dataError && (
         <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/80 text-white text-center px-4 py-3 text-base font-medium">

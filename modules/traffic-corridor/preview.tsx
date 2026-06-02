@@ -40,6 +40,9 @@ export default function TrafficCorridorPreview({
   const contentTextSize = useTrafficCorridorStore((state) => state.slides[slideId]?.contentTextSize || 5);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
+  const resolution = useGeneralStore((state) => state.resolution);
+  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
 
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
@@ -271,7 +274,8 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
             <img
               src={logoImage}
               alt="Logo"
-              className="max-h-16 object-contain ml-4 flex-shrink-0"
+              className="object-contain ml-4 flex-shrink-0"
+              style={{ maxHeight: logoHeight }}
             />
           )}
         </div>
@@ -327,7 +331,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
         </div>
       )}
 
-      {showFooter && <Footer />}
+      {showFooter && <Footer previewMode={previewMode} />}
     </div>
   );
 }

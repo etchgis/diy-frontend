@@ -97,6 +97,9 @@ export default function Template1Preview({
   const shortcode = useGeneralStore((state) => state.shortcode || "");
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
+  const resolution = useGeneralStore((state) => state.resolution);
+  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     if (!isEditor) return;
@@ -206,7 +209,8 @@ export default function Template1Preview({
             <img
               src={logoImage}
               alt="Logo"
-              className="max-h-16 object-contain ml-4 flex-shrink-0"
+              className="object-contain ml-4 flex-shrink-0"
+              style={{ maxHeight: logoHeight }}
             />
           )}
         </div>
@@ -311,7 +315,7 @@ export default function Template1Preview({
       </div>
 
       {/* Footer */}
-      {showFooter && <Footer />}
+      {showFooter && <Footer previewMode={previewMode} />}
     </div>
   );
 }

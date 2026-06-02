@@ -50,6 +50,8 @@ interface Store {
   defaultContentTextSize?: number;
   resolution: string;
   setResolution: (resolution: string) => void;
+  logoBaseHeight: number;
+  setLogoBaseHeight: (height: number) => void;
   // Theme settings
   theme: Theme;
   setThemePrimaryBackground: (color: string) => void;
@@ -85,6 +87,7 @@ export const useGeneralStore = create<Store>()(
     (set, get) => ({
       slides: [],
       resolution: '1920x1080',
+      logoBaseHeight: 64,
       theme: {
         primaryBackground: '#192F51',
         secondaryAccent: '#78B1DD',
@@ -152,6 +155,9 @@ export const useGeneralStore = create<Store>()(
       })),
       setResolution: (resolution) => set(() => ({
         resolution,
+      })),
+      setLogoBaseHeight: (height) => set(() => ({
+        logoBaseHeight: height,
       })),
       setThemePrimaryBackground: (color) => {
         const oldColor = get().theme.primaryBackground;

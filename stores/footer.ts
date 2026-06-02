@@ -15,6 +15,7 @@ interface FooterState {
   rightText: string;
   backgroundColor: string;
   timeTextColor: string;
+  footerBaseHeight: number;
   setLeftImage: (image: string) => void;
   setMiddleImage: (image: string) => void;
   setRightImage: (image: string) => void;
@@ -26,6 +27,7 @@ interface FooterState {
   setRightText: (text: string) => void;
   setBackgroundColor: (color: string) => void;
   setTimeTextColor: (color: string) => void;
+  setFooterBaseHeight: (height: number) => void;
 }
 
 export const useFooterStore = create<FooterState>()(
@@ -42,6 +44,7 @@ export const useFooterStore = create<FooterState>()(
       rightText: '',
       backgroundColor: '#F4F4F4',
       timeTextColor: '#000000',
+      footerBaseHeight: 50,
       setLeftImage: (image) => set({ leftImage: image }),
       setMiddleImage: (image) => set({ middleImage: image }),
       setRightImage: (image) => set({ rightImage: image }),
@@ -53,6 +56,7 @@ export const useFooterStore = create<FooterState>()(
       setRightText: (text) => set({ rightText: text }),
       setBackgroundColor: (color) => set({ backgroundColor: color }),
       setTimeTextColor: (color) => set({ timeTextColor: color }),
+      setFooterBaseHeight: (height) => set({ footerBaseHeight: height }),
     }),
     {
       name: 'footer-store',

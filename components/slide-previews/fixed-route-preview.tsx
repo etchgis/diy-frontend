@@ -58,6 +58,9 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor");
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
+  const resolution = useGeneralStore((state) => state.resolution);
+  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
 
   const isLoading = useFixedRouteStore(
     (state) => state.slides[slideId]?.isLoading
@@ -193,7 +196,8 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   <img
                     src={logoImage}
                     alt="Logo"
-                    className="max-h-16 object-contain ml-4 flex-shrink-0"
+                    className="object-contain ml-4 flex-shrink-0"
+                    style={{ maxHeight: logoHeight }}
                   />
                 )}
               </div>
@@ -237,7 +241,8 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                   <img
                     src={logoImage}
                     alt="Logo"
-                    className="max-h-16 object-contain ml-4 flex-shrink-0"
+                    className="object-contain ml-4 flex-shrink-0"
+                    style={{ maxHeight: logoHeight }}
                   />
                 )}
               </div>

@@ -28,6 +28,10 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
   const isEditor = pathname.includes("/editor");
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
+  const resolution = useGeneralStore((state) => state.resolution);
+  const resScale = parseInt(resolution?.split('x')[1] || '1080', 10) / 1080;
+  const logoHeight = isEditor ? 64 : logoBaseHeight * resScale;
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const textSizeMultiplier = 0.5 + textSize * 0.1;
@@ -52,7 +56,8 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
         <img
           src={logoImage}
           alt="Logo"
-          className="absolute top-6 right-6 max-h-16 object-contain z-20"
+          className="absolute top-6 right-6 object-contain z-20"
+          style={{ maxHeight: logoHeight }}
         />
       )}
 

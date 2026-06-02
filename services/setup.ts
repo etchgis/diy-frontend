@@ -226,7 +226,8 @@ async function importData(setup: any) {
     setDefaultTextColor,
     setDefaultFontFamily,
     setDefaultTitleTextSize,
-    setDefaultContentTextSize
+    setDefaultContentTextSize,
+    setLogoBaseHeight
   } = useGeneralStore.getState();
 
   setCoordinates({ lat: setup.coordinates.lat, lng: setup.coordinates.lng });
@@ -234,6 +235,7 @@ async function importData(setup: any) {
   setShortcode(setup.shortcode || '');
   setRotationInterval(setup.rotationInterval || 20);
   if (setup.resolution) setResolution(setup.resolution);
+  if (setup.logoBaseHeight != null) setLogoBaseHeight(setup.logoBaseHeight);
   setPublishPassword(setup.publishPassword || '');
   setIsTempPassword(setup.isTempPassword === true);
 
@@ -281,7 +283,8 @@ async function importData(setup: any) {
     setMiddleText,
     setRightText,
     setBackgroundColor,
-    setTimeTextColor
+    setTimeTextColor,
+    setFooterBaseHeight
   } = useFooterStore.getState();
 
   const leftImageValue = setup.footer?.leftImage !== undefined
@@ -320,6 +323,7 @@ async function importData(setup: any) {
   setRightText(setup.footer?.rightText ?? '');
   setBackgroundColor(backgroundColorValue);
   setTimeTextColor(timeTextColorValue);
+  if (setup.footer?.footerBaseHeight != null) setFooterBaseHeight(setup.footer.footerBaseHeight);
 
   const slides: any = [];
 

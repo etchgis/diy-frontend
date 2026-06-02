@@ -25,8 +25,8 @@ export class PublishDataMissingError extends Error {
 }
 
 export function buildPublishPayload() {
-  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, isTempPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution } = useGeneralStore.getState();
-  const { leftImage, middleImage, rightImage, leftType, middleType, rightType, leftText, middleText, rightText, backgroundColor, timeTextColor } = useFooterStore.getState();
+  const { address, location, coordinates, slides, url, shortcode, rotationInterval, publishPassword, isTempPassword, defaultBackgroundColor, defaultTitleColor, defaultTextColor, defaultFontFamily, defaultTitleTextSize, defaultContentTextSize, theme, resolution, logoBaseHeight } = useGeneralStore.getState();
+  const { leftImage, middleImage, rightImage, leftType, middleType, rightType, leftText, middleText, rightText, backgroundColor, timeTextColor, footerBaseHeight } = useFooterStore.getState();
 
   console.log('[PUBLISH] Footer data being published:', {
     leftImage,
@@ -58,6 +58,7 @@ export function buildPublishPayload() {
     defaultContentTextSize: defaultContentTextSize,
     theme: theme,
     resolution: resolution || '1920x1080',
+    logoBaseHeight: logoBaseHeight ?? 64,
     footer: {
       leftImage: leftImage,
       middleImage: middleImage,
@@ -70,6 +71,7 @@ export function buildPublishPayload() {
       rightText: rightText,
       backgroundColor: backgroundColor,
       timeTextColor: timeTextColor,
+      footerBaseHeight: footerBaseHeight ?? 50,
     },
     screens: [] as any[],
   }

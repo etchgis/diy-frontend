@@ -30,6 +30,8 @@ export default function EditFooter({
   const storeRightText = useFooterStore((state) => state.rightText);
   const storeBackgroundColor = useFooterStore((state) => state.backgroundColor);
   const storeTimeTextColor = useFooterStore((state) => state.timeTextColor);
+  const storeFooterBaseHeight = useFooterStore((state) => state.footerBaseHeight);
+  const storeResolution = useGeneralStore((state) => state.resolution || '1920x1080');
 
   // Local state for editing
   const [leftImage, setLeftImage] = useState(storeLeftImage);
@@ -43,6 +45,11 @@ export default function EditFooter({
   const [rightText, setRightText] = useState(storeRightText);
   const [backgroundColor, setBackgroundColor] = useState(storeBackgroundColor);
   const [timeTextColor, setTimeTextColor] = useState(storeTimeTextColor);
+
+  const resScale = parseInt(storeResolution?.split('x')[1] || '1080', 10) / 1080;
+  const footerHeight = storeFooterBaseHeight * resScale;
+  const imgMaxHeight = footerHeight * 0.72;
+  const fontSize = Math.max(10, footerHeight * 0.38);
 
   // Loading states
   const [isLeftUploading, setIsLeftUploading] = useState(false);
@@ -71,38 +78,32 @@ export default function EditFooter({
     return () => clearInterval(interval);
   }, []);
 
-  const renderSection = (
-    type: string,
-    image: string,
-    text: string,
-    altText: string,
-    imageClass: string,
-    placeholderClass: string
-  ) => {
+  const renderSection = (type: string, image: string, text: string, altText: string) => {
     if (type === "none") {
-      return <div className={placeholderClass} />;
+      return null;
     } else if (type === "time") {
       return (
-        <div
-          className={`font-medium ${placeholderClass}`}
-          style={{ color: timeTextColor }}
-        >
+        <div style={{ color: timeTextColor, fontSize, fontWeight: 500, lineHeight: 1 }}>
           {currentTime}
         </div>
       );
     } else if (type === "text") {
       return (
         <div
-          className={`${placeholderClass} flex items-center`}
-          style={{ color: timeTextColor }}
+          style={{ color: timeTextColor, fontSize }}
           dangerouslySetInnerHTML={{ __html: text }}
         />
       );
     } else if (image) {
-      return <img src={image} alt={altText} className={imageClass} />;
-    } else {
-      return <div className={placeholderClass} />;
+      return (
+        <img
+          src={image}
+          alt={altText}
+          style={{ maxHeight: imgMaxHeight, width: "auto", objectFit: "contain" }}
+        />
+      );
     }
+    return null;
   };
 
   // Save to store when Save button is clicked
@@ -254,17 +255,22 @@ export default function EditFooter({
             {/* Footer Preview */}
             <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden flex flex-col justify-end">
               <div
-                className="p-3 flex items-center gap-4 rounded-b-lg"
-                style={{ backgroundColor }}
+                className="flex items-center gap-4 rounded-b-lg overflow-hidden"
+                style={{
+                  backgroundColor,
+                  height: footerHeight,
+                  paddingLeft: footerHeight * 0.24,
+                  paddingRight: footerHeight * 0.24,
+                }}
               >
                 <div className="flex-1 min-w-0 flex items-center">
-                  {renderSection(leftType, leftImage, leftText, "Left Footer", "h-[25px] max-h-full", "h-[25px]")}
+                  {renderSection(leftType, leftImage, leftText, "Left Footer")}
                 </div>
                 <div className="flex-1 min-w-0 flex items-center justify-center">
-                  {renderSection(middleType, middleImage, middleText, "Middle Footer", "h-[25px] max-h-full", "h-[25px]")}
+                  {renderSection(middleType, middleImage, middleText, "Middle Footer")}
                 </div>
                 <div className="flex-1 min-w-0 flex items-center justify-end">
-                  {renderSection(rightType, rightImage, rightText, "Right Footer", "h-8 max-h-full", "h-8")}
+                  {renderSection(rightType, rightImage, rightText, "Right Footer")}
                 </div>
               </div>
             </div>
