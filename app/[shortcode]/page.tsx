@@ -1,10 +1,19 @@
 
 import PublishedPage from "../pages/published-page";
+import { getOrgConfig } from "@/lib/orgConfig";
 
-export default async function Page({ params }: { params: { shortcode: string } }) {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ shortcode: string }>;
+}) {
+  const { shortcode } = await params;
+  const orgConfig = getOrgConfig(shortcode);
 
-  const newParams = await Promise.resolve(params);
-  const shortcode = await Promise.resolve(newParams.shortcode); 
+  if (orgConfig) {
+    const publishedShortcode = orgConfig.diyShortcode ?? shortcode;
+    return <PublishedPage shortcode={publishedShortcode} />;
+  }
 
   return <PublishedPage shortcode={shortcode} />;
 }

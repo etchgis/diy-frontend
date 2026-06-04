@@ -1,4 +1,7 @@
 'use client';
+import { getOrgConfig, getOrgConfigByDiyShortcode } from '@/lib/orgConfig';
+import WatchPartyCountdownPreview from '@/modules/org-ferryhawks/watch-party-countdown/preview';
+import FerrySchedulePreview from '@/modules/org-ferryhawks/ferry-schedule/preview';
 import FixedRoutePreview from '@/modules/fixed-routes/preview';
 import QRSlidePreview from '@/modules/qr/preview';
 import Template1Preview from '@/modules/template-1/preview';
@@ -54,7 +57,23 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const [now, setNow] = useState(() => new Date());
 
   const allSlides = useGeneralStore((state) => state.slides);
-  const slides = allSlides.filter((s: any) => isSlideVisible(s, now));
+
+  // Inject org custom slides into the rotation (no editor, published-only)
+  // Match by org shortcode key OR by diyShortcode (so BQMHXD and /ferryhawks both work)
+  const orgConfig = getOrgConfig(shortcode) ?? getOrgConfigByDiyShortcode(shortcode);
+  const orgSlides = orgConfig?.customSlides ?? [];
+  const orgSlideMap = Object.fromEntries(orgSlides.map((s) => [s.id, s]));
+  const prependSlides = orgSlides.filter((s) => !s.position || s.position === 'prepend');
+  const appendSlides = orgSlides.filter((s) => s.position === 'append');
+  // Avoid double-injecting org slides already embedded in allSlides (new publish format)
+  const orgSlideIdsInAllSlides = new Set(
+    allSlides.filter((s: any) => orgSlides.some((os) => os.id === s.id)).map((s: any) => s.id)
+  );
+  const prependToInject = prependSlides.filter((s) => !orgSlideIdsInAllSlides.has(s.id));
+  const appendToInject = appendSlides.filter((s) => !orgSlideIdsInAllSlides.has(s.id));
+  const mergedSlides = [...prependToInject, ...allSlides, ...appendToInject];
+
+  const slides = mergedSlides.filter((s: any) => isSlideVisible(s, now));
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
   const resolution = useGeneralStore((state) => state.resolution || '1920x1080');
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
@@ -164,8 +183,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   useEffect(() => {
     const loadSlides = async () => {
+      // For org sites, load DIY slides from diyShortcode if set; otherwise skip SetupSlides
+      const effectiveShortcode = orgConfig?.diyShortcode ?? (orgConfig ? null : shortcode);
+      if (effectiveShortcode) {
+        await SetupSlides(effectiveShortcode);
+      }
       if (shortcode) {
-        await SetupSlides(shortcode);
         setIsLoading(false);
         getTransitDestinationData();
         getFixedRouteData();
@@ -576,6 +599,14 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   const renderSlidePreview = (type: string, slideId: string) => {
     switch (type) {
+      case 'ferryhawks-watch-party-countdown': {
+        const slideConfig = orgSlideMap[slideId];
+        return slideConfig ? <WatchPartyCountdownPreview config={slideConfig} /> : null;
+      }
+      case 'ferryhawks-ferry-schedule': {
+        const slideConfig = orgSlideMap[slideId];
+        return slideConfig ? <FerrySchedulePreview config={slideConfig} /> : null;
+      }
       case 'qr':
         return <QRSlidePreview slideId={slideId} />;
       case 'transit-destinations':

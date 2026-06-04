@@ -10,12 +10,14 @@ const DEFAULT_TABLES: DestinationTable[] = [DEFAULT_TABLE, DEFAULT_TABLE, DEFAUL
 export default function TrafficCorridorPreview({
   slideId,
   previewMode = false,
+  isEditor: isEditorProp,
 }: {
   slideId: string;
   previewMode?: boolean;
+  isEditor?: boolean;
 }) {
   const pathname = usePathname();
-  const isEditor = pathname.includes("/editor") && !previewMode;
+  const isEditor = isEditorProp ?? (pathname.includes("/editor") && !previewMode);
 
   const title = useTrafficCorridorStore((state) => state.slides[slideId]?.title || "");
   const setTitle = useTrafficCorridorStore((state) => state.setTitle);

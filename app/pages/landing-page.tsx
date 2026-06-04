@@ -11,6 +11,7 @@ import { SetupSlides } from '@/services/setup'
 import { v4 as uuidv4 } from "uuid";
 import { generateShortcode } from "@/utils/generateShortcode"
 import { existsingCheck } from "@/services/existingCheck"
+import { getOrgConfig } from "@/lib/orgConfig"
 
 
 export default function LandingPage() {
@@ -132,20 +133,25 @@ export default function LandingPage() {
   };
 
   const handleEdit = () => {
-
     const shortcode = url.split('/').pop();
+
+    if (!shortcode) {
+      console.error('Shortcode not found in URL');
+      return;
+    }
+
+    // Org shortcodes go directly to the org editor — no backend lookup needed
+    if (getOrgConfig(shortcode)) {
+      router.push(`/${shortcode}`);
+      return;
+    }
 
     localStorage.clear();
     localStorage.removeItem('general-store');
 
-    if (shortcode) {
-      SetupSlides(shortcode).then((data) => {
-
-        router.push(`/editor`);
-      })
-    } else {
-      console.error('Shortcode not found in URL');
-    }
+    SetupSlides(shortcode).then(() => {
+      router.push(`/editor`);
+    });
   };
 
   return (

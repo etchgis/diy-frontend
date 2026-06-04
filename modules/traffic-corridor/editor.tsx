@@ -836,7 +836,7 @@ export default function TrafficCorridorSlide({
 
           {/* Preview */}
           <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
-            <TrafficCorridorPreview slideId={slideId} />
+            <TrafficCorridorPreview slideId={slideId} isEditor={true} />
           </div>
 
           {/* Footer Buttons */}

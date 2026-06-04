@@ -1,6 +1,7 @@
 import { useFixedRouteStore } from '@/modules/fixed-routes/store';
 import { useTransitDestinationsStore } from '@/modules/transit-destinations/store';
 import { useGeneralStore } from '@/stores/general';
+import { getOrgConfig } from '@/lib/orgConfig';
 import { useQRStore } from '@/modules/qr/store';
 import { useTransitRouteStore } from '@/modules/transit-routes/store';
 import { useTemplate1Store } from '@/modules/template-1/store';
@@ -536,6 +537,39 @@ export function buildPublishPayload() {
 
   if (missingSlides.length > 0) {
     throw new PublishDataMissingError(missingSlides);
+  }
+
+  // Reorder screens to match the user's custom slide order (including org slide positions)
+  const { customSlideOrder, currentOrgId } = useGeneralStore.getState();
+  if (customSlideOrder && customSlideOrder.length > 0) {
+    const orgConfig = currentOrgId ? getOrgConfig(currentOrgId) : null;
+    const orgCustomSlides = orgConfig?.customSlides ?? [];
+    const orgSlideIdSet = new Set(orgCustomSlides.map((s) => s.id));
+
+    const diyScreenMap = new Map(json.screens.map((s: any) => [s.id, s]));
+    const orderedScreens: any[] = [];
+    const handledIds = new Set<string>();
+
+    for (const id of customSlideOrder) {
+      if (handledIds.has(id)) continue;
+      if (orgSlideIdSet.has(id)) {
+        const orgSlide = orgCustomSlides.find((s) => s.id === id);
+        if (orgSlide) {
+          orderedScreens.push({ id: orgSlide.id, type: orgSlide.type });
+          handledIds.add(id);
+        }
+      } else if (diyScreenMap.has(id)) {
+        orderedScreens.push(diyScreenMap.get(id));
+        handledIds.add(id);
+      }
+    }
+
+    // Append any DIY screens not yet in customSlideOrder (added since last drag)
+    for (const screen of json.screens) {
+      if (!handledIds.has(screen.id)) orderedScreens.push(screen);
+    }
+
+    json.screens = orderedScreens;
   }
 
   return json;

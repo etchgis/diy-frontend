@@ -35,6 +35,10 @@ import TrafficCorridorPreview from "@/modules/traffic-corridor/preview"
 import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { useFooterStore } from "@/stores/footer"
+import { getOrgConfig, getOrgConfigByDiyShortcode, getAllOrgSlideIds } from "@/lib/orgConfig"
+import WatchPartyCountdownPreview from "@/modules/org-ferryhawks/watch-party-countdown/preview"
+import FerryScheduleOrgPreview from "@/modules/org-ferryhawks/ferry-schedule/preview"
+import { Lock } from "lucide-react"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faTimesCircle, faGear } from '@fortawesome/free-solid-svg-icons';
 import bcrypt from "bcryptjs";
@@ -50,7 +54,9 @@ import {
   arrayMove,
   SortableContext,
   verticalListSortingStrategy,
+  useSortable,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { SortableSlide } from "@/components/sortable-slide"
 import SlideSettingsModal from "@/components/slide-settings-modal"
 import { SetupSlides } from "@/services/setup"
@@ -77,6 +83,69 @@ import { ResolutionFrame } from "@/components/resolution-frame"
 interface Slide {
   id: string;
   type: string;
+}
+
+function renderOrgSlidePreview(slide: any) {
+  switch (slide.type) {
+    case 'ferryhawks-watch-party-countdown':
+      return <WatchPartyCountdownPreview config={slide} />;
+    case 'ferryhawks-ferry-schedule':
+      return <FerryScheduleOrgPreview config={slide} isEditor={true} />;
+    default:
+      return <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">{slide.type}</div>;
+  }
+}
+
+function SortableOrgSlide({ slide, activeSlideId, setActiveSlideId }: { slide: any; activeSlideId: string; setActiveSlideId: (id: string) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slide.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={() => setActiveSlideId(slide.id)}
+      className={`cursor-pointer rounded border bg-white p-1 relative ${slide.id === activeSlideId ? "ring-2 ring-blue-500" : ""}`}
+    >
+      <div className="w-full aspect-video overflow-hidden relative bg-gray-100 rounded">
+        <div className="absolute inset-0">
+          <ResolutionFrame logicalW={1920} logicalH={1080} background="transparent">
+            {renderOrgSlidePreview(slide)}
+          </ResolutionFrame>
+        </div>
+      </div>
+      <div className="mt-1 flex items-center gap-1 px-0.5">
+        <Lock className="w-3 h-3 text-gray-400" />
+        <span className="text-xs text-gray-400">custom</span>
+      </div>
+    </div>
+  );
+}
+
+function OrgSlideViewer({ slide, onPreview, onPublish }: { slide: any; onPreview: () => void; onPublish: () => void }) {
+  return (
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 overflow-y-auto">
+      <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">
+        <Lock className="w-4 h-4 text-gray-400" />
+        Custom Screen — Read Only
+      </div>
+      <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
+        <ResolutionFrame logicalW={1920} logicalH={1080} background="transparent">
+          {renderOrgSlidePreview(slide)}
+        </ResolutionFrame>
+      </div>
+      <div className="flex gap-3 mt-4">
+        <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={onPreview}>Preview Screens</Button>
+        <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={onPublish}>Publish Screens</Button>
+      </div>
+    </div>
+  );
 }
 
 export default function EditorPage() {
@@ -108,6 +177,27 @@ export default function EditorPage() {
 
   const slides: any = useGeneralStore((state) => state.slides || []);
   const setSlides = useGeneralStore((state) => state.setSlides);
+  const storedCurrentOrgId = useGeneralStore((state) => state.currentOrgId);
+  const persistedShortcode = useGeneralStore((state) => state.shortcode || '');
+  // Derive currentOrgId synchronously so the first mergedOrder computation has the right context.
+  // storedCurrentOrgId is set by SetupSlides (after Edit); on a plain reload it's undefined
+  // because it's not persisted, so we fall back to looking up by the persisted shortcode.
+  const currentOrgId = storedCurrentOrgId ?? getOrgConfigByDiyShortcode(persistedShortcode)?.orgId;
+  const orgConfig = currentOrgId ? getOrgConfig(currentOrgId) : null;
+  const orgCustomSlides = orgConfig?.customSlides ?? [];
+
+  const [mergedOrder, setMergedOrder] = useState<string[]>([]);
+
+  // Keep store's currentOrgId populated (publish.ts reads it directly from the store).
+  useEffect(() => {
+    if (persistedShortcode && !storedCurrentOrgId) {
+      const orgCfg = getOrgConfigByDiyShortcode(persistedShortcode);
+      if (orgCfg) {
+        useGeneralStore.getState().setCurrentOrgId(orgCfg.orgId);
+      }
+    }
+  }, [persistedShortcode, storedCurrentOrgId]);
+
   const toggleSlideHidden = useGeneralStore((state) => state.toggleSlideHidden);
   const setSchedule = useGeneralStore((state) => state.setSchedule);
   const setSlideLabel = useGeneralStore((state) => state.setSlideLabel);
@@ -347,6 +437,22 @@ export default function EditorPage() {
     }
   }, []);
 
+  // On mount, deduplicate any stale slides persisted from old broken sessions.
+  // Org slide stubs (same IDs as customSlides) and duplicate IDs both get cleaned here.
+  useEffect(() => {
+    const { slides: storedSlides, setSlides: storeSetSlides } = useGeneralStore.getState();
+    const orgSlideIds = getAllOrgSlideIds();
+    const seen = new Set<string>();
+    const cleaned = storedSlides.filter((s: any) => {
+      if (!s.id || orgSlideIds.has(s.id) || seen.has(s.id)) return false;
+      seen.add(s.id);
+      return true;
+    });
+    if (cleaned.length !== storedSlides.length) {
+      storeSetSlides(cleaned);
+    }
+  }, []);
+
   // On mount refresh publishPassword + isTempPassword from the backend so
   useEffect(() => {
     const shortcode = useGeneralStore.getState().shortcode;
@@ -442,6 +548,39 @@ export default function EditorPage() {
   useEffect(() => {
   }, [activeSlideId]);
 
+  // Persist mergedOrder to the store so publish.ts and published-page can read it cross-device
+  useEffect(() => {
+    if (mergedOrder.length > 0) {
+      useGeneralStore.getState().setCustomSlideOrder(mergedOrder);
+    }
+  }, [mergedOrder]);
+
+  // Sync mergedOrder when DIY slides are added/removed, preserving any user-reordered positions
+  useEffect(() => {
+    const orgIds = orgCustomSlides.map((s: any) => s.id);
+    const orgIdSet = new Set(orgIds);
+    const diyIds = slides.filter((s: any) => !orgIdSet.has(s.id)).map((s: any) => s.id);
+    // Deduplicate allIds — dirty stored data can contain duplicate screen IDs
+    const seen = new Set<string>();
+    const allIds = [...orgIds, ...diyIds].filter(id => seen.has(id) ? false : (seen.add(id), true));
+    setMergedOrder((prev) => {
+      const allIdSet = new Set(allIds);
+      // Deduplicate prev while filtering out IDs that no longer exist
+      const deduped: string[] = [];
+      const dedupedSet = new Set<string>();
+      for (const id of prev) {
+        if (!dedupedSet.has(id) && allIdSet.has(id)) {
+          deduped.push(id);
+          dedupedSet.add(id);
+        }
+      }
+      const newIds = allIds.filter(id => !dedupedSet.has(id));
+      return [...deduped, ...newIds];
+    });
+    // depend on currentOrgId (stable reference) rather than the inline orgCustomSlides array
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slides, currentOrgId]);
+
 
   const handleDelete = (slideId: string) => {
     const confirmed = confirm("Are you sure you want to delete this screen? This action cannot be undone.");
@@ -493,16 +632,17 @@ export default function EditorPage() {
 
   const handleEdit = () => {
     hasFetchedDestinations.current = false;
-    const shortcode = url.split('/').pop();
+    const shortcode = url.split('/').pop()?.split('?')[0];
 
     localStorage.clear();
     localStorage.removeItem('general-store');
 
     if (shortcode) {
-      SetupSlides(shortcode).then((data) => {
-
-        router.push(`/editor`);
-      })
+      const orgCfg = getOrgConfig(shortcode);
+      const diyShortcode = orgCfg?.diyShortcode ?? shortcode;
+      SetupSlides(diyShortcode).then(() => {
+        router.push('/editor');
+      });
     } else {
       console.error('Shortcode not found in URL');
     }
@@ -786,31 +926,47 @@ export default function EditorPage() {
             onDragEnd={(event) => {
               const { active, over } = event;
               if (active.id !== over?.id) {
-                const oldIndex = slides.findIndex((s: any) => s.id === active.id);
-                const newIndex = slides.findIndex((s: any) => s.id === over?.id);
-                const reordered: any = arrayMove(slides, oldIndex, newIndex);
-                setSlides(reordered);
+                const oldIndex = mergedOrder.indexOf(active.id as string);
+                const newIndex = mergedOrder.indexOf(over?.id as string);
+                setMergedOrder(arrayMove(mergedOrder, oldIndex, newIndex));
               }
             }}
           >
-            <SortableContext items={slides.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext items={[...new Set(mergedOrder)]} strategy={verticalListSortingStrategy}>
               <div className="h-[60vh] max-h-[60vh] overflow-y-auto space-y-2 mb-4 pr-1 pl-1 pt-2">
-                {slides.map((slide: any) => (
-                  <SortableSlide
-                    key={slide.id}
-                    slide={slide}
-                    activeSlideId={activeSlideId}
-                    setActiveSlideId={setActiveSlideId}
-                    renderSlidePreview={renderSlidePreview}
-                    toggleSlideHidden={toggleSlideHidden}
-                    setSchedule={setSchedule}
-                    setSlideLabel={setSlideLabel}
-                    setSlideDuration={setSlideDuration}
-                    globalDuration={rotationInterval || 20}
-                    duplicateSlide={duplicateSlide}
-                    deleteSlide={deleteSlide}
-                  />
-                ))}
+                {[...new Set(mergedOrder)].map((id) => {
+                  const orgSlide = orgCustomSlides.find((s) => s.id === id);
+                  if (orgSlide) {
+                    return (
+                      <SortableOrgSlide
+                        key={id}
+                        slide={orgSlide}
+                        activeSlideId={activeSlideId}
+                        setActiveSlideId={setActiveSlideId}
+                      />
+                    );
+                  }
+                  const diySlide = slides.find((s: any) => s.id === id);
+                  if (diySlide) {
+                    return (
+                      <SortableSlide
+                        key={id}
+                        slide={diySlide}
+                        activeSlideId={activeSlideId}
+                        setActiveSlideId={setActiveSlideId}
+                        renderSlidePreview={renderSlidePreview}
+                        toggleSlideHidden={toggleSlideHidden}
+                        setSchedule={setSchedule}
+                        setSlideLabel={setSlideLabel}
+                        setSlideDuration={setSlideDuration}
+                        globalDuration={rotationInterval || 20}
+                        duplicateSlide={duplicateSlide}
+                        deleteSlide={deleteSlide}
+                      />
+                    );
+                  }
+                  return null;
+                })}
               </div>
             </SortableContext>
           </DndContext>
@@ -950,22 +1106,38 @@ export default function EditorPage() {
         </header>
 
 
-        <div key={activeSlide?.id ?? 'footer'} className="flex-1 min-h-0 flex overflow-hidden">
-          {isEditingFooter ? (
-            <EditFooter
-              handleCancel={handleCancelFooterEdit}
-              handleSave={handleSaveFooterEdit}
-            />
-          ) : (
-            activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)
-          )}
-        </div>
+        {(() => {
+          const activeOrgSlide = orgCustomSlides.find((s) => s.id === activeSlideId);
+          return (
+            <div key={activeOrgSlide?.id ?? activeSlide?.id ?? 'footer'} className="flex-1 min-h-0 flex overflow-hidden">
+              {isEditingFooter ? (
+                <EditFooter
+                  handleCancel={handleCancelFooterEdit}
+                  handleSave={handleSaveFooterEdit}
+                />
+              ) : activeOrgSlide ? (
+                <OrgSlideViewer slide={activeOrgSlide} onPreview={handlePreview} onPublish={openPasswordModal} />
+              ) : (
+                activeSlide && renderSlideComponent(activeSlide.type, activeSlide.id)
+              )}
+            </div>
+          );
+        })()}
 
 
       </div>
 
       {showModal && (() => {
-        const visibleSlides = slides.filter((s: any) => !s.hidden);
+        const mergedPreviewSlides = mergedOrder
+          .map((id) => {
+            const orgSlide = orgCustomSlides.find((s) => s.id === id);
+            if (orgSlide) return { id, isOrg: true as const, data: orgSlide };
+            const diySlide = slides.find((s: any) => s.id === id && !s.hidden);
+            if (diySlide) return { id, isOrg: false as const, data: diySlide };
+            return null;
+          })
+          .filter(Boolean) as Array<{ id: string; isOrg: boolean; data: any }>;
+
         const isResponsive = resolution === 'responsive';
         const { w: modalLogicalW, h: modalLogicalH } = isResponsive ? { w: 1920, h: 1080 } : parseResolution(resolution);
         const isPortrait = !isResponsive && modalLogicalH > modalLogicalW;
@@ -977,6 +1149,7 @@ export default function EditorPage() {
           maxWidth: isPortrait ? '60vw' : '92vw',
           width: isPortrait ? `calc((90vh - ${CONTROLS_H}px) * ${modalLogicalW / modalLogicalH})` : '100%',
         };
+        const current = mergedPreviewSlides[modalSlideIndex];
         return (
           <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
             <div
@@ -993,7 +1166,13 @@ export default function EditorPage() {
 
               {/* Slide Preview */}
               <div className="flex-1 min-h-0 z-10">
-                {visibleSlides[modalSlideIndex] && renderSlidePreview(visibleSlides[modalSlideIndex].type, visibleSlides[modalSlideIndex].id, true, true)}
+                {current && (
+                  current.isOrg
+                    ? <ResolutionFrame logicalW={modalLogicalW} logicalH={modalLogicalH} background="transparent">
+                        {renderOrgSlidePreview(current.data)}
+                      </ResolutionFrame>
+                    : renderSlidePreview(current.data.type, current.data.id, true, true)
+                )}
               </div>
 
               {/* Controls */}
@@ -1005,11 +1184,11 @@ export default function EditorPage() {
                   Previous
                 </Button>
                 <span className="text-sm text-gray-600">
-                  Slide {modalSlideIndex + 1} of {visibleSlides.length}
+                  Slide {modalSlideIndex + 1} of {mergedPreviewSlides.length}
                 </span>
                 <Button
-                  onClick={() => setModalSlideIndex((prev) => Math.min(visibleSlides.length - 1, prev + 1))}
-                  disabled={modalSlideIndex === visibleSlides.length - 1}
+                  onClick={() => setModalSlideIndex((prev) => Math.min(mergedPreviewSlides.length - 1, prev + 1))}
+                  disabled={modalSlideIndex === mergedPreviewSlides.length - 1}
                 >
                   Next
                 </Button>

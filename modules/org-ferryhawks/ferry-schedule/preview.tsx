@@ -1,0 +1,323 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { OrgCustomSlide } from '@/config/orgs/ferryhawks';
+
+interface FerryDeparture {
+  time: string;
+  timestamp: number;
+  destination: string;
+  isRealTime: boolean;
+}
+
+interface FerryData {
+  siFerry: FerryDeparture[];
+  nycFerry: FerryDeparture[];
+}
+
+function ServiceIcon({ type, size, color }: { type: 'si' | 'nyc'; size: string | number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M2 17l2-8h16l2 8H2z" opacity="0.9" />
+      <path d="M7 9V6h10v3" opacity="0.7" />
+      <rect x="0" y="17" width="24" height="3" rx="1" opacity="0.5" />
+    </svg>
+  );
+}
+
+function DepartureRow({
+  dep,
+  isFirst,
+  textColor,
+  accentColor,
+  isEditor,
+  contentMult,
+}: {
+  dep: FerryDeparture;
+  isFirst: boolean;
+  textColor: string;
+  accentColor: string;
+  isEditor: boolean;
+  contentMult: number;
+}) {
+  const minsFromNow = Math.round((dep.timestamp - Date.now()) / 60000);
+  const countdownColor = minsFromNow <= 5 ? '#f87171' : minsFromNow <= 15 ? '#fbbf24' : textColor;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isEditor ? 8 : '1.2vh',
+        padding: isEditor ? '8px 14px' : '1.2vh 2vh',
+        borderTop: isFirst ? 'none' : '1px solid rgba(255,255,255,0.08)',
+        backgroundColor: isFirst ? 'rgba(255,255,255,0.04)' : 'transparent',
+      }}
+    >
+      {/* Time */}
+      <div style={{
+        fontWeight: 700,
+        fontSize: isEditor ? `${26 * contentMult}px` : `${4.2 * contentMult}vh`,
+        color: textColor,
+        minWidth: isEditor ? 85 : '12vh',
+        flexShrink: 0,
+        letterSpacing: '-0.01em',
+        fontVariantNumeric: 'tabular-nums',
+      }}>
+        {dep.time}
+      </div>
+
+      {/* Countdown */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isEditor ? 4 : '0.5vh',
+        minWidth: isEditor ? 78 : '10vh',
+        flexShrink: 0,
+      }}>
+        {dep.isRealTime && (
+          <span style={{
+            width: isEditor ? 7 : '0.9vh',
+            height: isEditor ? 7 : '0.9vh',
+            minWidth: isEditor ? 7 : '0.9vh',
+            borderRadius: '50%',
+            backgroundColor: '#4ade80',
+            display: 'inline-block',
+            flexShrink: 0,
+          }} />
+        )}
+        <span style={{
+          fontWeight: 600,
+          fontSize: isEditor ? `${19 * contentMult}px` : `${3 * contentMult}vh`,
+          color: countdownColor,
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          {minsFromNow <= 0 ? 'Now' : `${minsFromNow} min`}
+        </span>
+      </div>
+
+      {/* Destination */}
+      <div style={{
+        flex: 1,
+        fontSize: isEditor ? `${15 * contentMult}px` : `${2.6 * contentMult}vh`,
+        color: textColor,
+        opacity: 0.8,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}>
+        {dep.destination}
+      </div>
+
+      {/* Badge */}
+      <div style={{
+        fontSize: isEditor ? `${9 * contentMult}px` : `${1.4 * contentMult}vh`,
+        fontWeight: 600,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase' as const,
+        color: dep.isRealTime ? '#4ade80' : textColor,
+        opacity: dep.isRealTime ? 1 : 0.4,
+        border: `1px solid ${dep.isRealTime ? '#4ade8055' : 'rgba(255,255,255,0.15)'}`,
+        borderRadius: isEditor ? 3 : '0.4vh',
+        padding: isEditor ? '2px 5px' : '0.25vh 0.7vh',
+        flexShrink: 0,
+      }}>
+        {dep.isRealTime ? 'Live' : 'Sched'}
+      </div>
+    </div>
+  );
+}
+
+function ServicePanel({
+  label,
+  icon,
+  accentColor,
+  textColor,
+  departures,
+  maxRows,
+  isEditor,
+  contentMult,
+}: {
+  label: string;
+  icon: 'si' | 'nyc';
+  accentColor: string;
+  textColor: string;
+  departures: FerryDeparture[];
+  maxRows: number;
+  isEditor: boolean;
+  contentMult: number;
+}) {
+  const now = Date.now();
+  const upcoming = departures.filter(d => d.timestamp > now - 30000).slice(0, maxRows);
+
+  return (
+    <div style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column' as const,
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: isEditor ? 8 : '1vh',
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isEditor ? 8 : '1vh',
+        padding: isEditor ? '9px 14px' : '1.3vh 2vh',
+        backgroundColor: `${accentColor}22`,
+        borderBottom: `2px solid ${accentColor}`,
+        color: accentColor,
+        flexShrink: 0,
+      }}>
+        <ServiceIcon type={icon} size={isEditor ? 16 : '2.2vh'} color={accentColor} />
+        <span style={{
+          fontWeight: 800,
+          fontSize: isEditor ? `${13 * contentMult}px` : `${2.2 * contentMult}vh`,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase' as const,
+        }}>
+          {label}
+        </span>
+      </div>
+
+      {/* Rows */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, justifyContent: upcoming.length ? 'flex-start' : 'center' }}>
+        {upcoming.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            color: textColor,
+            opacity: 0.35,
+            fontSize: isEditor ? `${13 * contentMult}px` : `${2 * contentMult}vh`,
+            padding: isEditor ? '16px' : '2vh',
+          }}>
+            No departures available
+          </div>
+        ) : (
+          upcoming.map((dep, i) => (
+            <DepartureRow
+              key={dep.timestamp + dep.destination + i}
+              dep={dep}
+              isFirst={i === 0}
+              textColor={textColor}
+              accentColor={accentColor}
+              isEditor={isEditor}
+              contentMult={contentMult}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function FerrySchedulePreview({ config, isEditor = false }: { config: OrgCustomSlide; isEditor?: boolean }) {
+  const [ferryData, setFerryData] = useState<FerryData | null>(null);
+  const [, setTick] = useState(0);
+
+  const fetchData = async () => {
+    try {
+      const resp = await fetch('/api/ferry/departures');
+      if (resp.ok) setFerryData(await resp.json());
+    } catch {
+      // leave stale data on screen
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    const refresh = setInterval(fetchData, 60000);
+    const tick = setInterval(() => setTick(n => n + 1), 30000);
+    return () => { clearInterval(refresh); clearInterval(tick); };
+  }, []);
+
+  const bg = config.backgroundColor ?? '#0D1B2A';
+  const textColor = config.textColor ?? '#ffffff';
+  const siAccent = config.siAccentColor ?? '#F7941D';
+  const nycAccent = config.nycAccentColor ?? '#00A5CE';
+  const title = config.title ?? 'FERRIES FROM ST. GEORGE';
+  const maxRows: number = config.maxRows ?? 4;
+  const contentMult = 0.5 + (config.contentTextSize ?? 5) * 0.1;
+  const titleMult = 0.5 + (config.titleTextSize ?? 5) * 0.1;
+
+  const now = new Date();
+  const clockStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+  const panels = [
+    config.showSIFerry !== false && {
+      label: 'Staten Island Ferry',
+      icon: 'si' as const,
+      accentColor: siAccent,
+      departures: ferryData?.siFerry ?? [],
+    },
+    config.showNYCFerry !== false && {
+      label: 'NYC Ferry',
+      icon: 'nyc' as const,
+      accentColor: nycAccent,
+      departures: ferryData?.nycFerry ?? [],
+    },
+  ].filter(Boolean) as { label: string; icon: 'si' | 'nyc'; accentColor: string; departures: FerryDeparture[] }[];
+
+  return (
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ backgroundColor: bg, color: textColor }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: isEditor ? '10px 14px' : '1.6vh 2.5vh',
+        borderBottom: '1px solid rgba(255,255,255,0.12)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 8 : '1vh' }}>
+          <svg width={isEditor ? 20 : '3vh'} height={isEditor ? 20 : '3vh'} viewBox="0 0 24 24" fill={textColor} opacity={0.7}>
+            <path d="M2 17l2-8h16l2 8H2z" />
+            <path d="M7 9V6h10v3" opacity="0.7" />
+            <rect x="0" y="17" width="24" height="3" rx="1" opacity="0.5" />
+          </svg>
+          <span style={{
+            fontWeight: 800,
+            fontSize: isEditor ? `${22 * titleMult}px` : `${4 * titleMult}vh`,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase' as const,
+            color: textColor,
+          }}>
+            {title}
+          </span>
+        </div>
+        <span style={{
+          fontSize: isEditor ? `${14 * contentMult}px` : `${2.2 * contentMult}vh`,
+          color: textColor,
+          opacity: 0.6,
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          {clockStr}
+        </span>
+      </div>
+
+      {/* Panels */}
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: panels.length === 1 ? 'column' : 'row',
+        gap: isEditor ? '10px' : '1.5vh',
+        padding: isEditor ? '10px' : '1.5vh',
+        overflow: 'hidden',
+      }}>
+        {panels.map(panel => (
+          <ServicePanel
+            key={panel.label}
+            label={panel.label}
+            icon={panel.icon}
+            accentColor={panel.accentColor}
+            textColor={textColor}
+            departures={panel.departures}
+            maxRows={maxRows}
+            isEditor={isEditor}
+            contentMult={contentMult}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

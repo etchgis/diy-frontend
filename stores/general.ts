@@ -33,6 +33,8 @@ interface Store {
   url?: string;
   location?: string;
   shortcode?: string;
+  currentOrgId?: string;
+  customSlideOrder?: string[];
   rotationInterval?: number,
   firstPublish?: boolean;
   publishPassword?: string;
@@ -65,6 +67,8 @@ interface Store {
   setUrl: (url: string) => void;
   setCoordinates: (coordinates: { lat: number; lng: number }) => void;
   setShortcode: (shortCode: string) => void;
+  setCurrentOrgId: (orgId: string | undefined) => void;
+  setCustomSlideOrder: (order: string[]) => void;
   setRotationInterval: (interval: number) => void;
   setFirstPublish: (firstPublish: boolean) => void;
   setPublishPassword: (publishPassword: string) => void;
@@ -121,6 +125,14 @@ export const useGeneralStore = create<Store>()(
 
       setShortcode: (shortcode) => set(() => ({
         shortcode,
+      })),
+
+      setCurrentOrgId: (currentOrgId) => set(() => ({
+        currentOrgId,
+      })),
+
+      setCustomSlideOrder: (customSlideOrder) => set(() => ({
+        customSlideOrder,
       })),
 
       setRotationInterval: (interval) => set(() => ({
@@ -219,8 +231,12 @@ export const useGeneralStore = create<Store>()(
         })),
     }),
     {
-      name: 'general-store' ,
-      storage: createJSONStorage(() => localStorage)
+      name: 'general-store',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => {
+        const { currentOrgId: _omit, ...rest } = state as any;
+        return rest;
+      },
     }
   )
 );

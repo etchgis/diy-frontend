@@ -1,0 +1,65 @@
+[Log
+] [SKIDS
+] Request body:
+Object
+
+destinations: [
+  {name: "Columbia", coordinate: {lat: 40.80812888, lon: -73.96386971
+    }, allowedModes: [
+      "SUBWAY",
+      "RAIL",
+      "WALK"
+    ]
+  }
+] (1)
+
+options: {maxTransfers: 3, maxWalkMeters: 800, numItineraries: 3
+}
+
+origin: {lat: 40.74844994, lon: -73.98566833
+}
+
+Object Prototype
+[Log
+] [SKIDS
+] Response:
+Object
+
+date: "20260603"
+
+metadata: {routingTimeMs: 209, usingPrebuiltGraph: true, usingRealtimeData: true, region: "nysdot", timezone: "America/New_York", …
+}
+
+origin: Object
+
+candidateStops: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, …
+] (89)
+
+coordinate: {lat: 40.74844994, lon: -73.98566833
+}
+
+Object Prototype
+
+results: Array (1)
+0
+Object
+
+candidateStops: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, …
+] (61)
+
+destinationCoordinate: {lat: 40.80812888, lon: -73.96386971
+}
+
+destinationName: "Columbia"
+
+mode: "none"
+
+reachable: false
+
+reason: "No route found to any nearby stop"
+
+Object Prototype
+
+Array Prototype
+
+Object Prototype

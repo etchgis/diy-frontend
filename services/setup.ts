@@ -14,6 +14,7 @@ import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store";
 import { useWebEmbedStore } from "@/modules/web-embed/store";
 import { useFooterStore } from "@/stores/footer";
 import { migrateHeadsignFilters } from "@/lib/stop-arrivals-filters";
+import { getAllOrgSlideIds, getOrgConfigByDiyShortcode } from "@/lib/orgConfig";
 
 // =============================================================================
 // TEMPORARY MIGRATION: Remove after all stored configs have been re-published
@@ -702,5 +703,15 @@ async function importData(setup: any) {
     }
   });
 
-  setSlides(slides);
+  const orgCfg = getOrgConfigByDiyShortcode(setup.shortcode || '');
+  useGeneralStore.getState().setCurrentOrgId(orgCfg?.orgId ?? undefined);
+
+  const orgSlideIds = getAllOrgSlideIds();
+  const seenIds = new Set<string>();
+  const cleanSlides = slides.filter((s: any) => {
+    if (orgSlideIds.has(s.id) || seenIds.has(s.id)) return false;
+    seenIds.add(s.id);
+    return true;
+  });
+  setSlides(cleanSlides);
 }
