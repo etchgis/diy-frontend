@@ -11,8 +11,15 @@ interface Theme {
 
 export interface SlideSchedule {
   enabled: boolean;
-  startTime: string; 
-  endTime: string; 
+  startTime: string;
+  endTime: string;
+}
+
+export interface OrgSlideOverride {
+  hidden?: boolean;
+  duration?: number;
+  label?: string;
+  schedule?: SlideSchedule;
 }
 
 interface Slide {
@@ -35,6 +42,7 @@ interface Store {
   shortcode?: string;
   currentOrgId?: string;
   customSlideOrder?: string[];
+  orgSlideOverrides?: Record<string, OrgSlideOverride>;
   rotationInterval?: number,
   firstPublish?: boolean;
   publishPassword?: string;
@@ -69,6 +77,8 @@ interface Store {
   setShortcode: (shortCode: string) => void;
   setCurrentOrgId: (orgId: string | undefined) => void;
   setCustomSlideOrder: (order: string[]) => void;
+  setOrgSlideOverride: (id: string, override: Partial<OrgSlideOverride>) => void;
+  setOrgSlideOverrides: (overrides: Record<string, OrgSlideOverride>) => void;
   setRotationInterval: (interval: number) => void;
   setFirstPublish: (firstPublish: boolean) => void;
   setPublishPassword: (publishPassword: string) => void;
@@ -133,6 +143,18 @@ export const useGeneralStore = create<Store>()(
 
       setCustomSlideOrder: (customSlideOrder) => set(() => ({
         customSlideOrder,
+      })),
+
+      setOrgSlideOverride: (id, override) =>
+        set((state) => ({
+          orgSlideOverrides: {
+            ...(state.orgSlideOverrides ?? {}),
+            [id]: { ...(state.orgSlideOverrides?.[id] ?? {}), ...override },
+          },
+        })),
+
+      setOrgSlideOverrides: (orgSlideOverrides) => set(() => ({
+        orgSlideOverrides,
       })),
 
       setRotationInterval: (interval) => set(() => ({

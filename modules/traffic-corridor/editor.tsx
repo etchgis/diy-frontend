@@ -51,6 +51,8 @@ export default function TrafficCorridorSlide({
   const setTableHeaderColor = useTrafficCorridorStore((state) => state.setTableHeaderColor);
   const rowColor = useTrafficCorridorStore((state) => state.slides[slideId]?.rowColor || '#192F51');
   const setRowColor = useTrafficCorridorStore((state) => state.setRowColor);
+  const alternateRowColor = useTrafficCorridorStore((state) => state.slides[slideId]?.alternateRowColor);
+  const setAlternateRowColor = useTrafficCorridorStore((state) => state.setAlternateRowColor);
   const titleColor = useTrafficCorridorStore((state) => state.slides[slideId]?.titleColor || '#ffffff');
   const setTitleColor = useTrafficCorridorStore((state) => state.setTitleColor);
   const textColor = useTrafficCorridorStore((state) => state.slides[slideId]?.textColor || '#ffffff');
@@ -930,6 +932,21 @@ export default function TrafficCorridorSlide({
                 <input type="color" value={rowColor} onChange={(e) => setRowColor(slideId, e.target.value)} className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none" />
               </div>
               <Input value={rowColor} className="flex-1 text-xs" onChange={(e) => setRowColor(slideId, e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+              Alternate Row Color
+              {alternateRowColor && (
+                <button onClick={() => setAlternateRowColor(slideId, undefined)} className="ml-2 text-[10px] text-[#a0aec0] hover:text-[#e53e3e] underline">clear</button>
+              )}
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="colorContainer">
+                <input type="color" value={alternateRowColor ?? rowColor} onChange={(e) => setAlternateRowColor(slideId, e.target.value)} className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none" />
+              </div>
+              <Input value={alternateRowColor ?? ''} placeholder="Same as row color" className="flex-1 text-xs" onChange={(e) => setAlternateRowColor(slideId, e.target.value || undefined)} />
             </div>
           </div>
 

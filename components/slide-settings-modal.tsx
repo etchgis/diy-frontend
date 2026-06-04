@@ -14,9 +14,10 @@ interface Props {
   onDuplicate: () => void;
   onDelete: () => void;
   onClose: () => void;
+  hideActions?: boolean;
 }
 
-export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel, onSaveDuration, onSaveVisibility, onSaveSchedule, onDuplicate, onDelete, onClose }: Props) {
+export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel, onSaveDuration, onSaveVisibility, onSaveSchedule, onDuplicate, onDelete, onClose, hideActions }: Props) {
   const [label, setLabel] = useState(slide.label ?? '');
   const [durationInput, setDurationInput] = useState(slide.duration != null ? String(slide.duration) : '');
   const [hidden, setHidden] = useState(slide.hidden ?? false);
@@ -139,7 +140,7 @@ export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel,
         </div>
 
         {/* Actions */}
-        <div className="border-t pt-4 mb-4">
+        {!hideActions && (<div className="border-t pt-4 mb-4">
           <p className="text-xs font-medium text-[#4a5568] uppercase tracking-wide mb-2">Actions</p>
           <button
             className="flex items-center gap-2 text-sm text-[#4a5568] hover:text-[#1a202c] px-2 py-1.5 rounded hover:bg-gray-50 w-full text-left"
@@ -176,7 +177,7 @@ export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel,
               </div>
             </div>
           )}
-        </div>
+        </div>)}
 
         {/* Footer */}
         <div className="flex gap-2 border-t pt-4">

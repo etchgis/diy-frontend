@@ -452,7 +452,7 @@ export function buildPublishPayload() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        const { title, showTitle, backgroundColor, bgImage, logoImage, titleColor, textColor, tableHeaderColor, rowColor, tables, showSecondTable, tableLayout, origin, titleTextSize, contentTextSize } = slideData;
+        const { title, showTitle, backgroundColor, bgImage, logoImage, titleColor, textColor, tableHeaderColor, rowColor, alternateRowColor, tables, showSecondTable, tableLayout, origin, titleTextSize, contentTextSize } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.showTitle = showTitle;
@@ -463,6 +463,7 @@ export function buildPublishPayload() {
         screenObj.data.textColor = textColor;
         screenObj.data.tableHeaderColor = tableHeaderColor;
         screenObj.data.rowColor = rowColor;
+        screenObj.data.alternateRowColor = alternateRowColor;
         screenObj.data.tables = tables;
         screenObj.data.showSecondTable = showSecondTable;
         screenObj.data.tableLayout = tableLayout;
@@ -540,10 +541,14 @@ export function buildPublishPayload() {
   }
 
   // Reorder screens to match the user's custom slide order (including org slide positions)
-  const { customSlideOrder, currentOrgId } = useGeneralStore.getState();
+  const { customSlideOrder, currentOrgId, orgSlideOverrides } = useGeneralStore.getState();
   if (customSlideOrder && customSlideOrder.length > 0) {
     const orgConfig = currentOrgId ? getOrgConfig(currentOrgId) : null;
-    const orgCustomSlides = orgConfig?.customSlides ?? [];
+    const orgCustomSlides = (orgConfig?.customSlides ?? []).filter((s) => {
+      if (s.hidden) return false;
+      if (orgSlideOverrides?.[s.id]?.hidden) return false;
+      return true;
+    });
     const orgSlideIdSet = new Set(orgCustomSlides.map((s) => s.id));
 
     const diyScreenMap = new Map(json.screens.map((s: any) => [s.id, s]));
@@ -555,7 +560,13 @@ export function buildPublishPayload() {
       if (orgSlideIdSet.has(id)) {
         const orgSlide = orgCustomSlides.find((s) => s.id === id);
         if (orgSlide) {
-          orderedScreens.push({ id: orgSlide.id, type: orgSlide.type });
+          const override = orgSlideOverrides?.[id];
+          orderedScreens.push({
+            id: orgSlide.id,
+            type: orgSlide.type,
+            ...(override?.duration != null ? { duration: override.duration } : {}),
+            ...(override?.schedule ? { schedule: override.schedule } : {}),
+          });
           handledIds.add(id);
         }
       } else if (diyScreenMap.has(id)) {
@@ -570,6 +581,10 @@ export function buildPublishPayload() {
     }
 
     json.screens = orderedScreens;
+  }
+
+  if (orgSlideOverrides && Object.keys(orgSlideOverrides).length > 0) {
+    (json as any).orgSlideOverrides = orgSlideOverrides;
   }
 
   return json;

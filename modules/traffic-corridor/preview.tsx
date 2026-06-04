@@ -29,6 +29,7 @@ export default function TrafficCorridorPreview({
   const textColor = useTrafficCorridorStore((state) => state.slides[slideId]?.textColor || "#ffffff");
   const tableHeaderColor = useTrafficCorridorStore((state) => state.slides[slideId]?.tableHeaderColor || "#78B1DD");
   const rowColor = useTrafficCorridorStore((state) => state.slides[slideId]?.rowColor || "#192F51");
+  const alternateRowColor = useTrafficCorridorStore((state) => state.slides[slideId]?.alternateRowColor);
   const tables = useTrafficCorridorStore((state) => state.slides[slideId]?.tables || DEFAULT_TABLES);
   const setTables = useTrafficCorridorStore((state) => state.setTables);
   const tableLayout = useTrafficCorridorStore((state) =>
@@ -127,7 +128,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           key={corridorIndex}
           className={isEditor ? 'flex items-center px-3 py-2' : 'flex items-center'}
           style={{
-            backgroundColor: corridorIndex % 2 === 0 ? rowColor : `${rowColor}cc`,
+            backgroundColor: corridorIndex % 2 === 0 ? rowColor : (alternateRowColor ?? rowColor),
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
             minHeight: isEditor ? (isQuad ? '20px' : isTriple ? '22px' : showSecondTable ? '26px' : '36px') : undefined,

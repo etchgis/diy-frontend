@@ -33,6 +33,7 @@ interface TrafficCorridorSlideData {
   textColor: string;
   tableHeaderColor: string;
   rowColor: string;
+  alternateRowColor?: string;
   tables: DestinationTable[];
   showSecondTable: boolean;
   tableLayout?: TableLayout;
@@ -52,6 +53,7 @@ interface TrafficCorridorStore {
   setTextColor: (slideId: string, color: string) => void;
   setTableHeaderColor: (slideId: string, color: string) => void;
   setRowColor: (slideId: string, color: string) => void;
+  setAlternateRowColor: (slideId: string, color: string | undefined) => void;
   setTables: (slideId: string, tables: DestinationTable[]) => void;
   setShowSecondTable: (slideId: string, show: boolean) => void;
   setTableLayout: (slideId: string, layout: TableLayout) => void;
@@ -108,6 +110,11 @@ export const useTrafficCorridorStore = create<TrafficCorridorStore>()(
       setRowColor: (slideId, color) =>
         set((state) => ({
           slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), rowColor: color } },
+        })),
+
+      setAlternateRowColor: (slideId, color) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), alternateRowColor: color } },
         })),
 
       setTables: (slideId, tables) =>

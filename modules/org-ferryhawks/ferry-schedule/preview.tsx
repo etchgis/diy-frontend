@@ -14,13 +14,9 @@ interface FerryData {
   nycFerry: FerryDeparture[];
 }
 
-function ServiceIcon({ type, size, color }: { type: 'si' | 'nyc'; size: string | number; color: string }) {
+function ServiceIcon({ size }: { type: 'si' | 'nyc'; size: string | number; color: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <path d="M2 17l2-8h16l2 8H2z" opacity="0.9" />
-      <path d="M7 9V6h10v3" opacity="0.7" />
-      <rect x="0" y="17" width="24" height="3" rx="1" opacity="0.5" />
-    </svg>
+    <img src="/images/ferry-icon.png" alt="" style={{ width: size, height: size, objectFit: 'contain' }} />
   );
 }
 
@@ -172,7 +168,7 @@ function ServicePanel({
         <ServiceIcon type={icon} size={isEditor ? 16 : '2.2vh'} color={accentColor} />
         <span style={{
           fontWeight: 800,
-          fontSize: isEditor ? `${13 * contentMult}px` : `${2.2 * contentMult}vh`,
+          fontSize: isEditor ? `${16 * contentMult}px` : `${2.8 * contentMult}vh`,
           letterSpacing: '0.06em',
           textTransform: 'uppercase' as const,
         }}>
@@ -269,14 +265,15 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 8 : '1vh' }}>
-          <svg width={isEditor ? 20 : '3vh'} height={isEditor ? 20 : '3vh'} viewBox="0 0 24 24" fill={textColor} opacity={0.7}>
-            <path d="M2 17l2-8h16l2 8H2z" />
-            <path d="M7 9V6h10v3" opacity="0.7" />
-            <rect x="0" y="17" width="24" height="3" rx="1" opacity="0.5" />
-          </svg>
+          <img
+            className="leg-icon"
+            src="/images/ferry-icon.png"
+            style={{ width: 80 }}
+            alt=""
+          />
           <span style={{
             fontWeight: 800,
-            fontSize: isEditor ? `${22 * titleMult}px` : `${4 * titleMult}vh`,
+            fontSize: isEditor ? `${22 * titleMult}px` : `${6 * titleMult}vh`,
             letterSpacing: '0.04em',
             textTransform: 'uppercase' as const,
             color: textColor,
@@ -284,14 +281,26 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
             {title}
           </span>
         </div>
-        <span style={{
-          fontSize: isEditor ? `${14 * contentMult}px` : `${2.2 * contentMult}vh`,
-          color: textColor,
-          opacity: 0.6,
-          fontVariantNumeric: 'tabular-nums',
-        }}>
-          {clockStr}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 10 : '1.5vh' }}>
+          <span style={{
+            fontSize: isEditor ? `${18 * contentMult}px` : `${4 * contentMult}vh`,
+            color: textColor,
+            opacity: 0.6,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {clockStr}
+          </span>
+          <img
+            src="/ferryhawks/logo-2.png"
+            alt="FerryHawks"
+            style={{
+              height: isEditor ? 44 : '7.5vh',
+              width: 'auto',
+              objectFit: 'contain',
+              flexShrink: 0,
+            }}
+          />
+        </div>
       </div>
 
       {/* Panels */}

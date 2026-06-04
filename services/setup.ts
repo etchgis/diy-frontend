@@ -634,6 +634,7 @@ async function importData(setup: any) {
         setTextColor,
         setTableHeaderColor,
         setRowColor,
+        setAlternateRowColor,
         setTables,
         setShowSecondTable,
         setTableLayout,
@@ -651,6 +652,7 @@ async function importData(setup: any) {
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
       setTableHeaderColor(slide.id, slide.data.tableHeaderColor || '#78B1DD');
       setRowColor(slide.id, slide.data.rowColor || '#192F51');
+      setAlternateRowColor(slide.id, slide.data.alternateRowColor ?? undefined);
       setTables(slide.id, slide.data.tables || [{ destination: '', corridors: [] }, { destination: '', corridors: [] }]);
       setShowSecondTable(slide.id, slide.data.showSecondTable || false);
       if (slide.data.tableLayout) setTableLayout(slide.id, slide.data.tableLayout);
@@ -705,6 +707,18 @@ async function importData(setup: any) {
 
   const orgCfg = getOrgConfigByDiyShortcode(setup.shortcode || '');
   useGeneralStore.getState().setCurrentOrgId(orgCfg?.orgId ?? undefined);
+
+  // Restore the published screen order so the editor sidebar respects the user's
+  // custom drag order after clicking Edit (handleEdit clears localStorage beforehand).
+  // setup.screens is already in the user's published order (set by publish.ts).
+  const screenOrder = ((setup.screens ?? []) as any[]).map((s: any) => s.id).filter(Boolean);
+  if (screenOrder.length > 0) {
+    useGeneralStore.getState().setCustomSlideOrder(screenOrder);
+  }
+
+  if (setup.orgSlideOverrides && typeof setup.orgSlideOverrides === 'object') {
+    useGeneralStore.getState().setOrgSlideOverrides(setup.orgSlideOverrides);
+  }
 
   const orgSlideIds = getAllOrgSlideIds();
   const seenIds = new Set<string>();

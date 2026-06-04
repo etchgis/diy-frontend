@@ -2,6 +2,7 @@
 import { getOrgConfig, getOrgConfigByDiyShortcode } from '@/lib/orgConfig';
 import WatchPartyCountdownPreview from '@/modules/org-ferryhawks/watch-party-countdown/preview';
 import FerrySchedulePreview from '@/modules/org-ferryhawks/ferry-schedule/preview';
+import SIRSchedulePreview from '@/modules/org-ferryhawks/sir-schedule/preview';
 import FixedRoutePreview from '@/modules/fixed-routes/preview';
 import QRSlidePreview from '@/modules/qr/preview';
 import Template1Preview from '@/modules/template-1/preview';
@@ -57,21 +58,53 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const [now, setNow] = useState(() => new Date());
 
   const allSlides = useGeneralStore((state) => state.slides);
+  const customSlideOrder = useGeneralStore((state) => state.customSlideOrder);
+  const orgSlideOverrides = useGeneralStore((state) => state.orgSlideOverrides ?? {});
 
   // Inject org custom slides into the rotation (no editor, published-only)
   // Match by org shortcode key OR by diyShortcode (so BQMHXD and /ferryhawks both work)
   const orgConfig = getOrgConfig(shortcode) ?? getOrgConfigByDiyShortcode(shortcode);
   const orgSlides = orgConfig?.customSlides ?? [];
   const orgSlideMap = Object.fromEntries(orgSlides.map((s) => [s.id, s]));
-  const prependSlides = orgSlides.filter((s) => !s.position || s.position === 'prepend');
-  const appendSlides = orgSlides.filter((s) => s.position === 'append');
-  // Avoid double-injecting org slides already embedded in allSlides (new publish format)
-  const orgSlideIdsInAllSlides = new Set(
-    allSlides.filter((s: any) => orgSlides.some((os) => os.id === s.id)).map((s: any) => s.id)
-  );
-  const prependToInject = prependSlides.filter((s) => !orgSlideIdsInAllSlides.has(s.id));
-  const appendToInject = appendSlides.filter((s) => !orgSlideIdsInAllSlides.has(s.id));
-  const mergedSlides = [...prependToInject, ...allSlides, ...appendToInject];
+
+  // Use customSlideOrder (restored from the backend by SetupSlides) to interleave org and DIY
+  // slides in the user's chosen order. Falls back to position-based prepend/append for legacy
+  // payloads that pre-date custom ordering, or before SetupSlides has populated allSlides.
+  let mergedSlides: any[];
+  if (customSlideOrder && customSlideOrder.length > 0 && allSlides.length > 0) {
+    const diySlideMap = new Map(allSlides.map((s: any) => [s.id, s]));
+    mergedSlides = customSlideOrder
+      .map((id: string) => {
+        const orgSlide = orgSlideMap[id];
+        if (orgSlide && !orgSlide.hidden) {
+          const override = orgSlideOverrides[id];
+          if (override) {
+            return {
+              ...orgSlide,
+              ...(override.hidden != null ? { hidden: override.hidden } : {}),
+              ...(override.duration != null ? { duration: override.duration } : {}),
+              ...(override.schedule ? { schedule: override.schedule } : {}),
+            };
+          }
+          return orgSlide;
+        }
+        return diySlideMap.get(id) ?? null;
+      })
+      .filter(Boolean);
+    const orderSet = new Set(customSlideOrder);
+    for (const s of allSlides) {
+      if (!orderSet.has(s.id)) mergedSlides.push(s);
+    }
+  } else {
+    const prependSlides = orgSlides.filter((s: any) => !s.position || s.position === 'prepend');
+    const appendSlides = orgSlides.filter((s: any) => s.position === 'append');
+    const orgSlideIdsInAllSlides = new Set(
+      allSlides.filter((s: any) => orgSlides.some((os: any) => os.id === s.id)).map((s: any) => s.id)
+    );
+    const prependToInject = prependSlides.filter((s: any) => !orgSlideIdsInAllSlides.has(s.id));
+    const appendToInject = appendSlides.filter((s: any) => !orgSlideIdsInAllSlides.has(s.id));
+    mergedSlides = [...prependToInject, ...allSlides, ...appendToInject];
+  }
 
   const slides = mergedSlides.filter((s: any) => isSlideVisible(s, now));
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
@@ -606,6 +639,10 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       case 'ferryhawks-ferry-schedule': {
         const slideConfig = orgSlideMap[slideId];
         return slideConfig ? <FerrySchedulePreview config={slideConfig} /> : null;
+      }
+      case 'ferryhawks-sir-schedule': {
+        const slideConfig = orgSlideMap[slideId];
+        return slideConfig ? <SIRSchedulePreview config={slideConfig} /> : null;
       }
       case 'qr':
         return <QRSlidePreview slideId={slideId} />;

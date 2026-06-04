@@ -38,7 +38,8 @@ import { useFooterStore } from "@/stores/footer"
 import { getOrgConfig, getOrgConfigByDiyShortcode, getAllOrgSlideIds } from "@/lib/orgConfig"
 import WatchPartyCountdownPreview from "@/modules/org-ferryhawks/watch-party-countdown/preview"
 import FerryScheduleOrgPreview from "@/modules/org-ferryhawks/ferry-schedule/preview"
-import { Lock } from "lucide-react"
+import SIRSchedulePreview from "@/modules/org-ferryhawks/sir-schedule/preview"
+import { Lock, EyeOff } from "lucide-react"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faTimesCircle, faGear } from '@fortawesome/free-solid-svg-icons';
 import bcrypt from "bcryptjs";
@@ -91,6 +92,8 @@ function renderOrgSlidePreview(slide: any) {
       return <WatchPartyCountdownPreview config={slide} />;
     case 'ferryhawks-ferry-schedule':
       return <FerryScheduleOrgPreview config={slide} isEditor={true} />;
+    case 'ferryhawks-sir-schedule':
+      return <SIRSchedulePreview config={slide} isEditor={true} />;
     default:
       return <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">{slide.type}</div>;
   }
@@ -104,36 +107,100 @@ function SortableOrgSlide({ slide, activeSlideId, setActiveSlideId }: { slide: a
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const [showSettings, setShowSettings] = useState(false);
+  const orgSlideOverrides = useGeneralStore((state) => state.orgSlideOverrides ?? {});
+  const setOrgSlideOverride = useGeneralStore((state) => state.setOrgSlideOverride);
+  const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
+
+  const override = orgSlideOverrides[slide.id] ?? {};
+  const isHidden = override.hidden ?? false;
+  const hasActiveSchedule = override.schedule?.enabled;
+  const slideForModal = { label: override.label ?? '', duration: override.duration, hidden: isHidden, schedule: override.schedule };
+
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={() => setActiveSlideId(slide.id)}
-      className={`cursor-pointer rounded border bg-white p-1 relative ${slide.id === activeSlideId ? "ring-2 ring-blue-500" : ""}`}
-    >
-      <div className="w-full aspect-video overflow-hidden relative bg-gray-100 rounded">
-        <div className="absolute inset-0">
-          <ResolutionFrame logicalW={1920} logicalH={1080} background="transparent">
-            {renderOrgSlidePreview(slide)}
-          </ResolutionFrame>
+    <>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        onClick={() => setActiveSlideId(slide.id)}
+        className={`cursor-pointer rounded border bg-white p-1 relative ${slide.id === activeSlideId ? "ring-2 ring-blue-500" : ""} ${isHidden ? 'opacity-40' : ''}`}
+      >
+        <div className="w-full aspect-video overflow-hidden relative bg-gray-100 rounded">
+          <div className="absolute inset-0">
+            <ResolutionFrame logicalW={1920} logicalH={1080} background="transparent">
+              {renderOrgSlidePreview(slide)}
+            </ResolutionFrame>
+          </div>
+          {isHidden && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
+              <EyeOff className="w-5 h-5 text-white drop-shadow" />
+            </div>
+          )}
+        </div>
+
+        {/* Settings button */}
+        <button
+          className="absolute top-1.5 right-1.5 z-10 p-0.5 rounded bg-white/80 hover:bg-white text-gray-500 hover:text-gray-800 shadow-sm"
+          onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}
+          title="Screen settings"
+        >
+          <Settings className="w-3.5 h-3.5" />
+          {hasActiveSchedule && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full" />
+          )}
+        </button>
+
+        <div className="mt-1 flex items-center gap-1 px-0.5">
+          <Lock className="w-3 h-3 text-gray-400 shrink-0" />
+          <span className="text-xs text-gray-400 truncate">{override.label || 'custom'}</span>
         </div>
       </div>
-      <div className="mt-1 flex items-center gap-1 px-0.5">
-        <Lock className="w-3 h-3 text-gray-400" />
-        <span className="text-xs text-gray-400">custom</span>
-      </div>
-    </div>
+      {showSettings && (
+        <SlideSettingsModal
+          slide={slideForModal}
+          globalDuration={rotationInterval}
+          onSaveLabel={(label) => setOrgSlideOverride(slide.id, { label: label || undefined })}
+          onSaveDuration={(duration) => setOrgSlideOverride(slide.id, { duration })}
+          onSaveVisibility={(hidden) => setOrgSlideOverride(slide.id, { hidden })}
+          onSaveSchedule={(schedule) => setOrgSlideOverride(slide.id, { schedule: schedule ?? undefined })}
+          onDuplicate={() => {}}
+          onDelete={() => {}}
+          onClose={() => setShowSettings(false)}
+          hideActions
+        />
+      )}
+    </>
   );
 }
 
 function OrgSlideViewer({ slide, onPreview, onPublish }: { slide: any; onPreview: () => void; onPublish: () => void }) {
+  const [showSettings, setShowSettings] = useState(false);
+  const orgSlideOverrides = useGeneralStore((state) => state.orgSlideOverrides ?? {});
+  const setOrgSlideOverride = useGeneralStore((state) => state.setOrgSlideOverride);
+  const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
+
+  const override = orgSlideOverrides[slide.id] ?? {};
+  const isHidden = override.hidden ?? false;
+  const slideForModal = { label: override.label ?? '', duration: override.duration, hidden: isHidden, schedule: override.schedule };
+
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 overflow-y-auto">
-      <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">
-        <Lock className="w-4 h-4 text-gray-400" />
-        Custom Screen — Read Only
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Lock className="w-4 h-4 text-gray-400" />
+          Custom Screen — Read Only
+          {isHidden && <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-medium">Hidden</span>}
+          {override.duration && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{override.duration}s</span>}
+        </div>
+        <button
+          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded px-2 py-1 hover:bg-gray-50"
+          onClick={() => setShowSettings(true)}
+        >
+          <Settings className="w-3.5 h-3.5" />
+          Settings
+        </button>
       </div>
       <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
         <ResolutionFrame logicalW={1920} logicalH={1080} background="transparent">
@@ -144,6 +211,20 @@ function OrgSlideViewer({ slide, onPreview, onPublish }: { slide: any; onPreview
         <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={onPreview}>Preview Screens</Button>
         <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={onPublish}>Publish Screens</Button>
       </div>
+      {showSettings && (
+        <SlideSettingsModal
+          slide={slideForModal}
+          globalDuration={rotationInterval}
+          onSaveLabel={(label) => setOrgSlideOverride(slide.id, { label: label || undefined })}
+          onSaveDuration={(duration) => setOrgSlideOverride(slide.id, { duration })}
+          onSaveVisibility={(hidden) => setOrgSlideOverride(slide.id, { hidden })}
+          onSaveSchedule={(schedule) => setOrgSlideOverride(slide.id, { schedule: schedule ?? undefined })}
+          onDuplicate={() => {}}
+          onDelete={() => {}}
+          onClose={() => setShowSettings(false)}
+          hideActions
+        />
+      )}
     </div>
   );
 }
@@ -184,9 +265,13 @@ export default function EditorPage() {
   // because it's not persisted, so we fall back to looking up by the persisted shortcode.
   const currentOrgId = storedCurrentOrgId ?? getOrgConfigByDiyShortcode(persistedShortcode)?.orgId;
   const orgConfig = currentOrgId ? getOrgConfig(currentOrgId) : null;
-  const orgCustomSlides = orgConfig?.customSlides ?? [];
+  const orgCustomSlides = (orgConfig?.customSlides ?? []).filter((s: any) => !s.hidden);
 
-  const [mergedOrder, setMergedOrder] = useState<string[]>([]);
+  // Seed from persisted customSlideOrder so the user's drag order survives page reloads.
+  // The mergedOrder effect below will preserve this order and only append truly new slide IDs.
+  const [mergedOrder, setMergedOrder] = useState<string[]>(() =>
+    useGeneralStore.getState().customSlideOrder ?? []
+  );
 
   // Keep store's currentOrgId populated (publish.ts reads it directly from the store).
   useEffect(() => {
@@ -555,7 +640,9 @@ export default function EditorPage() {
     }
   }, [mergedOrder]);
 
-  // Sync mergedOrder when DIY slides are added/removed, preserving any user-reordered positions
+  // Sync mergedOrder when DIY slides are added/removed, preserving any user-reordered positions.
+  // Reads the saved order directly from the Zustand store so that order restored by SetupSlides
+  // (after an Edit click + soft navigation that doesn't remount the component) is honoured.
   useEffect(() => {
     const orgIds = orgCustomSlides.map((s: any) => s.id);
     const orgIdSet = new Set(orgIds);
@@ -563,20 +650,21 @@ export default function EditorPage() {
     // Deduplicate allIds — dirty stored data can contain duplicate screen IDs
     const seen = new Set<string>();
     const allIds = [...orgIds, ...diyIds].filter(id => seen.has(id) ? false : (seen.add(id), true));
-    setMergedOrder((prev) => {
-      const allIdSet = new Set(allIds);
-      // Deduplicate prev while filtering out IDs that no longer exist
-      const deduped: string[] = [];
-      const dedupedSet = new Set<string>();
-      for (const id of prev) {
-        if (!dedupedSet.has(id) && allIdSet.has(id)) {
-          deduped.push(id);
-          dedupedSet.add(id);
-        }
+
+    // Use the store's saved order as the base rather than the React prev state.
+    // This ensures SetupSlides-restored order is respected even without a full remount.
+    const savedOrder = useGeneralStore.getState().customSlideOrder ?? [];
+    const allIdSet = new Set(allIds);
+    const deduped: string[] = [];
+    const dedupedSet = new Set<string>();
+    for (const id of savedOrder) {
+      if (!dedupedSet.has(id) && allIdSet.has(id)) {
+        deduped.push(id);
+        dedupedSet.add(id);
       }
-      const newIds = allIds.filter(id => !dedupedSet.has(id));
-      return [...deduped, ...newIds];
-    });
+    }
+    const newIds = allIds.filter(id => !dedupedSet.has(id));
+    setMergedOrder([...deduped, ...newIds]);
     // depend on currentOrgId (stable reference) rather than the inline orgCustomSlides array
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slides, currentOrgId]);

@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { EyeOff, Settings2 } from "lucide-react";
+import { EyeOff, Settings } from "lucide-react";
 import { useState } from "react";
 import SlideSettingsModal from "./slide-settings-modal";
 
@@ -68,7 +68,7 @@ export const SortableSlide = ({
           }}
           title="Screen settings"
         >
-          <Settings2 className="w-3.5 h-3.5" />
+          <Settings className="w-3.5 h-3.5" />
           {hasActiveSchedule && (
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full" />
           )}
