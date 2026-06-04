@@ -94,24 +94,18 @@ async function loadGtfs(): Promise<GtfsData> {
   let calendarDates: Record<string, string>[] = [];
   try { calendarDates = parseCSV(decode('calendar_dates.txt')); } catch { /* optional */ }
 
-  // SIR-only trips (route_id 'SI')
   const sirTrips = trips.filter(t => t.route_id === 'SI');
   const sirTripIds = new Set(sirTrips.map(t => t.trip_id));
   const tripServiceMap = new Map<string, string>(sirTrips.map(t => [t.trip_id, t.service_id]));
 
-  console.log(`[SIR] Found ${sirTrips.length} SIR trips`);
-
-  // Collect ALL stop IDs for St. George (there may be N/S platform variants like S01N, S01S)
   const stGeorgeStopIds = new Set(
     stops
       .filter(s => s.stop_name?.toLowerCase().replace(/[.\s-]/g, '').includes('stgeorge'))
       .map(s => s.stop_id)
   );
-  console.log(`[SIR] St. George stop IDs:`, [...stGeorgeStopIds]);
 
   const stopNames = new Map<string, string>(stops.map(s => [s.stop_id, s.stop_name ?? '']));
 
-  // Scan stop_times.txt line-by-line — avoid building millions of objects for the full feed
   const stopTimesText = decode('stop_times.txt');
   const stLines = stopTimesText.split('\n');
   const stHeaders = stLines[0].replace(/\r/g, '').split(',').map(h => h.trim());
@@ -121,9 +115,6 @@ async function loadGtfs(): Promise<GtfsData> {
   const depTimeCol = col('departure_time');
   const seqCol = col('stop_sequence');
 
-  console.log(`[SIR] stop_times cols: trip_id=${tripIdCol} stop_id=${stopIdCol} dep_time=${depTimeCol} seq=${seqCol}`);
-
-  // Collect stop_times for SIR trips only
   const tripStops = new Map<string, { stopId: string; depTime: string; seq: number }[]>();
   for (let i = 1; i < stLines.length; i++) {
     const line = stLines[i];
@@ -139,9 +130,6 @@ async function loadGtfs(): Promise<GtfsData> {
     });
   }
 
-  console.log(`[SIR] Collected stop_times for ${tripStops.size} SIR trips`);
-
-  // Build departure list: trips departing FROM St. George (it's the first stop)
   const departures: TripDeparture[] = [];
   for (const [tripId, stimes] of tripStops) {
     const sorted = stimes.sort((a, b) => a.seq - b.seq);
@@ -155,8 +143,6 @@ async function loadGtfs(): Promise<GtfsData> {
       destination: stopNames.get(last?.stopId ?? '') || 'Tottenville',
     });
   }
-
-  console.log(`[SIR] Built ${departures.length} St. George departures`);
 
   const calendarData = calendar.map(c => ({
     serviceId: c.service_id,
@@ -192,7 +178,6 @@ async function getSIRDepartures(limit = 6): Promise<SIRDeparture[]> {
   const gtfs = await loadGtfs();
   const { hour, minute, dayOfWeek, dateStr } = getNYParts();
 
-  // dayOfWeek: 0=Sun, 1=Mon ... 6=Sat; days array: [mon,tue,wed,thu,fri,sat,sun]
   const activeServices = new Set(
     gtfs.calendar
       .filter(c => {
@@ -207,8 +192,6 @@ async function getSIRDepartures(limit = 6): Promise<SIRDeparture[]> {
       else if (ex.exceptionType === '2') activeServices.delete(ex.serviceId);
     }
   }
-
-  console.log(`[SIR] Active services for ${dateStr} (dayOfWeek=${dayOfWeek}):`, [...activeServices]);
 
   const nowMinutes = hour * 60 + minute;
   const nowMs = Date.now();
@@ -230,7 +213,6 @@ async function getSIRDepartures(limit = 6): Promise<SIRDeparture[]> {
       };
     });
 
-  console.log(`[SIR] Returning ${results.length} departures for now=${hour}:${minute.toString().padStart(2,'0')}`);
   return results;
 }
 
