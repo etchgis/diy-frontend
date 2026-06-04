@@ -174,7 +174,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
         <div
           className={isEditor ? 'flex items-center gap-2 px-3 py-2' : 'flex items-center gap-[0.6vw]'}
           style={{
-            backgroundColor: `${rowColor}aa`,
+            backgroundColor: rowColor,
             borderTop: `1px solid ${tableHeaderColor}40`,
             color: textColor,
             minHeight: isEditor ? (isQuad ? '20px' : isTriple ? '22px' : showSecondTable ? '26px' : '36px') : undefined,

@@ -165,7 +165,7 @@ function ServicePanel({
         color: accentColor,
         flexShrink: 0,
       }}>
-        <ServiceIcon type={icon} size={isEditor ? 16 : '2.2vh'} color={accentColor} />
+        <ServiceIcon type={icon} size={isEditor ? 22 : '3.2vh'} color={accentColor} />
         <span style={{
           fontWeight: 800,
           fontSize: isEditor ? `${16 * contentMult}px` : `${2.8 * contentMult}vh`,
