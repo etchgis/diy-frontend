@@ -972,8 +972,20 @@ export default function StopArrivalsSlide({
           || newDirOptions[0]?.stopId
           || existing.selectedStopId;
 
+        // Union routes across both stops so linked-only routes (e.g. 100/107 on 02168)
+        // are selectable and renameable; enable the new ones by default.
+        const existingRoutes = existing.routes || [];
+        const existingRouteIds = new Set(existingRoutes.map((r: any) => r.id));
+        const addedRoutes = (linkedService.routes || []).filter((r: any) => r.id && !existingRouteIds.has(r.id));
+        const mergedRoutes = [...existingRoutes, ...addedRoutes];
+        const mergedEnabledRouteIds = existing.enabledRouteIds
+          ? Array.from(new Set([...existing.enabledRouteIds, ...addedRoutes.map((r: any) => r.id)]))
+          : undefined;
+
         updatedSelections[existingIndex] = {
           ...existing,
+          routes: mergedRoutes,
+          ...(mergedEnabledRouteIds ? { enabledRouteIds: mergedEnabledRouteIds } : {}),
           directionOptions: newDirOptions,
           selectedStopId: defaultStopId
         };
