@@ -298,7 +298,7 @@ export default function CitibikePreview({
               />
             ) : (
               <div
-                className="w-full bg-transparent font-light"
+                className="w-full bg-transparent font-light rich-text-content"
                 style={{
                   color: titleColor,
                   fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,

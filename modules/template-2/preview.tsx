@@ -187,7 +187,7 @@ export default function Template2Preview({
               />
             ) : (
               <div
-                className="w-full bg-transparent font-light"
+                className="w-full bg-transparent font-light rich-text-content"
                 style={{
                   color: titleColor,
                   fontSize: `clamp(1rem, ${8 * titleSizeMultiplier}vh, 11rem)`,

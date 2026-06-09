@@ -573,6 +573,22 @@ export default function EditorPage() {
     }
 
     hasAutoCreatedSlide.current = true;
+
+    // Reset footer to defaults so stale persisted values
+    const footerStore = useFooterStore.getState();
+    footerStore.setLeftImage('/images/statewide-mobility-services.png');
+    footerStore.setMiddleImage('');
+    footerStore.setRightImage('/images/nysdot-footer-logo.png');
+    footerStore.setLeftType('image');
+    footerStore.setMiddleType('image');
+    footerStore.setRightType('image');
+    footerStore.setLeftText('');
+    footerStore.setMiddleText('');
+    footerStore.setRightText('');
+    footerStore.setBackgroundColor('#F4F4F4');
+    footerStore.setTimeTextColor('#000000');
+    footerStore.setFooterBaseHeight(50);
+
     const newSlide = { id: uuidv4(), type: 'transit-destinations' };
     initializeSlideDefaults(newSlide.id, 'transit-destinations');
     setSlides([newSlide]);

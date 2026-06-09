@@ -94,7 +94,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
               minHeight="1.4em"
             />
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: text || "" }} />
+            <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: text || "" }} />
           )}
         </div>
       </div>

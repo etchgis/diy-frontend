@@ -58,7 +58,7 @@ export default function HtmlTextEditor({ content, onChange, textColor, fontSize,
           spellCheck={false}
           className="w-full h-full bg-gray-950 text-green-300 font-mono text-xs p-3 resize-none outline-none leading-relaxed"
           style={minHeight ? { minHeight } : undefined}
-          placeholder={'<p><strong>Bold text</strong></p>\n<p style="text-align:center; color:yellow;">Styled</p>'}
+          placeholder="Enter HTML content..."
         />
       )}
 

@@ -263,7 +263,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
               />
             ) : (
               <div
-                className="font-light"
+                className="font-light rich-text-content"
                 style={{
                   color: titleColor,
                   fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
