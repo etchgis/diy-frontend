@@ -53,14 +53,7 @@ export async function fetchWeatherData(slideId: string) {
   const { lat, lng } = coordinates;
 
   try {
-    const url =
-      `https://api.open-meteo.com/v1/forecast` +
-      `?latitude=${lat}&longitude=${lng}` +
-      `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m` +
-      `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
-      `&temperature_unit=fahrenheit` +
-      `&wind_speed_unit=mph` +
-      `&timezone=auto`;
+    const url = `/api/weather?lat=${lat}&lng=${lng}`;
 
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Weather API error: ${response.status}`);
