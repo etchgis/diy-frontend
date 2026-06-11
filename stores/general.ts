@@ -20,6 +20,7 @@ export interface OrgSlideOverride {
   duration?: number;
   label?: string;
   schedule?: SlideSchedule;
+  showFooter?: boolean;
 }
 
 interface Slide {

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { OrgCustomSlide } from "@/config/orgs/ferryhawks";
 import type { SIRDeparture } from "@/app/api/sir/departures/route";
+import Footer from "@/components/shared-components/footer";
 
 function SIRIcon({ size, color }: { size: string | number; color: string }) {
   // Simplified rail/train icon
@@ -143,9 +144,11 @@ function DepartureRow({
 export default function SIRSchedulePreview({
   config,
   isEditor = false,
+  showFooter = true,
 }: {
   config: OrgCustomSlide;
   isEditor?: boolean;
+  showFooter?: boolean;
 }) {
   const [departures, setDepartures] = useState<SIRDeparture[]>([]);
   const [, setTick] = useState(0);
@@ -350,21 +353,7 @@ export default function SIRSchedulePreview({
         )}
       </div>
 
-      {/* Footer */}
-      <div
-        style={{
-          padding: isEditor ? "5px 14px" : "0.7vh 2vh",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
-          fontSize: isEditor
-            ? `${9 * contentMult}px`
-            : `${1.4 * contentMult}vh`,
-          color: textColor,
-          opacity: 0.35,
-          flexShrink: 0,
-        }}
-      >
-        Departures from St. George · Scheduled times
-      </div>
+      {showFooter && <Footer />}
     </div>
   );
 }

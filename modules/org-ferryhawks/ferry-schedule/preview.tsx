@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { OrgCustomSlide } from '@/config/orgs/ferryhawks';
+import Footer from '@/components/shared-components/footer';
 
 interface FerryDeparture {
   time: string;
@@ -206,7 +207,7 @@ function ServicePanel({
   );
 }
 
-export default function FerrySchedulePreview({ config, isEditor = false }: { config: OrgCustomSlide; isEditor?: boolean }) {
+export default function FerrySchedulePreview({ config, isEditor = false, showFooter = true }: { config: OrgCustomSlide; isEditor?: boolean; showFooter?: boolean }) {
   const [ferryData, setFerryData] = useState<FerryData | null>(null);
   const [, setTick] = useState(0);
 
@@ -234,9 +235,6 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
   const maxRows: number = config.maxRows ?? 4;
   const contentMult = 0.5 + (config.contentTextSize ?? 5) * 0.1;
   const titleMult = 0.5 + (config.titleTextSize ?? 5) * 0.1;
-
-  const now = new Date();
-  const clockStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
   const panels = [
     config.showSIFerry !== false && {
@@ -281,26 +279,16 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
             {title}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 10 : '1.5vh' }}>
-          <span style={{
-            fontSize: isEditor ? `${18 * contentMult}px` : `${4 * contentMult}vh`,
-            color: textColor,
-            opacity: 0.6,
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            {clockStr}
-          </span>
-          <img
-            src="/ferryhawks/logo-2.png"
-            alt="FerryHawks"
-            style={{
-              height: isEditor ? 44 : '7.5vh',
-              width: 'auto',
-              objectFit: 'contain',
-              flexShrink: 0,
-            }}
-          />
-        </div>
+        <img
+          src="/ferryhawks/logo-2.png"
+          alt="FerryHawks"
+          style={{
+            height: isEditor ? 44 : '7.5vh',
+            width: 'auto',
+            objectFit: 'contain',
+            flexShrink: 0,
+          }}
+        />
       </div>
 
       {/* Panels */}
@@ -327,6 +315,7 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
           />
         ))}
       </div>
+      {showFooter && <Footer />}
     </div>
   );
 }

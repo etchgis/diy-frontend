@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { OrgCustomSlide } from '@/config/orgs/ferryhawks';
+import Footer from '@/components/shared-components/footer';
 
 function getCountdown(target: Date) {
   const diff = target.getTime() - Date.now();
@@ -13,15 +14,13 @@ function getCountdown(target: Date) {
   };
 }
 
-export default function WatchPartyCountdownPreview({ config }: { config: OrgCustomSlide }) {
+export default function WatchPartyCountdownPreview({ config, showFooter = true }: { config: OrgCustomSlide; showFooter?: boolean }) {
   const eventDate = new Date(config.eventTime ?? '2026-06-29T00:00:00-04:00');
   const [countdown, setCountdown] = useState(() => getCountdown(eventDate));
-  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCountdown(getCountdown(eventDate));
-      setNow(new Date());
     }, 30000);
     return () => clearInterval(interval);
   }, [config.eventTime]);
@@ -55,15 +54,6 @@ export default function WatchPartyCountdownPreview({ config }: { config: OrgCust
           alt="FerryHawks"
           style={{ height: '9vh', width: 'auto', objectFit: 'contain' }}
         />
-        <span style={{
-          fontSize: '4vh',
-          fontWeight: 600,
-          opacity: 0.6,
-          fontVariantNumeric: 'tabular-nums',
-          color: text,
-        }}>
-          {now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-        </span>
       </div>
 
       {/* Main content */}
@@ -222,6 +212,7 @@ export default function WatchPartyCountdownPreview({ config }: { config: OrgCust
           </div>
         </div>
       </div>
+      {showFooter && <Footer />}
     </div>
   );
 }
