@@ -2,10 +2,11 @@ import { useQRStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import QRCode from "react-qr-code";
 import Footer from "@/components/shared-components/footer";
+import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
 import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 
-export default function QRSlidePreview({ slideId }: { slideId: string }) {
+export default function QRSlidePreview({ slideId, previewMode = false }: { slideId: string; previewMode?: boolean }) {
   const text = useQRStore((state) => state.slides[slideId]?.text || "");
   const setText = useQRStore((state) => state.setText);
   const url = useQRStore((state) => state.slides[slideId]?.url || "");
@@ -25,18 +26,18 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
   );
 
   const pathname = usePathname();
-  const isEditor = pathname.includes("/editor");
+  const isEditor = pathname.includes("/editor") && !previewMode;
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
   const resolution = useGeneralStore((state) => state.resolution);
-  const resScale = parseInt(resolution?.split('x')[1] || '1080', 10) / 1080;
-  const logoHeight = isEditor ? 64 : logoBaseHeight * resScale;
+  const resScale = useResScale(resolution);
+  const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const textSizeMultiplier = 0.5 + textSize * 0.1;
 
-  const containerSize = isEditor ? `${2 * qrSize}rem` : `${qrSize * 8}vh`;
+  const containerSize = isEditor ? `${2 * qrSize}rem` : `${qrSize * 8}cqh`;
   const qrPixelSize = 32 * qrSize;
 
   return (
@@ -57,13 +58,13 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
           src={logoImage}
           alt="Logo"
           className="absolute top-6 right-6 object-contain z-20"
-          style={{ maxHeight: logoHeight }}
+          style={{ height: logoHeight }}
         />
       )}
 
       {/* QR Code and Text */}
-      <div className="flex flex-col items-center justify-center flex-1 px-4 py-6">
-        <div className="bg-white mb-4" style={{ padding: isEditor ? "1rem" : "2vh" }}>
+      <div className="flex flex-col items-center justify-center flex-1" style={{ padding: isEditor ? '1rem 1rem' : '6cqh 8cqw' }}>
+        <div className="bg-white mb-4" style={{ padding: isEditor ? "1rem" : "2cqh" }}>
           <div
             className="flex items-center justify-center"
             style={{
@@ -74,15 +75,15 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
             {url ? (
               <QRCode value={url} size={qrPixelSize} style={{ width: "100%", height: "100%" }} />
             ) : (
-              <div className="text-gray-400" style={{ fontSize: isEditor ? "0.875rem" : "3vh" }}>No QR Code Data</div>
+              <div className="text-gray-400" style={{ fontSize: isEditor ? "0.875rem" : "3cqh" }}>No QR Code Data</div>
             )}
           </div>
         </div>
         <div
-          className={`font-medium text-center w-full max-w-lg ${isEditor ? "border-2 border-[#11d1f7] rounded px-2 py-1" : ""}`}
+          className={`font-medium text-center w-full ${isEditor ? "border-2 border-[#11d1f7] rounded px-2 py-1" : ""}`}
           style={{
             color: textColor,
-            fontSize: isEditor ? `${18 * textSizeMultiplier}px` : `${4 * textSizeMultiplier}vh`,
+            fontSize: isEditor ? `${18 * textSizeMultiplier}px` : `${4 * textSizeMultiplier}cqh`,
           }}
         >
           {isEditor ? (
@@ -100,7 +101,7 @@ export default function QRSlidePreview({ slideId }: { slideId: string }) {
       </div>
 
       {/* Footer */}
-      {showFooter && <Footer />}
+      {showFooter && <Footer previewMode={previewMode} />}
     </div>
   );
 }

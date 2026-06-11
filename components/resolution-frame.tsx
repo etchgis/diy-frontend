@@ -44,7 +44,7 @@ export function ResolutionFrame({ logicalW, logicalH, fontFamilyStyle = {}, chil
     >
       {scale != null && (
         <div style={{ width: scaledW, height: scaledH, overflow: 'hidden', position: 'relative', flexShrink: 0, ...fontFamilyStyle }}>
-          <div style={{ width: logicalW, height: logicalH, transform: `scale(${scale})`, transformOrigin: 'top left', position: 'absolute' }}>
+          <div style={{ width: logicalW, height: logicalH, transform: `scale(${scale})`, transformOrigin: 'top left', position: 'absolute', containerType: 'size' }}>
             {children}
           </div>
         </div>

@@ -3,6 +3,7 @@ import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { useTemplate1Store } from "./store";
 import { useEffect, useState, useRef } from "react";
+import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/shared-components/footer";
 import ResizableImage from "@/components/shared-components/resizable-image";
@@ -99,7 +100,8 @@ export default function Template1Preview({
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
   const resolution = useGeneralStore((state) => state.resolution);
-  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
+  const resScale = useResScale(resolution);
+  const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     if (!isEditor) return;
@@ -198,7 +200,7 @@ export default function Template1Preview({
                 className="w-full bg-transparent font-light rich-text-content"
                 style={{
                   color: titleColor,
-                  fontSize: `clamp(1rem, ${8 * titleSizeMultiplier}vh, 11rem)`,
+                  fontSize: `${8 * titleSizeMultiplier}cqh`,
                   lineHeight: "1.2"
                 }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
@@ -210,7 +212,7 @@ export default function Template1Preview({
               src={logoImage}
               alt="Logo"
               className="object-contain ml-4 flex-shrink-0"
-              style={{ maxHeight: logoHeight }}
+              style={{ height: logoHeight }}
             />
           )}
         </div>
