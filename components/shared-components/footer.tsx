@@ -2,6 +2,7 @@ import { usePathname } from "next/navigation";
 import { useFooterStore } from "@/stores/footer";
 import { useGeneralStore } from "@/stores/general";
 import { useState, useEffect } from "react";
+import { useResScale } from "@/hooks/useResScale";
 
 export default function Footer({ previewMode = false }: { previewMode?: boolean }) {
   const pathname = usePathname();
@@ -21,10 +22,7 @@ export default function Footer({ previewMode = false }: { previewMode?: boolean 
   const footerBaseHeight = useFooterStore((state) => state.footerBaseHeight);
 
   const resolution = useGeneralStore((state) => state.resolution);
-  const resScale = (() => {
-    const h = parseInt(resolution?.split('x')[1] || '1080', 10);
-    return h / 1080;
-  })();
+  const resScale = useResScale(resolution);
   const footerHeight = isEditor ? 50 : footerBaseHeight * resScale;
 
   const [currentTime, setCurrentTime] = useState("");
@@ -70,7 +68,7 @@ export default function Footer({ previewMode = false }: { previewMode?: boolean 
         <img
           src={image}
           alt={altText}
-          style={{ maxHeight: imgMaxHeight, width: "auto", objectFit: "contain" }}
+          style={{ height: imgMaxHeight, width: "auto", objectFit: "contain" }}
         />
       );
     }

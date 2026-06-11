@@ -946,7 +946,7 @@ export default function EditorPage() {
     const content = (() => {
       switch (type) {
         case "qr":
-          return <QRSlidePreview slideId={slideId} />;
+          return <QRSlidePreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "transit-destinations":
           return <TransitDestinationPreview slideId={slideId} />;
         case "fixed-routes":
@@ -1421,7 +1421,7 @@ export default function EditorPage() {
                     <input
                       type="number"
                       min={16}
-                      max={200}
+                      max={600}
                       value={tempLogoBaseHeight}
                       onChange={(e) => setTempLogoBaseHeight(Number(e.target.value))}
                       className="h-7 w-20 text-sm border border-gray-300 rounded px-2"
@@ -1432,7 +1432,7 @@ export default function EditorPage() {
                     <input
                       type="number"
                       min={20}
-                      max={200}
+                      max={400}
                       value={tempFooterBaseHeight}
                       onChange={(e) => setTempFooterBaseHeight(Number(e.target.value))}
                       className="h-7 w-20 text-sm border border-gray-300 rounded px-2"

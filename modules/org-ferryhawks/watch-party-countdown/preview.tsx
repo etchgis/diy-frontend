@@ -45,14 +45,14 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '2vh 3vh',
+        padding: '2cqh 3cqh',
         flexShrink: 0,
         borderBottom: `1px solid rgba(255,255,255,0.08)`,
       }}>
         <img
           src="/ferryhawks/logo-2.png"
           alt="FerryHawks"
-          style={{ height: '9vh', width: 'auto', objectFit: 'contain' }}
+          style={{ height: '9cqh', width: 'auto', objectFit: 'contain' }}
         />
       </div>
 
@@ -63,36 +63,36 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
         flexDirection: 'column' as const,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '2vh 4vh',
-        gap: '1.8vh',
+        padding: '2cqh 4cqh',
+        gap: '1.8cqh',
       }}>
 
         {/* Headline */}
         <div style={{ textAlign: 'center' }}>
           <div style={{
-            fontSize: '3.2vh',
+            fontSize: '3.2cqh',
             fontWeight: 700,
             letterSpacing: '0.18em',
             textTransform: 'uppercase' as const,
             color: text,
             opacity: 0.7,
-            marginBottom: '0.4vh',
+            marginBottom: '0.4cqh',
           }}>
             Staten Island
           </div>
           <div style={{
-            fontSize: '5vh',
+            fontSize: '5cqh',
             fontWeight: 800,
             letterSpacing: '0.14em',
             textTransform: 'uppercase' as const,
             color: '#94b6e5',
             lineHeight: 1,
-            marginBottom: '0.3vh',
+            marginBottom: '0.3cqh',
           }}>
             World Cup
           </div>
           <div style={{
-            fontSize: '9vh',
+            fontSize: '9cqh',
             fontWeight: 900,
             letterSpacing: '0.04em',
             textTransform: 'uppercase' as const,
@@ -105,7 +105,7 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
 
         {/* Venue */}
         <div style={{
-          fontSize: '2.4vh',
+          fontSize: '2.4cqh',
           fontWeight: 500,
           letterSpacing: '0.06em',
           color: text,
@@ -120,12 +120,12 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
           backgroundColor: accent,
           color: '#000000',
           fontWeight: 800,
-          fontSize: '3vh',
+          fontSize: '3cqh',
           letterSpacing: '0.1em',
           textTransform: 'uppercase' as const,
-          padding: '0.8vh 3vh',
-          borderRadius: '0.6vh',
-          marginTop: '0.5vh',
+          padding: '0.8cqh 3cqh',
+          borderRadius: '0.6cqh',
+          marginTop: '0.5cqh',
         }}>
           June 29 – July 2, 2026
         </div>
@@ -134,39 +134,39 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
         {!countdown.started ? (
           <div style={{
             display: 'flex',
-            gap: '3vh',
-            marginTop: '1vh',
+            gap: '3cqh',
+            marginTop: '1cqh',
           }}>
             {units.map(({ value, label }) => (
               <div key={label} style={{
                 display: 'flex',
                 flexDirection: 'column' as const,
                 alignItems: 'center',
-                minWidth: '10vh',
+                minWidth: '10cqh',
               }}>
                 <div style={{
                   backgroundColor: 'rgba(255,255,255,0.08)',
                   border: `1px solid rgba(255,255,255,0.14)`,
-                  borderRadius: '1vh',
-                  padding: '1.2vh 2vh',
-                  fontSize: '6.5vh',
+                  borderRadius: '1cqh',
+                  padding: '1.2cqh 2cqh',
+                  fontSize: '6.5cqh',
                   fontWeight: 800,
                   color: text,
                   fontVariantNumeric: 'tabular-nums',
                   lineHeight: 1,
-                  minWidth: '7vh',
+                  minWidth: '7cqh',
                   textAlign: 'center',
                 }}>
                   {String(value).padStart(2, '0')}
                 </div>
                 <div style={{
-                  fontSize: '1.3vh',
+                  fontSize: '1.3cqh',
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase' as const,
                   color: text,
                   opacity: 0.45,
-                  marginTop: '0.7vh',
+                  marginTop: '0.7cqh',
                 }}>
                   {label}
                 </div>
@@ -175,7 +175,7 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
           </div>
         ) : (
           <div style={{
-            fontSize: '5vh',
+            fontSize: '5cqh',
             fontWeight: 800,
             color: accent,
             letterSpacing: '0.05em',
@@ -189,11 +189,11 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
           display: 'flex',
           flexDirection: 'column' as const,
           alignItems: 'center',
-          gap: '0.5vh',
-          marginTop: '0.5vh',
+          gap: '0.5cqh',
+          marginTop: '0.5cqh',
         }}>
           <div style={{
-            fontSize: '2vh',
+            fontSize: '2cqh',
             fontWeight: 600,
             letterSpacing: '0.08em',
             textTransform: 'uppercase' as const,
@@ -203,7 +203,7 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
             Weekday Evening Match Viewing
           </div>
           <div style={{
-            fontSize: '1.7vh',
+            fontSize: '1.7cqh',
             color: text,
             opacity: 0.4,
             letterSpacing: '0.04em',

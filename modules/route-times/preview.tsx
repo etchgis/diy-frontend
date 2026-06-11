@@ -7,6 +7,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { renderRouteOnMap, calculateRouteBounds } from '@/services/map/renderRouteOnMap';
 import type { RouteDataItem, TripData, StopInfo, Departure, StopWithDepartures, PatternStop } from '@/types/route-times';
+import { useResScale } from "@/hooks/useResScale";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
@@ -37,7 +38,8 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
   const resolution = useGeneralStore((state) => state.resolution);
-  const logoHeight = logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
+  const resScale = useResScale(resolution);
+  const logoHeight = logoBaseHeight * resScale;
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
@@ -632,7 +634,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
               src={logoImage}
               alt="Logo"
               className="object-contain ml-4 flex-shrink-0"
-              style={{ maxHeight: logoHeight }}
+              style={{ height: logoHeight }}
             />
           )}
         </div>

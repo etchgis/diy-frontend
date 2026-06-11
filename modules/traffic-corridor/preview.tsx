@@ -1,5 +1,6 @@
 import { useTrafficCorridorStore, type DestinationTable } from "./store";
 import { useGeneralStore } from "@/stores/general";
+import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/shared-components/footer";
 import HtmlTextEditor from "@/components/shared-components/html-text-editor";
@@ -45,7 +46,8 @@ export default function TrafficCorridorPreview({
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
   const resolution = useGeneralStore((state) => state.resolution);
-  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
+  const resScale = useResScale(resolution);
+  const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
 
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
@@ -87,18 +89,18 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
 
   const headerFontSize = isEditor
     ? `${20 * contentSizeMultiplier}px`
-    : `clamp(1.2rem, ${5 * contentSizeMultiplier}vh, 6rem)`;
+    : `${5 * contentSizeMultiplier}cqh`;
 
   const rowFontSize = isEditor
     ? `${15 * contentSizeMultiplier}px`
-    : `clamp(1rem, ${4 * contentSizeMultiplier}vh, 5rem)`;
+    : `${4 * contentSizeMultiplier}cqh`;
 
   const timeFontSize = isEditor
     ? `${15 * contentSizeMultiplier}px`
-    : `clamp(1rem, ${4 * contentSizeMultiplier}vh, 5rem)`;
+    : `${4 * contentSizeMultiplier}cqh`;
 
-  const headerPadding = isEditor ? undefined : `${1.8 * contentSizeMultiplier}vh 2vw`;
-  const rowPadding = isEditor ? undefined : `${1.5 * contentSizeMultiplier}vh 2vw`;
+  const headerPadding = isEditor ? undefined : `${1.8 * contentSizeMultiplier}cqh 2cqw`;
+  const rowPadding = isEditor ? undefined : `${1.5 * contentSizeMultiplier}cqh 2cqw`;
 
   const renderTable = (tableData: DestinationTable, tableIndex: number) => (
     <div
@@ -172,7 +174,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
       {/* Transit Alternative Row */}
       {tableData.showTransitAlternative && (
         <div
-          className={isEditor ? 'flex items-center gap-2 px-3 py-2' : 'flex items-center gap-[0.6vw]'}
+          className={isEditor ? 'flex items-center gap-2 px-3 py-2' : 'flex items-center gap-[0.6cqw]'}
           style={{
             backgroundColor: rowColor,
             borderTop: `1px solid ${tableHeaderColor}40`,
@@ -189,9 +191,9 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
                 const iconSrc = leg.mode === 'SUBWAY' ? '/images/subway-icon.png'
                   : leg.mode === 'RAIL' || leg.mode === 'LIGHT RAIL' ? '/images/rail-icon.png'
                   : '/images/bus-icon.png';
-                const iconSize = isEditor ? `${20 * contentSizeMultiplier}px` : `${3.2 * contentSizeMultiplier}vh`;
-                const badgeFontSize = isEditor ? `${12 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}vh`;
-                const badgePadding = isEditor ? `${1 * contentSizeMultiplier}px ${3 * contentSizeMultiplier}px` : '0.2vh 0.4vw';
+                const iconSize = isEditor ? `${20 * contentSizeMultiplier}px` : `${3.2 * contentSizeMultiplier}cqh`;
+                const badgeFontSize = isEditor ? `${12 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}cqh`;
+                const badgePadding = isEditor ? `${1 * contentSizeMultiplier}px ${3 * contentSizeMultiplier}px` : '0.2cqh 0.4cqw';
                 return (
                   <div key={i} className="flex items-center gap-0.5 flex-shrink-0">
                     <img src={iconSrc} alt={leg.mode} style={{ height: iconSize, width: 'auto', objectFit: 'contain' }} />
@@ -266,7 +268,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
                 className="font-light rich-text-content"
                 style={{
                   color: titleColor,
-                  fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
+                  fontSize: `${6 * titleSizeMultiplier}cqh`,
                   lineHeight: '1.2',
                 }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
@@ -278,7 +280,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
               src={logoImage}
               alt="Logo"
               className="object-contain ml-4 flex-shrink-0"
-              style={{ maxHeight: logoHeight }}
+              style={{ height: logoHeight }}
             />
           )}
         </div>
@@ -289,11 +291,11 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
         <div
           className="flex-1 min-h-0 overflow-hidden flex flex-col"
           style={{
-            padding: isEditor ? '0.4rem' : '1.2vh 3vw',
-            gap: isEditor ? '0.4rem' : '1vh',
+            padding: isEditor ? '0.4rem' : '1.2cqh 3cqw',
+            gap: isEditor ? '0.4rem' : '1cqh',
           }}
         >
-          <div className="flex min-h-0 overflow-hidden" style={{ gap: isEditor ? '0.4rem' : '1vw', flex: 1 }}>
+          <div className="flex min-h-0 overflow-hidden" style={{ gap: isEditor ? '0.4rem' : '1cqw', flex: 1 }}>
             <div className="flex-1 min-w-0 overflow-hidden">{renderTable(table0, 0)}</div>
             <div className="flex-1 min-w-0 overflow-hidden">{renderTable(table1, 1)}</div>
           </div>
@@ -307,10 +309,10 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           style={{
             padding: isEditor
               ? (isQuad ? '0.3rem' : showSecondTable ? '0.5rem' : '1rem')
-              : (isQuad ? '1vh 2vw' : showSecondTable ? '1.5vh 4vw' : '3vh 4vw'),
+              : (isQuad ? '1cqh 2cqw' : showSecondTable ? '1.5cqh 4cqw' : '3cqh 4cqw'),
             gap: isEditor
               ? (isQuad ? '0.3rem' : showSecondTable ? '0.4rem' : '0.75rem')
-              : (isQuad ? '0.8vh' : showSecondTable ? '1.2vh' : '2.5vh'),
+              : (isQuad ? '0.8cqh' : showSecondTable ? '1.2cqh' : '2.5cqh'),
           }}
         >
           <div className="w-full min-h-0 overflow-hidden">
