@@ -144,7 +144,8 @@ export interface TransformedDestination {
   coordinates?: { lat: number; lng: number };
   dark: boolean;
   originStop?: { id: string; name: string; distanceMeters: number } | null;
-  allItineraries?: TransformedItinerary[]; 
+  originCandidateStops?: { id: string; name: string; distanceMeters: number; routeCount: number }[];
+  allItineraries?: TransformedItinerary[];
   reason?: string;
 }
 
@@ -278,6 +279,7 @@ export function transformSkidsResponse(
       coordinates: destCoord,
       dark: index % 2 === 0,
       originStop: response.origin?.candidateStops?.[0] || null,
+      originCandidateStops: response.origin?.candidateStops || [],
       allItineraries: transformedItineraries.length > 1 ? transformedItineraries : undefined,
     };
   });
@@ -293,7 +295,7 @@ export interface SkidsFetchOptions {
  */
 export async function fetchSkidsTransitData(
   origin: { lat: number; lng: number },
-  destinations: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[] }[],
+  destinations: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[]; allowedRoutes?: string[]; bannedRoutes?: string[] }[],
   options?: SkidsFetchOptions
 ): Promise<TransformedDestination[]> {
   if (!SKIDS_URL) {
@@ -320,6 +322,8 @@ export async function fetchSkidsTransitData(
         name: d.name,
         coordinate: { lat: d.coordinates.lat, lon: d.coordinates.lng },
         ...(d.allowedModes && d.allowedModes.length > 0 ? { allowedModes: d.allowedModes } : {}),
+        ...(d.allowedRoutes && d.allowedRoutes.length > 0 ? { allowedRoutes: d.allowedRoutes } : {}),
+        ...(d.bannedRoutes && d.bannedRoutes.length > 0 ? { bannedRoutes: d.bannedRoutes } : {}),
       })),
       options: apiOptions,
     }),

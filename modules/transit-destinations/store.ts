@@ -51,6 +51,8 @@ interface SlideStore {
   setDestinationModes: (slideId: string, destName: string, modes: string[]) => void;
   setDestinationPreferredItinerary: (slideId: string, destName: string, routeSignature: string[]) => void;
   setDestinationMaxWalkDistance: (slideId: string, destName: string, meters: number | undefined) => void;
+  setDestinationAllowedRoutes: (slideId: string, destName: string, routes: string[]) => void;
+  setDestinationBannedRoutes: (slideId: string, destName: string, routes: string[]) => void;
 }
 
 export const useTransitDestinationsStore = create<SlideStore>()(
@@ -310,6 +312,24 @@ export const useTransitDestinationsStore = create<SlideStore>()(
           const slide = state.slides[slideId] || {};
           const destinations = (slide.destinations || []).map((d: any) =>
             d.name === destName ? { ...d, maxWalkDistance: meters } : d
+          );
+          return { slides: { ...state.slides, [slideId]: { ...slide, destinations } } };
+        }),
+
+      setDestinationAllowedRoutes: (slideId, destName, routes) =>
+        set((state) => {
+          const slide = state.slides[slideId] || {};
+          const destinations = (slide.destinations || []).map((d: any) =>
+            d.name === destName ? { ...d, allowedRoutes: routes } : d
+          );
+          return { slides: { ...state.slides, [slideId]: { ...slide, destinations } } };
+        }),
+
+      setDestinationBannedRoutes: (slideId, destName, routes) =>
+        set((state) => {
+          const slide = state.slides[slideId] || {};
+          const destinations = (slide.destinations || []).map((d: any) =>
+            d.name === destName ? { ...d, bannedRoutes: routes } : d
           );
           return { slides: { ...state.slides, [slideId]: { ...slide, destinations } } };
         }),

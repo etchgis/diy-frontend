@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HelpCircle, ChevronRight, Plus, X, RefreshCw, ChevronDown, ChevronUp } from "lucide-react"
+import { HelpCircle, ChevronRight, Plus, X, RefreshCw, Settings } from "lucide-react"
 import TransitDestinationPreview from "./preview"
 import { useTransitDestinationsStore } from "./store"
 import { useEffect, useRef, useState } from "react"
@@ -27,9 +27,332 @@ function formatWalkDistance(meters: number): string {
   return `${(meters / 1609.344).toFixed(1)} mi`;
 }
 
+async function fetchStopRoutes(stopId: string): Promise<{ shortName: string; color?: string; textColor?: string }[]> {
+  const base = process.env.NEXT_PUBLIC_SKIDS_URL;
+  const region = process.env.NEXT_PUBLIC_SKIDS_REGION;
+  if (!base) return [];
+  try {
+    const url = `${base}/api/transit/stops/${encodeURIComponent(stopId)}${region ? `?region=${region}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.routes ?? []).map((r: any) => ({ shortName: r.shortName, color: r.color, textColor: r.textColor }));
+  } catch {
+    return [];
+  }
+}
+
+function DestinationSettingsModal({
+  dest,
+  slideId,
+  destResult,
+  globalMaxWalkDistance,
+  onClose,
+  onRefetch,
+  refetching,
+  handleToggleMode,
+  setDestinationPreferredItinerary,
+  setDestinationMaxWalkDistance,
+  setDestinationAllowedRoutes,
+  setDestinationBannedRoutes,
+}: {
+  dest: any;
+  slideId: string;
+  destResult: any;
+  globalMaxWalkDistance: number;
+  onClose: () => void;
+  onRefetch: (dest: any) => void;
+  refetching: boolean;
+  handleToggleMode: (destName: string, mode: string, currentModes: string[]) => void;
+  setDestinationPreferredItinerary: (slideId: string, destName: string, sig: string[]) => void;
+  setDestinationMaxWalkDistance: (slideId: string, destName: string, meters: number | undefined) => void;
+  setDestinationAllowedRoutes: (slideId: string, destName: string, routes: string[]) => void;
+  setDestinationBannedRoutes: (slideId: string, destName: string, routes: string[]) => void;
+}) {
+  const currentModes: string[] = dest.allowedModes ?? ALL_MODES;
+  const preferredItinerary: string[] = dest.preferredItinerary ?? [];
+  const allItineraries: { routeSignature: string[]; route: string | null }[] = destResult?.allItineraries ?? [];
+  const preferredLabel = preferredItinerary.length > 0 ? preferredItinerary.join(' › ') : null;
+
+  const [allowedRoutesText, setAllowedRoutesText] = useState<string>((dest.allowedRoutes ?? []).join(', '));
+  const [bannedRoutesText, setBannedRoutesText] = useState<string>((dest.bannedRoutes ?? []).join(', '));
+
+  const itineraryRoutes: string[] = Array.from(new Set(
+    (destResult?.allItineraries ?? []).flatMap((it: any) =>
+      (it.legs ?? [])
+        .filter((leg: any) => leg.mode !== 'WALK' && leg.routeShortName)
+        .map((leg: any) => leg.routeShortName as string)
+    )
+  ));
+
+  const [stopRoutes, setStopRoutes] = useState<{ shortName: string; color?: string; textColor?: string }[]>([]);
+  const [loadingStopRoutes, setLoadingStopRoutes] = useState(false);
+
+  useEffect(() => {
+    const candidateStops: { id: string }[] = destResult?.originCandidateStops ?? (destResult?.originStop ? [destResult.originStop] : []);
+    if (candidateStops.length === 0) return;
+    setLoadingStopRoutes(true);
+    Promise.all(candidateStops.map((s) => fetchStopRoutes(s.id)))
+      .then((results) => {
+        const seen = new Set<string>();
+        const merged: { shortName: string; color?: string; textColor?: string }[] = [];
+        for (const routes of results) {
+          for (const r of routes) {
+            if (!seen.has(r.shortName)) {
+              seen.add(r.shortName);
+              merged.push(r);
+            }
+          }
+        }
+        setStopRoutes(merged);
+      })
+      .finally(() => setLoadingStopRoutes(false));
+  }, [destResult?.originStop?.id]);
+
+  const displayRoutes: { shortName: string; color?: string; textColor?: string }[] =
+    stopRoutes.length > 0
+      ? stopRoutes
+      : itineraryRoutes.map((r) => ({ shortName: r }));
+
+  const applyAllowedRoutes = (text: string) => {
+    setDestinationAllowedRoutes(slideId, dest.name, text.split(',').map((r) => r.trim()).filter(Boolean));
+  };
+  const applyBannedRoutes = (text: string) => {
+    setDestinationBannedRoutes(slideId, dest.name, text.split(',').map((r) => r.trim()).filter(Boolean));
+  };
+
+  const toggleRouteChip = (route: string) => {
+    const allowedList = allowedRoutesText.split(',').map((r) => r.trim()).filter(Boolean);
+    const bannedList = bannedRoutesText.split(',').map((r) => r.trim()).filter(Boolean);
+    const inAllowed = allowedList.includes(route);
+    const inBanned = bannedList.includes(route);
+    if (!inAllowed && !inBanned) {
+      const next = [...allowedList, route].join(', ');
+      setAllowedRoutesText(next);
+      applyAllowedRoutes(next);
+    } else if (inAllowed) {
+      const nextAllowed = allowedList.filter((r) => r !== route).join(', ');
+      const nextBanned = [...bannedList, route].join(', ');
+      setAllowedRoutesText(nextAllowed);
+      setBannedRoutesText(nextBanned);
+      applyAllowedRoutes(nextAllowed);
+      applyBannedRoutes(nextBanned);
+    } else {
+      const next = bannedList.filter((r) => r !== route).join(', ');
+      setBannedRoutesText(next);
+      applyBannedRoutes(next);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className="relative bg-white rounded-lg shadow-xl w-80 max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide">Destination settings</p>
+            <h3 className="font-semibold text-gray-800 text-sm leading-tight truncate max-w-[200px]">{dest.name}</h3>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-4 py-3 space-y-4">
+          {/* Allowed modes */}
+          <div>
+            <p className="text-xs font-medium text-gray-600 mb-2">Allowed modes</p>
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_MODES.map((mode) => {
+                const active = currentModes.includes(mode);
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => handleToggleMode(dest.name, mode, currentModes)}
+                    className={`text-xs px-2.5 py-1 rounded font-medium border-2 transition-colors ${
+                      active ? 'bg-green-500 text-white border-green-600' : 'bg-white text-red-500 border-red-300 line-through'
+                    }`}
+                  >
+                    {MODE_LABELS[mode]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Route filters */}
+          <div>
+            <p className="text-xs font-medium text-gray-600 mb-2">Route filters</p>
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">
+                  Allowed routes <span className="text-gray-400">(short names, comma-separated)</span>
+                </label>
+                <Input
+                  value={allowedRoutesText}
+                  placeholder="e.g. 540, S79, 1"
+                  className="text-xs h-7"
+                  onChange={(e) => setAllowedRoutesText(e.target.value)}
+                  onBlur={(e) => applyAllowedRoutes(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">
+                  Banned routes <span className="text-gray-400">(short names, comma-separated)</span>
+                </label>
+                <Input
+                  value={bannedRoutesText}
+                  placeholder="e.g. 62, X1"
+                  className="text-xs h-7"
+                  onChange={(e) => setBannedRoutesText(e.target.value)}
+                  onBlur={(e) => applyBannedRoutes(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Available routes */}
+          {(displayRoutes.length > 0 || loadingStopRoutes) && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-medium text-gray-600">
+                  {stopRoutes.length > 0 ? 'Routes at origin stop' : 'Routes in results'}
+                </p>
+                {loadingStopRoutes
+                  ? <span className="text-[10px] text-gray-400">Loading...</span>
+                  : <span className="text-[10px] text-gray-400">tap: allow → ban → clear</span>
+                }
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {displayRoutes.map(({ shortName, color, textColor }) => {
+                  const inAllowed = allowedRoutesText.split(',').map((r) => r.trim()).includes(shortName);
+                  const inBanned = bannedRoutesText.split(',').map((r) => r.trim()).includes(shortName);
+                  const bgColor = !inAllowed && !inBanned && color ? `#${color}` : undefined;
+                  const fgColor = !inAllowed && !inBanned && bgColor ? (textColor ? `#${textColor}` : '#ffffff') : undefined;
+                  return (
+                    <button
+                      key={shortName}
+                      onClick={() => toggleRouteChip(shortName)}
+                      style={bgColor ? { backgroundColor: bgColor, color: fgColor, borderColor: bgColor } : undefined}
+                      className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors ${
+                        inAllowed
+                          ? 'bg-green-100 border-green-400 text-green-700'
+                          : inBanned
+                          ? 'bg-red-100 border-red-400 text-red-600 line-through'
+                          : bgColor
+                          ? ''
+                          : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {shortName}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Max walk distance */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-medium text-gray-600">Max walk distance</p>
+              {dest.maxWalkDistance != null && (
+                <button
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                  onClick={() => setDestinationMaxWalkDistance(slideId, dest.name, undefined)}
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0}
+                max={MAX_WALK_METERS}
+                step={WALK_STEP_METERS}
+                value={dest.maxWalkDistance ?? globalMaxWalkDistance}
+                onChange={(e) => setDestinationMaxWalkDistance(slideId, dest.name, Number(e.target.value))}
+                className="flex-1"
+              />
+              <span className="text-xs text-gray-500 w-14 text-right">
+                {formatWalkDistance(dest.maxWalkDistance ?? globalMaxWalkDistance)}
+                {dest.maxWalkDistance == null && <span className="text-gray-300"> *</span>}
+              </span>
+            </div>
+            {dest.maxWalkDistance == null && (
+              <p className="text-xs text-gray-400 italic mt-0.5">Using global default</p>
+            )}
+          </div>
+
+          {/* Preferred itinerary */}
+          {allItineraries.length > 1 && (
+            <div>
+              <p className="text-xs font-medium text-gray-600 mb-2">Preferred itinerary</p>
+              <div className="space-y-1">
+                {allItineraries.map((it, i) => {
+                  const label = it.route || it.routeSignature.join(' › ') || `Option ${i + 1}`;
+                  const isSelected =
+                    preferredItinerary.length > 0 &&
+                    preferredItinerary.every((r) => it.routeSignature.includes(r)) &&
+                    it.routeSignature.every((r) => preferredItinerary.includes(r));
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setDestinationPreferredItinerary(slideId, dest.name, it.routeSignature)}
+                      className={`w-full text-left text-xs px-2 py-1.5 rounded border transition-colors ${
+                        isSelected
+                          ? 'bg-blue-500 text-white border-blue-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:border-blue-300'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {preferredLabel && (
+                <button
+                  className="text-xs text-gray-400 hover:text-gray-600 mt-1"
+                  onClick={() => setDestinationPreferredItinerary(slideId, dest.name, [])}
+                >
+                  Clear preference
+                </button>
+              )}
+            </div>
+          )}
+          {allItineraries.length === 0 && (
+            <p className="text-xs text-gray-400 italic">Refetch to see itinerary options.</p>
+          )}
+          {allItineraries.length === 1 && (
+            <p className="text-xs text-gray-400 italic">Only one itinerary available.</p>
+          )}
+
+          {/* Refetch */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full h-8 text-xs gap-1.5"
+            disabled={refetching}
+            onClick={() => onRefetch(dest)}
+          >
+            {refetching
+              ? <><div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" /> Fetching...</>
+              : <><RefreshCw className="w-3 h-3" /> Refetch</>
+            }
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TransitDestinationSlide({ slideId, handleDelete, handlePreview, handlePublish, handleOpenSettings }: { slideId: string, handleDelete: (id: string) => void, handlePreview: () => void, handlePublish: () => void, handleOpenSettings: () => void }) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [expandedDest, setExpandedDest] = useState<string | null>(null);
+  const [settingsDest, setSettingsDest] = useState<string | null>(null);
   const [refetchingDest, setRefetchingDest] = useState<string | null>(null);
 
 
@@ -104,6 +427,8 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
   const setDestinationModes = useTransitDestinationsStore((state) => state.setDestinationModes);
   const setDestinationPreferredItinerary = useTransitDestinationsStore((state) => state.setDestinationPreferredItinerary);
   const setDestinationMaxWalkDistance = useTransitDestinationsStore((state) => state.setDestinationMaxWalkDistance);
+  const setDestinationAllowedRoutes = useTransitDestinationsStore((state) => state.setDestinationAllowedRoutes);
+  const setDestinationBannedRoutes = useTransitDestinationsStore((state) => state.setDestinationBannedRoutes);
 
 
 
@@ -608,144 +933,27 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
             <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Destinations</h3>
             <div className="space-y-2">
               {destinations.map((dest: any, index: number) => {
-                const currentModes: string[] = dest.allowedModes ?? ALL_MODES;
-                const isExpanded = expandedDest === dest.name;
-                const isRefetching = refetchingDest === dest.name;
+                const hasFilters = (dest.allowedRoutes?.length ?? 0) > 0 || (dest.bannedRoutes?.length ?? 0) > 0;
                 return (
-                  <div key={index} className="bg-[#f4f4f4] rounded overflow-hidden">
+                  <div key={index} className="bg-[#f4f4f4] rounded">
                     <div className="flex items-center justify-between p-2">
                       <span className="text-xs text-[#4a5568] truncate pr-1 flex-1">{dest.name}</span>
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        {hasFilters && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" title="Route filters active" />
+                        )}
                         <button
                           className="p-0.5 text-gray-400 hover:text-gray-700"
-                          onClick={() => setExpandedDest(isExpanded ? null : dest.name)}
-                          title="Mode options"
+                          onClick={() => setSettingsDest(dest.name)}
+                          title="Destination settings"
                         >
-                          {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                          <Settings className="w-3 h-3" />
                         </button>
                         <Button variant="ghost" size="sm" className="h-4 w-4 p-0" onClick={() => handleDeleteDestination(dest.name)}>
                           <X className="w-2 h-2" />
                         </Button>
                       </div>
                     </div>
-
-                    {isExpanded && (() => {
-                      const preferredItinerary: string[] = dest.preferredItinerary ?? [];
-                      const destResult = destinationData.find((d: any) => d.name === dest.name);
-                      const allItineraries: { routeSignature: string[]; route: string | null }[] = destResult?.allItineraries ?? [];
-                      const preferredLabel = preferredItinerary.length > 0 ? preferredItinerary.join(' › ') : null;
-                      return (
-                        <div className="px-2 pb-2 border-t border-gray-200 pt-2 space-y-2">
-                          <p className="text-xs text-gray-500">Allowed modes:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {ALL_MODES.map((mode) => {
-                              const active = currentModes.includes(mode);
-                              return (
-                                <button
-                                  key={mode}
-                                  onClick={() => handleToggleMode(dest.name, mode, currentModes)}
-                                  className={`text-xs px-2 py-1 rounded font-medium border-2 transition-colors ${
-                                    active
-                                      ? 'bg-green-500 text-white border-green-600'
-                                      : 'bg-white text-red-500 border-red-300 line-through'
-                                  }`}
-                                >
-                                  {MODE_LABELS[mode]}
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-xs text-gray-500">Max walk distance:</p>
-                              {dest.maxWalkDistance != null && (
-                                <button
-                                  className="text-xs text-gray-400 hover:text-gray-600"
-                                  onClick={() => setDestinationMaxWalkDistance(slideId, dest.name, undefined)}
-                                >
-                                  Reset
-                                </button>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="range"
-                                min={0}
-                                max={MAX_WALK_METERS}
-                                step={WALK_STEP_METERS}
-                                value={dest.maxWalkDistance ?? maxWalkDistance}
-                                onChange={(e) => setDestinationMaxWalkDistance(slideId, dest.name, Number(e.target.value))}
-                                className="flex-1"
-                              />
-                              <span className="text-xs text-gray-500 w-14 text-right">
-                                {formatWalkDistance(dest.maxWalkDistance ?? maxWalkDistance)}
-                                {dest.maxWalkDistance == null && <span className="text-gray-300"> *</span>}
-                              </span>
-                            </div>
-                            {dest.maxWalkDistance == null && (
-                              <p className="text-xs text-gray-400 italic">Using global default</p>
-                            )}
-                          </div>
-
-                          {allItineraries.length > 1 && (
-                            <div>
-                              <p className="text-xs text-gray-500 mb-1">Preferred itinerary:</p>
-                              <div className="space-y-1">
-                                {allItineraries.map((it, i) => {
-                                  const label = it.route || it.routeSignature.join(' › ') || `Option ${i + 1}`;
-                                  const isSelected = preferredItinerary.length > 0 &&
-                                    preferredItinerary.every((r) => it.routeSignature.includes(r)) &&
-                                    it.routeSignature.every((r) => preferredItinerary.includes(r));
-                                  return (
-                                    <button
-                                      key={i}
-                                      onClick={() => setDestinationPreferredItinerary(slideId, dest.name, it.routeSignature)}
-                                      className={`w-full text-left text-xs px-2 py-1 rounded border transition-colors ${
-                                        isSelected
-                                          ? 'bg-blue-500 text-white border-blue-600'
-                                          : 'bg-white text-gray-600 border-gray-300 hover:border-blue-300'
-                                      }`}
-                                    >
-                                      {label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                              {preferredLabel && (
-                                <button
-                                  className="text-xs text-gray-400 hover:text-gray-600 mt-1"
-                                  onClick={() => setDestinationPreferredItinerary(slideId, dest.name, [])}
-                                >
-                                  Clear preference
-                                </button>
-                              )}
-                            </div>
-                          )}
-
-                          {allItineraries.length <= 1 && (
-                            <p className="text-xs text-gray-400 italic">
-                              {allItineraries.length === 0
-                                ? 'Refetch to see itinerary options.'
-                                : 'Only one itinerary available.'}
-                            </p>
-                          )}
-
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full h-6 text-xs gap-1"
-                            disabled={isRefetching}
-                            onClick={() => handleRefetchDestination(dest)}
-                          >
-                            {isRefetching
-                              ? <><div className="w-2.5 h-2.5 border border-gray-400 border-t-transparent rounded-full animate-spin" /> Fetching...</>
-                              : <><RefreshCw className="w-2.5 h-2.5" /> Refetch</>
-                            }
-                          </Button>
-                        </div>
-                      );
-                    })()}
                   </div>
                 );
               })}
@@ -790,7 +998,27 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
         </div>
       </div>
 
-
+      {settingsDest && (() => {
+        const dest = destinations.find((d: any) => d.name === settingsDest);
+        if (!dest) return null;
+        const destResult = destinationData.find((d: any) => d.name === settingsDest);
+        return (
+          <DestinationSettingsModal
+            dest={dest}
+            slideId={slideId}
+            destResult={destResult}
+            globalMaxWalkDistance={maxWalkDistance}
+            onClose={() => setSettingsDest(null)}
+            onRefetch={handleRefetchDestination}
+            refetching={refetchingDest === settingsDest}
+            handleToggleMode={handleToggleMode}
+            setDestinationPreferredItinerary={setDestinationPreferredItinerary}
+            setDestinationMaxWalkDistance={setDestinationMaxWalkDistance}
+            setDestinationAllowedRoutes={setDestinationAllowedRoutes}
+            setDestinationBannedRoutes={setDestinationBannedRoutes}
+          />
+        );
+      })()}
     </>
   );
 }

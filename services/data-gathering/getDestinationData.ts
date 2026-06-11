@@ -25,7 +25,7 @@ function selectBestItinerary<T extends { routeSignature: string[]; route: string
 }
 
 export async function getDestinationData(
-  destList: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[]; preferredItinerary?: string[]; maxWalkDistance?: number }[],
+  destList: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[]; preferredItinerary?: string[]; maxWalkDistance?: number; allowedRoutes?: string[]; bannedRoutes?: string[] }[],
   slideId: string,
   setDestinationData: (slideId: string, data: any[]) => void,
   setDataError: (slideId: string, error: boolean) => void,
