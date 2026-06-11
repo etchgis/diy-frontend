@@ -634,15 +634,15 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     switch (type) {
       case 'ferryhawks-watch-party-countdown': {
         const slideConfig = orgSlideMap[slideId];
-        return slideConfig ? <WatchPartyCountdownPreview config={slideConfig} /> : null;
+        return slideConfig ? <WatchPartyCountdownPreview config={slideConfig} showFooter={orgSlideOverrides[slideId]?.showFooter ?? true} /> : null;
       }
       case 'ferryhawks-ferry-schedule': {
         const slideConfig = orgSlideMap[slideId];
-        return slideConfig ? <FerrySchedulePreview config={slideConfig} /> : null;
+        return slideConfig ? <FerrySchedulePreview config={slideConfig} showFooter={orgSlideOverrides[slideId]?.showFooter ?? true} /> : null;
       }
       case 'ferryhawks-sir-schedule': {
         const slideConfig = orgSlideMap[slideId];
-        return slideConfig ? <SIRSchedulePreview config={slideConfig} /> : null;
+        return slideConfig ? <SIRSchedulePreview config={slideConfig} showFooter={orgSlideOverrides[slideId]?.showFooter ?? true} /> : null;
       }
       case 'qr':
         return <QRSlidePreview slideId={slideId} />;

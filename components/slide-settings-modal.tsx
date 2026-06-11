@@ -11,16 +11,18 @@ interface Props {
   onSaveDuration: (duration: number | undefined) => void;
   onSaveVisibility: (hidden: boolean) => void;
   onSaveSchedule: (schedule: SlideSchedule | null) => void;
+  onSaveFooter?: (showFooter: boolean) => void;
   onDuplicate: () => void;
   onDelete: () => void;
   onClose: () => void;
   hideActions?: boolean;
 }
 
-export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel, onSaveDuration, onSaveVisibility, onSaveSchedule, onDuplicate, onDelete, onClose, hideActions }: Props) {
+export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel, onSaveDuration, onSaveVisibility, onSaveSchedule, onSaveFooter, onDuplicate, onDelete, onClose, hideActions }: Props) {
   const [label, setLabel] = useState(slide.label ?? '');
   const [durationInput, setDurationInput] = useState(slide.duration != null ? String(slide.duration) : '');
   const [hidden, setHidden] = useState(slide.hidden ?? false);
+  const [showFooter, setShowFooter] = useState(slide.showFooter ?? true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(slide.schedule?.enabled ?? false);
   const [startTime, setStartTime] = useState(slide.schedule?.startTime ?? '08:00');
@@ -34,6 +36,7 @@ export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel,
     onSaveDuration(!isNaN(parsed) && parsed > 0 ? parsed : undefined);
     onSaveVisibility(hidden);
     onSaveSchedule(scheduleEnabled ? { enabled: true, startTime, endTime } : null);
+    onSaveFooter?.(showFooter);
     onClose();
   };
 
@@ -86,7 +89,7 @@ export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel,
         {/* Visibility */}
         <div className="mb-4 border-t pt-4">
           <p className="text-xs font-medium text-[#4a5568] uppercase tracking-wide mb-2">Visibility</p>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2 cursor-pointer mb-2">
             <input
               type="checkbox"
               checked={!hidden}
@@ -95,6 +98,17 @@ export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel,
             />
             <span className="text-sm text-[#4a5568]">Show on published screen</span>
           </label>
+          {onSaveFooter != null && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showFooter}
+                onChange={(e) => setShowFooter(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              <span className="text-sm text-[#4a5568]">Show footer</span>
+            </label>
+          )}
         </div>
 
         {/* Schedule */}

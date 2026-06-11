@@ -86,14 +86,14 @@ interface Slide {
   type: string;
 }
 
-function renderOrgSlidePreview(slide: any) {
+function renderOrgSlidePreview(slide: any, showFooter?: boolean) {
   switch (slide.type) {
     case 'ferryhawks-watch-party-countdown':
-      return <WatchPartyCountdownPreview config={slide} />;
+      return <WatchPartyCountdownPreview config={slide} showFooter={showFooter} />;
     case 'ferryhawks-ferry-schedule':
-      return <FerryScheduleOrgPreview config={slide} isEditor={true} />;
+      return <FerryScheduleOrgPreview config={slide} isEditor={true} showFooter={showFooter} />;
     case 'ferryhawks-sir-schedule':
-      return <SIRSchedulePreview config={slide} isEditor={true} />;
+      return <SIRSchedulePreview config={slide} isEditor={true} showFooter={showFooter} />;
     default:
       return <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">{slide.type}</div>;
   }
@@ -115,7 +115,7 @@ function SortableOrgSlide({ slide, activeSlideId, setActiveSlideId }: { slide: a
   const override = orgSlideOverrides[slide.id] ?? {};
   const isHidden = override.hidden ?? false;
   const hasActiveSchedule = override.schedule?.enabled;
-  const slideForModal = { label: override.label ?? '', duration: override.duration, hidden: isHidden, schedule: override.schedule };
+  const slideForModal = { label: override.label ?? '', duration: override.duration, hidden: isHidden, schedule: override.schedule, showFooter: override.showFooter ?? true };
 
   return (
     <>
@@ -165,6 +165,7 @@ function SortableOrgSlide({ slide, activeSlideId, setActiveSlideId }: { slide: a
           onSaveDuration={(duration) => setOrgSlideOverride(slide.id, { duration })}
           onSaveVisibility={(hidden) => setOrgSlideOverride(slide.id, { hidden })}
           onSaveSchedule={(schedule) => setOrgSlideOverride(slide.id, { schedule: schedule ?? undefined })}
+          onSaveFooter={(showFooter) => setOrgSlideOverride(slide.id, { showFooter })}
           onDuplicate={() => {}}
           onDelete={() => {}}
           onClose={() => setShowSettings(false)}
@@ -183,7 +184,8 @@ function OrgSlideViewer({ slide, onPreview, onPublish }: { slide: any; onPreview
 
   const override = orgSlideOverrides[slide.id] ?? {};
   const isHidden = override.hidden ?? false;
-  const slideForModal = { label: override.label ?? '', duration: override.duration, hidden: isHidden, schedule: override.schedule };
+  const orgShowFooter = override.showFooter ?? true;
+  const slideForModal = { label: override.label ?? '', duration: override.duration, hidden: isHidden, schedule: override.schedule, showFooter: orgShowFooter };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 overflow-y-auto">
@@ -204,7 +206,7 @@ function OrgSlideViewer({ slide, onPreview, onPublish }: { slide: any; onPreview
       </div>
       <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
         <ResolutionFrame logicalW={1920} logicalH={1080} background="transparent">
-          {renderOrgSlidePreview(slide)}
+          {renderOrgSlidePreview(slide, orgShowFooter)}
         </ResolutionFrame>
       </div>
       <div className="flex gap-3 mt-4">
@@ -219,6 +221,7 @@ function OrgSlideViewer({ slide, onPreview, onPublish }: { slide: any; onPreview
           onSaveDuration={(duration) => setOrgSlideOverride(slide.id, { duration })}
           onSaveVisibility={(hidden) => setOrgSlideOverride(slide.id, { hidden })}
           onSaveSchedule={(schedule) => setOrgSlideOverride(slide.id, { schedule: schedule ?? undefined })}
+          onSaveFooter={(showFooter) => setOrgSlideOverride(slide.id, { showFooter })}
           onDuplicate={() => {}}
           onDelete={() => {}}
           onClose={() => setShowSettings(false)}
@@ -1273,7 +1276,7 @@ export default function EditorPage() {
                 {current && (
                   current.isOrg
                     ? <ResolutionFrame logicalW={modalLogicalW} logicalH={modalLogicalH} background="transparent">
-                        {renderOrgSlidePreview(current.data)}
+                        {renderOrgSlidePreview(current.data, (orgCustomSlides.find((s) => s.id === current.id) ? (useGeneralStore.getState().orgSlideOverrides?.[current.id]?.showFooter ?? true) : undefined))}
                       </ResolutionFrame>
                     : renderSlidePreview(current.data.type, current.data.id, true, true)
                 )}
