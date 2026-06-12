@@ -587,6 +587,8 @@ export default function StopArrivalsSlide({
     (state: { slides: { [x: string]: { displayName: any; }; }; }) => state.slides[slideId]?.displayName ?? ""
   );
   const setDisplayName = useFixedRouteStore((state: { setDisplayName: any; }) => state.setDisplayName);
+  const showDisplayName = useFixedRouteStore((state: any) => state.slides[slideId]?.showDisplayName !== false);
+  const setShowDisplayName = useFixedRouteStore((state: any) => state.setShowDisplayName);
 
   const selectedStop = useFixedRouteStore(
     (state: { slides: { [x: string]: { selectedStop: any; }; }; }) => state.slides[slideId]?.selectedStop || undefined
@@ -681,6 +683,20 @@ export default function StopArrivalsSlide({
   const minArrivalMinutes = useFixedRouteStore((state: any) => state.slides[slideId]?.minArrivalMinutes ?? 0);
   const setMinArrivalMinutes = useFixedRouteStore((state: any) => state.setMinArrivalMinutes);
 
+  const showTitleHtml = useFixedRouteStore((state: any) => state.slides[slideId]?.showTitleHtml || false);
+  const setShowTitleHtml = useFixedRouteStore((state: any) => state.setShowTitleHtml);
+  const subtitleText = useFixedRouteStore((state: any) => state.slides[slideId]?.subtitleText ?? '');
+  const setSubtitleText = useFixedRouteStore((state: any) => state.setSubtitleText);
+  const showSubtitle = useFixedRouteStore((state: any) => state.slides[slideId]?.showSubtitle !== false);
+  const setShowSubtitle = useFixedRouteStore((state: any) => state.setShowSubtitle);
+  const logoHeightOverride = useFixedRouteStore((state: any) => state.slides[slideId]?.logoHeightOverride);
+  const setLogoHeightOverride = useFixedRouteStore((state: any) => state.setLogoHeightOverride);
+  const showTableColumnHeaders = useFixedRouteStore((state: any) => state.slides[slideId]?.showTableColumnHeaders || false);
+  const setShowTableColumnHeaders = useFixedRouteStore((state: any) => state.setShowTableColumnHeaders);
+  const tableHeaderLeft = useFixedRouteStore((state: any) => state.slides[slideId]?.tableHeaderLeft ?? 'Transit Service Line');
+  const setTableHeaderLeft = useFixedRouteStore((state: any) => state.setTableHeaderLeft);
+  const tableHeaderRight = useFixedRouteStore((state: any) => state.slides[slideId]?.tableHeaderRight ?? 'Est Arrival Time');
+  const setTableHeaderRight = useFixedRouteStore((state: any) => state.setTableHeaderRight);
 
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const setShowFooter = useGeneralStore((state) => state.setShowFooter);
@@ -1121,19 +1137,20 @@ export default function StopArrivalsSlide({
         });
       }
 
-      // Build routeId → line name map from serviceSelections for LIRR/Metro-North display
       const routeLineNameMap: Record<string, string> = {};
       for (const sel of serviceSelections) {
         for (const route of sel.routes || []) {
           const routeId = route.id ?? (route as any).route_id;
+          const shortName = route.shortName ?? '';
           const longName = route.longName ?? (route as any).route_long_name ?? '';
-          if (routeId && longName) {
-            // Strip common suffixes to get a compact display label
-            routeLineNameMap[routeId] = longName
+          if (longName) {
+            const cleanName = longName
               .replace(/\s+Branch$/i, '')
               .replace(/\s+Line$/i, '')
               .replace(/\s+Railroad$/i, '')
               .trim();
+            if (routeId) routeLineNameMap[routeId] = cleanName;
+            if (shortName) routeLineNameMap[shortName] = cleanName;
           }
         }
       }
@@ -1143,8 +1160,9 @@ export default function StopArrivalsSlide({
       const cappedArrivals = storeCap === Infinity ? filteredArrivals : filteredArrivals.slice(0, storeCap);
 
       const displayArrivals = cappedArrivals.map(arr => {
-        if (arr.routeType === 2 && routeLineNameMap[arr.routeId]) {
-          return { ...arr, routeShortName: `${arr.routeShortName} ${routeLineNameMap[arr.routeId]}` };
+        const lineName = routeLineNameMap[arr.routeId] || routeLineNameMap[arr.routeShortName];
+        if (lineName) {
+          return { ...arr, routeShortName: `${arr.routeShortName} ${lineName}` };
         }
         return arr;
       });
@@ -1995,9 +2013,20 @@ export default function StopArrivalsSlide({
               )}
 
               <div>
-                <label className="block text-[#4a5568] font-medium mb-2">
-                  Display Name Override
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[#4a5568] font-medium">
+                    Display Name Override
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm text-[#718096] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showDisplayName}
+                      onChange={(e) => setShowDisplayName(slideId, e.target.checked)}
+                      className="w-3.5 h-3.5"
+                    />
+                    Show
+                  </label>
+                </div>
                 <Input
                   placeholder={selectedStop?.name || selectedStop?.stop_name || "Leave blank to use agency name"}
                   className="bg-white border-[#cbd5e0]"
@@ -2019,6 +2048,32 @@ export default function StopArrivalsSlide({
                   value={description}
                   onChange={(e) => setDescription?.(slideId, e.target.value)}
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[#4a5568] font-medium">
+                    Subtitle Text
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm text-[#718096] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showSubtitle}
+                      onChange={(e) => setShowSubtitle(slideId, e.target.checked)}
+                      className="w-3.5 h-3.5"
+                    />
+                    Show
+                  </label>
+                </div>
+                <Input
+                  placeholder={selectedStop ? `Stop #${selectedStop.id} arrival times` : "e.g. Stop #12345 arrival times"}
+                  className="bg-white border-[#cbd5e0]"
+                  value={subtitleText}
+                  onChange={(e) => setSubtitleText(slideId, e.target.value)}
+                />
+                <p className="text-xs text-[#718096] mt-1">
+                  Customize or hide the small text beneath the slide title. Leave blank to use the auto-generated stop ID text.
+                </p>
               </div>
             </div>
 
@@ -2069,7 +2124,19 @@ export default function StopArrivalsSlide({
                   onChange={(e) => setShowTitle(slideId, e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300"
                 />
-                Show Title
+                Show Header
+              </label>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showTitleHtml}
+                  onChange={(e) => setShowTitleHtml(slideId, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                Show Custom Title
               </label>
             </div>
 
@@ -2326,6 +2393,34 @@ export default function StopArrivalsSlide({
 
             <div>
               <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Logo Height Override (px)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={10}
+                  max={500}
+                  placeholder="Global default"
+                  value={logoHeightOverride ?? ''}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value);
+                    setLogoHeightOverride(slideId, isNaN(v) || v <= 0 ? undefined : v);
+                  }}
+                  className="w-24 border border-[#e2e8f0] rounded px-2 py-1 text-xs text-[#4a5568] focus:outline-none focus:border-blue-400"
+                />
+                {logoHeightOverride != null && (
+                  <button
+                    onClick={() => setLogoHeightOverride(slideId, undefined)}
+                    className="text-xs text-red-400 hover:text-red-600"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
                 Title Text Size
               </label>
               <div className="flex items-center gap-2">
@@ -2375,6 +2470,46 @@ export default function StopArrivalsSlide({
                 >
                   +
                 </Button>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-[#4a5568] font-medium mb-3 pb-2 border-b border-[#e2e8f0] text-xs">Table Column Headers</h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`show-table-col-headers-${slideId}`}
+                    checked={showTableColumnHeaders}
+                    onChange={(e) => setShowTableColumnHeaders(slideId, e.target.checked)}
+                    className="w-3.5 h-3.5 accent-blue-500"
+                  />
+                  <label htmlFor={`show-table-col-headers-${slideId}`} className="text-xs text-[#4a5568] cursor-pointer">
+                    Show column headers
+                  </label>
+                </div>
+                {showTableColumnHeaders && (
+                  <>
+                    <div>
+                      <label className="block text-[#4a5568] font-medium mb-1 text-xs">Left Header</label>
+                      <Input
+                        value={tableHeaderLeft}
+                        className="text-xs"
+                        onChange={(e) => setTableHeaderLeft(slideId, e.target.value)}
+                        placeholder="Transit Service Line"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#4a5568] font-medium mb-1 text-xs">Right Header</label>
+                      <Input
+                        value={tableHeaderRight}
+                        className="text-xs"
+                        onChange={(e) => setTableHeaderRight(slideId, e.target.value)}
+                        placeholder="Est Arrival Time"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

@@ -41,7 +41,16 @@ export interface ServiceSelection {
 interface FixedRouteSlideData {
   stopName: string;
   displayName?: string;
+  showDisplayName?: boolean;
   showTitle?: boolean;
+  titleHtml?: string;
+  showTitleHtml?: boolean;
+  subtitleText?: string;
+  showSubtitle?: boolean;
+  logoHeightOverride?: number;
+  showTableColumnHeaders?: boolean;
+  tableHeaderLeft?: string;
+  tableHeaderRight?: string;
   description: string;
   backgroundColor: string;
   titleColor: string;
@@ -73,6 +82,7 @@ interface SlideStore {
   slides: Record<string, FixedRouteSlideData>;
   setStopName: (slideId: string, name: string) => void;
   setDisplayName: (slideId: string, name: string) => void;
+  setShowDisplayName: (slideId: string, show: boolean) => void;
   setShowTitle: (slideId: string, show: boolean) => void;
   setDescription: (slideId: string, description: string) => void;
   setBackgroundColor: (slideId: string, color: string) => void;
@@ -99,6 +109,14 @@ interface SlideStore {
   setMinArrivalMinutes: (slideId: string, minutes: number) => void;
   setColumnScheduleData: (slideId: string, data: { label: string; arrivals: any[] }[]) => void;
   setColumnServiceSelections: (slideId: string, data: [ServiceSelection[], ServiceSelection[]] | undefined) => void;
+  setTitleHtml: (slideId: string, html: string) => void;
+  setShowTitleHtml: (slideId: string, show: boolean) => void;
+  setSubtitleText: (slideId: string, text: string) => void;
+  setShowSubtitle: (slideId: string, show: boolean) => void;
+  setLogoHeightOverride: (slideId: string, height: number | undefined) => void;
+  setShowTableColumnHeaders: (slideId: string, show: boolean) => void;
+  setTableHeaderLeft: (slideId: string, label: string) => void;
+  setTableHeaderRight: (slideId: string, label: string) => void;
 }
 
 export const useFixedRouteStore = create<SlideStore>()(
@@ -126,6 +144,11 @@ export const useFixedRouteStore = create<SlideStore>()(
               displayName: name,
             },
           },
+        })),
+
+      setShowDisplayName: (slideId, show) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), showDisplayName: show } },
         })),
 
       setShowTitle: (slideId, show) =>
@@ -328,6 +351,46 @@ export const useFixedRouteStore = create<SlideStore>()(
             ...state.slides,
             [slideId]: { ...(state.slides[slideId] || {}), columnServiceSelections: data },
           },
+        })),
+
+      setTitleHtml: (slideId, html) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), titleHtml: html } },
+        })),
+
+      setShowTitleHtml: (slideId, show) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), showTitleHtml: show } },
+        })),
+
+      setSubtitleText: (slideId, text) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), subtitleText: text } },
+        })),
+
+      setShowSubtitle: (slideId, show) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), showSubtitle: show } },
+        })),
+
+      setLogoHeightOverride: (slideId, height) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), logoHeightOverride: height } },
+        })),
+
+      setShowTableColumnHeaders: (slideId, show) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), showTableColumnHeaders: show } },
+        })),
+
+      setTableHeaderLeft: (slideId, label) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), tableHeaderLeft: label } },
+        })),
+
+      setTableHeaderRight: (slideId, label) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), tableHeaderRight: label } },
         })),
     }),
     {

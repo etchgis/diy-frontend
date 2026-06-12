@@ -62,6 +62,9 @@ export default function CitibikePreview({
   const vehicleMarkerColor = useCitibikeStore(
     (state) => state.slides[slideId]?.vehicleMarkerColor || '#22C55E'
   );
+  const mutedMap = useCitibikeStore(
+    (state) => state.slides[slideId]?.mutedMap !== false
+  );
   const showTitle = useCitibikeStore(
     (state) => state.slides[slideId]?.showTitle !== false
   );
@@ -114,7 +117,7 @@ export default function CitibikePreview({
 
       const map = new mapboxgl.Map({
         container,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: mutedMap ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/streets-v12",
         center: [coordinates.lng, coordinates.lat],
         zoom: 14,
         attributionControl: false,
@@ -178,10 +181,17 @@ export default function CitibikePreview({
     }
   }, [stationData, vehicleMarkerColor]);
 
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const style = mutedMap ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/streets-v12";
+    mapRef.current.setStyle(style);
+    mapRef.current.once("style.load", () => addMarkers());
+  }, [mutedMap]);
+
   function getMarkerColor(bikes: number): string {
-    if (bikes === 0) return "#EF4444";
-    if (bikes <= 5) return "#EAB308";
-    return "#22C55E";
+    if (bikes === 0) return "#DC2626";
+    if (bikes <= 5) return "#D97706";
+    return "#16a34a";
   }
 
   function addMarkers() {
@@ -232,19 +242,23 @@ export default function CitibikePreview({
       } else {
         const totalBikes = station.bikesAvailable;
         const color = getMarkerColor(totalBikes);
+        const scale = isEditor ? 1 : Math.max(resScale * 1.25, 1.1);
+        const size = Math.round(48 * scale);
+        const font = Math.round(15 * scale);
+        const border = Math.round(3 * scale);
         el.style.cssText = `
-          width: 28px;
-          height: 28px;
+          width: ${size}px;
+          height: ${size}px;
           background: ${color};
-          border: 2px solid white;
+          border: ${border}px solid white;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: bold;
-          font-size: 11px;
+          font-size: ${font}px;
           color: white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          box-shadow: 0 3px 10px rgba(0,0,0,0.5);
           cursor: default;
         `;
         el.textContent = String(totalBikes);
@@ -462,7 +476,7 @@ export default function CitibikePreview({
                       </div>
                       <div
                         style={{
-                          color: total === 0 ? "#EF4444" : total <= 5 ? "#EAB308" : "#22C55E",
+                          color: total === 0 ? "#DC2626" : total <= 5 ? "#D97706" : "#16a34a",
                           fontWeight: 600,
                           marginTop: "2px",
                         }}
