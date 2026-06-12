@@ -67,7 +67,7 @@ export default function HtmlTextEditor({ content, onChange, textColor, fontSize,
         type="button"
         onMouseDown={(e) => { e.preventDefault(); setMode(mode === 'edit' ? 'html' : 'edit'); }}
         title={mode === 'edit' ? 'Edit HTML source' : 'Back to editor'}
-        className="absolute bottom-1.5 right-1.5 z-10 p-1 rounded bg-black/40 text-white/60 hover:bg-black/70 hover:text-white transition-colors select-none"
+        className="absolute top-1.5 right-1.5 z-10 p-1 rounded bg-black/40 text-white/60 hover:bg-black/70 hover:text-white transition-colors select-none"
       >
         {mode === 'edit' ? <Code2 className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
       </button>

@@ -11,9 +11,11 @@ import { useFixedRouteStore } from "./store";
 import { MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { useGeneralStore } from "@/stores/general";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react";
+import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import Footer from "@/components/shared-components/footer";
+import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 
 
 export default function FixedRoutePreview({ slideId, previewMode = false }: { slideId: string; previewMode?: boolean }) {
@@ -22,6 +24,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   );
   const displayName = useFixedRouteStore(
     (state) => state.slides[slideId]?.displayName || ""
+  );
+  const showDisplayName = useFixedRouteStore(
+    (state) => state.slides[slideId]?.showDisplayName !== false
   );
   const description = useFixedRouteStore(
     (state) => state.slides[slideId]?.description || ""
@@ -66,7 +71,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
   const resolution = useGeneralStore((state) => state.resolution);
-  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
+  const resScale = useResScale(resolution);
+  const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
 
   const isLoading = useFixedRouteStore(
     (state) => state.slides[slideId]?.isLoading
@@ -155,6 +161,18 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const contentTextSize = useFixedRouteStore(
     (state) => state.slides[slideId]?.contentTextSize || 5
   );
+  const titleHtml = useFixedRouteStore((state) => state.slides[slideId]?.titleHtml || "");
+  const setTitleHtml = useFixedRouteStore((state) => state.setTitleHtml);
+  const showTitleHtml = useFixedRouteStore((state) => state.slides[slideId]?.showTitleHtml || false);
+  const subtitleText = useFixedRouteStore((state) => state.slides[slideId]?.subtitleText || "");
+  const showSubtitle = useFixedRouteStore((state) => state.slides[slideId]?.showSubtitle !== false);
+  const logoHeightOverride = useFixedRouteStore((state) => state.slides[slideId]?.logoHeightOverride);
+  const effectiveLogoHeight = logoHeightOverride != null
+    ? (isEditor ? logoHeightOverride : logoHeightOverride * resScale)
+    : logoHeight;
+  const showTableColumnHeaders = useFixedRouteStore((state) => state.slides[slideId]?.showTableColumnHeaders || false);
+  const tableHeaderLeft = useFixedRouteStore((state) => state.slides[slideId]?.tableHeaderLeft || "Transit Service Line");
+  const tableHeaderRight = useFixedRouteStore((state) => state.slides[slideId]?.tableHeaderRight || "Est Arrival Time");
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
@@ -245,47 +263,63 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
             (isEditor ? (
               <div className="p-6 flex items-center">
                 <div className="flex-1">
-                  <div
-                    className="mb-2"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      fontSize: `${18 * titleSizeMultiplier}px`,
-                    }}
-                  >
-                    <img
-                      src={modeIcon}
-                      style={{
-                        height: `${38 * titleSizeMultiplier}px`,
-                        width: `${38 * titleSizeMultiplier}px`,
-                        marginRight: "8px",
-                        objectFit: "contain",
-                      }}
-                      alt=""
-                    />
-                    <p>Stop #{selectedStop?.id} arrival times</p>
-                  </div>
+                  {showTitleHtml && (
+                    <div className="rounded px-2 mb-2 border-2 border-[#11d1f7]">
+                      <HtmlTextEditor
+                        content={titleHtml}
+                        onChange={(html) => setTitleHtml(slideId, html)}
+                        textColor={titleColor}
+                        fontSize={Math.round(28 * titleSizeMultiplier)}
+                        minHeight="1.4em"
+                      />
+                    </div>
+                  )}
 
-                  <h2
-                    className="font-bold mb-2 flex items-center gap-2"
-                    style={{ fontSize: `${30 * titleSizeMultiplier}px` }}
-                  >
-                    {(
-                      displayName ||
-                      selectedStop?.name ||
-                      selectedStop?.stop_name
-                    )
-                      ?.toString()
-                      .toUpperCase() || "UNKNOWN STOP"}
-                    {selectedStop?.wheelchairBoarding === 1 && (
-                      <span
-                        title="Wheelchair accessible"
-                        style={{ fontSize: `${22 * titleSizeMultiplier}px` }}
-                      >
-                        ♿
-                      </span>
-                    )}
-                  </h2>
+                  {showSubtitle && (
+                    <div
+                      className="mb-2"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        fontSize: `${18 * titleSizeMultiplier}px`,
+                      }}
+                    >
+                      <img
+                        src={modeIcon}
+                        style={{
+                          height: `${38 * titleSizeMultiplier}px`,
+                          width: `${38 * titleSizeMultiplier}px`,
+                          marginRight: "8px",
+                          objectFit: "contain",
+                        }}
+                        alt=""
+                      />
+                      <p>{subtitleText || `Stop #${selectedStop?.id} arrival times`}</p>
+                    </div>
+                  )}
+
+                  {showDisplayName && (
+                    <h2
+                      className="font-bold mb-2 flex items-center gap-2"
+                      style={{ fontSize: `${30 * titleSizeMultiplier}px` }}
+                    >
+                      {(
+                        displayName ||
+                        selectedStop?.name ||
+                        selectedStop?.stop_name
+                      )
+                        ?.toString()
+                        .toUpperCase() || "UNKNOWN STOP"}
+                      {selectedStop?.wheelchairBoarding === 1 && (
+                        <span
+                          title="Wheelchair accessible"
+                          style={{ fontSize: `${22 * titleSizeMultiplier}px` }}
+                        >
+                          ♿
+                        </span>
+                      )}
+                    </h2>
+                  )}
 
                   <p style={{ fontSize: `${16 * titleSizeMultiplier}px` }}>
                     {description}
@@ -296,7 +330,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                     src={logoImage}
                     alt="Logo"
                     className="object-contain ml-4 flex-shrink-0"
-                    style={{ maxHeight: logoHeight }}
+                    style={{ height: effectiveLogoHeight }}
                   />
                 )}
               </div>
@@ -304,75 +338,79 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
               <div
                 className="p-2 sm:p-4 lg:p-6 xl:p-8 flex items-center flex-shrink-0 overflow-hidden"
                 style={{
-                  padding: "clamp(0.5rem, 2vw, 2rem)",
+                  padding: "2cqw",
                   maxHeight: "25%",
                 }}
               >
                 <div className="flex-1 overflow-hidden">
-                  <div
-                    className="mb-1 sm:mb-2 overflow-hidden"
-                    style={{
-                      fontSize: `clamp(0.75rem, ${
-                        2.5 * titleSizeMultiplier
-                      }vh, 3rem)`,
-                      marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <img
-                      src={modeIcon}
+                  {showTitleHtml && titleHtml && (
+                    <div
+                      className="font-bold overflow-hidden rich-text-content"
                       style={{
-                        height: `clamp(28px, ${
-                          5.5 * titleSizeMultiplier
-                        }vh, 7rem)`,
-                        width: `clamp(28px, ${
-                          5.5 * titleSizeMultiplier
-                        }vh, 7rem)`,
-                        marginRight: "8px",
-                        objectFit: "contain",
+                        fontSize: `${5 * titleSizeMultiplier}cqh`,
+                        color: titleColor,
+                        marginBottom: "0.5cqw",
                       }}
-                      alt=""
+                      dangerouslySetInnerHTML={{ __html: titleHtml }}
                     />
-                    <span className="truncate">
-                      Stop #{selectedStop?.id} arrival times
-                    </span>
-                  </div>
+                  )}
 
-                  <h2
-                    className="font-bold mb-1 sm:mb-2 flex items-center gap-2 overflow-hidden"
-                    style={{
-                      fontSize: `clamp(1.25rem, ${
-                        6 * titleSizeMultiplier
-                      }vh, 6rem)`,
-                      marginBottom: "clamp(0.25rem, 0.5vw, 0.5rem)",
-                    }}
-                  >
-                    <span className="truncate">
-                      {(displayName || stopName)?.toString().toUpperCase() ||
-                        "UNKNOWN STOP"}
-                    </span>
-                    {selectedStop?.wheelchairBoarding === 1 && (
-                      <span
-                        title="Wheelchair accessible"
-                        className="flex-shrink-0"
+                  {showSubtitle && (
+                    <div
+                      className="mb-1 sm:mb-2 overflow-hidden"
+                      style={{
+                        fontSize: `${2.5 * titleSizeMultiplier}cqh`,
+                        marginBottom: "0.5cqw",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <img
+                        src={modeIcon}
                         style={{
-                          fontSize: `clamp(1rem, ${
-                            4 * titleSizeMultiplier
-                          }vh, 4rem)`,
+                          height: `${5.5 * titleSizeMultiplier}cqh`,
+                          width: `${5.5 * titleSizeMultiplier}cqh`,
+                          marginRight: "8px",
+                          objectFit: "contain",
                         }}
-                      >
-                        ♿
+                        alt=""
+                      />
+                      <span className="truncate">
+                        {subtitleText || `Stop #${selectedStop?.id} arrival times`}
                       </span>
-                    )}
-                  </h2>
+                    </div>
+                  )}
+
+                  {showDisplayName && (
+                    <h2
+                      className="font-bold mb-1 sm:mb-2 flex items-center gap-2 overflow-hidden"
+                      style={{
+                        fontSize: `${6 * titleSizeMultiplier}cqh`,
+                        marginBottom: "0.5cqw",
+                      }}
+                    >
+                      <span className="truncate">
+                        {(displayName || stopName)?.toString().toUpperCase() ||
+                          "UNKNOWN STOP"}
+                      </span>
+                      {selectedStop?.wheelchairBoarding === 1 && (
+                        <span
+                          title="Wheelchair accessible"
+                          className="flex-shrink-0"
+                          style={{
+                            fontSize: `${4 * titleSizeMultiplier}cqh`,
+                          }}
+                        >
+                          ♿
+                        </span>
+                      )}
+                    </h2>
+                  )}
 
                   <p
                     className="truncate"
                     style={{
-                      fontSize: `clamp(0.625rem, ${
-                        2 * titleSizeMultiplier
-                      }vh, 2.5rem)`,
+                      fontSize: `${2 * titleSizeMultiplier}cqh`,
                     }}
                   >
                     {description}
@@ -383,7 +421,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                     src={logoImage}
                     alt="Logo"
                     className="object-contain ml-4 flex-shrink-0"
-                    style={{ maxHeight: logoHeight }}
+                    style={{ height: effectiveLogoHeight }}
                   />
                 )}
               </div>
@@ -444,8 +482,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           color: columnHeaderTextColor,
                           fontSize: isEditor
                             ? `${(10 + columnHeaderTextSize * 0.8) * contentSizeMultiplier}px`
-                            : `clamp(0.8rem, ${(1.5 + columnHeaderTextSize * 0.3) * contentSizeMultiplier}vh, 5rem)`,
-                          padding: isEditor ? "6px 8px" : `${1.2 * contentSizeMultiplier}vh 2vw`,
+                            : `${(1.5 + columnHeaderTextSize * 0.3) * contentSizeMultiplier}cqh`,
+                          padding: isEditor ? "6px 8px" : `${1.2 * contentSizeMultiplier}cqh 2cqw`,
                         }}
                       >
                         {col.label}
@@ -456,6 +494,20 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         className="text-black flex flex-col overflow-hidden"
                         style={{ flex: "1 1 0", minHeight: 0 }}
                       >
+                        {showTableColumnHeaders && (
+                          <div
+                            className="flex items-center justify-between border-b-2 flex-shrink-0 font-semibold"
+                            style={{
+                              backgroundColor: backgroundColor,
+                              color: titleColor,
+                              padding: `${description ? "8px 10px" : "10px 12px"}`,
+                              fontSize: `${12 * contentSizeMultiplier}px`,
+                            }}
+                          >
+                            <span className="flex-1">{tableHeaderLeft}</span>
+                            <span className="flex-shrink-0 pr-1">{tableHeaderRight}</span>
+                          </div>
+                        )}
                         {col.arrivals.map((item: any, idx: number) => (
                           <div
                             key={idx}
@@ -470,17 +522,15 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               padding: `${description ? "10px" : "12px"}`,
                             }}
                           >
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 min-w-0 flex items-center gap-2">
                               <span
-                                className="truncate block"
+                                className="block break-words leading-snug"
                                 style={{
                                   fontSize: `${12 * contentSizeMultiplier}px`,
                                 }}
                               >
-                                {applyAlias(item.destination, item.routeShortName)}
+                                {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
                               </span>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
                               <div
                                 className="rounded font-bold text-center flex-shrink-0"
                                 style={{
@@ -491,8 +541,10 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                {item.routeShortName || item.routeId}
+                                {item.routeShortName || item.routeId || ''}
                               </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
                               <div
                                 style={{
                                   fontSize: `${12 * contentSizeMultiplier}px`,
@@ -519,6 +571,21 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         className="text-black flex flex-col overflow-hidden"
                         style={{ flex: "1 1 0", minHeight: 0 }}
                       >
+                        {showTableColumnHeaders && (
+                          <div
+                            className="flex items-center justify-between border-b-2 flex-shrink-0"
+                            style={{
+                              backgroundColor: backgroundColor,
+                              color: titleColor,
+                              padding: `0.8cqh 1.5cqw`,
+                              fontSize: `${2.2 * contentSizeMultiplier}cqh`,
+                              fontWeight: 600,
+                            }}
+                          >
+                            <span className="flex-1">{tableHeaderLeft}</span>
+                            <span className="flex-shrink-0">{tableHeaderRight}</span>
+                          </div>
+                        )}
                         {col.arrivals.map((item: any, idx: number) => (
                           <div
                             key={idx}
@@ -530,47 +597,45 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                 ? tableColor
                                 : "transparent",
                               color: tableTextColor,
-                              padding: `clamp(0.5rem, 1.5vw, ${
-                                description ? "0.625rem" : "0.75rem"
-                              })`,
+                              padding: `1cqh 1.5cqw`,
                             }}
                           >
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 min-w-0 flex items-center gap-2">
                               <span
-                                className="font-medium block truncate"
+                                className="font-medium block break-words leading-snug"
                                 style={{
-                                  fontSize: `clamp(0.625rem,${
+                                  fontSize: `${
                                     2.5 * contentSizeMultiplier
-                                  }vh,2.5rem)`,
+                                  }cqh`,
                                 }}
                               >
-                                {applyAlias(item.destination, item.routeShortName)}
+                                {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
                               </span>
-                            </div>
-                            <div
-                              className="flex items-center flex-shrink-0"
-                              style={{ gap: "clamp(0.5rem,1.5vh,2rem)" }}
-                            >
                               <div
                                 className="rounded font-bold text-center flex-shrink-0"
                                 style={{
                                   padding: "0.3em 0.6em",
-                                  fontSize: `clamp(0.5rem,${
+                                  fontSize: `${
                                     2 * contentSizeMultiplier
-                                  }vh,2rem)`,
+                                  }cqh`,
                                   color: `#${item.routeTextColor}`,
                                   backgroundColor: `#${item.routeColor}`,
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                {item.routeShortName || item.routeId}
+                                {item.routeShortName || item.routeId || ''}
                               </div>
+                            </div>
+                            <div
+                              className="flex items-center flex-shrink-0"
+                              style={{ gap: "1.5cqh" }}
+                            >
                               <div
                                 className="font-medium flex-shrink-0"
                                 style={{
-                                  fontSize: `clamp(0.625rem,${
+                                  fontSize: `${
                                     2.5 * contentSizeMultiplier
-                                  }vh,2.5rem)`,
+                                  }cqh`,
                                   whiteSpace: "nowrap",
                                 }}
                               >
@@ -579,9 +644,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               <div
                                 className="flex-shrink-0"
                                 style={{
-                                  fontSize: `clamp(0.5rem,${
+                                  fontSize: `${
                                     2 * contentSizeMultiplier
-                                  }vh,2rem)`,
+                                  }cqh`,
                                   whiteSpace: "nowrap",
                                   opacity: 0.85,
                                 }}
@@ -601,6 +666,20 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
             <>
               {isEditor ? (
                 <div className="text-black">
+                  {showTableColumnHeaders && (
+                    <div
+                      className="flex items-center justify-between border-b-2 border-[#e2e8f0] font-semibold"
+                      style={{
+                        backgroundColor: backgroundColor,
+                        color: titleColor,
+                        padding: `${description ? "8px 10px" : "10px 12px"}`,
+                        fontSize: `${12 * contentSizeMultiplier}px`,
+                      }}
+                    >
+                      <span className="flex-1">{tableHeaderLeft}</span>
+                      <span className="flex-shrink-0 pr-1">{tableHeaderRight}</span>
+                    </div>
+                  )}
                   {scheduleData &&
                     scheduleData.map((item: any, index: number) => (
                       <div
@@ -615,17 +694,15 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           color: tableTextColor,
                         }}
                       >
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
                           <span
-                            className="font-medium"
+                            className="font-medium block break-words leading-snug"
                             style={{
                               fontSize: `${14 * contentSizeMultiplier}px`,
                             }}
                           >
-                            {applyAlias(item.destination, item.routeShortName)}
+                            {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-4">
                           <div
                             className={`rounded font-bold text-center flex-shrink-0`}
                             style={{
@@ -637,8 +714,10 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {item.routeShortName || item.routeId}
+                            {item.routeShortName || item.routeId || ''}
                           </div>
+                        </div>
+                        <div className="flex items-center gap-4">
                           <div
                             className="font-medium flex-shrink-0 overflow-hidden"
                             style={{
@@ -680,6 +759,21 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                   className="text-black flex flex-col overflow-hidden"
                   style={{ flex: "1 1 0", minHeight: 0 }}
                 >
+                  {showTableColumnHeaders && (
+                    <div
+                      className="flex items-center justify-between border-b-2 flex-shrink-0"
+                      style={{
+                        backgroundColor: backgroundColor,
+                        color: titleColor,
+                        padding: `0.8cqh 1.5cqw`,
+                        fontSize: `${2.2 * contentSizeMultiplier}cqh`,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <span className="flex-1">{tableHeaderLeft}</span>
+                      <span className="flex-shrink-0">{tableHeaderRight}</span>
+                    </div>
+                  )}
                   {scheduleData &&
                     scheduleData.map((item: any, index: number) => (
                       <div
@@ -692,51 +786,46 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             ? tableColor
                             : "transparent",
                           color: tableTextColor,
-                          padding: `clamp(0.5rem, 1.5vw, ${
-                            description ? "0.625rem" : "0.75rem"
-                          })`,
+                          padding: `1cqh 1.5cqw`,
                         }}
                       >
-                        {/* Destination */}
-                        <div className="flex-1 overflow-hidden">
+                        {/* Destination + Route Badge */}
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
                           <span
-                            className="font-medium block truncate"
+                            className="font-medium block break-words leading-snug"
                             style={{
-                              fontSize: `clamp(0.75rem, ${
+                              fontSize: `${
                                 3 * contentSizeMultiplier
-                              }vh, 3rem)`,
+                              }cqh`,
                             }}
                           >
-                            {applyAlias(item.destination, item.routeShortName)}
+                            {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
                           </span>
+                          <div
+                            className="rounded font-bold text-center flex-shrink-0"
+                            style={{
+                              padding: "0.3em 0.4em",
+                              fontSize: `${
+                                2.5 * contentSizeMultiplier
+                              }cqh`,
+                              whiteSpace: "nowrap",
+                              color: `#${item.routeTextColor}`,
+                              backgroundColor: `#${item.routeColor}`,
+                            }}
+                          >
+                            {item.routeShortName || item.routeId || ''}
+                          </div>
                         </div>
                         {/* Right-side columns — em widths track font size so nothing ever clips */}
                         <div
                           className="flex items-center flex-shrink-0"
                           style={{
-                            fontSize: `clamp(0.75rem, ${
+                            fontSize: `${
                               3 * contentSizeMultiplier
-                            }vh, 3rem)`,
+                            }cqh`,
                             gap: "1em",
                           }}
                         >
-                          <div
-                            className="rounded font-bold text-center flex-shrink-0"
-                            style={{
-                              width: "4.5em",
-                              padding: "0.3em 0.4em",
-                              fontSize: `clamp(0.625rem, ${
-                                2.5 * contentSizeMultiplier
-                              }vh, 2.5rem)`,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              color: `#${item.routeTextColor}`,
-                              backgroundColor: `#${item.routeColor}`,
-                            }}
-                          >
-                            {item.routeShortName || item.routeId}
-                          </div>
                           <div
                             className="font-medium text-right flex-shrink-0"
                             style={{ width: "4.5em", whiteSpace: "nowrap" }}
@@ -758,9 +847,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             style={{
                               width: "9em",
                               padding: "0.3em 0.4em",
-                              fontSize: `clamp(0.625rem, ${
+                              fontSize: `${
                                 2.5 * contentSizeMultiplier
-                              }vh, 2.5rem)`,
+                              }cqh`,
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",

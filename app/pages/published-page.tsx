@@ -442,7 +442,32 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         const cap = (columnMode && columnServiceSelections) ? Infinity : MAX_ARRIVALS_PER_SLIDE;
         const limitedArrivals = cap === Infinity ? filteredArrivals : filteredArrivals.slice(0, cap);
 
-        setScheduleData(slide.id, limitedArrivals);
+        const routeLineNameMap: Record<string, string> = {};
+        for (const sel of serviceSelections) {
+          for (const route of (sel as any).routes || []) {
+            const routeId = route.id ?? route.route_id;
+            const shortName = route.shortName ?? '';
+            const longName = route.longName ?? route.route_long_name ?? '';
+            if (longName) {
+              const cleanName = longName
+                .replace(/\s+Branch$/i, '')
+                .replace(/\s+Line$/i, '')
+                .replace(/\s+Railroad$/i, '')
+                .trim();
+              if (routeId) routeLineNameMap[routeId] = cleanName;
+              if (shortName) routeLineNameMap[shortName] = cleanName;
+            }
+          }
+        }
+        const displayArrivals = limitedArrivals.map((arr: any) => {
+          const lineName = routeLineNameMap[arr.routeId] || routeLineNameMap[arr.routeShortName];
+          if (lineName) {
+            return { ...arr, routeShortName: `${arr.routeShortName} ${lineName}` };
+          }
+          return arr;
+        });
+
+        setScheduleData(slide.id, displayArrivals);
         setFixedRouteDataError(slide.id, false);
         console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, limitedArrivals);
       } catch (error) {
@@ -634,15 +659,15 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     switch (type) {
       case 'ferryhawks-watch-party-countdown': {
         const slideConfig = orgSlideMap[slideId];
-        return slideConfig ? <WatchPartyCountdownPreview config={slideConfig} /> : null;
+        return slideConfig ? <WatchPartyCountdownPreview config={slideConfig} showFooter={orgSlideOverrides[slideId]?.showFooter ?? true} /> : null;
       }
       case 'ferryhawks-ferry-schedule': {
         const slideConfig = orgSlideMap[slideId];
-        return slideConfig ? <FerrySchedulePreview config={slideConfig} /> : null;
+        return slideConfig ? <FerrySchedulePreview config={slideConfig} showFooter={orgSlideOverrides[slideId]?.showFooter ?? true} /> : null;
       }
       case 'ferryhawks-sir-schedule': {
         const slideConfig = orgSlideMap[slideId];
-        return slideConfig ? <SIRSchedulePreview config={slideConfig} /> : null;
+        return slideConfig ? <SIRSchedulePreview config={slideConfig} showFooter={orgSlideOverrides[slideId]?.showFooter ?? true} /> : null;
       }
       case 'qr':
         return <QRSlidePreview slideId={slideId} />;

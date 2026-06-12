@@ -1,6 +1,7 @@
 import { useCitibikeStore, KNOWN_PROVIDERS, type RentalStation } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData";
+import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import Footer from "@/components/shared-components/footer";
@@ -61,6 +62,9 @@ export default function CitibikePreview({
   const vehicleMarkerColor = useCitibikeStore(
     (state) => state.slides[slideId]?.vehicleMarkerColor || '#22C55E'
   );
+  const mutedMap = useCitibikeStore(
+    (state) => state.slides[slideId]?.mutedMap !== false
+  );
   const showTitle = useCitibikeStore(
     (state) => state.slides[slideId]?.showTitle !== false
   );
@@ -76,7 +80,8 @@ export default function CitibikePreview({
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
   const resolution = useGeneralStore((state) => state.resolution);
-  const logoHeight = isEditor ? 64 : logoBaseHeight * (parseInt(resolution?.split('x')[1] || '1080', 10) / 1080);
+  const resScale = useResScale(resolution);
+  const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
 
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
@@ -112,7 +117,7 @@ export default function CitibikePreview({
 
       const map = new mapboxgl.Map({
         container,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: mutedMap ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/streets-v12",
         center: [coordinates.lng, coordinates.lat],
         zoom: 14,
         attributionControl: false,
@@ -176,10 +181,17 @@ export default function CitibikePreview({
     }
   }, [stationData, vehicleMarkerColor]);
 
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const style = mutedMap ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/streets-v12";
+    mapRef.current.setStyle(style);
+    mapRef.current.once("style.load", () => addMarkers());
+  }, [mutedMap]);
+
   function getMarkerColor(bikes: number): string {
-    if (bikes === 0) return "#EF4444";
-    if (bikes <= 5) return "#EAB308";
-    return "#22C55E";
+    if (bikes === 0) return "#DC2626";
+    if (bikes <= 5) return "#D97706";
+    return "#16a34a";
   }
 
   function addMarkers() {
@@ -230,19 +242,23 @@ export default function CitibikePreview({
       } else {
         const totalBikes = station.bikesAvailable;
         const color = getMarkerColor(totalBikes);
+        const scale = isEditor ? 1 : Math.max(resScale * 1.25, 1.1);
+        const size = Math.round(48 * scale);
+        const font = Math.round(15 * scale);
+        const border = Math.round(3 * scale);
         el.style.cssText = `
-          width: 28px;
-          height: 28px;
+          width: ${size}px;
+          height: ${size}px;
           background: ${color};
-          border: 2px solid white;
+          border: ${border}px solid white;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: bold;
-          font-size: 11px;
+          font-size: ${font}px;
           color: white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          box-shadow: 0 3px 10px rgba(0,0,0,0.5);
           cursor: default;
         `;
         el.textContent = String(totalBikes);
@@ -301,7 +317,7 @@ export default function CitibikePreview({
                 className="w-full bg-transparent font-light rich-text-content"
                 style={{
                   color: titleColor,
-                  fontSize: `clamp(1.5rem, ${6 * titleSizeMultiplier}vh, 8rem)`,
+                  fontSize: `${6 * titleSizeMultiplier}cqh`,
                   lineHeight: "1.2",
                 }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
@@ -313,7 +329,7 @@ export default function CitibikePreview({
               src={logoImage}
               alt="Logo"
               className="object-contain ml-4 flex-shrink-0"
-              style={{ maxHeight: logoHeight }}
+              style={{ height: logoHeight }}
             />
           )}
         </div>
@@ -328,7 +344,7 @@ export default function CitibikePreview({
                 style={{
                   color: textColor,
                   opacity: 0.7,
-                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh`,
+                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
                 }}
               >
                 Unable to load {selectedProvider.name} data. Please check your location.
@@ -355,7 +371,7 @@ export default function CitibikePreview({
               className="p-3 text-center"
               style={{
                 opacity: 0.7,
-                fontSize: isEditor ? `${12.8 * contentSizeMultiplier}px` : `${1.8 * contentSizeMultiplier}vh`,
+                fontSize: isEditor ? `${12.8 * contentSizeMultiplier}px` : `${1.8 * contentSizeMultiplier}cqh`,
               }}
             >
               {!coordinates
@@ -369,7 +385,7 @@ export default function CitibikePreview({
               <div
                 className="font-medium mb-2 pb-1"
                 style={{
-                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh`,
+                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
                   borderBottom: "1px solid rgba(255,255,255,0.2)",
                 }}
               >
@@ -377,13 +393,13 @@ export default function CitibikePreview({
               </div>
               <div
                 className="mt-3"
-                style={{ fontSize: isEditor ? `${40 * contentSizeMultiplier}px` : `${5 * contentSizeMultiplier}vh`, fontWeight: 700 }}
+                style={{ fontSize: isEditor ? `${40 * contentSizeMultiplier}px` : `${5 * contentSizeMultiplier}cqh`, fontWeight: 700 }}
               >
                 {stationData.length}
               </div>
               <div
                 style={{
-                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}vh`,
+                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}cqh`,
                   opacity: 0.75,
                   marginTop: "2px",
                 }}
@@ -393,7 +409,7 @@ export default function CitibikePreview({
               {stationData[0] && (
                 <div
                   className="mt-3"
-                  style={{ fontSize: isEditor ? `${15 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}vh` }}
+                  style={{ fontSize: isEditor ? `${15 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}cqh` }}
                 >
                   <div style={{ opacity: 0.7 }}>Nearest</div>
                   <div style={{ fontWeight: 600 }}>{stationData[0].distance} mi</div>
@@ -403,7 +419,7 @@ export default function CitibikePreview({
                 className="mt-3 pt-2"
                 style={{
                   borderTop: "1px solid rgba(255,255,255,0.2)",
-                  fontSize: isEditor ? `${14 * contentSizeMultiplier}px` : `${1.9 * contentSizeMultiplier}vh`,
+                  fontSize: isEditor ? `${14 * contentSizeMultiplier}px` : `${1.9 * contentSizeMultiplier}cqh`,
                 }}
               >
                 {[
@@ -426,7 +442,7 @@ export default function CitibikePreview({
               <div
                 className="font-medium mb-2 pb-1"
                 style={{
-                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}vh`,
+                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
                   borderBottom: "1px solid rgba(255,255,255,0.2)",
                 }}
               >
@@ -443,14 +459,14 @@ export default function CitibikePreview({
                   >
                     <div
                       className="font-medium"
-                      style={{ fontSize: isEditor ? `${13.6 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}vh` }}
+                      style={{ fontSize: isEditor ? `${13.6 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}cqh` }}
                     >
                       {station.name}
                     </div>
                     <div
                       className="mt-1"
                       style={{
-                        fontSize: isEditor ? `${11.2 * contentSizeMultiplier}px` : `${1.7 * contentSizeMultiplier}vh`,
+                        fontSize: isEditor ? `${11.2 * contentSizeMultiplier}px` : `${1.7 * contentSizeMultiplier}cqh`,
                         opacity: 0.8,
                       }}
                     >
@@ -460,7 +476,7 @@ export default function CitibikePreview({
                       </div>
                       <div
                         style={{
-                          color: total === 0 ? "#EF4444" : total <= 5 ? "#EAB308" : "#22C55E",
+                          color: total === 0 ? "#DC2626" : total <= 5 ? "#D97706" : "#16a34a",
                           fontWeight: 600,
                           marginTop: "2px",
                         }}

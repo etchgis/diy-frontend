@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { OrgCustomSlide } from '@/config/orgs/ferryhawks';
+import Footer from '@/components/shared-components/footer';
 
 interface FerryDeparture {
   time: string;
@@ -43,8 +44,8 @@ function DepartureRow({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 8 : '1.2vh',
-        padding: isEditor ? '8px 14px' : '1.2vh 2vh',
+        gap: isEditor ? 8 : '1.2cqh',
+        padding: isEditor ? '8px 14px' : '1.2cqh 2cqh',
         borderTop: isFirst ? 'none' : '1px solid rgba(255,255,255,0.08)',
         backgroundColor: isFirst ? 'rgba(255,255,255,0.04)' : 'transparent',
       }}
@@ -52,9 +53,9 @@ function DepartureRow({
       {/* Time */}
       <div style={{
         fontWeight: 700,
-        fontSize: isEditor ? `${26 * contentMult}px` : `${4.2 * contentMult}vh`,
+        fontSize: isEditor ? `${26 * contentMult}px` : `${4.2 * contentMult}cqh`,
         color: textColor,
-        minWidth: isEditor ? 85 : '12vh',
+        minWidth: isEditor ? 85 : '12cqh',
         flexShrink: 0,
         letterSpacing: '-0.01em',
         fontVariantNumeric: 'tabular-nums',
@@ -66,15 +67,15 @@ function DepartureRow({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 4 : '0.5vh',
-        minWidth: isEditor ? 78 : '10vh',
+        gap: isEditor ? 4 : '0.5cqh',
+        minWidth: isEditor ? 78 : '10cqh',
         flexShrink: 0,
       }}>
         {dep.isRealTime && (
           <span style={{
-            width: isEditor ? 7 : '0.9vh',
-            height: isEditor ? 7 : '0.9vh',
-            minWidth: isEditor ? 7 : '0.9vh',
+            width: isEditor ? 7 : '0.9cqh',
+            height: isEditor ? 7 : '0.9cqh',
+            minWidth: isEditor ? 7 : '0.9cqh',
             borderRadius: '50%',
             backgroundColor: '#4ade80',
             display: 'inline-block',
@@ -83,7 +84,7 @@ function DepartureRow({
         )}
         <span style={{
           fontWeight: 600,
-          fontSize: isEditor ? `${19 * contentMult}px` : `${3 * contentMult}vh`,
+          fontSize: isEditor ? `${19 * contentMult}px` : `${3 * contentMult}cqh`,
           color: countdownColor,
           fontVariantNumeric: 'tabular-nums',
         }}>
@@ -94,7 +95,7 @@ function DepartureRow({
       {/* Destination */}
       <div style={{
         flex: 1,
-        fontSize: isEditor ? `${15 * contentMult}px` : `${2.6 * contentMult}vh`,
+        fontSize: isEditor ? `${15 * contentMult}px` : `${2.6 * contentMult}cqh`,
         color: textColor,
         opacity: 0.8,
         whiteSpace: 'nowrap',
@@ -106,15 +107,15 @@ function DepartureRow({
 
       {/* Badge */}
       <div style={{
-        fontSize: isEditor ? `${9 * contentMult}px` : `${1.4 * contentMult}vh`,
+        fontSize: isEditor ? `${9 * contentMult}px` : `${1.4 * contentMult}cqh`,
         fontWeight: 600,
         letterSpacing: '0.05em',
         textTransform: 'uppercase' as const,
         color: dep.isRealTime ? '#4ade80' : textColor,
         opacity: dep.isRealTime ? 1 : 0.4,
         border: `1px solid ${dep.isRealTime ? '#4ade8055' : 'rgba(255,255,255,0.15)'}`,
-        borderRadius: isEditor ? 3 : '0.4vh',
-        padding: isEditor ? '2px 5px' : '0.25vh 0.7vh',
+        borderRadius: isEditor ? 3 : '0.4cqh',
+        padding: isEditor ? '2px 5px' : '0.25cqh 0.7cqh',
         flexShrink: 0,
       }}>
         {dep.isRealTime ? 'Live' : 'Sched'}
@@ -151,24 +152,24 @@ function ServicePanel({
       display: 'flex',
       flexDirection: 'column' as const,
       border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: isEditor ? 8 : '1vh',
+      borderRadius: isEditor ? 8 : '1cqh',
       overflow: 'hidden',
     }}>
       {/* Header */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 8 : '1vh',
-        padding: isEditor ? '9px 14px' : '1.3vh 2vh',
+        gap: isEditor ? 8 : '1cqh',
+        padding: isEditor ? '9px 14px' : '1.3cqh 2cqh',
         backgroundColor: `${accentColor}22`,
         borderBottom: `2px solid ${accentColor}`,
         color: accentColor,
         flexShrink: 0,
       }}>
-        <ServiceIcon type={icon} size={isEditor ? 22 : '3.2vh'} color={accentColor} />
+        <ServiceIcon type={icon} size={isEditor ? 22 : '3.2cqh'} color={accentColor} />
         <span style={{
           fontWeight: 800,
-          fontSize: isEditor ? `${16 * contentMult}px` : `${2.8 * contentMult}vh`,
+          fontSize: isEditor ? `${16 * contentMult}px` : `${2.8 * contentMult}cqh`,
           letterSpacing: '0.06em',
           textTransform: 'uppercase' as const,
         }}>
@@ -183,8 +184,8 @@ function ServicePanel({
             textAlign: 'center',
             color: textColor,
             opacity: 0.35,
-            fontSize: isEditor ? `${13 * contentMult}px` : `${2 * contentMult}vh`,
-            padding: isEditor ? '16px' : '2vh',
+            fontSize: isEditor ? `${13 * contentMult}px` : `${2 * contentMult}cqh`,
+            padding: isEditor ? '16px' : '2cqh',
           }}>
             No departures available
           </div>
@@ -206,7 +207,7 @@ function ServicePanel({
   );
 }
 
-export default function FerrySchedulePreview({ config, isEditor = false }: { config: OrgCustomSlide; isEditor?: boolean }) {
+export default function FerrySchedulePreview({ config, isEditor = false, showFooter = true }: { config: OrgCustomSlide; isEditor?: boolean; showFooter?: boolean }) {
   const [ferryData, setFerryData] = useState<FerryData | null>(null);
   const [, setTick] = useState(0);
 
@@ -235,9 +236,6 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
   const contentMult = 0.5 + (config.contentTextSize ?? 5) * 0.1;
   const titleMult = 0.5 + (config.titleTextSize ?? 5) * 0.1;
 
-  const now = new Date();
-  const clockStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-
   const panels = [
     config.showSIFerry !== false && {
       label: 'Staten Island Ferry',
@@ -260,11 +258,11 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: isEditor ? '10px 14px' : '1.6vh 2.5vh',
+        padding: isEditor ? '10px 14px' : '1.6cqh 2.5cqh',
         borderBottom: '1px solid rgba(255,255,255,0.12)',
         flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 8 : '1vh' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 8 : '1cqh' }}>
           <img
             className="leg-icon"
             src="/images/ferry-icon.png"
@@ -273,7 +271,7 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
           />
           <span style={{
             fontWeight: 800,
-            fontSize: isEditor ? `${22 * titleMult}px` : `${6 * titleMult}vh`,
+            fontSize: isEditor ? `${22 * titleMult}px` : `${6 * titleMult}cqh`,
             letterSpacing: '0.04em',
             textTransform: 'uppercase' as const,
             color: textColor,
@@ -281,26 +279,16 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
             {title}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 10 : '1.5vh' }}>
-          <span style={{
-            fontSize: isEditor ? `${18 * contentMult}px` : `${4 * contentMult}vh`,
-            color: textColor,
-            opacity: 0.6,
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            {clockStr}
-          </span>
-          <img
-            src="/ferryhawks/logo-2.png"
-            alt="FerryHawks"
-            style={{
-              height: isEditor ? 44 : '7.5vh',
-              width: 'auto',
-              objectFit: 'contain',
-              flexShrink: 0,
-            }}
-          />
-        </div>
+        <img
+          src="/ferryhawks/logo-2.png"
+          alt="FerryHawks"
+          style={{
+            height: isEditor ? 44 : '7.5cqh',
+            width: 'auto',
+            objectFit: 'contain',
+            flexShrink: 0,
+          }}
+        />
       </div>
 
       {/* Panels */}
@@ -309,8 +297,8 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
         minHeight: 0,
         display: 'flex',
         flexDirection: panels.length === 1 ? 'column' : 'row',
-        gap: isEditor ? '10px' : '1.5vh',
-        padding: isEditor ? '10px' : '1.5vh',
+        gap: isEditor ? '10px' : '1.5cqh',
+        padding: isEditor ? '10px' : '1.5cqh',
         overflow: 'hidden',
       }}>
         {panels.map(panel => (
@@ -327,6 +315,7 @@ export default function FerrySchedulePreview({ config, isEditor = false }: { con
           />
         ))}
       </div>
+      {showFooter && <Footer />}
     </div>
   );
 }

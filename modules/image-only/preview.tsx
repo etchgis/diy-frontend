@@ -46,14 +46,9 @@ export default function ImageOnlyPreview({
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isEditor) return;
-    e.preventDefault();
-
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-
+  const handleFile = (file: File) => {
     setIsUploading(true);
     uploadImage(shortcode, file)
       .then((data) => {
@@ -72,9 +67,22 @@ export default function ImageOnlyPreview({
       });
   };
 
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isEditor) return;
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     if (!isEditor) return;
     e.preventDefault();
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+    e.target.value = '';
   };
 
   return (
@@ -119,10 +127,23 @@ export default function ImageOnlyPreview({
         <div className="w-full h-full flex flex-col items-center justify-center text-white">
           {isEditor && (
             <>
-              <div className="text-lg mb-4">Drag and Drop Image Here</div>
-              <div className="text-sm mb-6" style={{ opacity: 0.8 }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".png,.jpg,.jpeg,.gif"
+                className="hidden"
+                onChange={handleFileInput}
+              />
+              <div className="text-lg mb-2">Drag and Drop Image Here</div>
+              <div className="text-sm mb-4" style={{ opacity: 0.8 }}>
                 accepted files: .png, .jpg, .gif
               </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 mb-4 text-sm font-medium bg-white/20 hover:bg-white/30 rounded border border-white/30 transition-colors"
+              >
+                Browse Files
+              </button>
             </>
           )}
           <img
