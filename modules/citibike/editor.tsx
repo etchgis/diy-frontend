@@ -38,6 +38,9 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
   const showTitle = useCitibikeStore((state) => state.slides[slideId]?.showTitle !== false);
   const setShowTitle = useCitibikeStore((state) => state.setShowTitle);
 
+  const mutedMap = useCitibikeStore((state) => state.slides[slideId]?.mutedMap !== false);
+  const setMutedMap = useCitibikeStore((state) => state.setMutedMap);
+
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const setShowFooter = useGeneralStore((state) => state.setShowFooter);
 
@@ -119,6 +122,18 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
                 className="w-4 h-4 rounded border-gray-300"
               />
               Show Footer
+            </label>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={mutedMap}
+                onChange={(e) => setMutedMap(slideId, e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              Grayscale Map
             </label>
           </div>
 
