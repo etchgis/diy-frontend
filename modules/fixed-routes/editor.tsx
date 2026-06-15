@@ -554,6 +554,7 @@ export default function StopArrivalsSlide({
 }) {
   const allStopsRefreshedRef = useRef(false);
   const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [discoveredRoutes, setDiscoveredRoutes] = useState<Record<string, RouteInfo[]>>({});
   const [allStops, setAllStops] = useState<ExpandedStop[]>([]);
   const [filteredStops, setFilteredStops] = useState<ExpandedStop[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -912,7 +913,7 @@ export default function StopArrivalsSlide({
         enabled: true,  // All enabled by default
         selectedStopId: defaultStopId,
         directionOptions,
-        enabledRouteIds: svc.routes?.map((r: any) => r.id) || []
+        enabledRouteIds: undefined
       };
     });
 
@@ -1021,7 +1022,7 @@ export default function StopArrivalsSlide({
           enabled: true,
           selectedStopId: defaultStopId,
           directionOptions,
-          enabledRouteIds: linkedService.routes?.map((r: any) => r.id) || []
+          enabledRouteIds: undefined
         });
         anyMerged = true;
       }
@@ -1136,8 +1137,15 @@ export default function StopArrivalsSlide({
         const routeFilteredArrivals = offsetArrivals.filter(arr => {
           const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
           if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
-          if (!arr.routeId) return true;
-          return selection.enabledRouteIds.includes(arr.routeId);
+          if (!arr.routeId && !arr.routeShortName) return true;
+          if (arr.routeId && selection.enabledRouteIds.includes(arr.routeId)) return true;
+          if (arr.routeShortName && selection.enabledRouteIds.includes(arr.routeShortName)) return true;
+          if (arr.routeShortName && selection.routes?.length) {
+            for (const route of selection.routes) {
+              if (selection.enabledRouteIds.includes(route.id) && route.shortName === arr.routeShortName) return true;
+            }
+          }
+          return false;
         });
         filteredArrivals = routeFilteredArrivals.filter(arr => {
           const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
@@ -1178,6 +1186,27 @@ export default function StopArrivalsSlide({
         }
         return arr;
       });
+
+      // Collect routes seen in arrivals (keyed by service → shortName) for badge supplementation
+      const seenByService: Record<string, Map<string, RouteInfo>> = {};
+      for (const arr of uniqueArrivals) {
+        if (!arr._sourceService || !arr.routeShortName) continue;
+        if (!seenByService[arr._sourceService]) seenByService[arr._sourceService] = new Map();
+        const m = seenByService[arr._sourceService];
+        if (!m.has(arr.routeShortName)) {
+          m.set(arr.routeShortName, {
+            id: arr.routeId || arr.routeShortName,
+            shortName: arr.routeShortName,
+            color: arr.routeColor || '',
+            textColor: arr.routeTextColor || '',
+          });
+        }
+      }
+      const nextDiscovered: Record<string, RouteInfo[]> = {};
+      for (const [svcId, routeMap] of Object.entries(seenByService)) {
+        nextDiscovered[svcId] = Array.from(routeMap.values());
+      }
+      setDiscoveredRoutes(nextDiscovered);
 
       setScheduleData(slideId, displayArrivals);
       useFixedRouteStore.getState().setDataError(slideId, false);
@@ -1233,7 +1262,7 @@ export default function StopArrivalsSlide({
           directionOptions: newDirOptions,
           selectedStopId: newSelectedStopId,
           selectedHeadsignFilters: newSelectedHeadsignFilters.length > 0 ? newSelectedHeadsignFilters : undefined,
-          ...(needsRouteRestore ? { routes: svc.routes, enabledRouteIds: selection.enabledRouteIds?.length ? selection.enabledRouteIds : svc.routes.map((r: any) => r.id) } : {}),
+          ...(needsRouteRestore ? { routes: svc.routes, enabledRouteIds: selection.enabledRouteIds?.length ? selection.enabledRouteIds : undefined } : {}),
           ...(needsAgencyRestore ? { agencyName: svc.agencyName } : {}),
         };
       }
@@ -1272,7 +1301,7 @@ export default function StopArrivalsSlide({
           enabled: true,
           selectedStopId: defaultStopId,
           directionOptions,
-          enabledRouteIds: svc.routes?.map((r: any) => r.id) || []
+          enabledRouteIds: undefined
         };
       });
 
@@ -1609,6 +1638,11 @@ export default function StopArrivalsSlide({
                                 directionOptions: sel.directionOptions ?? baseDisplay.directionOptions,
                                 headsignAliases: sel.headsignAliases ?? baseDisplay.headsignAliases,
                               };
+                              // Use routes discovered from live SKIDS arrivals as the source of truth for badges.
+                              // Fall back to stops-API routes only before the first fetch completes.
+                              const baseRoutes: RouteInfo[] = selection.routes || [];
+                              const liveRoutes: RouteInfo[] = discoveredRoutes[selection.serviceId] || [];
+                              const allRoutes: RouteInfo[] = liveRoutes.length > 0 ? liveRoutes : baseRoutes;
                               return (
                               <div
                             key={`${selection.serviceId}-${index}`}
@@ -1625,13 +1659,13 @@ export default function StopArrivalsSlide({
                                   setActiveSels(updated);
                                 }}
                               />
-                              {selection.routes && selection.routes.length > 0 ? (
+                              {allRoutes.length > 0 ? (
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  {selection.routes.map((route: RouteInfo, routeIdx: number) => {
+                                  {allRoutes.map((route: RouteInfo, routeIdx: number) => {
                                     const routeId = route.id ?? (route as any).route_id;
                                     const isRouteEnabled = !selection.enabledRouteIds ||
                                       selection.enabledRouteIds.includes(routeId);
-                                    const canToggle = selection.enabled && selection.routes!.length > 1;
+                                    const canToggle = selection.enabled && allRoutes.length > 1;
 
                                     return (
                                       <button
@@ -1640,7 +1674,7 @@ export default function StopArrivalsSlide({
                                         onClick={() => {
                                           if (!canToggle) return;
                                           const currentEnabled = selection.enabledRouteIds ||
-                                            selection.routes!.map((r: RouteInfo) => r.id);
+                                            allRoutes.map((r: RouteInfo) => r.id);
                                           // Prevent disabling all routes
                                           if (isRouteEnabled && currentEnabled.length === 1) return;
                                           const newEnabled = isRouteEnabled
@@ -1666,7 +1700,7 @@ export default function StopArrivalsSlide({
                                     );
                                   })}
                                   {/* Select All button for services with many routes */}
-                                  {selection.enabled && selection.routes.length > 3 && (
+                                  {selection.enabled && allRoutes.length > 3 && (
                                     <button
                                       onClick={() => {
                                         // Only reset enabledRouteIds — don't recompute directionOptions,

@@ -68,6 +68,7 @@ export async function getDestinationData(
       coordinates: dest.coordinates,
       dark: index % 2 === 0,
       originStop: data.originStop ?? null,
+      originCandidateStops: data.originCandidateStops ?? [],
       allItineraries: data.allItineraries,
       reason: data.reason,
     };

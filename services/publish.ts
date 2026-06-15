@@ -113,6 +113,9 @@ export function buildPublishPayload() {
           coordinates: destination.coordinates,
           allowedModes: destination.allowedModes ?? null,
           preferredItinerary: destination.preferredItinerary ?? null,
+          allowedRoutes: destination.allowedRoutes ?? null,
+          bannedRoutes: destination.bannedRoutes ?? null,
+          maxWalkDistance: destination.maxWalkDistance ?? null,
         })) || [];
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
@@ -187,6 +190,14 @@ export function buildPublishPayload() {
               id: svc.id,
               organizationId: svc.organizationId,
               agencyName: svc.agencyName,
+              routes: (svc.routes || []).map((r: any) => ({
+                id: r.id,
+                shortName: r.shortName,
+                longName: r.longName,
+                color: r.color,
+                textColor: r.textColor,
+                headsigns: r.headsigns || [],
+              })),
             })),
           };
         }
@@ -195,11 +206,20 @@ export function buildPublishPayload() {
           screenObj.data.serviceSelections = serviceSelections.map((s: any) => ({
             serviceId: s.serviceId,
             organizationId: s.organizationId,
+            agencyName: s.agencyName,
             enabled: s.enabled,
             selectedStopId: s.selectedStopId,
             enabledRouteIds: s.enabledRouteIds,
             selectedHeadsignFilters: s.selectedHeadsignFilters,
             headsignAliases: s.headsignAliases,
+            routes: (s.routes || []).map((r: any) => ({
+              id: r.id,
+              shortName: r.shortName,
+              longName: r.longName,
+              color: r.color,
+              textColor: r.textColor,
+              headsigns: r.headsigns || [],
+            })),
           }));
         }
 

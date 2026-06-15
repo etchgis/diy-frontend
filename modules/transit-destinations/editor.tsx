@@ -77,13 +77,30 @@ function DestinationSettingsModal({
   const [allowedRoutesText, setAllowedRoutesText] = useState<string>((dest.allowedRoutes ?? []).join(', '));
   const [bannedRoutesText, setBannedRoutesText] = useState<string>((dest.bannedRoutes ?? []).join(', '));
 
-  const itineraryRoutes: string[] = Array.from(new Set(
-    (destResult?.allItineraries ?? []).flatMap((it: any) =>
-      (it.legs ?? [])
-        .filter((leg: any) => leg.mode !== 'WALK' && leg.routeShortName)
-        .map((leg: any) => leg.routeShortName as string)
-    )
-  ));
+  // Routes seen in actual itinerary results (with color info when available).
+  // Check both primary legs and allItineraries (when SKIDS returns multiple options).
+  const itineraryRoutes: { shortName: string; color?: string; textColor?: string }[] = (() => {
+    const seen = new Map<string, { shortName: string; color?: string; textColor?: string }>();
+    const addLegs = (legs: any[]) => {
+      for (const leg of legs) {
+        if (leg.mode === 'WALK' || !leg.routeShortName) continue;
+        if (!seen.has(leg.routeShortName)) {
+          seen.set(leg.routeShortName, {
+            shortName: leg.routeShortName,
+            color: leg.routeColor || leg.color || undefined,
+            textColor: leg.routeTextColor || leg.textColor || undefined,
+          });
+        }
+      }
+    };
+    // Primary route legs (always present)
+    addLegs(destResult?.legs ?? []);
+    // Additional itineraries when SKIDS returns multiple options
+    for (const it of (destResult?.allItineraries ?? [])) {
+      addLegs(it.legs ?? []);
+    }
+    return Array.from(seen.values());
+  })();
 
   const [stopRoutes, setStopRoutes] = useState<{ shortName: string; color?: string; textColor?: string }[]>([]);
   const [loadingStopRoutes, setLoadingStopRoutes] = useState(false);
@@ -107,12 +124,16 @@ function DestinationSettingsModal({
         setStopRoutes(merged);
       })
       .finally(() => setLoadingStopRoutes(false));
-  }, [destResult?.originStop?.id]);
+  }, [destResult?.originStop?.id, destResult?.originCandidateStops?.length]);
 
-  const displayRoutes: { shortName: string; color?: string; textColor?: string }[] =
-    stopRoutes.length > 0
-      ? stopRoutes
-      : itineraryRoutes.map((r) => ({ shortName: r }));
+  // Merge stop-API routes (with colors) with any extra routes from actual itinerary results.
+  // This ensures routes like M3/M4 that the stop API omits still appear as badges.
+  const displayRoutes: { shortName: string; color?: string; textColor?: string }[] = (() => {
+    const base = stopRoutes.length > 0 ? stopRoutes : [];
+    const seen = new Set(base.map((r) => r.shortName));
+    const extras = itineraryRoutes.filter((r) => !seen.has(r.shortName));
+    return [...base, ...extras];
+  })();
 
   const applyAllowedRoutes = (text: string) => {
     setDestinationAllowedRoutes(slideId, dest.name, text.split(',').map((r) => r.trim()).filter(Boolean));
@@ -148,7 +169,7 @@ function DestinationSettingsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="relative bg-white rounded-lg shadow-xl w-80 max-h-[80vh] overflow-y-auto"
+        className="relative bg-white rounded-lg shadow-xl w-96 max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
@@ -223,10 +244,25 @@ function DestinationSettingsModal({
                 </p>
                 {loadingStopRoutes
                   ? <span className="text-[10px] text-gray-400">Loading...</span>
-                  : <span className="text-[10px] text-gray-400">tap: allow → ban → clear</span>
+                  : <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">tap: allow → ban → clear</span>
+                      {(allowedRoutesText || bannedRoutesText) && (
+                        <button
+                          onClick={() => {
+                            setAllowedRoutesText('');
+                            setBannedRoutesText('');
+                            applyAllowedRoutes('');
+                            applyBannedRoutes('');
+                          }}
+                          className="text-[10px] text-red-400 hover:text-red-600 underline"
+                        >
+                          Clear all
+                        </button>
+                      )}
+                    </div>
                 }
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                 {displayRoutes.map(({ shortName, color, textColor }) => {
                   const inAllowed = allowedRoutesText.split(',').map((r) => r.trim()).includes(shortName);
                   const inBanned = bannedRoutesText.split(',').map((r) => r.trim()).includes(shortName);
@@ -574,6 +610,9 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               arrival: skidsData.arrival,
               travel: skidsData.travel,
               legs: skidsData.legs,
+              allItineraries: skidsData.allItineraries,
+              originStop: skidsData.originStop ?? null,
+              originCandidateStops: skidsData.originCandidateStops ?? [],
               coordinates: newDestination.coordinates,
               dark: updatedDestinations.length % 2 === 0,
             };

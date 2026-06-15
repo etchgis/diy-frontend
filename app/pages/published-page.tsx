@@ -426,8 +426,15 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           const routeFiltered = offsetArrivals.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
             if (!selection || !selection.enabledRouteIds || selection.enabledRouteIds.length === 0) return true;
-            if (!arr.routeId) return true;
-            return selection.enabledRouteIds.includes(arr.routeId);
+            if (!arr.routeId && !arr.routeShortName) return true;
+            if (arr.routeId && selection.enabledRouteIds.includes(arr.routeId)) return true;
+            if (arr.routeShortName && selection.enabledRouteIds.includes(arr.routeShortName)) return true;
+            if (arr.routeShortName && selection.routes?.length) {
+              for (const route of selection.routes) {
+                if (selection.enabledRouteIds.includes(route.id) && route.shortName === arr.routeShortName) return true;
+              }
+            }
+            return false;
           });
           filteredArrivals = routeFiltered.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
