@@ -26,6 +26,7 @@ import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus";
 import { useImageUploadField } from "@/hooks/useImageUploadField";
 import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
+import { matchesHeadsign } from "@/lib/stop-arrivals-filters";
 import { fetchRoutes } from "@/services/data-gathering/fetchRoutes";
 import { fetchRoutePatterns } from "@/services/route-times/routeDataFetcher";
 import { calculateDistance, formatDistance } from "@/utils/distance";
@@ -1149,11 +1150,7 @@ export default function StopArrivalsSlide({
         });
         filteredArrivals = routeFilteredArrivals.filter(arr => {
           const selection = serviceSelections.find((s: { serviceId: any; }) => s.serviceId === arr._sourceService);
-          if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
-          const destination = (arr.destination || '').toLowerCase().trim();
-          return selection.selectedHeadsignFilters.some((filter: string) =>
-            destination === filter.toLowerCase().trim()
-          );
+          return matchesHeadsign(arr, selection);
         });
       }
 
@@ -1161,18 +1158,28 @@ export default function StopArrivalsSlide({
       for (const sel of serviceSelections) {
         for (const route of sel.routes || []) {
           const routeId = route.id ?? (route as any).route_id;
-          const shortName = route.shortName ?? '';
           const longName = route.longName ?? (route as any).route_long_name ?? '';
-          if (longName) {
+          if (longName && routeId) {
             const cleanName = longName
               .replace(/\s+Branch$/i, '')
               .replace(/\s+Line$/i, '')
               .replace(/\s+Railroad$/i, '')
               .trim();
-            if (routeId) routeLineNameMap[routeId] = cleanName;
-            if (shortName) routeLineNameMap[shortName] = cleanName;
+            routeLineNameMap[routeId] = cleanName;
           }
         }
+      }
+
+      // Canonical abbreviations for commuter rail agencies keyed by serviceId
+      const commuterRailNameMap: Record<string, string> = {};
+      for (const sel of serviceSelections) {
+        if (!sel.serviceId || !sel.agencyName) continue;
+        const agency = sel.agencyName;
+        if (/long island rail road|lirr/i.test(agency)) commuterRailNameMap[sel.serviceId] = 'LIRR';
+        else if (/metro.north railroad/i.test(agency)) commuterRailNameMap[sel.serviceId] = 'MNR';
+        else if (/staten island railway/i.test(agency)) commuterRailNameMap[sel.serviceId] = 'SIR';
+        else if (/nj transit rail/i.test(agency)) commuterRailNameMap[sel.serviceId] = 'NJT';
+        else if (/amtrak/i.test(agency)) commuterRailNameMap[sel.serviceId] = 'AMT';
       }
 
       // In column mode, don't cap here — the preview applies per-column caps after filtering
@@ -1182,7 +1189,11 @@ export default function StopArrivalsSlide({
       const displayArrivals = cappedArrivals.map(arr => {
         const lineName = routeLineNameMap[arr.routeId] || routeLineNameMap[arr.routeShortName];
         if (lineName) {
-          return { ...arr, routeShortName: `${arr.routeShortName} ${lineName}` };
+          return { ...arr, routeShortName: `${arr.routeShortName} - ${lineName}` };
+        }
+        const commuterSuffix = commuterRailNameMap[arr._sourceService];
+        if (commuterSuffix) {
+          return { ...arr, routeShortName: `${arr.routeShortName} ${commuterSuffix}` };
         }
         return arr;
       });

@@ -720,6 +720,64 @@ async function importData(setup: any) {
     useGeneralStore.getState().setOrgSlideOverrides(setup.orgSlideOverrides);
   }
 
+  const fixedRouteSlideIds = slides
+    .filter((s: any) => s.type === 'fixed-routes')
+    .map((s: any) => s.id);
+
+  if (fixedRouteSlideIds.length > 0) {
+    type RouteTask = { orgId: string; serviceId: string; slideIds: string[] };
+    const taskMap = new Map<string, RouteTask>();
+
+    for (const slideId of fixedRouteSlideIds) {
+      const slideState = useFixedRouteStore.getState().slides[slideId];
+      for (const sel of slideState?.serviceSelections || []) {
+        const needsRoutes = !sel.routes?.length || sel.routes.every((r: any) => !r.longName);
+        if (!needsRoutes) continue;
+        const orgId = (sel as any).organizationId
+          || slideState?.selectedStop?.services?.find((svc: any) => svc.id === sel.serviceId)?.organizationId;
+        if (!orgId || !sel.serviceId) continue;
+        const key = `${orgId}:${sel.serviceId}`;
+        if (!taskMap.has(key)) taskMap.set(key, { orgId, serviceId: sel.serviceId, slideIds: [] });
+        taskMap.get(key)!.slideIds.push(slideId);
+      }
+    }
+
+    if (taskMap.size > 0) {
+      console.log('[ROUTE RESTORE] Fetching longNames for', taskMap.size, 'service(s):', Array.from(taskMap.keys()));
+      const { setServiceSelections: setFRSelections } = useFixedRouteStore.getState();
+      await Promise.all(Array.from(taskMap.values()).map(async ({ orgId, serviceId, slideIds }) => {
+        try {
+          const res = await fetch(`/api/skids-routes?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(orgId)}`);
+          if (!res.ok) { console.warn('[ROUTE RESTORE] Proxy returned', res.status, 'for service', serviceId); return; }
+          const data = await res.json();
+          const routes: any[] = data.routes || [];
+          console.log('[ROUTE RESTORE] Got', routes.length, 'routes for service', serviceId, '— sample longNames:', routes.slice(0, 3).map((r: any) => r.longName));
+          if (!routes.length) return;
+          const routeInfos = routes.map((r: any) => ({
+            id: r.id,
+            shortName: r.shortName || '',
+            longName: r.longName || '',
+            color: r.color || '',
+            textColor: r.textColor || '',
+            headsigns: [],
+          }));
+          for (const slideId of slideIds) {
+            const state = useFixedRouteStore.getState().slides[slideId];
+            if (!state?.serviceSelections) continue;
+            const updated = state.serviceSelections.map((sel: any) =>
+              sel.serviceId === serviceId && (!sel.routes?.length || sel.routes.every((r: any) => !r.longName))
+                ? { ...sel, routes: routeInfos }
+                : sel
+            );
+            setFRSelections(slideId, updated);
+          }
+        } catch {
+          // Non-fatal — slide will fall back to agency suffix label
+        }
+      }));
+    }
+  }
+
   const orgSlideIds = getAllOrgSlideIds();
   const seenIds = new Set<string>();
   const cleanSlides = slides.filter((s: any) => {

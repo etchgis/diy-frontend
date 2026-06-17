@@ -41,6 +41,9 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
   const mutedMap = useCitibikeStore((state) => state.slides[slideId]?.mutedMap !== false);
   const setMutedMap = useCitibikeStore((state) => state.setMutedMap);
 
+  const showTransitStops = useCitibikeStore((state) => state.slides[slideId]?.showTransitStops !== false);
+  const setShowTransitStops = useCitibikeStore((state) => state.setShowTransitStops);
+
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const setShowFooter = useGeneralStore((state) => state.setShowFooter);
 
@@ -134,6 +137,18 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
                 className="w-4 h-4 rounded border-gray-300"
               />
               Grayscale Map
+            </label>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-[#4a5568] font-medium text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showTransitStops}
+                onChange={(e) => setShowTransitStops(slideId, e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              Show Transit Stops
             </label>
           </div>
 

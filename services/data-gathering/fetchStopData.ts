@@ -3,10 +3,6 @@ import { formatTime } from '@/utils/formats';
 // Maximum number of arrivals to display per slide
 export const MAX_ARRIVALS_PER_SLIDE = 6;
 
-const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
-if (!SKIDS_URL) {
-  throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
-}
 
 function findStatus(realtime: boolean, arrive: number, arriveScheduled: number) {
   const currentTime = Date.now();
@@ -93,17 +89,18 @@ function formatBusData(data: any) {
 }
 
 async function fetchStopById(stopId: string, serviceId: string, organizationId: string) {
-  const endpoint = `${SKIDS_URL}/feed/${serviceId}/stops/${stopId}?timestamp=${Date.now()}&n=20&nysdot=true`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'X-Organization-Id': organizationId,
-    'X-Skids-Route-Key': serviceId,
-  };
-  return fetch(endpoint, { method: 'GET', headers });
+  const url = `/api/skids-stop?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(organizationId)}&stopId=${encodeURIComponent(stopId)}`;
+  return fetch(url, { method: 'GET' });
 }
 
 export async function fetchStopData(stopId: string, serviceId: string, organizationId: string) {
-  let response = await fetchStopById(stopId, serviceId, organizationId);
+  let response: Response;
+  try {
+    response = await fetchStopById(stopId, serviceId, organizationId);
+  } catch {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    response = await fetchStopById(stopId, serviceId, organizationId);
+  }
 
   // If the stop ID has no directional suffix and the API rejects it,
   // automatically retry with N and S variants
@@ -118,9 +115,14 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     }
   }
 
+  // Retry once on 503/504
+  if (response.status === 503 || response.status === 504) {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    response = await fetchStopById(stopId, serviceId, organizationId);
+  }
+
   if (!response.ok) {
     if (response.status >= 400 && response.status < 500) {
-      const body = await response.text().catch(() => '');
       return undefined;
     }
     throw new Error(`Failed to fetch stop data: ${response.status} ${response.statusText}`);

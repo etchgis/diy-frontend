@@ -17,6 +17,7 @@ import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
 import CitibikePreview from '@/modules/citibike/preview';
 import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from '@/services/data-gathering/fetchStopData';
+import { matchesHeadsign } from '@/lib/stop-arrivals-filters';
 import TrafficCorridorPreview from '@/modules/traffic-corridor/preview';
 import WebEmbedPreview from '@/modules/web-embed/preview';
 import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
@@ -378,6 +379,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
       try {
         const allArrivals: any[] = [];
+        let serverErrorCount = 0;
         for (const q of queries) {
           try {
             const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId);
@@ -398,8 +400,14 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
             }));
             allArrivals.push(...tagged);
           } catch (err) {
+            serverErrorCount++;
             console.warn('[DATA UPDATE] Failed to fetch arrivals:', err);
           }
+        }
+
+        if (serverErrorCount > 0 && serverErrorCount === queries.length) {
+          setFixedRouteDataError(slide.id, true);
+          continue;
         }
 
         // Sort by arrival timestamp
@@ -438,11 +446,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           });
           filteredArrivals = routeFiltered.filter(arr => {
             const selection = serviceSelections.find((s: any) => s.serviceId === arr._sourceService);
-            if (!selection?.selectedHeadsignFilters || selection.selectedHeadsignFilters.length === 0) return true;
-            const destination = (arr.destination || '').toLowerCase().trim();
-            return selection.selectedHeadsignFilters.some((filter: string) =>
-              destination === filter.toLowerCase().trim()
-            );
+            return matchesHeadsign(arr, selection);
           });
         }
 
@@ -453,23 +457,37 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         for (const sel of serviceSelections) {
           for (const route of (sel as any).routes || []) {
             const routeId = route.id ?? route.route_id;
-            const shortName = route.shortName ?? '';
             const longName = route.longName ?? route.route_long_name ?? '';
-            if (longName) {
+            if (longName && routeId) {
               const cleanName = longName
                 .replace(/\s+Branch$/i, '')
                 .replace(/\s+Line$/i, '')
                 .replace(/\s+Railroad$/i, '')
                 .trim();
-              if (routeId) routeLineNameMap[routeId] = cleanName;
-              if (shortName) routeLineNameMap[shortName] = cleanName;
+              routeLineNameMap[routeId] = cleanName;
             }
           }
         }
+
+        const commuterRailNameMap: Record<string, string> = {};
+        for (const sel of serviceSelections) {
+          if (!(sel as any).serviceId || !(sel as any).agencyName) continue;
+          const agency = (sel as any).agencyName;
+          if (/long island rail road|lirr/i.test(agency)) commuterRailNameMap[(sel as any).serviceId] = 'LIRR';
+          else if (/metro.north railroad/i.test(agency)) commuterRailNameMap[(sel as any).serviceId] = 'MNR';
+          else if (/staten island railway/i.test(agency)) commuterRailNameMap[(sel as any).serviceId] = 'SIR';
+          else if (/nj transit rail/i.test(agency)) commuterRailNameMap[(sel as any).serviceId] = 'NJT';
+          else if (/amtrak/i.test(agency)) commuterRailNameMap[(sel as any).serviceId] = 'AMT';
+        }
+
         const displayArrivals = limitedArrivals.map((arr: any) => {
           const lineName = routeLineNameMap[arr.routeId] || routeLineNameMap[arr.routeShortName];
           if (lineName) {
-            return { ...arr, routeShortName: `${arr.routeShortName} ${lineName}` };
+            return { ...arr, routeShortName: `${arr.routeShortName} - ${lineName}` };
+          }
+          const commuterSuffix = commuterRailNameMap[arr._sourceService];
+          if (commuterSuffix) {
+            return { ...arr, routeShortName: `${arr.routeShortName} ${commuterSuffix}` };
           }
           return arr;
         });

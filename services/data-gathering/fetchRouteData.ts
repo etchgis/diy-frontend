@@ -270,22 +270,12 @@ export async function fetchRouteTimetable(
       throw new Error('Invalid time range: startTime must be less than endTime');
     }
 
-    // Build URL with query parameters
-    let url = `${SKIDS_URL}/feed/${serviceId}/routes/${routeId}/timetable?` +
-      `startTime=${startTime}&endTime=${endTime}&nysdot=true`;
-
+    let url = `/api/skids-timetable?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(organizationId)}&routeId=${encodeURIComponent(routeId)}&startTime=${startTime}&endTime=${endTime}`;
     if (direction !== undefined) {
       url += `&direction=${direction}`;
     }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Organization-Id': organizationId,
-        'X-Skids-Route-Key': serviceId,
-      },
-    });
+    const response = await fetch(url, { method: 'GET' });
 
     if (!response.ok) {
       const errorBody = await response.text();

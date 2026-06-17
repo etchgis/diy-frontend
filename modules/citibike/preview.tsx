@@ -1,6 +1,7 @@
 import { useCitibikeStore, KNOWN_PROVIDERS, type RentalStation } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData";
+import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -27,6 +28,7 @@ export default function CitibikePreview({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const transitMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const isMapLoadedRef = useRef(false);
 
@@ -64,6 +66,9 @@ export default function CitibikePreview({
   );
   const mutedMap = useCitibikeStore(
     (state) => state.slides[slideId]?.mutedMap !== false
+  );
+  const showTransitStops = useCitibikeStore(
+    (state) => state.slides[slideId]?.showTransitStops !== false
   );
   const showTitle = useCitibikeStore(
     (state) => state.slides[slideId]?.showTitle !== false
@@ -142,6 +147,7 @@ export default function CitibikePreview({
       map.on("load", () => {
         isMapLoadedRef.current = true;
         addMarkers();
+        addTransitStopMarkers();
       });
 
       mapRef.current = map;
@@ -168,6 +174,8 @@ export default function CitibikePreview({
       window.removeEventListener("resize", handleWindowResize);
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
+      transitMarkersRef.current.forEach((m) => m.remove());
+      transitMarkersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
       isMapLoadedRef.current = false;
@@ -185,8 +193,12 @@ export default function CitibikePreview({
     if (!mapRef.current) return;
     const style = mutedMap ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/streets-v12";
     mapRef.current.setStyle(style);
-    mapRef.current.once("style.load", () => addMarkers());
+    mapRef.current.once("style.load", () => { addMarkers(); addTransitStopMarkers(); });
   }, [mutedMap]);
+
+  useEffect(() => {
+    if (isMapLoadedRef.current) addTransitStopMarkers();
+  }, [showTransitStops]);
 
   function getMarkerColor(bikes: number): string {
     if (bikes === 0) return "#DC2626";
@@ -281,6 +293,158 @@ export default function CitibikePreview({
         bounds.extend([s.lon, s.lat]);
       }
       mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 16 });
+    }
+  }
+
+  async function addTransitStopMarkers() {
+    transitMarkersRef.current.forEach((m) => m.remove());
+    transitMarkersRef.current = [];
+    if (!mapRef.current || !coordinates || !showTransitStops) return;
+
+    try {
+      const stops = await fetchAllStops({ coordinates, radius: 600 });
+      if (!Array.isArray(stops) || !mapRef.current) return;
+
+      const clusters = new Map<string, {
+        lat: number; lon: number;
+        routes: { shortName: string; color: string; textColor: string }[];
+      }>();
+
+      for (const stop of stops) {
+        if (!stop.lat || !stop.lon) continue;
+        const key = `${stop.lat.toFixed(3)}_${stop.lon.toFixed(3)}`;
+        if (!clusters.has(key)) clusters.set(key, { lat: stop.lat, lon: stop.lon, routes: [] });
+        const cluster = clusters.get(key)!;
+
+        for (const service of (stop.services || [])) {
+          const agency = service.agencyName || '';
+          const isCommuterRail = /long island rail road|lirr|metro.north railroad|staten island railway|nj transit rail|amtrak/i.test(agency);
+          const isMTATransit = /mta new york city transit/i.test(agency);
+
+          const commuterLabel = /long island rail road|lirr/i.test(agency) ? 'LIRR'
+            : /metro.north/i.test(agency) ? 'MNR'
+            : /staten island railway/i.test(agency) ? 'SIR'
+            : /nj transit/i.test(agency) ? 'NJT'
+            : /amtrak/i.test(agency) ? 'AMT'
+            : null;
+          const commuterColor = /long island rail road|lirr/i.test(agency) ? '003DA5'
+            : /metro.north/i.test(agency) ? '003DA5'
+            : /nj transit/i.test(agency) ? '003DA5'
+            : '444444';
+
+          if (isCommuterRail && commuterLabel) {
+            if (!cluster.routes.find((r) => r.shortName === commuterLabel)) {
+              const firstRouteColor = (service.routes || [])[0]?.color || commuterColor;
+              cluster.routes.push({
+                shortName: commuterLabel,
+                color: firstRouteColor,
+                textColor: 'FFFFFF',
+              });
+            }
+            continue;
+          }
+
+          for (const route of (service.routes || [])) {
+            const sn = (route.shortName || '').trim();
+            if (!sn || !route.color) continue;
+            const isSubwayLine = isMTATransit && /^([1-7]|[ACEJZNSRLMGBDFWQ])$/.test(sn);
+            if (!isSubwayLine) continue;
+            if (cluster.routes.find((r) => r.shortName === sn)) continue;
+            cluster.routes.push({
+              shortName: sn,
+              color: route.color,
+              textColor: route.textColor || 'FFFFFF',
+            });
+          }
+        }
+      }
+
+      const scale = isEditor ? 1 : Math.max(resScale, 1);
+      const bulletSize = Math.round(22 * scale);
+      const bulletFont = Math.round(12 * scale);
+      const gap = Math.round(3 * scale);
+      const triSize = Math.round(7 * scale);
+
+      for (const cluster of clusters.values()) {
+        if (cluster.routes.length === 0) continue;
+
+        const el = document.createElement('div');
+        el.style.cssText = `
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          pointer-events: none;
+        `;
+
+        const bubble = document.createElement('div');
+        bubble.style.cssText = `
+          background: rgba(255,255,255,0.6);
+          border-radius: ${Math.round(6 * scale)}px;
+          padding: ${Math.round(4 * scale)}px ${Math.round(5 * scale)}px;
+          display: flex;
+          gap: ${gap}px;
+          align-items: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          border: ${Math.round(1.5 * scale)}px solid rgba(0,0,0,0.08);
+
+        `;
+
+        for (const route of cluster.routes.slice(0, 4)) {
+          const bullet = document.createElement('div');
+          bullet.style.cssText = `
+            width: ${bulletSize}px;
+            height: ${bulletSize}px;
+            background: #${route.color};
+            color: #${route.textColor};
+            font-size: ${bulletFont}px;
+            font-weight: 900;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: ${Math.round(2 * scale)}px solid white;
+            line-height: 1;
+            font-family: sans-serif;
+            flex-shrink: 0;
+          `;
+          bullet.textContent = route.shortName;
+          bubble.appendChild(bullet);
+        }
+
+        if (cluster.routes.length > 4) {
+          const more = document.createElement('div');
+          more.style.cssText = `
+            font-size: ${Math.round(9 * scale)}px; font-weight: 700;
+            color: #555; padding: 0 2px;
+          `;
+          more.textContent = `+${cluster.routes.length - 4}`;
+          bubble.appendChild(more);
+        }
+
+        // Downward-pointing triangle
+        const triangle = document.createElement('div');
+        triangle.style.cssText = `
+          width: 0;
+          height: 0;
+          border-left: ${triSize}px solid transparent;
+          border-right: ${triSize}px solid transparent;
+          border-top: ${triSize}px solid rgba(255,255,255,0.75);
+          filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+        `;
+
+        el.appendChild(bubble);
+        el.appendChild(triangle);
+
+        const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([cluster.lon, cluster.lat])
+          .addTo(mapRef.current);
+        // Lift the Mapbox wrapper above Citi Bike station circles
+        const wrapper = el.parentElement;
+        if (wrapper) wrapper.style.zIndex = '20';
+        transitMarkersRef.current.push(marker);
+      }
+    } catch (err) {
+      console.warn('[CitibikePreview] Transit stops fetch failed:', err);
     }
   }
 
