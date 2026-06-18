@@ -98,8 +98,7 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
   try {
     response = await fetchStopById(stopId, serviceId, organizationId);
   } catch {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    response = await fetchStopById(stopId, serviceId, organizationId);
+    throw new Error('Network error fetching stop data');
   }
 
   // If the stop ID has no directional suffix and the API rejects it,
@@ -113,15 +112,6 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
         break;
       }
     }
-  }
-
-  if (response.status === 503 || response.status === 504) {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    response = await fetchStopById(stopId, serviceId, organizationId);
-  }
-  if (response.status === 503 || response.status === 504) {
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    response = await fetchStopById(stopId, serviceId, organizationId);
   }
 
   if (!response.ok) {

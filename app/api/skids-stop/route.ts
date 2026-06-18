@@ -22,12 +22,7 @@ export async function GET(req: NextRequest) {
   };
 
   try {
-    let response = await fetch(url, { headers });
-
-    if ((response.status === 503 || response.status === 504) ) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      response = await fetch(url, { headers });
-    }
+    const response = await fetch(url, { headers });
 
     if (!response.ok) {
       return NextResponse.json({ error: `Upstream error: ${response.status}` }, { status: response.status });

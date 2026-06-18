@@ -86,30 +86,13 @@ export async function fetchRouteData(
   includeStops: boolean = true
 ): Promise<RouteData[]> {
   try {
-    let url = `${SKIDS_URL}/feed/routes?geometry=${includeGeometry}&stops=${includeStops}&nysdot=true`;
+    let url = `/api/skids-routes?orgId=${encodeURIComponent(organizationId)}&geometry=${includeGeometry}&stops=${includeStops}`;
 
     if (serviceIds && serviceIds.length > 0) {
-      url += `&serviceIds=${serviceIds.join(',')}`;
+      url += `&serviceIds=${encodeURIComponent(serviceIds.join(','))}`;
     }
 
-    // Use first serviceId as the route key for SKIDS routing
-    const routeKey = serviceIds && serviceIds.length > 0 ? serviceIds[0] : organizationId;
-
-    const fetchOpts = {
-      method: 'GET' as const,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Organization-Id': organizationId,
-        'X-Skids-Route-Key': routeKey,
-      },
-    };
-
-    let response = await fetch(url, fetchOpts);
-
-    if (response.status === 503 || response.status === 504) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      response = await fetch(url, fetchOpts);
-    }
+    const response = await fetch(url, { method: 'GET' });
 
     if (!response.ok) {
       const errorBody = await response.text();

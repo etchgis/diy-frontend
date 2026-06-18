@@ -1,4 +1,3 @@
-const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
 const SKIDS_REGION = process.env.NEXT_PUBLIC_SKIDS_REGION;
 
 interface SkidsResponse {
@@ -298,10 +297,6 @@ export async function fetchSkidsTransitData(
   destinations: { name: string; coordinates: { lat: number; lng: number }; allowedModes?: string[]; allowedRoutes?: string[]; bannedRoutes?: string[] }[],
   options?: SkidsFetchOptions
 ): Promise<TransformedDestination[]> {
-  if (!SKIDS_URL) {
-    throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
-  }
-
   const apiOptions: any = { maxTransfers: 3 };
   if (SKIDS_REGION) {
     apiOptions.region = SKIDS_REGION;
@@ -313,7 +308,7 @@ export async function fetchSkidsTransitData(
     apiOptions.numItineraries = options.numItineraries;
   }
 
-  const response = await fetch(`${SKIDS_URL}/api/transit/route/coordinates`, {
+  const response = await fetch('/api/skids-transit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
