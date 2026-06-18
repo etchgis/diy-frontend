@@ -549,8 +549,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const slideData = currentState[slide.id];
       if (!slideData?.selectedRoute) {continue;}
 
+      const hasExistingRouteData = !!slideData.routeData?.length;
       try {
-        setRouteTimesIsLoading(slide.id, true);
+        if (!hasExistingRouteData) setRouteTimesIsLoading(slide.id, true);
 
         const result = await fetchCompleteRouteData(slideData.selectedRoute);
 
@@ -570,8 +571,10 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         });
       } catch (error) {
         console.error(`[DATA UPDATE] Error fetching route times data for slide ${slide.id}:`, error);
-        setRouteTimesDataError(slide.id, true);
-        setRouteTimesIsLoading(slide.id, false);
+        if (!hasExistingRouteData) {
+          setRouteTimesDataError(slide.id, true);
+          setRouteTimesIsLoading(slide.id, false);
+        }
       }
     }
   };

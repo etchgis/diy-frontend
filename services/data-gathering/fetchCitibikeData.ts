@@ -10,12 +10,15 @@ export async function fetchCitibikeData(slideId: string) {
     return;
   }
 
-  useCitibikeStore.getState().setDataLoaded(slideId, false);
-
   const { lat, lng } = coordinates;
   const slide = useCitibikeStore.getState().slides[slideId];
   const searchRadius = slide?.searchRadius || 0.5;
   const systemId = slide?.selectedProvider?.id ?? 'citibike-nyc';
+  const hasExistingData = !!slide?.stationData?.length;
+
+  if (!hasExistingData) {
+    useCitibikeStore.getState().setDataLoaded(slideId, false);
+  }
 
   try {
     const response = await fetch(
@@ -33,7 +36,9 @@ export async function fetchCitibikeData(slideId: string) {
     useCitibikeStore.getState().setDataLoaded(slideId, true);
   } catch (error) {
     console.error("[CITIBIKE] Failed to fetch citibike data:", error);
-    useCitibikeStore.getState().setDataError(slideId, true);
-    useCitibikeStore.getState().setDataLoaded(slideId, true);
+    if (!hasExistingData) {
+      useCitibikeStore.getState().setDataError(slideId, true);
+      useCitibikeStore.getState().setDataLoaded(slideId, true);
+    }
   }
 }

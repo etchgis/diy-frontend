@@ -127,7 +127,7 @@ export async function getDestinationData(
       }
     }
 
-    setDataError(slideId, true);
+    if (!currentDestinationData?.length) setDataError(slideId, true);
   }
 }
 

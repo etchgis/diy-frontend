@@ -44,9 +44,10 @@ function getDayName(dateStr: string): string {
 
 export async function fetchWeatherData(slideId: string) {
   const coordinates = useGeneralStore.getState().coordinates;
+  const hasExistingData = !!useWeatherStore.getState().slides[slideId]?.weatherData;
   if (!coordinates) {
     console.error("[WEATHER] No coordinates available");
-    useWeatherStore.getState().setDataError(slideId, true);
+    if (!hasExistingData) useWeatherStore.getState().setDataError(slideId, true);
     return;
   }
 
@@ -91,6 +92,6 @@ export async function fetchWeatherData(slideId: string) {
     console.log("[WEATHER] Data fetched successfully for slide:", slideId);
   } catch (error) {
     console.error("[WEATHER] Failed to fetch weather data:", error);
-    useWeatherStore.getState().setDataError(slideId, true);
+    if (!hasExistingData) useWeatherStore.getState().setDataError(slideId, true);
   }
 }
