@@ -126,6 +126,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const [screens] = useState<any[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const dataRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const versionPollRef = useRef<NodeJS.Timeout | null>(null);
+  const deployedBuildId = useRef<string | null>(null);
 
   const currentSlide = slides?.[activeIndex] || null;
 
@@ -682,6 +684,31 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         clearInterval(dataRefreshIntervalRef.current);
         dataRefreshIntervalRef.current = null;
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await fetch('/api/version', { cache: 'no-store' });
+        if (!res.ok) return;
+        const { buildId } = await res.json();
+        if (!deployedBuildId.current) {
+          deployedBuildId.current = buildId;
+        } else if (buildId !== deployedBuildId.current) {
+          console.log('[VERSION] New deployment detected, reloading...');
+          window.location.reload();
+        }
+      } catch {
+        // network error — skip this poll
+      }
+    };
+
+    poll();
+    versionPollRef.current = setInterval(poll, 5 * 60 * 1000);
+
+    return () => {
+      if (versionPollRef.current) clearInterval(versionPollRef.current);
     };
   }, []);
 
