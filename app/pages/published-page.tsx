@@ -219,8 +219,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     const loadSlides = async () => {
       // For org sites, load DIY slides from diyShortcode if set; otherwise skip SetupSlides
       const effectiveShortcode = orgConfig?.diyShortcode ?? (orgConfig ? null : shortcode);
-      if (effectiveShortcode) {
-        await SetupSlides(effectiveShortcode);
+      try {
+        if (effectiveShortcode) {
+          await SetupSlides(effectiveShortcode);
+        }
+      } catch (err) {
+        console.error('[SETUP] SetupSlides failed:', err);
       }
       if (shortcode) {
         setIsLoading(false);
@@ -408,7 +412,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         }
 
         if (serverErrorCount > 0 && serverErrorCount === queries.length) {
-          setFixedRouteDataError(slide.id, true);
+          // All queries failed — only show the error banner if there's no cached data to fall back on
+          const existingData = useFixedRouteStore.getState().slides[slide.id]?.scheduleData;
+          if (!existingData?.length) setFixedRouteDataError(slide.id, true);
           continue;
         }
 
@@ -499,7 +505,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, limitedArrivals);
       } catch (error) {
         console.error(`[DATA UPDATE] Error fetching fixed route data for slide ${slide.id}:`, error);
-        setFixedRouteDataError(slide.id, true);
+        const existingData = useFixedRouteStore.getState().slides[slide.id]?.scheduleData;
+        if (!existingData?.length) setFixedRouteDataError(slide.id, true);
       }
     }
   };

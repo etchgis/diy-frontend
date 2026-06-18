@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import Footer from "@/components/shared-components/footer";
 import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY as string;
 if (typeof window !== 'undefined') mapboxgl.prewarm();
@@ -199,6 +200,15 @@ export default function CitibikePreview({
   useEffect(() => {
     if (isMapLoadedRef.current) addTransitStopMarkers();
   }, [showTransitStops]);
+
+  // Force resize after mount — ensures the canvas fills the container correctly
+  // when the map initializes inside a CSS-transformed or initially-hidden parent
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (mapRef.current) mapRef.current.resize();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   function getMarkerColor(bikes: number): string {
     if (bikes === 0) return "#DC2626";
@@ -515,7 +525,7 @@ export default function CitibikePreview({
                   fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
                 }}
               >
-                Unable to load {selectedProvider.name} data. Please check your location.
+                Unable to load {selectedProvider.name} data.
               </p>
             </div>
           ) : (

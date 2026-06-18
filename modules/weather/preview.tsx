@@ -132,7 +132,7 @@ export default function WeatherPreview({
         {dataError ? (
           <div className="w-full flex items-center justify-center">
             <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh` }}>
-              Unable to load weather data. Please check your location settings.
+              Unable to load weather data.
             </p>
           </div>
         ) : !weatherData ? (
