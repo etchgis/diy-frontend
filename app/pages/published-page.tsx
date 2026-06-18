@@ -797,9 +797,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         </div>
       ) : null}
 
-      {/* Fallback for no slide loaded */}
+      {/* Loading overlay — absolute so it covers any localStorage-hydrated slides underneath */}
       {isLoading && (
-        <div className="flex flex-col items-center justify-center w-full h-full z-10">
+        <div className="absolute inset-0 z-50 bg-white flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold">Loading slides...</h1>
         </div>
       )}
