@@ -86,13 +86,22 @@ export async function fetchRouteData(
   includeStops: boolean = true
 ): Promise<RouteData[]> {
   try {
-    let url = `/api/skids-routes?orgId=${encodeURIComponent(organizationId)}&geometry=${includeGeometry}&stops=${includeStops}`;
+    let url = `${SKIDS_URL}/feed/routes?geometry=${includeGeometry}&stops=${includeStops}&nysdot=true`;
 
     if (serviceIds && serviceIds.length > 0) {
-      url += `&serviceIds=${encodeURIComponent(serviceIds.join(','))}`;
+      url += `&serviceIds=${serviceIds.join(',')}`;
     }
 
-    const response = await fetch(url, { method: 'GET' });
+    const routeKey = serviceIds && serviceIds.length > 0 ? serviceIds[0] : organizationId;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Organization-Id': organizationId,
+        'X-Skids-Route-Key': routeKey,
+      },
+    });
 
     if (!response.ok) {
       const errorBody = await response.text();
@@ -260,12 +269,19 @@ export async function fetchRouteTimetable(
       throw new Error('Invalid time range: startTime must be less than endTime');
     }
 
-    let url = `/api/skids-timetable?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(organizationId)}&routeId=${encodeURIComponent(routeId)}&startTime=${startTime}&endTime=${endTime}`;
+    let url = `${SKIDS_URL}/feed/${encodeURIComponent(serviceId)}/routes/${encodeURIComponent(routeId)}/timetable?startTime=${startTime}&endTime=${endTime}&nysdot=true`;
     if (direction !== undefined) {
       url += `&direction=${direction}`;
     }
 
-    const response = await fetch(url, { method: 'GET' });
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Organization-Id': organizationId,
+        'X-Skids-Route-Key': serviceId,
+      },
+    });
 
     if (!response.ok) {
       const errorBody = await response.text();

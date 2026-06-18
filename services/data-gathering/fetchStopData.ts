@@ -1,5 +1,7 @@
 import { formatTime } from '@/utils/formats';
 
+const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
+
 // Maximum number of arrivals to display per slide
 export const MAX_ARRIVALS_PER_SLIDE = 6;
 
@@ -89,8 +91,15 @@ function formatBusData(data: any) {
 }
 
 async function fetchStopById(stopId: string, serviceId: string, organizationId: string) {
-  const url = `/api/skids-stop?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(organizationId)}&stopId=${encodeURIComponent(stopId)}`;
-  return fetch(url, { method: 'GET' });
+  const url = `${SKIDS_URL}/feed/${encodeURIComponent(serviceId)}/stops/${encodeURIComponent(stopId)}?timestamp=${Date.now()}&n=20&nysdot=true`;
+  return fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Organization-Id': organizationId,
+      'X-Skids-Route-Key': serviceId,
+    },
+  });
 }
 
 export async function fetchStopData(stopId: string, serviceId: string, organizationId: string) {

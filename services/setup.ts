@@ -749,7 +749,14 @@ async function importData(setup: any) {
         const { setServiceSelections: setFRSelections } = useFixedRouteStore.getState();
         for (const { orgId, serviceId, slideIds } of Array.from(taskMap.values())) {
           try {
-            const res = await fetch(`/api/skids-routes?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(orgId)}`);
+            const skidsUrl = process.env.NEXT_PUBLIC_SKIDS_URL;
+            const res = await fetch(`${skidsUrl}/feed/routes?geometry=false&stops=false&nysdot=true&serviceIds=${encodeURIComponent(serviceId)}`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Organization-Id': orgId,
+                'X-Skids-Route-Key': serviceId,
+              },
+            });
             if (!res.ok) { console.warn('[ROUTE RESTORE] Proxy returned', res.status, 'for service', serviceId); continue; }
             const data = await res.json();
             const routes: any[] = data.routes || [];

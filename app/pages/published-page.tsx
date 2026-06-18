@@ -552,10 +552,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       if (!slideData?.selectedRoute) {continue;}
 
       const hasExistingRouteData = !!slideData.routeData?.length;
+      const hasPatternData = !!slideData.patternData;
       try {
         if (!hasExistingRouteData) setRouteTimesIsLoading(slide.id, true);
 
-        const result = await fetchCompleteRouteData(slideData.selectedRoute);
+        const result = await fetchCompleteRouteData(slideData.selectedRoute, hasPatternData);
 
         if (result.patternData) {
           setRouteTimesPatternData(slide.id, result.patternData);

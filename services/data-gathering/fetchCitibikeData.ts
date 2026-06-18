@@ -1,6 +1,8 @@
 import { useGeneralStore } from "@/stores/general";
 import { useCitibikeStore } from "@/modules/citibike/store";
 
+const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
+
 export async function fetchCitibikeData(slideId: string) {
   const coordinates = useGeneralStore.getState().coordinates;
   if (!coordinates) {
@@ -22,7 +24,7 @@ export async function fetchCitibikeData(slideId: string) {
 
   try {
     const response = await fetch(
-      `/api/skids-gbfs?lat=${lat}&lon=${lng}&radius=${searchRadius}&system=${encodeURIComponent(systemId)}`
+      `${SKIDS_URL}/api/gbfs/stations/nearby?lat=${lat}&lon=${lng}&radius=${searchRadius}&system=${encodeURIComponent(systemId)}`
     );
 
     if (!response.ok) {
