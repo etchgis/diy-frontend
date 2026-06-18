@@ -224,13 +224,15 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       }
       if (shortcode) {
         setIsLoading(false);
-        getTransitDestinationData();
-        getFixedRouteData();
-        getTransitRoutesData();
-        getRouteTimesData();
+        // Non-SKIDS — fire immediately
         getWeatherData();
-        getCitibikeData();
         getTrafficCorridorData();
+        // SKIDS fetchers — stagger to avoid overwhelming the API with simultaneous requests
+        getFixedRouteData();
+        setTimeout(() => getTransitDestinationData(), 2000);
+        setTimeout(() => getCitibikeData(), 4000);
+        setTimeout(() => getTransitRoutesData(), 6000);
+        setTimeout(() => getRouteTimesData(), 8000);
       }
     };
     loadSlides();
@@ -655,13 +657,13 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   useEffect(() => {
     dataRefreshIntervalRef.current = setInterval(() => {
       console.log('[DATA UPDATE] ========== 60-second refresh triggered ==========');
-      getTransitDestinationData();
-      getFixedRouteData();
-      getTransitRoutesData();
-      getRouteTimesData();
       getWeatherData();
-      getCitibikeData();
       getTrafficCorridorData();
+      getFixedRouteData();
+      setTimeout(() => getTransitDestinationData(), 2000);
+      setTimeout(() => getCitibikeData(), 4000);
+      setTimeout(() => getTransitRoutesData(), 6000);
+      setTimeout(() => getRouteTimesData(), 8000);
     }, 60000);
     console.log('[DATA UPDATE] Auto-refresh interval started (60 seconds)');
 

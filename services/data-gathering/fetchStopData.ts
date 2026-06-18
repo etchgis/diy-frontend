@@ -115,9 +115,12 @@ export async function fetchStopData(stopId: string, serviceId: string, organizat
     }
   }
 
-  // Retry once on 503/504
   if (response.status === 503 || response.status === 504) {
     await new Promise(resolve => setTimeout(resolve, 2000));
+    response = await fetchStopById(stopId, serviceId, organizationId);
+  }
+  if (response.status === 503 || response.status === 504) {
+    await new Promise(resolve => setTimeout(resolve, 4000));
     response = await fetchStopById(stopId, serviceId, organizationId);
   }
 

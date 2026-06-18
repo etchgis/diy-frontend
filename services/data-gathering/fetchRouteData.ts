@@ -95,14 +95,21 @@ export async function fetchRouteData(
     // Use first serviceId as the route key for SKIDS routing
     const routeKey = serviceIds && serviceIds.length > 0 ? serviceIds[0] : organizationId;
 
-    const response = await fetch(url, {
-      method: 'GET',
+    const fetchOpts = {
+      method: 'GET' as const,
       headers: {
         'Content-Type': 'application/json',
         'X-Organization-Id': organizationId,
         'X-Skids-Route-Key': routeKey,
       },
-    });
+    };
+
+    let response = await fetch(url, fetchOpts);
+
+    if (response.status === 503 || response.status === 504) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      response = await fetch(url, fetchOpts);
+    }
 
     if (!response.ok) {
       const errorBody = await response.text();

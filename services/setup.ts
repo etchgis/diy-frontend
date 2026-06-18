@@ -745,14 +745,18 @@ async function importData(setup: any) {
     if (taskMap.size > 0) {
       console.log('[ROUTE RESTORE] Fetching longNames for', taskMap.size, 'service(s):', Array.from(taskMap.keys()));
       const { setServiceSelections: setFRSelections } = useFixedRouteStore.getState();
-      await Promise.all(Array.from(taskMap.values()).map(async ({ orgId, serviceId, slideIds }) => {
+      for (const { orgId, serviceId, slideIds } of Array.from(taskMap.values())) {
         try {
-          const res = await fetch(`/api/skids-routes?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(orgId)}`);
-          if (!res.ok) { console.warn('[ROUTE RESTORE] Proxy returned', res.status, 'for service', serviceId); return; }
+          let res = await fetch(`/api/skids-routes?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(orgId)}`);
+          if (res.status === 503 || res.status === 504) {
+            await new Promise(r => setTimeout(r, 2000));
+            res = await fetch(`/api/skids-routes?serviceId=${encodeURIComponent(serviceId)}&orgId=${encodeURIComponent(orgId)}`);
+          }
+          if (!res.ok) { console.warn('[ROUTE RESTORE] Proxy returned', res.status, 'for service', serviceId); continue; }
           const data = await res.json();
           const routes: any[] = data.routes || [];
           console.log('[ROUTE RESTORE] Got', routes.length, 'routes for service', serviceId, '— sample longNames:', routes.slice(0, 3).map((r: any) => r.longName));
-          if (!routes.length) return;
+          if (!routes.length) continue;
           const routeInfos = routes.map((r: any) => ({
             id: r.id,
             shortName: r.shortName || '',
@@ -764,17 +768,29 @@ async function importData(setup: any) {
           for (const slideId of slideIds) {
             const state = useFixedRouteStore.getState().slides[slideId];
             if (!state?.serviceSelections) continue;
-            const updated = state.serviceSelections.map((sel: any) =>
-              sel.serviceId === serviceId && (!sel.routes?.length || sel.routes.every((r: any) => !r.longName))
-                ? { ...sel, routes: routeInfos }
-                : sel
-            );
+            const updated = state.serviceSelections.map((sel: any) => {
+              if (sel.serviceId !== serviceId) return sel;
+              if (!(!sel.routes?.length || sel.routes.every((r: any) => !r.longName))) return sel;
+              if (!sel.routes?.length) {
+                // No routes at all — safe to use full API data
+                return { ...sel, routes: routeInfos };
+              }
+              // Routes exist but missing longNames — only update longName, preserve IDs
+              // so enabledRouteIds matching is not disrupted for bus stops
+              const mergedRoutes = sel.routes.map((existing: any) => {
+                const fresh = routeInfos.find((r: any) =>
+                  r.id === existing.id || (r.shortName && r.shortName === existing.shortName)
+                );
+                return fresh ? { ...existing, longName: fresh.longName } : existing;
+              });
+              return { ...sel, routes: mergedRoutes };
+            });
             setFRSelections(slideId, updated);
           }
         } catch {
           // Non-fatal — slide will fall back to agency suffix label
         }
-      }));
+      }
     }
   }
 

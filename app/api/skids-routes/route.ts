@@ -13,15 +13,19 @@ export async function GET(req: NextRequest) {
 
   const url = `${SKIDS_URL}/feed/routes?geometry=false&stops=false&nysdot=true&serviceIds=${encodeURIComponent(serviceId)}`;
 
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Organization-Id': orgId,
+    'X-Skids-Route-Key': serviceId,
+  };
+
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Organization-Id': orgId,
-        'X-Skids-Route-Key': serviceId,
-      },
-      next: { revalidate: 3600 },
-    });
+    let response = await fetch(url, { headers, next: { revalidate: 3600 } });
+
+    if (response.status === 503 || response.status === 504) {
+      await new Promise(r => setTimeout(r, 2000));
+      response = await fetch(url, { headers, next: { revalidate: 3600 } });
+    }
 
     if (!response.ok) {
       return NextResponse.json({ error: `Upstream error: ${response.status}` }, { status: response.status });

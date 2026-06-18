@@ -117,24 +117,24 @@ export default function TransitDestinationPreview({
     return "text-[1.8cqh]";
   };
 
-  /**
-   * Format route name for display.
-   * For long route names (e.g., "M34-SBS"), show agencyId + route number like "MTA NYCT 34"
-   * For short route names (e.g., "N", "Q"), show as-is
-   */
   const formatRouteName = (leg: any): string => {
     const name = leg.routeShortName || leg.tripShortName || "N/A";
-
-    // For short names display as-is
     if (name.length <= 5) return name;
-
-    // For longer names, use agencyId + extracted route number
     const routeNumber = name.match(/\d+/)?.[0];
     if (routeNumber && leg.agencyId) {
       return `${leg.agencyId} ${routeNumber}`;
     }
-
     return name;
+  };
+    const formatRailName = (leg: any): string => {
+    const name = leg.routeShortName || leg.tripShortName || "N/A";
+    if (name.length <= 5) return name;
+    const num = name.match(/\d+/)?.[0];
+    const agency = (leg.agencyId || '').toLowerCase();
+    if (agency.includes("lirr") || agency.includes("long island")) return num || "LIRR";
+    if (agency.includes("mnr") || agency.includes("metro-north") || agency.includes("metro north") || agency.includes("metronorth")) return num || "MNR";
+    if (agency.includes("amtrak")) return num || "AMT";
+    return num ? `${(leg.agencyId || '').substring(0, 4)} ${num}` : name.substring(0, 5);
   };
 
   const getDurationTextSize = (hasMany: boolean) => {
@@ -447,15 +447,7 @@ export default function TransitDestinationPreview({
                                                 : "black",
                                             }}
                                           >
-                                            {leg.routeShortName?.length > 5
-                                              ? `${leg.agencyId || "N/A"} ${
-                                                  leg.routeShortName.match(
-                                                    /\d+/
-                                                  )?.[0] || ""
-                                                }`
-                                              : leg.routeShortName ||
-                                                leg.tripShortName ||
-                                                "N/A"}
+                                            {formatRailName(leg)}
                                           </p>
                                         </div>
                                       </div>

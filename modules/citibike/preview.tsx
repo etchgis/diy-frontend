@@ -391,14 +391,17 @@ export default function CitibikePreview({
 
         for (const route of cluster.routes.slice(0, 4)) {
           const bullet = document.createElement('div');
+          const isCircle = route.shortName.length === 1;
+          const fontSize = route.shortName.length >= 4 ? Math.round(bulletFont * 0.8) : bulletFont;
           bullet.style.cssText = `
-            width: ${bulletSize}px;
-            height: ${bulletSize}px;
+            ${isCircle
+              ? `width: ${bulletSize}px; height: ${bulletSize}px;`
+              : `height: ${bulletSize}px; padding: 0 ${Math.round(4 * scale)}px;`}
             background: #${route.color};
             color: #${route.textColor};
-            font-size: ${bulletFont}px;
+            font-size: ${fontSize}px;
             font-weight: 900;
-            border-radius: 50%;
+            border-radius: ${isCircle ? '50%' : `${Math.round(bulletSize / 4)}px`};
             display: flex;
             align-items: center;
             justify-content: center;
@@ -406,6 +409,7 @@ export default function CitibikePreview({
             line-height: 1;
             font-family: sans-serif;
             flex-shrink: 0;
+            white-space: nowrap;
           `;
           bullet.textContent = route.shortName;
           bubble.appendChild(bullet);
