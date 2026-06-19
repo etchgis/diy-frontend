@@ -368,6 +368,7 @@ async function importData(setup: any) {
       const {
         setStopName,
         setDisplayName,
+        setShowDisplayName,
         setShowTitle,
         setDescription,
         setBackgroundColor,
@@ -388,6 +389,14 @@ async function importData(setup: any) {
         setColumnHeaderTextSize,
         setMinArrivalMinutes,
         setColumnServiceSelections,
+        setShowTitleHtml,
+        setTitleHtml,
+        setShowSubtitle,
+        setSubtitleText,
+        setLogoHeightOverride,
+        setShowTableColumnHeaders,
+        setTableHeaderLeft,
+        setTableHeaderRight,
         setOutageMessage: setFROutageMessage,
         setSkipOnError: setFRSkipOnError,
       } = useFixedRouteStore.getState();
@@ -421,6 +430,15 @@ async function importData(setup: any) {
       if (slide.data.columnServiceSelections) {
         setColumnServiceSelections(slide.id, slide.data.columnServiceSelections);
       }
+      setShowDisplayName(slide.id, slide.data.showDisplayName !== false);
+      setShowTitleHtml(slide.id, slide.data.showTitleHtml ?? false);
+      setTitleHtml(slide.id, slide.data.titleHtml ?? '');
+      setShowSubtitle(slide.id, slide.data.showSubtitle !== false);
+      setSubtitleText(slide.id, slide.data.subtitleText ?? '');
+      setLogoHeightOverride(slide.id, slide.data.logoHeightOverride ?? undefined);
+      setShowTableColumnHeaders(slide.id, slide.data.showTableColumnHeaders ?? false);
+      setTableHeaderLeft(slide.id, slide.data.tableHeaderLeft ?? 'Transit Service Line');
+      setTableHeaderRight(slide.id, slide.data.tableHeaderRight ?? 'Est Arrival Time');
       setFROutageMessage(slide.id, slide.data.outageMessage || '');
       setFRSkipOnError(slide.id, slide.data.skipOnError ?? false);
     }

@@ -177,6 +177,15 @@ export function buildPublishPayload() {
         screenObj.data.minArrivalMinutes = slideData.minArrivalMinutes ?? 0;
         screenObj.data.titleTextSize = titleTextSize ?? 5;
         screenObj.data.contentTextSize = contentTextSize ?? 5;
+        screenObj.data.showTitleHtml = slideData.showTitleHtml ?? false;
+        screenObj.data.titleHtml = slideData.titleHtml ?? '';
+        screenObj.data.showSubtitle = slideData.showSubtitle !== false;
+        screenObj.data.subtitleText = slideData.subtitleText ?? '';
+        screenObj.data.showDisplayName = slideData.showDisplayName !== false;
+        screenObj.data.logoHeightOverride = slideData.logoHeightOverride ?? null;
+        screenObj.data.showTableColumnHeaders = slideData.showTableColumnHeaders ?? false;
+        screenObj.data.tableHeaderLeft = slideData.tableHeaderLeft ?? 'Transit Service Line';
+        screenObj.data.tableHeaderRight = slideData.tableHeaderRight ?? 'Est Arrival Time';
         screenObj.data.outageMessage = slideData.outageMessage ?? '';
         screenObj.data.skipOnError = slideData.skipOnError ?? false;
 
