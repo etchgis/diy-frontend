@@ -531,6 +531,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               >
                                 {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
                               </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
                               <div
                                 className="rounded font-bold text-center flex-shrink-0"
                                 style={{
@@ -543,8 +545,6 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               >
                                 {item.routeShortName || item.routeId || ''}
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
                               <div
                                 style={{
                                   fontSize: `${12 * contentSizeMultiplier}px`,
@@ -611,6 +611,11 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               >
                                 {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
                               </span>
+                            </div>
+                            <div
+                              className="flex items-center flex-shrink-0"
+                              style={{ gap: "1.5cqh" }}
+                            >
                               <div
                                 className="rounded font-bold text-center flex-shrink-0"
                                 style={{
@@ -625,11 +630,6 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               >
                                 {item.routeShortName || item.routeId || ''}
                               </div>
-                            </div>
-                            <div
-                              className="flex items-center flex-shrink-0"
-                              style={{ gap: "1.5cqh" }}
-                            >
                               <div
                                 className="font-medium flex-shrink-0"
                                 style={{
@@ -703,6 +703,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           >
                             {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
                           </span>
+                        </div>
+                        <div className="flex items-center gap-4">
                           <div
                             className={`rounded font-bold text-center flex-shrink-0`}
                             style={{
@@ -716,8 +718,6 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           >
                             {item.routeShortName || item.routeId || ''}
                           </div>
-                        </div>
-                        <div className="flex items-center gap-4">
                           <div
                             className="font-medium flex-shrink-0 overflow-hidden"
                             style={{
@@ -789,7 +789,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           padding: `1cqh 1.5cqw`,
                         }}
                       >
-                        {/* Destination + Route Badge */}
+                        {/* Destination */}
                         <div className="flex-1 min-w-0 flex items-center gap-2">
                           <span
                             className="font-medium block break-words leading-snug"
@@ -801,6 +801,17 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           >
                             {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
                           </span>
+                        </div>
+                        {/* Right-side columns — em widths track font size so nothing ever clips */}
+                        <div
+                          className="flex items-center flex-shrink-0"
+                          style={{
+                            fontSize: `${
+                              3 * contentSizeMultiplier
+                            }cqh`,
+                            gap: "1em",
+                          }}
+                        >
                           <div
                             className="rounded font-bold text-center flex-shrink-0"
                             style={{
@@ -815,17 +826,6 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           >
                             {item.routeShortName || item.routeId || ''}
                           </div>
-                        </div>
-                        {/* Right-side columns — em widths track font size so nothing ever clips */}
-                        <div
-                          className="flex items-center flex-shrink-0"
-                          style={{
-                            fontSize: `${
-                              3 * contentSizeMultiplier
-                            }cqh`,
-                            gap: "1em",
-                          }}
-                        >
                           <div
                             className="font-medium text-right flex-shrink-0"
                             style={{ width: "4.5em", whiteSpace: "nowrap" }}
