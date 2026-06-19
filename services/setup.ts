@@ -397,6 +397,8 @@ async function importData(setup: any) {
         setShowTableColumnHeaders,
         setTableHeaderLeft,
         setTableHeaderRight,
+        setIsLoading: setFRIsLoading,
+        setDataError: setFRDataError,
         setOutageMessage: setFROutageMessage,
         setSkipOnError: setFRSkipOnError,
       } = useFixedRouteStore.getState();
@@ -430,6 +432,8 @@ async function importData(setup: any) {
       if (slide.data.columnServiceSelections) {
         setColumnServiceSelections(slide.id, slide.data.columnServiceSelections);
       }
+      setFRIsLoading(slide.id, true);
+      setFRDataError(slide.id, false);
       setShowDisplayName(slide.id, slide.data.showDisplayName !== false);
       setShowTitleHtml(slide.id, slide.data.showTitleHtml ?? false);
       setTitleHtml(slide.id, slide.data.titleHtml ?? '');

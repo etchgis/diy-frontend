@@ -137,6 +137,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   const setScheduleData = useFixedRouteStore((state) => state.setScheduleData);
   const setFixedRouteDataError = useFixedRouteStore((state) => state.setDataError);
+  const setFixedRouteIsLoading = useFixedRouteStore((state) => state.setIsLoading);
 
   const setTransitRoutesDataError = useTransitRouteStore((state) => state.setDataError);
 
@@ -382,9 +383,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       if (queries.length === 0) {
         setScheduleData(slide.id, []);
         setFixedRouteDataError(slide.id, false);
+        setFixedRouteIsLoading(slide.id, false);
         continue;
       }
 
+      setFixedRouteIsLoading(slide.id, true);
       try {
         const allArrivals: any[] = [];
         let serverErrorCount = 0;
@@ -417,6 +420,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           // All queries failed — only show the error banner if there's no cached data to fall back on
           const existingData = useFixedRouteStore.getState().slides[slide.id]?.scheduleData;
           if (!existingData?.length) setFixedRouteDataError(slide.id, true);
+          setFixedRouteIsLoading(slide.id, false);
           continue;
         }
 
@@ -504,11 +508,13 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
         setScheduleData(slide.id, displayArrivals);
         setFixedRouteDataError(slide.id, false);
+        setFixedRouteIsLoading(slide.id, false);
         console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, limitedArrivals);
       } catch (error) {
         console.error(`[DATA UPDATE] Error fetching fixed route data for slide ${slide.id}:`, error);
         const existingData = useFixedRouteStore.getState().slides[slide.id]?.scheduleData;
         if (!existingData?.length) setFixedRouteDataError(slide.id, true);
+        setFixedRouteIsLoading(slide.id, false);
       }
     }
   };
