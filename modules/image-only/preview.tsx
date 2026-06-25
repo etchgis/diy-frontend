@@ -5,6 +5,7 @@ import { deleteImage } from "@/services/deleteImage";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import ResizableImage from "@/components/shared-components/resizable-image";
+import Footer from "@/components/shared-components/footer";
 
 export default function ImageOnlyPreview({
   slideId,
@@ -46,6 +47,7 @@ export default function ImageOnlyPreview({
 
   const shortcode = useGeneralStore((state) => state.shortcode || "");
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (file: File) => {
@@ -87,72 +89,77 @@ export default function ImageOnlyPreview({
 
   return (
     <div
-      ref={imageContainerRef}
-      className="w-full h-full overflow-hidden"
-      onDrop={isEditor ? handleDrop : undefined}
-      onDragOver={isEditor ? handleDragOver : undefined}
+      className="w-full h-full flex flex-col overflow-hidden"
       style={{ backgroundColor, fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined }}
     >
-      {isUploading ? (
-        <div className="w-full h-full flex flex-col items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          <p className="mt-4 text-sm text-white">Uploading...</p>
-        </div>
-      ) : image ? (
-        fullScreen ? (
-          <img
-            src={image}
-            alt="Full screen image"
-            className="w-full h-full"
-            style={{ objectFit: imageObjectFit }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center p-6">
-            <ResizableImage
+      <div
+        ref={imageContainerRef}
+        className="flex-1 min-h-0 overflow-hidden"
+        onDrop={isEditor ? handleDrop : undefined}
+        onDragOver={isEditor ? handleDragOver : undefined}
+      >
+        {isUploading ? (
+          <div className="w-full h-full flex flex-col items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <p className="mt-4 text-sm text-white">Uploading...</p>
+          </div>
+        ) : image ? (
+          fullScreen ? (
+            <img
               src={image}
-              alt="Uploaded"
-              width={imageWidth}
-              height={imageHeight}
-              objectFit={imageObjectFit}
-              onResize={(w, h) => {
-                setImageWidth(slideId, w);
-                setImageHeight(slideId, h);
-              }}
-              isEditor={isEditor}
-              containerRef={imageContainerRef}
+              alt="Full screen image"
+              className="w-full h-full"
+              style={{ objectFit: imageObjectFit }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center p-6">
+              <ResizableImage
+                src={image}
+                alt="Uploaded"
+                width={imageWidth}
+                height={imageHeight}
+                objectFit={imageObjectFit}
+                onResize={(w, h) => {
+                  setImageWidth(slideId, w);
+                  setImageHeight(slideId, h);
+                }}
+                isEditor={isEditor}
+                containerRef={imageContainerRef}
+              />
+            </div>
+          )
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-white">
+            {isEditor && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.gif"
+                  className="hidden"
+                  onChange={handleFileInput}
+                />
+                <div className="text-lg mb-2">Drag and Drop Image Here</div>
+                <div className="text-sm mb-4" style={{ opacity: 0.8 }}>
+                  accepted files: .png, .jpg, .gif
+                </div>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 mb-4 text-sm font-medium bg-white/20 hover:bg-white/30 rounded border border-white/30 transition-colors"
+                >
+                  Browse Files
+                </button>
+              </>
+            )}
+            <img
+              src="/images/placeholder-image.png"
+              alt="Placeholder"
+              className="w-full max-w-xs max-h-40 object-contain mx-auto"
             />
           </div>
-        )
-      ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center text-white">
-          {isEditor && (
-            <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".png,.jpg,.jpeg,.gif"
-                className="hidden"
-                onChange={handleFileInput}
-              />
-              <div className="text-lg mb-2">Drag and Drop Image Here</div>
-              <div className="text-sm mb-4" style={{ opacity: 0.8 }}>
-                accepted files: .png, .jpg, .gif
-              </div>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 mb-4 text-sm font-medium bg-white/20 hover:bg-white/30 rounded border border-white/30 transition-colors"
-              >
-                Browse Files
-              </button>
-            </>
-          )}
-          <img
-            src="/images/placeholder-image.png"
-            alt="Placeholder"
-            className="w-full max-w-xs max-h-40 object-contain mx-auto"
-          />
-        </div>
-      )}
+        )}
+      </div>
+      {showFooter && <Footer previewMode={previewMode} />}
     </div>
   );
 }
