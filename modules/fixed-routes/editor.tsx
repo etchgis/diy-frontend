@@ -830,12 +830,16 @@ export default function StopArrivalsSlide({
         routeCacheRef.current = deduped;
 
         const q = value.trim().toLowerCase();
-        const cacheMatches = deduped.filter(r =>
-          r.route_short_name?.toLowerCase().startsWith(q) ||
-          r.route_long_name?.toLowerCase().includes(q)
-        );
-
-        setRouteResults(cacheMatches);
+        const exactShortName = deduped.filter(r => r.route_short_name?.toLowerCase() === q);
+        const startsWithShortName = deduped.filter(r => {
+          const sn = r.route_short_name?.toLowerCase();
+          return sn && sn !== q && sn.startsWith(q);
+        });
+        const longNameContains = deduped.filter(r => {
+          const sn = r.route_short_name?.toLowerCase();
+          return (!sn || !sn.startsWith(q)) && r.route_long_name?.toLowerCase().includes(q);
+        });
+        setRouteResults([...exactShortName, ...startsWithShortName, ...longNameContains].slice(0, 15));
       } catch {
         setRouteResults([]);
       } finally {
