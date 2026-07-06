@@ -38,8 +38,19 @@ export function processRoutePatterns(patterns: any[]) {
     }
   });
 
+  const byName = new Map<string, any>();
+  for (const stop of allStops.values()) {
+    const name = (stop.name || stop.stopName || '').trim().toLowerCase();
+    if (name && !byName.has(name)) {
+      byName.set(name, stop);
+    } else if (!name) {
+      // No name — fall back to stopId key so it still appears
+      byName.set(stop.stopId, stop);
+    }
+  }
+
   return {
-    stops: Array.from(allStops.values()),
+    stops: Array.from(byName.values()),
     coordinates: longestPattern.coordinates || [],
   };
 }

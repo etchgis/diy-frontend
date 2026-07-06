@@ -36,13 +36,12 @@ export function extractRouteIds(route: RouteInfo) {
 }
 
 /**
- * Find a specific route from an array of route data
+ * Find a specific route from an array of route data.
  */
 export function findSpecificRoute(routeDataArray: any[], route: RouteInfo) {
-  return routeDataArray.find(r =>
-    r.id === route.route_id ||
-    r.shortName === route.route_short_name
-  );
+  const byId = routeDataArray.find(r => r.id === route.route_id);
+  if (byId) return byId;
+  return routeDataArray.find(r => r.shortName === route.route_short_name);
 }
 
 /**

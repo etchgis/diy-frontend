@@ -175,13 +175,14 @@ function computeDirectionOptions(
 
     if (hasHeadsigns) {
       for (const [label, headsigns] of directionHeadsigns) {
+        const directionalStopId = directionalByLabel.get(label)!.join(',');
         if (headsigns.length > 0) {
-          options.push({ stopId: combinedStopId, label, isAllDirections: false, groupHeadsigns: headsigns });
+          options.push({ stopId: directionalStopId, label, isAllDirections: false, groupHeadsigns: headsigns });
           for (const headsign of headsigns) {
-            options.push({ stopId: combinedStopId, label: headsign, isAllDirections: false, headsignFilter: headsign, directionGroup: label });
+            options.push({ stopId: directionalStopId, label: headsign, isAllDirections: false, headsignFilter: headsign, directionGroup: label });
           }
         } else {
-          options.push({ stopId: directionalByLabel.get(label)!.join(','), label, isAllDirections: false });
+          options.push({ stopId: directionalStopId, label, isAllDirections: false });
         }
       }
     } else {
@@ -344,8 +345,15 @@ function deduplicateStops(stops: ExpandedStop[]): ExpandedStop[] {
             existingService.routes = [];
           }
           for (const route of svc.routes || []) {
-            if (!existingService.routes.some((r: any) => r.id === route.id)) {
+            const existingRouteIdx = existingService.routes.findIndex((r: any) => r.id === route.id);
+            if (existingRouteIdx === -1) {
               existingService.routes.push(route);
+            } else {
+              // Same route on a different platform — merge headsigns so the combined
+              // service entry has all destinations (e.g. both northbound and southbound).
+              const existingRoute = existingService.routes[existingRouteIdx];
+              const merged = new Set<string>([...(existingRoute.headsigns || []), ...(route.headsigns || [])]);
+              existingRoute.headsigns = Array.from(merged);
             }
           }
           // Track stopIds for this service
@@ -1653,11 +1661,14 @@ export default function StopArrivalsSlide({
                                 directionOptions: sel.directionOptions ?? baseDisplay.directionOptions,
                                 headsignAliases: sel.headsignAliases ?? baseDisplay.headsignAliases,
                               };
-                              // Use routes discovered from live SKIDS arrivals as the source of truth for badges.
-                              // Fall back to stops-API routes only before the first fetch completes.
+                              // Always show all routes from the stops API as route badges; supplement with any
+                              // routes discovered from live arrivals that weren't in the stops API response.
                               const baseRoutes: RouteInfo[] = selection.routes || [];
                               const liveRoutes: RouteInfo[] = discoveredRoutes[selection.serviceId] || [];
-                              const allRoutes: RouteInfo[] = liveRoutes.length > 0 ? liveRoutes : baseRoutes;
+                              const liveOnlyRoutes = liveRoutes.filter(r => !baseRoutes.some(b => b.id === r.id));
+                              const allRoutes: RouteInfo[] = baseRoutes.length > 0
+                                ? [...baseRoutes, ...liveOnlyRoutes]
+                                : liveRoutes;
                               return (
                               <div
                             key={`${selection.serviceId}-${index}`}
@@ -1795,7 +1806,10 @@ export default function StopArrivalsSlide({
                                           ? currentFilters.length === 0 && normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId)
                                           : currentFilters.length === 0;
                                       } else if (opt.groupHeadsigns) {
-                                        isSelected = opt.groupHeadsigns.every(h => currentFilters.includes(h));
+                                        // Compare by stopId — headsign inclusion is unreliable because
+                                        // a directional stop's data often contains headsigns from both
+                                        // directions, which would make every group appear "selected".
+                                        isSelected = normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId);
                                       } else {
                                         isSelected = normalizeIds(selection.selectedStopId) === normalizeIds(opt.stopId);
                                       }
@@ -1806,28 +1820,16 @@ export default function StopArrivalsSlide({
                                         <button
                                           key={String(opt.label)}
                                           onClick={() => {
-                                            let newFilters: string[];
-                                            if (opt.isAllDirections) {
-                                              newFilters = [];
-                                            } else if (opt.groupHeadsigns) {
-                                              const allSelected = opt.groupHeadsigns.every(h => currentFilters.includes(h));
-                                              if (allSelected) {
-                                                newFilters = currentFilters.filter((f: string) => !opt.groupHeadsigns!.includes(f));
-                                              } else {
-                                                const toAdd = opt.groupHeadsigns.filter(h => !currentFilters.includes(h));
-                                                newFilters = [...currentFilters, ...toAdd];
-                                              }
-                                            } else {
-                                              newFilters = [];
-                                            }
+                                            // Always clear headsign filters so the stopId is the sole discriminator.
                                             const updated = activeSels.map((s: any, i: any) =>
                                               i === index ? {
                                                 ...s,
                                                 selectedStopId: opt.stopId,
-                                                selectedHeadsignFilters: newFilters.length > 0 ? newFilters : undefined
+                                                selectedHeadsignFilters: undefined
                                               } : s
                                             );
                                             setActiveSels(updated);
+                                            setIsLoading(slideId, true);
                                           }}
                                           className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                                             isSelected
@@ -1873,6 +1875,7 @@ export default function StopArrivalsSlide({
                                               } : s
                                             );
                                             setActiveSels(updated);
+                                            setIsLoading(slideId, true);
                                           }}
                                           className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                                             isSelected
