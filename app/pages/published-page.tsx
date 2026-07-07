@@ -478,7 +478,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
                 .replace(/\s+Line$/i, '')
                 .replace(/\s+Railroad$/i, '')
                 .trim();
-              routeLineNameMap[routeId] = cleanName;
+              routeLineNameMap[`${(sel as any).serviceId}:${routeId}`] = cleanName;
             }
           }
         }
@@ -495,7 +495,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         }
 
         const displayArrivals = limitedArrivals.map((arr: any) => {
-          const lineName = routeLineNameMap[arr.routeId] || routeLineNameMap[arr.routeShortName];
+          const svcKey = arr._sourceService || '';
+          const lineName = routeLineNameMap[`${svcKey}:${arr.routeId}`] || routeLineNameMap[`${svcKey}:${arr.routeShortName}`];
           if (lineName) {
             return { ...arr, routeShortName: `${arr.routeShortName} - ${lineName}` };
           }

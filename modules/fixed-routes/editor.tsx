@@ -717,6 +717,7 @@ export default function StopArrivalsSlide({
   );
 
   const setScheduleData = useFixedRouteStore((state: { setScheduleData: any; }) => state.setScheduleData);
+  const liveArrivals = useFixedRouteStore((state: any) => state.slides[slideId]?.scheduleData || []);
 
   useEffect(() => {
     // Fetch stops within 5km by default
@@ -1198,7 +1199,9 @@ export default function StopArrivalsSlide({
               .replace(/\s+Line$/i, '')
               .replace(/\s+Railroad$/i, '')
               .trim();
-            routeLineNameMap[routeId] = cleanName;
+            // Key by serviceId:routeId to avoid collisions between agencies (e.g. LIRR and MNR
+            // both use short numeric route IDs that can be identical across feeds)
+            routeLineNameMap[`${sel.serviceId}:${routeId}`] = cleanName;
           }
         }
       }
@@ -1220,7 +1223,8 @@ export default function StopArrivalsSlide({
       const cappedArrivals = storeCap === Infinity ? filteredArrivals : filteredArrivals.slice(0, storeCap);
 
       const displayArrivals = cappedArrivals.map(arr => {
-        const lineName = routeLineNameMap[arr.routeId] || routeLineNameMap[arr.routeShortName];
+        const svcKey = arr._sourceService || '';
+        const lineName = routeLineNameMap[`${svcKey}:${arr.routeId}`] || routeLineNameMap[`${svcKey}:${arr.routeShortName}`];
         if (lineName) {
           return { ...arr, routeShortName: `${arr.routeShortName} - ${lineName}` };
         }
@@ -1634,7 +1638,7 @@ export default function StopArrivalsSlide({
                           {([0, 1] as const).map((tabIdx) => (
                             <button
                               key={tabIdx}
-                              onClick={() => setColumnActiveTab(tabIdx)}
+                              onClick={() => { setColumnActiveTab(tabIdx); setEditingHeadsignsFor(null); }}
                               className={`px-4 py-1.5 text-xs font-medium rounded border transition-colors ${
                                 columnActiveTab === tabIdx
                                   ? 'bg-blue-600 text-white border-blue-600'
@@ -1776,6 +1780,7 @@ export default function StopArrivalsSlide({
                               const _liveHeadsigns = (() => {
                                 const seen = new Set<string>();
                                 const opts: DirectionOption[] = [];
+                                // First: headsigns from stop API route data
                                 for (const route of (selection.routes || []) as RouteInfo[]) {
                                   if (selection.enabledRouteIds && !selection.enabledRouteIds.includes(route.id)) continue;
                                   const rsn = route.shortName || '';
@@ -1786,6 +1791,21 @@ export default function StopArrivalsSlide({
                                       seen.add(key);
                                       opts.push({ stopId: '', label: headsign, isAllDirections: false, headsignFilter: normalized, routeShortName: rsn || undefined });
                                     }
+                                  }
+                                }
+                                // Second: destinations from live arrivals — fills the gap when the stop
+                                // API returns empty headsigns (e.g. G train, PATH) or only one direction
+                                for (const arr of liveArrivals) {
+                                  if (arr._sourceService !== selection.serviceId) continue;
+                                  if (selection.enabledRouteIds && arr.routeId && !selection.enabledRouteIds.includes(arr.routeId)) continue;
+                                  const rsn = arr.routeShortName || arr.routeId || '';
+                                  const headsign = arr.destination || '';
+                                  if (!headsign) continue;
+                                  const normalized = headsign.toLowerCase().trim();
+                                  const key = rsn ? `${rsn}|${normalized}` : normalized;
+                                  if (!seen.has(key)) {
+                                    seen.add(key);
+                                    opts.push({ stopId: '', label: headsign, isAllDirections: false, headsignFilter: normalized, routeShortName: rsn || undefined });
                                   }
                                 }
                                 return opts;
