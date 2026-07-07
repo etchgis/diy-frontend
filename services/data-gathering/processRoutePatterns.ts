@@ -13,14 +13,14 @@ export function processRoutePatterns(patterns: any[]) {
 
   patterns.forEach((pattern: any) => {
     // Track pattern with most stops for route line
-    const stopCount = pattern.stops ? pattern.stops.length : 0;
+    const stopCount = Array.isArray(pattern.stops) ? pattern.stops.length : 0;
     if (stopCount > maxStopCount) {
       maxStopCount = stopCount;
       longestPattern = pattern;
     }
 
     // Add stops from this pattern
-    if (pattern.stops) {
+    if (Array.isArray(pattern.stops)) {
       pattern.stops.forEach((stop: any) => {
         const stopId = stop.stopId || stop.id;
         if (!allStops.has(stopId)) {

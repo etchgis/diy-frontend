@@ -2,7 +2,7 @@
  * Shared utility for fetching route data consistently across components
  */
 
-import { fetchRouteData, fetchRouteTimetable } from '../data-gathering/fetchRouteData';
+import { fetchRouteData, fetchRouteTimetable, fetchPatternDetails } from '../data-gathering/fetchRouteData';
 import { processRoutePatterns, formatTimetableData } from '../data-gathering/processRoutePatterns';
 import { calculateTimeWindow } from './timeWindowCalculator';
 
@@ -41,6 +41,13 @@ export function extractRouteIds(route: RouteInfo) {
 export function findSpecificRoute(routeDataArray: any[], route: RouteInfo) {
   const byId = routeDataArray.find(r => r.id === route.route_id);
   if (byId) return byId;
+
+  const normalizedRouteId = route.route_id.replace(/^[^_]*_/, '');
+  if (normalizedRouteId !== route.route_id) {
+    const byNormalized = routeDataArray.find(r => r.id === normalizedRouteId);
+    if (byNormalized) return byNormalized;
+  }
+
   return routeDataArray.find(r => r.shortName === route.route_short_name);
 }
 
@@ -56,16 +63,33 @@ export async function fetchRoutePatterns(
     organizationId,
     [serviceId],
     true,
-    true
+    false
   );
 
   const specificRoute = findSpecificRoute(routeDataArray, route);
 
-  if (specificRoute && specificRoute.patterns && specificRoute.patterns.length > 0) {
-    return processRoutePatterns(specificRoute.patterns);
+  if (!specificRoute || !specificRoute.patterns || specificRoute.patterns.length === 0) {
+    return null;
   }
 
-  return null;
+  
+  const patternsToFetch: any[] = specificRoute.patterns.slice(0, 5);
+  const detailsResults = await Promise.all(
+    patternsToFetch.map((pattern: any) =>
+      fetchPatternDetails(serviceId, pattern.id, organizationId).catch(() => null)
+    )
+  );
+
+  const enrichedPatterns = specificRoute.patterns.map((pattern: any, i: number) => {
+    const details = detailsResults[i];
+    return {
+      ...pattern,
+      stops: details?.stops ?? (Array.isArray(pattern.stops) ? pattern.stops : []),
+      coordinates: details?.coordinates ?? pattern.coordinates ?? [],
+    };
+  });
+
+  return processRoutePatterns(enrichedPatterns);
 }
 
 /**

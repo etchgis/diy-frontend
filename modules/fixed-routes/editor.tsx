@@ -862,15 +862,24 @@ export default function StopArrivalsSlide({
     setRouteResults([]);
     setIsLoadingRouteStops(true);
     try {
-      const patternData = await fetchRoutePatterns({
-        route_id: route.route_id,
-        route_short_name: route.route_short_name,
-        route_long_name: route.route_long_name,
-        services: route.services?.map((s: any) => ({
+      const allServices: Array<{ organization_guid: string; service_guid: string }> =
+        route.services?.map((s: any) => ({
           organization_guid: s.organization_guid,
           service_guid: s.service_guid,
-        })) || [],
-      });
+        })) || [];
+
+      // Try each service in order until one returns stops
+      let patternData: any = null;
+      for (const service of allServices) {
+        patternData = await fetchRoutePatterns({
+          route_id: route.route_id,
+          route_short_name: route.route_short_name,
+          route_long_name: route.route_long_name,
+          services: [service],
+        });
+        if (patternData?.stops?.length > 0) break;
+      }
+
       const stops = patternData?.stops || [];
       stops.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
       setRouteStops(stops);
@@ -884,11 +893,23 @@ export default function StopArrivalsSlide({
   const handleSelectStopFromRoute = async (routeStop: any) => {
     setIsLoadingRouteStops(true);
     try {
-      const results = await fetchAllStops({
+      // First attempt: coordinate + name within 400m (covers stations where SKIDS
+      // and NYSDOT coordinates differ by up to a few hundred meters).
+      let results = await fetchAllStops({
         coordinates: { lat: routeStop.lat, lng: routeStop.lon },
-        radius: 100,
+        radius: 400,
         search: routeStop.name,
       });
+
+      // Fallback: if name didn't match, search by proximity only — the closest stop
+      // to the route stop's coordinates is almost always the right one.
+      if (!results?.length) {
+        results = await fetchAllStops({
+          coordinates: { lat: routeStop.lat, lng: routeStop.lon },
+          radius: 400,
+        });
+      }
+
       const deduped = deduplicateStops(results);
       const match = deduped[0];
       if (match) {
