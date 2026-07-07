@@ -32,6 +32,8 @@ export default function CitibikePreview({
   const transitMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const isMapLoadedRef = useRef(false);
+  const addMarkersRef = useRef<() => void>(() => {});
+  const addTransitStopMarkersRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const title = useCitibikeStore((state) => state.slides[slideId]?.title || "");
   const setTitle = useCitibikeStore((state) => state.setTitle);
@@ -147,8 +149,8 @@ export default function CitibikePreview({
 
       map.on("load", () => {
         isMapLoadedRef.current = true;
-        addMarkers();
-        addTransitStopMarkers();
+        addMarkersRef.current();
+        addTransitStopMarkersRef.current();
       });
 
       mapRef.current = map;
@@ -194,7 +196,7 @@ export default function CitibikePreview({
     if (!mapRef.current) return;
     const style = mutedMap ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/streets-v12";
     mapRef.current.setStyle(style);
-    mapRef.current.once("style.load", () => { addMarkers(); addTransitStopMarkers(); });
+    mapRef.current.once("style.load", () => { addMarkersRef.current(); addTransitStopMarkersRef.current(); });
   }, [mutedMap]);
 
   useEffect(() => {
@@ -461,6 +463,11 @@ export default function CitibikePreview({
       console.warn('[CitibikePreview] Transit stops fetch failed:', err);
     }
   }
+
+  // Keep refs in sync with the latest render's closures so async map callbacks
+  // (load, style.load) always read current stationData instead of a stale one.
+  addMarkersRef.current = addMarkers;
+  addTransitStopMarkersRef.current = addTransitStopMarkers;
 
   return (
     <div
