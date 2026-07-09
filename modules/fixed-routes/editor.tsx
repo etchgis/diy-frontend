@@ -1116,10 +1116,19 @@ export default function StopArrivalsSlide({
     try {
       // Fetch sequentially to avoid overwhelming the API
       const allArrivals: any[] = [];
+      // serviceId -> authoritative routes serving the stop (from skids), keyed by
+      // route id so peak-only routes stay in the badge list even with no arrivals.
+      const servingByService: Record<string, Map<string, RouteInfo>> = {};
       let serverErrorCount = 0;
       for (const q of queries) {
         try {
           const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId);
+          for (const r of ((data as any)?.routes || []) as RouteInfo[]) {
+            const rid = r.id ?? (r as any).route_id;
+            if (!rid) continue;
+            if (!servingByService[q.serviceId]) servingByService[q.serviceId] = new Map();
+            if (!servingByService[q.serviceId].has(rid)) servingByService[q.serviceId].set(rid, r);
+          }
           const tagged = (data?.trains || []).map((item: any) => ({
             destination: item.destination,
             routeId: item.routeId,
@@ -1235,23 +1244,11 @@ export default function StopArrivalsSlide({
         return arr;
       });
 
-      // Collect routes seen in arrivals (keyed by service → shortName) for badge supplementation
-      const seenByService: Record<string, Map<string, RouteInfo>> = {};
-      for (const arr of uniqueArrivals) {
-        if (!arr._sourceService || !arr.routeShortName) continue;
-        if (!seenByService[arr._sourceService]) seenByService[arr._sourceService] = new Map();
-        const m = seenByService[arr._sourceService];
-        if (!m.has(arr.routeShortName)) {
-          m.set(arr.routeShortName, {
-            id: arr.routeId || arr.routeShortName,
-            shortName: arr.routeShortName,
-            color: arr.routeColor || '',
-            textColor: arr.routeTextColor || '',
-          });
-        }
-      }
+      // Badge list comes from skids' authoritative serving-routes (schedule-derived,
+      // time-independent), not the arrivals sample — so peak-only/express routes with
+      // no upcoming trips don't drop out of the options.
       const nextDiscovered: Record<string, RouteInfo[]> = {};
-      for (const [svcId, routeMap] of Object.entries(seenByService)) {
+      for (const [svcId, routeMap] of Object.entries(servingByService)) {
         nextDiscovered[svcId] = Array.from(routeMap.values());
       }
       setDiscoveredRoutes(nextDiscovered);
@@ -1686,14 +1683,19 @@ export default function StopArrivalsSlide({
                                 directionOptions: sel.directionOptions ?? baseDisplay.directionOptions,
                                 headsignAliases: sel.headsignAliases ?? baseDisplay.headsignAliases,
                               };
-                              // Always show all routes from the stops API as route badges; supplement with any
-                              // routes discovered from live arrivals that weren't in the stops API response.
+                              // Union configured routes with skids' authoritative serving-routes.
+                              // Both are schedule-derived and complete; the union keeps configured
+                              // routes if skids is cold and adds any skids-only routes if config is stale.
                               const baseRoutes: RouteInfo[] = selection.routes || [];
                               const liveRoutes: RouteInfo[] = discoveredRoutes[selection.serviceId] || [];
-                              const liveOnlyRoutes = liveRoutes.filter(r => !baseRoutes.some(b => b.id === r.id));
-                              const allRoutes: RouteInfo[] = baseRoutes.length > 0
-                                ? [...baseRoutes, ...liveOnlyRoutes]
-                                : liveRoutes;
+                              const seenRouteKeys = new Set<string>();
+                              const allRoutes: RouteInfo[] = [];
+                              for (const route of [...baseRoutes, ...liveRoutes]) {
+                                const key = String(route.id ?? (route as any).route_id ?? route.shortName ?? '');
+                                if (!key || seenRouteKeys.has(key)) continue;
+                                seenRouteKeys.add(key);
+                                allRoutes.push(route);
+                              }
                               return (
                               <div
                             key={`${selection.serviceId}-${index}`}
