@@ -73,8 +73,19 @@ function formatBusData(data: any) {
     return true;
   });
 
+  // Authoritative, schedule-derived set of routes serving this stop (skids `routes`).
+  // Time-independent, so it includes peak-only/express routes with no upcoming trips.
+  const servingRoutes = (data.routes || []).map((r: any) => ({
+    id: r.id ?? r.routeId,
+    shortName: r.shortName ?? r.id ?? r.routeId,
+    longName: r.longName ?? '',
+    color: r.color ?? '',
+    textColor: r.textColor ?? '',
+  }));
+
   return {
     station: data.name,
+    routes: servingRoutes,
     trains: futureArrivals.map((train: any) => ({
       destination: (() => {
         const headsign = (train.headsign || '').trim();
