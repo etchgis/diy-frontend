@@ -76,9 +76,33 @@ function formatBusData(data: any) {
   return {
     station: data.name,
     trains: futureArrivals.map((train: any) => ({
-      destination: train.headsign,
+      destination: (() => {
+        const headsign = (train.headsign || '').trim();
+        const shortName = (train.shortName || '').trim();
+        const parseMidSegments = (s: string) => {
+          const parts = s.split(' - ');
+          return parts.length >= 3 ? parts.slice(1, -1).join(' - ') : parts[parts.length - 1] || '';
+        };
+        // headsign is empty — parse route name if it has the "Route X - A - B - Terminal" format
+        if (!headsign) {
+          return shortName.includes(' - ') ? parseMidSegments(shortName) : null;
+        }
+        // headsign is identical to shortName — same situation
+        if (headsign === shortName) {
+          return shortName.includes(' - ') ? parseMidSegments(shortName) : headsign;
+        }
+        // headsign IS the full route name (e.g. "Route 2 - A - B - C") while shortName is just "Route 2"
+        if (shortName && headsign.startsWith(shortName + ' - ')) {
+          return parseMidSegments(headsign);
+        }
+        // Normal headsign (e.g. "Flushing", "Jamaica - Far Rockaway") — use as-is
+        return headsign;
+      })(),
       routeId: train.routeId || train.id?.split(':')[0] || '',
-      routeShortName: train.shortName || train.routeId || train.id?.split(':')[0] || '',
+      routeShortName: (() => {
+        const raw = train.shortName || train.routeId || train.id?.split(':')[0] || '';
+        return raw.includes(' - ') ? raw.split(' - ')[0] : raw;
+      })(),
       routeType: train.routeType,
       routeColor: train.color || DEFAULT_ROUTE_COLOR,
       routeTextColor: train.textColor || DEFAULT_ROUTE_TEXT_COLOR,

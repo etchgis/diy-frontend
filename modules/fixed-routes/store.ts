@@ -394,7 +394,16 @@ export const useFixedRouteStore = create<SlideStore>()(
         })),
     }),
     {
-      name: 'fixed-route-storage'
+      name: 'fixed-route-storage',
+      partialize: (state) => ({
+        ...state,
+        slides: Object.fromEntries(
+          Object.entries(state.slides).map(([id, slide]) => {
+            const { scheduleData, isLoading, dataError, ...rest } = slide as any;
+            return [id, rest];
+          })
+        ),
+      }),
     }
   )
 );

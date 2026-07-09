@@ -1811,21 +1811,37 @@ export default function StopArrivalsSlide({
                                 return opts;
                               })();
                               const hasDirectionToggles = allOpts.length > 1 || _liveHeadsigns.length > 0;
-                              // Toggle buttons: deduplicate by headsignFilter only (one toggle per unique destination)
+                              // Toggle buttons: deduplicate by headsignFilter only (one toggle per unique destination).
                               const _seenHsToggle = new Set<string>();
-                              const headsignOpts = _liveHeadsigns.filter((o: DirectionOption) => {
+                              const headsignOpts: DirectionOption[] = [];
+                              for (const o of _liveHeadsigns) {
                                 const k = o.headsignFilter!;
-                                if (_seenHsToggle.has(k)) return false;
+                                if (_seenHsToggle.has(k)) continue;
                                 _seenHsToggle.add(k);
-                                return true;
-                              });
+                                headsignOpts.push(o);
+                              }
+                              for (const o of allOpts) {
+                                if (!o.headsignFilter) continue;
+                                const k = o.headsignFilter;
+                                if (_seenHsToggle.has(k)) continue;
+                                _seenHsToggle.add(k);
+                                headsignOpts.push(o);
+                              }
                               const _seenHsRename = new Set<string>();
-                              const headsignRenameOpts = _liveHeadsigns.filter((o: DirectionOption) => {
+                              const headsignRenameOpts: DirectionOption[] = [];
+                              for (const o of _liveHeadsigns) {
                                 const k = o.routeShortName ? `${o.routeShortName}|${o.headsignFilter!}` : o.headsignFilter!;
-                                if (_seenHsRename.has(k)) return false;
+                                if (_seenHsRename.has(k)) continue;
                                 _seenHsRename.add(k);
-                                return true;
-                              });
+                                headsignRenameOpts.push(o);
+                              }
+                              for (const o of allOpts) {
+                                if (!o.headsignFilter) continue;
+                                const k = o.routeShortName ? `${o.routeShortName}|${o.headsignFilter}` : o.headsignFilter;
+                                if (_seenHsRename.has(k)) continue;
+                                _seenHsRename.add(k);
+                                headsignRenameOpts.push(o);
+                              }
                               const getAliasKey = (o: DirectionOption) =>
                                 o.routeShortName ? `${o.routeShortName}|${o.headsignFilter!}` : o.headsignFilter!;
                               const groupOpts = allOpts.filter((o: DirectionOption) => !o.isAllDirections && !o.headsignFilter && o.groupHeadsigns);

@@ -8,6 +8,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useFixedRouteStore } from "./store";
+
+function parseMidSegments(s: string): string {
+  const parts = s.split(' - ');
+  return parts.length >= 3 ? parts.slice(1, -1).join(' - ') : (parts[parts.length - 1] || '');
+}
+
+function routeLabel(shortName: string, routeId: string): string {
+  const s = (shortName || '').trim();
+  return (s.includes(' - ') ? s.split(' - ')[0] : s) || routeId;
+}
+
+function routeDestination(destination: string, shortName: string, routeId: string): string {
+  const dest = (destination || '').trim();
+  const sn = (shortName || '').trim();
+  if (!dest) return sn.includes(' - ') ? parseMidSegments(sn) : (sn || routeId);
+  if (dest === sn) return sn.includes(' - ') ? parseMidSegments(sn) : dest;
+  if (sn && dest.startsWith(sn + ' - ')) return parseMidSegments(dest);
+  return dest;
+}
 import { MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { useGeneralStore } from "@/stores/general";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react";
@@ -529,7 +548,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   fontSize: `${12 * contentSizeMultiplier}px`,
                                 }}
                               >
-                                {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
+                                {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
@@ -543,7 +562,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                {item.routeShortName || item.routeId || ''}
+                                {routeLabel(item.routeShortName, item.routeId)}
                               </div>
                               <div
                                 style={{
@@ -609,7 +628,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   }cqh`,
                                 }}
                               >
-                                {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
+                                {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
                               </span>
                             </div>
                             <div
@@ -628,7 +647,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                {item.routeShortName || item.routeId || ''}
+                                {routeLabel(item.routeShortName, item.routeId)}
                               </div>
                               <div
                                 className="font-medium flex-shrink-0"
@@ -701,7 +720,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               fontSize: `${14 * contentSizeMultiplier}px`,
                             }}
                           >
-                            {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
+                            {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
@@ -716,7 +735,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {item.routeShortName || item.routeId || ''}
+                            {routeLabel(item.routeShortName, item.routeId)}
                           </div>
                           <div
                             className="font-medium flex-shrink-0 overflow-hidden"
@@ -799,7 +818,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               }cqh`,
                             }}
                           >
-                            {applyAlias(item.destination, (item.routeShortName || '').split(' ')[0])}
+                            {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
                           </span>
                         </div>
                         {/* Right-side columns — em widths track font size so nothing ever clips */}
@@ -824,7 +843,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {item.routeShortName || item.routeId || ''}
+                            {routeLabel(item.routeShortName, item.routeId)}
                           </div>
                           <div
                             className="font-medium text-right flex-shrink-0"

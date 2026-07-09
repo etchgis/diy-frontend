@@ -14,6 +14,25 @@ import { usePathname } from "next/navigation";
 import Footer from "../shared-components/footer";
 import { useMemo } from "react";
 
+function parseMidSegments(s: string): string {
+  const parts = s.split(' - ');
+  return parts.length >= 3 ? parts.slice(1, -1).join(' - ') : (parts[parts.length - 1] || '');
+}
+
+function routeLabel(shortName: string, routeId: string): string {
+  const s = (shortName || '').trim();
+  return (s.includes(' - ') ? s.split(' - ')[0] : s) || routeId;
+}
+
+function routeDestination(destination: string, shortName: string, routeId: string): string {
+  const dest = (destination || '').trim();
+  const sn = (shortName || '').trim();
+  if (!dest) return sn.includes(' - ') ? parseMidSegments(sn) : (sn || routeId);
+  if (dest === sn) return sn.includes(' - ') ? parseMidSegments(sn) : dest;
+  if (sn && dest.startsWith(sn + ' - ')) return parseMidSegments(dest);
+  return dest;
+}
+
 export default function FixedRoutePreview({ slideId }: { slideId: string }) {
   const stopName = useFixedRouteStore(
     (state) => state.slides[slideId]?.stopName || ""
@@ -294,14 +313,14 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                           style={{ flex: '1 1 0', minHeight: 0, backgroundColor: !bgImage ? tableColor : 'transparent', color: tableTextColor, padding: `${description ? '10px' : '12px'}` }}
                         >
                           <div className="flex-1 overflow-hidden">
-                            <span className="truncate block" style={{ fontSize: `${12 * contentSizeMultiplier}px` }}>{item.destination}</span>
+                            <span className="truncate block" style={{ fontSize: `${12 * contentSizeMultiplier}px` }}>{routeDestination(item.destination, item.routeShortName, item.routeId)}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <div
                               className="rounded font-bold text-center flex-shrink-0"
                               style={{ padding: '0.2em 0.4em', fontSize: `${10 * contentSizeMultiplier}px`, color: `#${item.routeTextColor}`, backgroundColor: `#${item.routeColor}`, whiteSpace: 'nowrap' }}
                             >
-                              {item.routeShortName || item.routeId}
+                              {routeLabel(item.routeShortName, item.routeId)}
                             </div>
                             <div style={{ fontSize: `${12 * contentSizeMultiplier}px`, whiteSpace: 'nowrap' }}>{item.time}</div>
                             <div style={{ fontSize: `${11 * contentSizeMultiplier}px`, whiteSpace: 'nowrap', opacity: 0.8 }}>{item.duration}</div>
@@ -325,7 +344,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                         >
                           <div className="flex-1 overflow-hidden">
                             <span className="font-medium block truncate" style={{ fontSize: `clamp(0.625rem,${2.5 * contentSizeMultiplier}vh,2.5rem)` }}>
-                              {item.destination}
+                              {routeDestination(item.destination, item.routeShortName, item.routeId)}
                             </span>
                           </div>
                           <div className="flex items-center flex-shrink-0" style={{ gap: 'clamp(0.5rem,1.5vh,2rem)' }}>
@@ -333,7 +352,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               className="rounded font-bold text-center flex-shrink-0"
                               style={{ padding: '0.3em 0.6em', fontSize: `clamp(0.5rem,${2 * contentSizeMultiplier}vh,2rem)`, color: `#${item.routeTextColor}`, backgroundColor: `#${item.routeColor}`, whiteSpace: 'nowrap' }}
                             >
-                              {item.routeShortName || item.routeId}
+                              {routeLabel(item.routeShortName, item.routeId)}
                             </div>
                             <div className="font-medium flex-shrink-0" style={{ fontSize: `clamp(0.625rem,${2.5 * contentSizeMultiplier}vh,2.5rem)`, whiteSpace: 'nowrap' }}>
                               {item.time}
@@ -369,7 +388,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                       >
                         <div className="flex-1">
                           <span className="font-medium" style={{ fontSize: `${14 * contentSizeMultiplier}px` }}>
-                            {item.destination}
+                            {routeDestination(item.destination, item.routeShortName, item.routeId)}
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
@@ -384,7 +403,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {item.routeShortName || item.routeId}
+                            {routeLabel(item.routeShortName, item.routeId)}
                           </div>
                           <div className="font-medium flex-shrink-0 overflow-hidden" style={{ fontSize: `${14 * contentSizeMultiplier}px`, width: `${70 * contentSizeMultiplier}px`, whiteSpace: 'nowrap' }}>
                             {item.time}
@@ -427,7 +446,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                             className="font-medium block truncate"
                             style={{ fontSize: `clamp(0.75rem, ${3 * contentSizeMultiplier}vh, 3rem)` }}
                           >
-                            {item.destination}
+                            {routeDestination(item.destination, item.routeShortName, item.routeId)}
                           </span>
                         </div>
                         {/* Right-side columns — em widths track font size so nothing ever clips */}
@@ -451,7 +470,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {item.routeShortName || item.routeId}
+                            {routeLabel(item.routeShortName, item.routeId)}
                           </div>
                           <div
                             className="font-medium text-right flex-shrink-0"
