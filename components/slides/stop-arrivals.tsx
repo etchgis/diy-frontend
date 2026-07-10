@@ -1082,7 +1082,7 @@ export default function StopArrivalsSlide({
 
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-[#4a5568] font-medium mb-2">
+                <label className="block text-[#4a5568] font-medium mb-1 text-xs">
                   Fixed Route Stop
                 </label>
                 <div className="relative">
@@ -1180,7 +1180,7 @@ export default function StopArrivalsSlide({
                   {/* Service & Direction Selection */}
                   {serviceSelections.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-blue-200">
-                      <label className="block text-[#4a5568] font-medium text-sm mb-2">
+                      <label className="block text-[#4a5568] font-medium mb-1 text-xs">
                         Lines & Directions
                       </label>
                       <div className="space-y-3">
@@ -1307,13 +1307,13 @@ export default function StopArrivalsSlide({
                             {selection.enabled && selection.directionOptions.length > 1 && (
                               <div className="flex items-center gap-1.5 ml-6 flex-wrap mt-2">
                                 {selection.directionOptions.map((opt) => {
-                                  // "All" is selected when no filters are active
-                                  // Individual headsigns are selected when in the selectedHeadsignFilters array
                                   const currentFilters = selection.selectedHeadsignFilters || [];
                                   const isAllOption = opt.isAllDirections;
-                                  const isSelected = isAllOption
-                                    ? currentFilters.length === 0
-                                    : opt.headsignFilter ? currentFilters.includes(opt.headsignFilter) : false;
+                                  // Determine whether this option set uses headsign filtering or stop-ID filtering
+                                  const usesHeadsignFiltering = selection.directionOptions.some(o => !o.isAllDirections && o.headsignFilter);
+                                  const isSelected = usesHeadsignFiltering
+                                    ? (isAllOption ? currentFilters.length === 0 : !!opt.headsignFilter && currentFilters.includes(opt.headsignFilter))
+                                    : selection.selectedStopId === opt.stopId;
 
                                   return (
                                     <button
@@ -1322,7 +1322,6 @@ export default function StopArrivalsSlide({
                                         let newFilters: string[];
 
                                         if (isAllOption) {
-                                          // Clicking "All" clears all filters
                                           newFilters = [];
                                         } else if (opt.headsignFilter) {
                                           // Toggle this headsign filter
@@ -1332,7 +1331,8 @@ export default function StopArrivalsSlide({
                                             newFilters = [...currentFilters, opt.headsignFilter];
                                           }
                                         } else {
-                                          newFilters = currentFilters;
+                                          // Stop-based directional option (N/S/E/W) — clear headsign filters
+                                          newFilters = [];
                                         }
 
                                         const updated = serviceSelections.map((s, i) =>
@@ -1442,7 +1442,7 @@ export default function StopArrivalsSlide({
               )}
 
               <div>
-                <label className="block text-[#4a5568] font-medium mb-2">
+                <label className="block text-[#4a5568] font-medium mb-1 text-xs">
                   Display Name Override
                 </label>
                 <Input
@@ -1457,7 +1457,7 @@ export default function StopArrivalsSlide({
               </div>
 
               <div>
-                <label className="block text-[#4a5568] font-medium mb-2">
+                <label className="block text-[#4a5568] font-medium mb-1 text-xs">
                   Sub Description
                 </label>
                 <Input
