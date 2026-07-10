@@ -107,7 +107,15 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     mergedSlides = [...prependToInject, ...allSlides, ...appendToInject];
   }
 
-  const slides = mergedSlides.filter((s: any) => isSlideVisible(s, now));
+  const onlyParam = searchParams.get('only')?.toLowerCase().trim().replace(/\+/g, ' ') || null;
+  const slides = mergedSlides.filter((s: any) => {
+    if (!isSlideVisible(s, now)) return false;
+    if (!onlyParam) return true;
+    return (
+      s.type?.toLowerCase() === onlyParam ||
+      s.label?.toLowerCase() === onlyParam
+    );
+  });
   const rotationInterval = useGeneralStore((state) => state.rotationInterval || 20);
   const resolution = useGeneralStore((state) => state.resolution || '1920x1080');
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);

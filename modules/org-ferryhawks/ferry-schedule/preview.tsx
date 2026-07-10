@@ -280,10 +280,10 @@ export default function FerrySchedulePreview({ config, isEditor = false, showFoo
           </span>
         </div>
         <img
-          src="/ferryhawks/logo-2.png"
+          src="/ferryhawks/logo.png"
           alt="FerryHawks"
           style={{
-            height: isEditor ? 44 : '7.5cqh',
+            height: isEditor ? 72 : '14cqh',
             width: 'auto',
             objectFit: 'contain',
             flexShrink: 0,

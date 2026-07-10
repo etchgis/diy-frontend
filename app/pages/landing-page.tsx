@@ -105,6 +105,7 @@ export default function LandingPage() {
 
     localStorage.clear();
     localStorage.removeItem('general-store');
+    useGeneralStore.getState().setCurrentOrgId(undefined);
     setUrl('');
     setPublishPassword('');
     const shortcode = generateShortcode()
@@ -133,23 +134,20 @@ export default function LandingPage() {
   };
 
   const handleEdit = () => {
-    const shortcode = url.split('/').pop();
+    const shortcode = url.split('/').pop()?.split('?')[0];
 
     if (!shortcode) {
       console.error('Shortcode not found in URL');
       return;
     }
 
-    // Org shortcodes go directly to the org editor — no backend lookup needed
-    if (getOrgConfig(shortcode)) {
-      router.push(`/${shortcode}`);
-      return;
-    }
-
     localStorage.clear();
     localStorage.removeItem('general-store');
+    useGeneralStore.getState().setCurrentOrgId(undefined);
 
-    SetupSlides(shortcode).then(() => {
+    const orgCfg = getOrgConfig(shortcode);
+    const diyShortcode = orgCfg?.diyShortcode ?? shortcode;
+    SetupSlides(diyShortcode).then(() => {
       router.push(`/editor`);
     });
   };

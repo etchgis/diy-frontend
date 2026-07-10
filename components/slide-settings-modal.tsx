@@ -67,6 +67,11 @@ export default function SlideSettingsModal({ slide, globalDuration, onSaveLabel,
             className="w-full border border-[#cbd5e0] rounded px-3 py-1.5 text-sm"
             maxLength={60}
           />
+          {label.trim() && (
+            <p className="text-xs text-gray-400 mt-1.5">
+              Standalone URL: append <span className="font-mono bg-gray-100 px-1 rounded">?only={label.trim().toLowerCase().replace(/\s+/g, '+')}</span> to your published link
+            </p>
+          )}
         </div>
 
         {/* Duration */}

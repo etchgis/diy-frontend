@@ -213,6 +213,9 @@ function OrgSlideViewer({ slide, onPreview, onPublish }: { slide: any; onPreview
         <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={onPreview}>Preview Screens</Button>
         <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium" onClick={onPublish}>Publish Screens</Button>
       </div>
+      <p className="text-xs text-gray-400 mt-3">
+        Standalone URL: append <span className="font-mono bg-gray-100 px-1 rounded">?only={slide.type}</span> to your published link to display only this screen
+      </p>
       {showSettings && (
         <SlideSettingsModal
           slide={slideForModal}
@@ -743,6 +746,7 @@ export default function EditorPage() {
 
     localStorage.clear();
     localStorage.removeItem('general-store');
+    useGeneralStore.getState().setCurrentOrgId(undefined);
 
     if (shortcode) {
       const orgCfg = getOrgConfig(shortcode);
