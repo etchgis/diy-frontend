@@ -244,7 +244,7 @@ export default function SIRSchedulePreview({
             {clockStr}
           </span>
           <img
-            src="/ferryhawks/logo.png"
+            src="/ferryhawks/logo-3.png"
             alt="FerryHawks"
             style={{
               height: isEditor ? 72 : "14cqh",
