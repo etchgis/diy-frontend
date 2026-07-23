@@ -1,3 +1,4 @@
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { useImageOnlyStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { uploadImage } from "@/services/uploadImage";
@@ -106,7 +107,7 @@ export default function ImageOnlyPreview({
         ) : image ? (
           fullScreen ? (
             <img
-              src={image}
+              src={proxyImageUrl(image)}
               alt="Full screen image"
               className="w-full h-full"
               style={{ objectFit: imageObjectFit }}
@@ -114,7 +115,7 @@ export default function ImageOnlyPreview({
           ) : (
             <div className="w-full h-full flex items-center justify-center p-6">
               <ResizableImage
-                src={image}
+                src={proxyImageUrl(image)}
                 alt="Uploaded"
                 width={imageWidth}
                 height={imageHeight}

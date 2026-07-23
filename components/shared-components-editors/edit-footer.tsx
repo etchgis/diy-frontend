@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { Input } from "@/components/ui/input";
 import { ChevronRight } from "lucide-react";
 import { useFooterStore } from "@/stores/footer";
@@ -97,7 +98,7 @@ export default function EditFooter({
     } else if (image) {
       return (
         <img
-          src={image}
+          src={proxyImageUrl(image)}
           alt={altText}
           style={{ maxHeight: imgMaxHeight, width: "auto", objectFit: "contain" }}
         />
@@ -377,7 +378,7 @@ export default function EditFooter({
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                   ) : leftImage ? (
                     <img
-                      src={leftImage}
+                      src={proxyImageUrl(leftImage)}
                       alt="Left"
                       className="max-w-full max-h-full object-contain"
                     />
@@ -468,7 +469,7 @@ export default function EditFooter({
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     ) : middleImage ? (
                       <img
-                        src={middleImage}
+                        src={proxyImageUrl(middleImage)}
                         alt="Middle"
                         className="max-w-full max-h-full object-contain"
                       />
@@ -559,7 +560,7 @@ export default function EditFooter({
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                   ) : rightImage ? (
                     <img
-                      src={rightImage}
+                      src={proxyImageUrl(rightImage)}
                       alt="Right"
                       className="max-w-full max-h-full object-contain"
                     />

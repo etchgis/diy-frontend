@@ -1,3 +1,4 @@
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { useRouteTimesStore } from './store';
 import { useGeneralStore } from '@/stores/general';
 import { useEffect, useState, useRef } from 'react';
@@ -582,7 +583,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       className="h-full w-full flex flex-col relative overflow-hidden"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
-        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundImage: bgImage ? `url(${proxyImageUrl(bgImage)})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
@@ -631,7 +632,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
           </div>
           {logoImage && (
             <img
-              src={logoImage}
+              src={proxyImageUrl(logoImage)}
               alt="Logo"
               className="object-contain ml-4 flex-shrink-0"
               style={{ height: logoHeight }}

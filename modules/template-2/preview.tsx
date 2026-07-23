@@ -1,3 +1,4 @@
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { deleteImage } from "@/services/deleteImage";
 import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
@@ -164,7 +165,7 @@ export default function Template2Preview({
       className="w-full h-full flex flex-col justify-between overflow-hidden mb-6 relative"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
-        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundImage: bgImage ? `url(${proxyImageUrl(bgImage)})` : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: textColor,
@@ -201,7 +202,7 @@ export default function Template2Preview({
           </div>
           {logoImage && (
             <img
-              src={logoImage}
+              src={proxyImageUrl(logoImage)}
               alt="Logo"
               className="object-contain ml-4 flex-shrink-0"
               style={{ height: logoHeight }}
@@ -240,7 +241,7 @@ export default function Template2Preview({
               </div>
             ) : image ? (
               <ResizableImage
-                src={image}
+                src={proxyImageUrl(image)}
                 alt="Uploaded"
                 width={imageWidth}
                 height={imageHeight}

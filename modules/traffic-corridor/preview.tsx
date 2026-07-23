@@ -1,3 +1,4 @@
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { useTrafficCorridorStore, type DestinationTable } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { useResScale } from "@/hooks/useResScale";
@@ -242,7 +243,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
       className="w-full h-full flex flex-col overflow-hidden"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
-        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundImage: bgImage ? `url(${proxyImageUrl(bgImage)})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         color: textColor,
@@ -277,7 +278,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           </div>
           {logoImage && (
             <img
-              src={logoImage}
+              src={proxyImageUrl(logoImage)}
               alt="Logo"
               className="object-contain ml-4 flex-shrink-0"
               style={{ height: logoHeight }}

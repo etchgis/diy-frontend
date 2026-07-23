@@ -163,7 +163,7 @@ export default function LandingPage() {
       <div className="flex-1 bg-white">
         {/* Header */}
         <header className="bg-white border-b border-[#e2e8f0] px-6 py-4 flex justify-end">
-          <Button variant="ghost" size="icon" className="text-[#606061]">
+          <Button variant="ghost" size="icon" className="text-[#606061]" onClick={() => router.push('/tech-details')}>
             <HelpCircle className="w-5 h-5" />
           </Button>
         </header>

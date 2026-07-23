@@ -1,4 +1,5 @@
 import { usePathname } from "next/navigation";
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { useFooterStore } from "@/stores/footer";
 import { useGeneralStore } from "@/stores/general";
 import { useState, useEffect } from "react";
@@ -66,7 +67,7 @@ export default function Footer({ previewMode = false }: { previewMode?: boolean 
     } else if (image) {
       return (
         <img
-          src={image}
+          src={proxyImageUrl(image)}
           alt={altText}
           style={{ height: imgMaxHeight, width: "auto", objectFit: "contain" }}
         />

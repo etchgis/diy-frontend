@@ -1,3 +1,4 @@
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { useQRStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import QRCode from "react-qr-code";
@@ -45,7 +46,7 @@ export default function QRSlidePreview({ slideId, previewMode = false }: { slide
       className="w-full h-full flex flex-col justify-between overflow-hidden mb-6 relative"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
-        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundImage: bgImage ? `url(${proxyImageUrl(bgImage)})` : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: textColor,
@@ -55,7 +56,7 @@ export default function QRSlidePreview({ slideId, previewMode = false }: { slide
       {/* Logo (only if present) */}
       {logoImage && (
         <img
-          src={logoImage}
+          src={proxyImageUrl(logoImage)}
           alt="Logo"
           className="absolute top-6 right-6 object-contain z-20"
           style={{ height: logoHeight }}

@@ -27,6 +27,7 @@ import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { calculateDistance, formatDistance } from "@/utils/distance";
 import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop } from "@/types/nysdot-stops";
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 
 // Stable empty array reference for Zustand selector
 const EMPTY_SERVICE_SELECTIONS: ServiceSelection[] = [];
@@ -1658,7 +1659,7 @@ export default function StopArrivalsSlide({
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                   ) : bgImage ? (
                     <img
-                      src={bgImage}
+                      src={proxyImageUrl(bgImage)}
                       alt="BG"
                       className="w-full h-full object-cover"
                     />
@@ -1707,7 +1708,7 @@ export default function StopArrivalsSlide({
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                   ) : logoImage ? (
                     <img
-                      src={logoImage}
+                      src={proxyImageUrl(logoImage)}
                       alt="BG"
                       className="w-full h-full object-cover"
                     />

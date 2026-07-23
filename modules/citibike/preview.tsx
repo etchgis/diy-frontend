@@ -1,3 +1,4 @@
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { useCitibikeStore, KNOWN_PROVIDERS, type RentalStation } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData";
@@ -474,7 +475,7 @@ export default function CitibikePreview({
       className="w-full h-full flex flex-col overflow-hidden relative"
       style={{
         backgroundColor: !bgImage ? backgroundColor : undefined,
-        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundImage: bgImage ? `url(${proxyImageUrl(bgImage)})` : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: textColor,
@@ -511,7 +512,7 @@ export default function CitibikePreview({
           </div>
           {logoImage && (
             <img
-              src={logoImage}
+              src={proxyImageUrl(logoImage)}
               alt="Logo"
               className="object-contain ml-4 flex-shrink-0"
               style={{ height: logoHeight }}

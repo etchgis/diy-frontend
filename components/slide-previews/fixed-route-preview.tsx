@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import {
   Select,
   SelectContent,
@@ -184,7 +185,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
           className={`w-full h-full flex flex-col justify-between text-white overflow-hidden relative `}
           style={{
             backgroundColor: !bgImage ? backgroundColor : undefined,
-            backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+            backgroundImage: bgImage ? `url(${proxyImageUrl(bgImage)})` : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
             color: titleColor || "#ffffff",
@@ -213,7 +214,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 </div>
                 {logoImage && (
                   <img
-                    src={logoImage}
+                    src={proxyImageUrl(logoImage)}
                     alt="Logo"
                     className="object-contain ml-4 flex-shrink-0"
                     style={{ maxHeight: logoHeight }}
@@ -258,7 +259,7 @@ export default function FixedRoutePreview({ slideId }: { slideId: string }) {
                 </div>
                 {logoImage && (
                   <img
-                    src={logoImage}
+                    src={proxyImageUrl(logoImage)}
                     alt="Logo"
                     className="object-contain ml-4 flex-shrink-0"
                     style={{ maxHeight: logoHeight }}
