@@ -468,6 +468,28 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                 </p>
               </div>
             </div>
+          ) : scheduleData && scheduleData.length === 0 ? (
+            // No arrivals in the feed right now. Happens for an event-only
+            // station like LIRR Belmont Park between race days: the stop is
+            // real and selectable, but the agency only publishes trips on
+            // event days. Show a clear message instead of blank rows; the
+            // table fills in automatically once service is scheduled.
+            <div className="flex items-center justify-center h-full">
+              <div
+                className="p-6 rounded-lg shadow-md"
+                style={{
+                  backgroundColor: tableColor,
+                  color: tableTextColor,
+                  maxWidth: "400px",
+                  textAlign: "center",
+                }}
+              >
+                <p className="text-sm">
+                  No upcoming service at this stop right now. Check back closer
+                  to your departure.
+                </p>
+              </div>
+            </div>
           ) : columnMode && columnData ? (
             /* ── Split column view ── */
             <div
