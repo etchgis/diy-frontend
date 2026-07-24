@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Pin pnpm: `npm install -g pnpm` (unpinned) now pulls a version that
+        # dropped the package.json "pnpm" field and requires Node >=22.13, which
+        # breaks the build (sharp's build script gets ignored -> exit 1). 10.12.4
+        # reads the config and builds sharp cleanly on this Node version.
+        - npm install -g pnpm@10.12.4
+        - pnpm install --frozen-lockfile
+    build:
+      commands:
+        - pnpm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - .next/cache/**/*
+      - node_modules/**/*
