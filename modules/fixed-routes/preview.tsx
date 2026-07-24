@@ -480,8 +480,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                 }}
               >
                 <p className="text-sm">
-                  No upcoming service at this stop right now. Check back closer
-                  to your departure.
+                  No upcoming service at this stop right now.
                 </p>
               </div>
             </div>
