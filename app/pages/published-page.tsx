@@ -133,7 +133,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [screens] = useState<any[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const dataRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const versionPollRef = useRef<NodeJS.Timeout | null>(null);
   const deployedBuildId = useRef<string | null>(null);
 
@@ -683,23 +682,67 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   };
 
   useEffect(() => {
-    dataRefreshIntervalRef.current = setInterval(() => {
-      console.log('[DATA UPDATE] ========== 60-second refresh triggered ==========');
-      getWeatherData();
-      getTrafficCorridorData();
-      getFixedRouteData();
-      setTimeout(() => getTransitDestinationData(), 2000);
-      setTimeout(() => getCitibikeData(), 4000);
-      setTimeout(() => getTransitRoutesData(), 6000);
-      setTimeout(() => getRouteTimesData(), 8000);
-    }, 60000);
-    console.log('[DATA UPDATE] Auto-refresh interval started (60 seconds)');
+    // Non-overlapping refresh loop. The old bare setInterval re-fired every 60s
+    // regardless of whether the previous cycle had finished, so a slow/stalled
+    // backend stacked overlapping cycles into a request storm that could pin the
+    // API pod (the Jul 2026 incident). Here each cycle is fully awaited and the
+    // next is scheduled only after it completes, with exponential backoff on
+    // failure.
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let consecutiveFailures = 0;
+    const BASE_MS = 60000;
+    const MAX_BACKOFF_MS = 5 * 60000;
+    const sleep = (ms: number) => new Promise<void>((resolve) => { timer = setTimeout(resolve, ms); });
+
+    const runCycle = async (): Promise<boolean> => {
+      let hadError = false;
+      const guard = async (label: string, fn: () => Promise<unknown>) => {
+        try { await fn(); } catch (e) { hadError = true; console.error(`[DATA UPDATE] ${label} failed`, e); }
+      };
+      console.log('[DATA UPDATE] ========== refresh cycle start ==========');
+      // Light/independent fetches together.
+      await Promise.all([
+        guard('weather', getWeatherData),
+        guard('trafficCorridor', getTrafficCorridorData),
+        guard('fixedRoute', getFixedRouteData),
+      ]);
+      // Stagger the heavier SKIDS fetches ~2s apart (as before) but awaited.
+      const staggered: [string, () => Promise<unknown>][] = [
+        ['transitDestination', getTransitDestinationData],
+        ['citibike', getCitibikeData],
+        ['transitRoutes', getTransitRoutesData],
+        ['routeTimes', getRouteTimesData],
+      ];
+      for (const [label, fn] of staggered) {
+        if (cancelled) return hadError;
+        await sleep(2000);
+        if (cancelled) return hadError;
+        await guard(label, fn);
+      }
+      return hadError;
+    };
+
+    const loop = async () => {
+      if (cancelled) return;
+      const hadError = await runCycle();
+      if (cancelled) return;
+      consecutiveFailures = hadError ? consecutiveFailures + 1 : 0;
+      const delay = hadError
+        ? Math.min(BASE_MS * 2 ** consecutiveFailures, MAX_BACKOFF_MS)
+        : BASE_MS;
+      console.log(`[DATA UPDATE] next refresh in ${Math.round(delay / 1000)}s`);
+      timer = setTimeout(loop, delay);
+    };
+
+    // Initial data load is handled by the loadSlides effect; start the recurring
+    // loop one interval after mount.
+    timer = setTimeout(loop, BASE_MS);
+    console.log('[DATA UPDATE] Auto-refresh loop started (60 seconds, non-overlapping)');
 
     return () => {
-      if (dataRefreshIntervalRef.current) {
-        clearInterval(dataRefreshIntervalRef.current);
-        dataRefreshIntervalRef.current = null;
-      }
+      cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
