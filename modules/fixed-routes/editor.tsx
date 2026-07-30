@@ -28,6 +28,7 @@ import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
 import { matchesHeadsign } from "@/lib/stop-arrivals-filters";
 import { fetchRoutes } from "@/services/data-gathering/fetchRoutes";
+import { getNicknameSearchTerms } from "@/utils/routeNicknames";
 import { fetchRoutePatterns } from "@/services/route-times/routeDataFetcher";
 import { calculateDistance, formatDistance } from "@/utils/distance";
 import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop } from "@/types/nysdot-stops";
@@ -833,17 +834,34 @@ export default function StopArrivalsSlide({
     setIsSearchingRoutes(true);
     routeSearchTimeoutRef.current = setTimeout(async () => {
       try {
-        const results = await fetchRoutes(value.trim());
+        const nicknameTerms = getNicknameSearchTerms(value.trim());
+        const allResults = await Promise.allSettled([
+          fetchRoutes(value.trim()),
+          ...nicknameTerms.map(t => fetchRoutes(t)),
+        ]);
+        const fetched = allResults.flatMap(r => r.status === 'fulfilled' ? r.value : []);
 
-        const merged = [...routeCacheRef.current, ...(results || [])];
+        const merged = [...routeCacheRef.current, ...fetched];
         const deduped = [...new Map(merged.map(r => [r.route_id, r])).values()];
         routeCacheRef.current = deduped;
 
-        const q = value.toLowerCase();
+        const q = value.trim().toLowerCase();
         const cacheMatches = deduped.filter(r =>
           r.route_short_name?.toLowerCase().startsWith(q) ||
           r.route_long_name?.toLowerCase().includes(q)
         );
+
+        // Sort: exact short-name match first (the "nickname" case), then startsWith, then rest
+        cacheMatches.sort((a, b) => {
+          const aExact = a.route_short_name?.toLowerCase() === q;
+          const bExact = b.route_short_name?.toLowerCase() === q;
+          if (aExact !== bExact) return aExact ? -1 : 1;
+          const aStarts = a.route_short_name?.toLowerCase().startsWith(q);
+          const bStarts = b.route_short_name?.toLowerCase().startsWith(q);
+          if (aStarts !== bStarts) return aStarts ? -1 : 1;
+          return 0;
+        });
+
         setRouteResults(cacheMatches);
       } catch {
         setRouteResults([]);

@@ -8,6 +8,7 @@ import { useGeneralStore } from '@/stores/general';
 import { useLocalSaveStatus } from '@/hooks/useLocalSaveStatus';
 import { useImageUploadField } from '@/hooks/useImageUploadField';
 import { fetchRoutes } from '@/services/data-gathering/fetchRoutes';
+import { getNicknameSearchTerms } from '@/utils/routeNicknames';
 import { fetchCompleteRouteData } from '@/services/route-times/routeDataFetcher';
 import HtmlTextEditor from '@/components/shared-components/html-text-editor';
 
@@ -100,17 +101,33 @@ export default function RouteTimesSlide({
 
     searchTimeoutRef.current = setTimeout(async () => {
       try {
-        const searchResults = await fetchRoutes(value);
+        const nicknameTerms = getNicknameSearchTerms(value.trim());
+        const allResults = await Promise.allSettled([
+          fetchRoutes(value),
+          ...nicknameTerms.map(t => fetchRoutes(t)),
+        ]);
+        const fetched = allResults.flatMap(r => r.status === 'fulfilled' ? r.value : []);
 
-        const merged = [...routeCacheRef.current, ...(searchResults || [])];
+        const merged = [...routeCacheRef.current, ...fetched];
         const deduped = [...new Map(merged.map(r => [r.route_id, r])).values()];
         routeCacheRef.current = deduped;
 
-        const q = value.toLowerCase();
+        const q = value.trim().toLowerCase();
         const cacheMatches = deduped.filter(r =>
           r.route_short_name?.toLowerCase().startsWith(q) ||
           r.route_long_name?.toLowerCase().includes(q)
         );
+
+        // Sort: exact short-name match first (the "nickname" case), then startsWith, then rest
+        cacheMatches.sort((a, b) => {
+          const aExact = a.route_short_name?.toLowerCase() === q;
+          const bExact = b.route_short_name?.toLowerCase() === q;
+          if (aExact !== bExact) return aExact ? -1 : 1;
+          const aStarts = a.route_short_name?.toLowerCase().startsWith(q);
+          const bStarts = b.route_short_name?.toLowerCase().startsWith(q);
+          if (aStarts !== bStarts) return aStarts ? -1 : 1;
+          return 0;
+        });
 
         if (cacheMatches.length > 0) {
           setFilteredRoutes(cacheMatches);

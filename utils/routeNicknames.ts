@@ -1,0 +1,68 @@
+
+const NICKNAME_SEARCHES: Record<string, string[]> = {
+  // NYC Subway — letter lines
+  'a': ['8 avenue express'],
+  'b': ['6 avenue express', 'brighton'],
+  'c': ['8 avenue local'],
+  'd': ['6 avenue express', 'west end'],
+  'e': ['queens boulevard express'],
+  'f': ['queens boulevard local', 'culver'],
+  'g': ['crosstown'],
+  'j': ['nassau'],
+  'l': ['canarsie'],
+  'm': ['queens boulevard', 'myrtle'],
+  'n': ['broadway local', 'astoria'],
+  'q': ['2nd avenue', 'brighton'],
+  'r': ['queens boulevard local'],
+  's': ['shuttle', '42 street'],
+  'w': ['broadway local'],
+  'z': ['nassau'],
+  // NYC Subway — number lines
+  '1': ['broadway-7 avenue local', '7 avenue local'],
+  '2': ['7 avenue express'],
+  '3': ['7 avenue express'],
+  '4': ['lexington avenue express'],
+  '5': ['lexington avenue express'],
+  '6': ['lexington avenue local'],
+  '7': ['flushing'],
+  // "X train" variants
+  'a train': ['8 avenue express'],
+  'b train': ['6 avenue express', 'brighton'],
+  'c train': ['8 avenue local'],
+  'd train': ['6 avenue express'],
+  'e train': ['queens boulevard express'],
+  'f train': ['queens boulevard local'],
+  'g train': ['crosstown'],
+  'j train': ['nassau'],
+  'l train': ['canarsie'],
+  'm train': ['queens boulevard'],
+  'n train': ['broadway'],
+  'q train': ['2nd avenue'],
+  'r train': ['queens boulevard'],
+  's train': ['shuttle'],
+  'w train': ['broadway'],
+  'z train': ['nassau'],
+  '1 train': ['broadway-7 avenue local'],
+  '2 train': ['7 avenue express'],
+  '3 train': ['7 avenue express'],
+  '4 train': ['lexington avenue express'],
+  '5 train': ['lexington avenue express'],
+  '6 train': ['lexington avenue local'],
+  '7 train': ['flushing'],
+  // Combined letter groups users might type
+  'ace': ['8 avenue'],
+  'bdfm': ['6 avenue'],
+  'nqrw': ['broadway'],
+  '456': ['lexington'],
+  '123': ['7 avenue'],
+  // LIRR / Metro-North shorthand
+  'lirr': ['long island'],
+  'long island': ['long island'],
+  'metro north': ['metro-north', 'hudson', 'harlem', 'new haven'],
+  'metro-north': ['metro-north', 'hudson', 'harlem', 'new haven'],
+  'sir': ['staten island railway'],
+};
+
+export function getNicknameSearchTerms(query: string): string[] {
+  return NICKNAME_SEARCHES[query.toLowerCase().trim()] ?? [];
+}
