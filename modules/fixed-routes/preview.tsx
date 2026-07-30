@@ -593,7 +593,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                {routeLabel(item.routeShortName, item.routeId)}
+                                {item.routeShortName || item.routeId}
                               </div>
                               <div
                                 style={{
@@ -678,7 +678,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                {routeLabel(item.routeShortName, item.routeId)}
+                                {item.routeShortName || item.routeId}
                               </div>
                               <div
                                 className="font-medium flex-shrink-0"
@@ -766,7 +766,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {routeLabel(item.routeShortName, item.routeId)}
+                            {item.routeShortName || item.routeId}
                           </div>
                           <div
                             className="font-medium flex-shrink-0 overflow-hidden"
@@ -874,7 +874,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               backgroundColor: `#${item.routeColor}`,
                             }}
                           >
-                            {routeLabel(item.routeShortName, item.routeId)}
+                            {item.routeShortName || item.routeId}
                           </div>
                           <div
                             className="font-medium text-right flex-shrink-0"
