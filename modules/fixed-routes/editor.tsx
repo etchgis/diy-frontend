@@ -1109,7 +1109,15 @@ export default function StopArrivalsSlide({
 
     const queries = Array.from(queryMap.values());
 
-    if (queries.length === 0) return;
+    // No arrivals to fetch: set an empty result (not null) so the preview shows
+    // the "no upcoming service" state instead of a headers-only table. Mirrors
+    // the published page (published-page.tsx).
+    if (queries.length === 0) {
+      setScheduleData(slideId, []);
+      useFixedRouteStore.getState().setDataError(slideId, false);
+      setIsLoading(slideId, false);
+      return;
+    }
 
     setIsLoading(slideId, true);
 

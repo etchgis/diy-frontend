@@ -468,6 +468,23 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                 </p>
               </div>
             </div>
+          ) : scheduleData && scheduleData.length === 0 ? (
+            // No upcoming arrivals: show a message instead of blank rows.
+            <div className="flex items-center justify-center h-full">
+              <div
+                className="p-6 rounded-lg shadow-md"
+                style={{
+                  backgroundColor: tableColor,
+                  color: tableTextColor,
+                  maxWidth: "400px",
+                  textAlign: "center",
+                }}
+              >
+                <p className="text-sm">
+                  No upcoming service at this stop right now.
+                </p>
+              </div>
+            </div>
           ) : columnMode && columnData ? (
             /* ── Split column view ── */
             <div
