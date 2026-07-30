@@ -9,6 +9,7 @@ import { useLocalSaveStatus } from '@/hooks/useLocalSaveStatus';
 import { useImageUploadField } from '@/hooks/useImageUploadField';
 import { fetchRoutes } from '@/services/data-gathering/fetchRoutes';
 import { fetchCompleteRouteData } from '@/services/route-times/routeDataFetcher';
+import HtmlTextEditor from '@/components/shared-components/html-text-editor';
 
 export default function RouteTimesSlide({
   slideId,
@@ -266,22 +267,28 @@ export default function RouteTimesSlide({
 
               <div>
                 <label className="block text-[#4a5568] font-medium mb-2">Sub Description</label>
-                <Input
-                  placeholder="Enter text here..."
-                  className="bg-white border-[#cbd5e0]"
-                  value={description}
-                  onChange={(e) => setDescription?.(slideId, e.target.value)}
-                />
+                <div className="border border-[#cbd5e0] rounded-md bg-white overflow-hidden" style={{ minHeight: '60px' }}>
+                  <HtmlTextEditor
+                    content={description}
+                    onChange={(html) => setDescription?.(slideId, html)}
+                    textColor="#1a202c"
+                    fontSize={13}
+                    minHeight="60px"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-[#4a5568] font-medium mb-2">Display Name Override</label>
-                <Input
-                  placeholder={selectedRoute?.route_long_name || routeName || 'Leave blank to use route name'}
-                  className="bg-white border-[#cbd5e0]"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(slideId, e.target.value)}
-                />
+                <div className="border border-[#cbd5e0] rounded-md bg-white overflow-hidden" style={{ minHeight: '60px' }}>
+                  <HtmlTextEditor
+                    content={displayName}
+                    onChange={(html) => setDisplayName(slideId, html)}
+                    textColor="#1a202c"
+                    fontSize={13}
+                    minHeight="60px"
+                  />
+                </div>
                 <p className="text-xs text-[#718096] mt-1">
                   Override the route name shown on screen. Leave blank to use the agency-provided name.
                 </p>

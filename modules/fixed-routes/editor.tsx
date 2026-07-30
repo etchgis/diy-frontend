@@ -33,6 +33,7 @@ import { calculateDistance, formatDistance } from "@/utils/distance";
 import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop } from "@/types/nysdot-stops";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import HtmlTextEditor from '@/components/shared-components/html-text-editor';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY as string;
 
@@ -2153,12 +2154,15 @@ export default function StopArrivalsSlide({
                     Show
                   </label>
                 </div>
-                <Input
-                  placeholder={selectedStop?.name || selectedStop?.stop_name || "Leave blank to use agency name"}
-                  className="bg-white border-[#cbd5e0]"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(slideId, e.target.value)}
-                />
+                <div className="border border-[#cbd5e0] rounded-md bg-white overflow-hidden" style={{ minHeight: '60px' }}>
+                  <HtmlTextEditor
+                    content={displayName}
+                    onChange={(html) => setDisplayName(slideId, html)}
+                    textColor="#1a202c"
+                    fontSize={13}
+                    minHeight="60px"
+                  />
+                </div>
                 <p className="text-xs text-[#718096] mt-1">
                   Override the station name shown on screen. Leave blank to use the agency-provided name.
                 </p>
@@ -2168,12 +2172,15 @@ export default function StopArrivalsSlide({
                 <label className="block text-[#4a5568] font-medium mb-2">
                   Sub Description
                 </label>
-                <Input
-                  placeholder="Enter text here..."
-                  className="bg-white border-[#cbd5e0]"
-                  value={description}
-                  onChange={(e) => setDescription?.(slideId, e.target.value)}
-                />
+                <div className="border border-[#cbd5e0] rounded-md bg-white overflow-hidden" style={{ minHeight: '60px' }}>
+                  <HtmlTextEditor
+                    content={description}
+                    onChange={(html) => setDescription?.(slideId, html)}
+                    textColor="#1a202c"
+                    fontSize={13}
+                    minHeight="60px"
+                  />
+                </div>
               </div>
 
               <div>
@@ -2191,12 +2198,15 @@ export default function StopArrivalsSlide({
                     Show
                   </label>
                 </div>
-                <Input
-                  placeholder={selectedStop ? `Stop #${selectedStop.id} arrival times` : "e.g. Stop #12345 arrival times"}
-                  className="bg-white border-[#cbd5e0]"
-                  value={subtitleText}
-                  onChange={(e) => setSubtitleText(slideId, e.target.value)}
-                />
+                <div className="border border-[#cbd5e0] rounded-md bg-white overflow-hidden" style={{ minHeight: '60px' }}>
+                  <HtmlTextEditor
+                    content={subtitleText}
+                    onChange={(html) => setSubtitleText(slideId, html)}
+                    textColor="#1a202c"
+                    fontSize={13}
+                    minHeight="60px"
+                  />
+                </div>
                 <p className="text-xs text-[#718096] mt-1">
                   Customize or hide the small text beneath the slide title. Leave blank to use the auto-generated stop ID text.
                 </p>

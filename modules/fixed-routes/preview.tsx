@@ -198,6 +198,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
+  const hasContent = (html: string) => !!html && !!html.replace(/<[^>]*>/g, '').trim();
+
   // Get rail icon based on organization/agency name
   const getRailIcon = (): string => {
     const orgId =
@@ -314,22 +316,26 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         }}
                         alt=""
                       />
-                      <p>{subtitleText || `Stop #${selectedStop?.id} arrival times`}</p>
+                      {hasContent(subtitleText)
+                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: subtitleText }} />
+                        : <span>{`Stop #${selectedStop?.id} arrival times`}</span>
+                      }
                     </div>
                   )}
 
                   {showDisplayName && (
                     <h2
                       className="font-bold mb-2 flex items-center gap-2"
-                      style={{ fontSize: `${30 * titleSizeMultiplier}px` }}
+                      style={{ fontSize: `${30 * titleSizeMultiplier}px`, textTransform: 'uppercase' }}
                     >
-                      {(
-                        displayName ||
-                        selectedStop?.name ||
-                        selectedStop?.stop_name
-                      )
-                        ?.toString()
-                        .toUpperCase() || "UNKNOWN STOP"}
+                      {hasContent(displayName) ? (
+                        <span
+                          className="rich-text-content"
+                          dangerouslySetInnerHTML={{ __html: displayName }}
+                        />
+                      ) : (
+                        <span>{selectedStop?.name || selectedStop?.stop_name || 'UNKNOWN STOP'}</span>
+                      )}
                       {selectedStop?.wheelchairBoarding === 1 && (
                         <span
                           title="Wheelchair accessible"
@@ -341,9 +347,11 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                     </h2>
                   )}
 
-                  <p style={{ fontSize: `${16 * titleSizeMultiplier}px` }}>
-                    {description}
-                  </p>
+                  {hasContent(description) && (
+                    <p className="rich-text-content" style={{ fontSize: `${16 * titleSizeMultiplier}px` }}
+                      dangerouslySetInnerHTML={{ __html: description }}
+                    />
+                  )}
                 </div>
                 {logoImage && (
                   <img
@@ -395,9 +403,10 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         }}
                         alt=""
                       />
-                      <span className="truncate">
-                        {subtitleText || `Stop #${selectedStop?.id} arrival times`}
-                      </span>
+                      {hasContent(subtitleText)
+                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: subtitleText }} />
+                        : <span className="truncate">{`Stop #${selectedStop?.id} arrival times`}</span>
+                      }
                     </div>
                   )}
 
@@ -407,12 +416,17 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       style={{
                         fontSize: `${6 * titleSizeMultiplier}cqh`,
                         marginBottom: "0.5cqw",
+                        textTransform: 'uppercase',
                       }}
                     >
-                      <span className="truncate">
-                        {(displayName || stopName)?.toString().toUpperCase() ||
-                          "UNKNOWN STOP"}
-                      </span>
+                      {hasContent(displayName) ? (
+                        <span
+                          className="truncate rich-text-content"
+                          dangerouslySetInnerHTML={{ __html: displayName }}
+                        />
+                      ) : (
+                        <span className="truncate">{stopName || selectedStop?.name || selectedStop?.stop_name || 'UNKNOWN STOP'}</span>
+                      )}
                       {selectedStop?.wheelchairBoarding === 1 && (
                         <span
                           title="Wheelchair accessible"
@@ -427,14 +441,13 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                     </h2>
                   )}
 
-                  <p
-                    className="truncate"
-                    style={{
-                      fontSize: `${2 * titleSizeMultiplier}cqh`,
-                    }}
-                  >
-                    {description}
-                  </p>
+                  {hasContent(description) && (
+                    <p
+                      className="truncate rich-text-content"
+                      style={{ fontSize: `${2 * titleSizeMultiplier}cqh` }}
+                      dangerouslySetInnerHTML={{ __html: description }}
+                    />
+                  )}
                 </div>
                 {logoImage && (
                   <img

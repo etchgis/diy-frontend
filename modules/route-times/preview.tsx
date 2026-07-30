@@ -46,6 +46,8 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
+  const hasContent = (html: string) => !!html && !!html.replace(/<[^>]*>/g, '').trim();
+
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapContainer, setMapContainer] = useState<HTMLDivElement | null>(null);
@@ -618,16 +620,21 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
                     </span>
                   )}
 
-                  <span>{displayName || selectedRoute.route_long_name || routeName}</span>
+                  {hasContent(displayName)
+                    ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: displayName }} />
+                    : <span>{selectedRoute.route_long_name || routeName}</span>
+                  }
                 </>
               ) : (
-                displayName || routeName || 'Select a Route'
+                hasContent(displayName)
+                  ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: displayName }} />
+                  : <span>{routeName || 'Select a Route'}</span>
               )}
             </h1>
-            {description && (
-              <p className="mt-2" style={{ color: titleColor, opacity: 0.9, fontSize: `${14 * titleSizeMultiplier}px` }}>
-                {description}
-              </p>
+            {hasContent(description) && (
+              <p className="mt-2 rich-text-content" style={{ color: titleColor, opacity: 0.9, fontSize: `${14 * titleSizeMultiplier}px` }}
+                dangerouslySetInnerHTML={{ __html: description }}
+              />
             )}
           </div>
           {logoImage && (
