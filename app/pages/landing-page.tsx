@@ -7,6 +7,7 @@ import { HelpCircle, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useGeneralStore } from "@/stores/general"
+import { useFooterStore } from "@/stores/footer"
 import { SetupSlides } from '@/services/setup'
 import { v4 as uuidv4 } from "uuid";
 import { generateShortcode } from "@/utils/generateShortcode"
@@ -70,13 +71,16 @@ export default function LandingPage() {
           fetch(generalUrl, { signal: controller.signal })
         ]);
 
-        const poiData = await poiRes.json();
-        const generalData = await generalRes.json();
+        const poiData = poiRes.ok ? await poiRes.json() : { features: [] };
+        const generalData = generalRes.ok ? await generalRes.json() : { features: [] };
+
+        const poiFeatures: any[] = poiData.features ?? [];
+        const generalFeatures: any[] = generalData.features ?? [];
 
         const merged = [
-          ...poiData.features,
-          ...generalData.features.filter(
-            (f: any) => !poiData.features.find((p: any) => p.id === f.id)
+          ...poiFeatures,
+          ...generalFeatures.filter(
+            (f: any) => !poiFeatures.find((p: any) => p.id === f.id)
           )
         ];
 
@@ -105,7 +109,38 @@ export default function LandingPage() {
 
     localStorage.clear();
     localStorage.removeItem('general-store');
-    useGeneralStore.getState().setCurrentOrgId(undefined);
+
+    useFooterStore.setState({
+      leftImage: '/images/statewide-mobility-services.png',
+      middleImage: '',
+      rightImage: '/images/nysdot-footer-logo.png',
+      leftType: 'image',
+      middleType: 'image',
+      rightType: 'image',
+      leftText: '',
+      middleText: '',
+      rightText: '',
+      backgroundColor: '#F4F4F4',
+      timeTextColor: '#000000',
+      footerBaseHeight: 50,
+    });
+
+    useGeneralStore.setState({
+      defaultBackgroundColor: undefined,
+      defaultTitleColor: undefined,
+      defaultTextColor: undefined,
+      defaultFontFamily: undefined,
+      defaultTitleTextSize: undefined,
+      defaultContentTextSize: undefined,
+      resolution: '1920x1080',
+      logoBaseHeight: 64,
+      theme: { primaryBackground: '#192F51', secondaryAccent: '#78B1DD', titleText: '#ffffff', bodyText: '#ffffff' },
+      rotationInterval: undefined,
+      customSlideOrder: undefined,
+      orgSlideOverrides: undefined,
+      currentOrgId: undefined,
+    });
+
     setUrl('');
     setPublishPassword('');
     const shortcode = generateShortcode()

@@ -68,7 +68,7 @@ export default function WebEmbedEditor({
           </div>
 
           <p className="text-[#606061] mb-4 text-sm">
-            Embed a webpage directly on screen — ideal for shuttle schedules, event calendars, or any page from the host's website.
+            Embed a webpage directly on screen.
           </p>
 
           {/* URL input */}
@@ -100,7 +100,7 @@ export default function WebEmbedEditor({
           <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-4">
             <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <span>
-              Some sites block embedding. If the preview is blank, the site's server is preventing it. Use a direct link to a page you control or one that allows framing.
+              Pages are loaded through a proxy to bypass most embedding restrictions. If the preview is still blank, the site likely uses JavaScript-based frame detection which cannot be bypassed. Most transit agency pages, schedule tables, and informational pages will work.
             </span>
           </div>
 

@@ -85,7 +85,11 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "sharp"
+      "sharp",
+      "@img/sharp-linux-x64",
+      "@img/sharp-linux-arm64",
+      "@img/sharp-linux-x64-musl",
+      "@img/sharp-linux-arm64-musl"
     ]
   },
   "devDependencies": {

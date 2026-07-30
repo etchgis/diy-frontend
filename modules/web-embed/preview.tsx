@@ -12,8 +12,14 @@ export default function WebEmbedPreview({ slideId }: { slideId: string }) {
   const scrollY = useWebEmbedStore((state) => state.slides[slideId]?.scrollY ?? 0);
   const refreshInterval = useWebEmbedStore((state) => state.slides[slideId]?.refreshInterval ?? 0);
 
+  const toProxyUrl = (raw: string, bust?: number) => {
+    if (!raw) return '';
+    const base = `/api/web-proxy?url=${encodeURIComponent(raw)}`;
+    return bust ? `${base}&_t=${bust}` : base;
+  };
+
   const [activeIdx, setActiveIdx] = useState(0);
-  const [srcs, setSrcs] = useState<[string, string]>([url, '']);
+  const [srcs, setSrcs] = useState<[string, string]>([toProxyUrl(url), '']);
   const pendingIdx = activeIdx === 0 ? 1 : 0;
 
   const prevUrlRef = useRef(url);
@@ -22,24 +28,23 @@ export default function WebEmbedPreview({ slideId }: { slideId: string }) {
     prevUrlRef.current = url;
     setSrcs((prev) => {
       const next: [string, string] = [...prev] as [string, string];
-      next[pendingIdx] = url;
+      next[pendingIdx] = toProxyUrl(url);
       return next;
     });
-  }, [url]); 
+  }, [url]);
 
   useEffect(() => {
     if (!refreshInterval || refreshInterval <= 0 || !url) return;
     const ms = refreshInterval * 60 * 1000;
     const id = setInterval(() => {
-      const busted = url.includes('?') ? `${url}&_t=${Date.now()}` : `${url}?_t=${Date.now()}`;
       setSrcs((prev) => {
         const next: [string, string] = [...prev] as [string, string];
-        next[pendingIdx] = busted;
+        next[pendingIdx] = toProxyUrl(url, Date.now());
         return next;
       });
     }, ms);
     return () => clearInterval(id);
-  }, [refreshInterval, url]); 
+  }, [refreshInterval, url]);
 
   const handleLoad = (idx: number) => {
     if (idx === pendingIdx && srcs[pendingIdx]) {
