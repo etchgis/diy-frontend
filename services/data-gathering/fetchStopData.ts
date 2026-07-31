@@ -126,7 +126,14 @@ function formatBusData(data: any) {
 }
 
 async function fetchStopById(stopId: string, serviceId: string, organizationId: string) {
-  const url = `${SKIDS_URL}/feed/${encodeURIComponent(serviceId)}/stops/${encodeURIComponent(stopId)}?timestamp=${Date.now()}&n=20&nysdot=true`;
+  // `timestamp` is a flag, not a value: skids only tests whether it parses as a number
+  // (routers/feed.ts wantArrivals) and takes the arrivals clock from its own server-side
+  // clock. Keep it CONSTANT. Date.now() made every URL unique, and because this request
+  // carries non-safelisted headers it needs a CORS preflight - which the browser caches
+  // per-URL, so a unique URL meant an extra OPTIONS round trip on every poll (preflights
+  // were ~45% of all skids traffic). Freshness comes from the endpoint's
+  // Cache-Control: no-store, not from URL uniqueness.
+  const url = `${SKIDS_URL}/feed/${encodeURIComponent(serviceId)}/stops/${encodeURIComponent(stopId)}?timestamp=1&n=20&nysdot=true`;
   return fetch(url, {
     method: 'GET',
     headers: {
