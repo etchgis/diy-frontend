@@ -50,7 +50,7 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
         borderBottom: `1px solid rgba(255,255,255,0.08)`,
       }}>
         <img
-          src="/ferryhawks/logo-2.png"
+          src="/ferryhawks/Bobby-Dark.png"
           alt="FerryHawks"
           style={{ height: '9cqh', width: 'auto', objectFit: 'contain' }}
         />
