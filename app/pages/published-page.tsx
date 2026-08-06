@@ -397,6 +397,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       setFixedRouteIsLoading(slide.id, true);
       try {
         const allArrivals: any[] = [];
+        const servingRoutesByService: Record<string, any[]> = {};
         let serverErrorCount = 0;
         for (const q of queries) {
           try {
@@ -417,6 +418,13 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
               _queryStopId: q.stopId,
             }));
             allArrivals.push(...tagged);
+            if (data?.routes?.length) {
+              if (!servingRoutesByService[q.serviceId]) servingRoutesByService[q.serviceId] = [];
+              const existing = new Set(servingRoutesByService[q.serviceId].map((r: any) => r.id));
+              for (const r of data.routes) {
+                if (!existing.has(r.id)) { servingRoutesByService[q.serviceId].push(r); existing.add(r.id); }
+              }
+            }
           } catch (err) {
             serverErrorCount++;
             console.warn('[DATA UPDATE] Failed to fetch arrivals:', err);
@@ -458,8 +466,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
             if (!arr.routeId && !arr.routeShortName) return true;
             if (arr.routeId && selection.enabledRouteIds.includes(arr.routeId)) return true;
             if (arr.routeShortName && selection.enabledRouteIds.includes(arr.routeShortName)) return true;
-            if (arr.routeShortName && selection.routes?.length) {
-              for (const route of selection.routes) {
+            const servingRoutes = servingRoutesByService[arr._sourceService] || [];
+            if (arr.routeShortName && servingRoutes.length) {
+              for (const route of servingRoutes) {
                 if (selection.enabledRouteIds.includes(route.id) && route.shortName === arr.routeShortName) return true;
               }
             }
@@ -475,8 +484,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         const limitedArrivals = cap === Infinity ? filteredArrivals : filteredArrivals.slice(0, cap);
 
         const routeLineNameMap: Record<string, string> = {};
-        for (const sel of serviceSelections) {
-          for (const route of (sel as any).routes || []) {
+        for (const [serviceId, routes] of Object.entries(servingRoutesByService)) {
+          for (const route of routes) {
             const routeId = route.id ?? route.route_id;
             const longName = route.longName ?? route.route_long_name ?? '';
             if (longName && routeId) {
@@ -485,7 +494,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
                 .replace(/\s+Line$/i, '')
                 .replace(/\s+Railroad$/i, '')
                 .trim();
-              routeLineNameMap[`${(sel as any).serviceId}:${routeId}`] = cleanName;
+              routeLineNameMap[`${serviceId}:${routeId}`] = cleanName;
             }
           }
         }

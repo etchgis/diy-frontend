@@ -199,14 +199,6 @@ export function buildPublishPayload() {
               id: svc.id,
               organizationId: svc.organizationId,
               agencyName: svc.agencyName,
-              routes: (svc.routes || []).map((r: any) => ({
-                id: r.id,
-                shortName: r.shortName,
-                longName: r.longName,
-                color: r.color,
-                textColor: r.textColor,
-                headsigns: r.headsigns || [],
-              })),
             })),
           };
         }
@@ -221,14 +213,6 @@ export function buildPublishPayload() {
             enabledRouteIds: s.enabledRouteIds,
             selectedHeadsignFilters: s.selectedHeadsignFilters,
             headsignAliases: s.headsignAliases,
-            routes: (s.routes || []).map((r: any) => ({
-              id: r.id,
-              shortName: r.shortName,
-              longName: r.longName,
-              color: r.color,
-              textColor: r.textColor,
-              headsigns: r.headsigns || [],
-            })),
           }));
         }
 
