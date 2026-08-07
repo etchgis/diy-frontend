@@ -224,7 +224,28 @@ function transformItinerary(
   duration: number | undefined,
 ): TransformedItinerary | null {
   const allLegs = rawLegs.map(transformLeg);
-  const displayLegs = allLegs.filter((l) => l.duration > 0 && !(l.mode === 'WALK' && l.duration < 240));
+  const filteredLegs = allLegs.filter((l) => l.duration >= 60 && !(l.mode === 'WALK' && l.duration < 240));
+
+  // Merge consecutive transit legs with the same route into one leg
+  const displayLegs = filteredLegs.reduce<TransformedLeg[]>((acc, leg) => {
+    const prev = acc[acc.length - 1];
+    if (
+      prev &&
+      prev.mode !== 'WALK' &&
+      leg.mode !== 'WALK' &&
+      prev.routeShortName === leg.routeShortName
+    ) {
+      acc[acc.length - 1] = {
+        ...prev,
+        duration: prev.duration + leg.duration,
+        to: leg.to,
+        alightTime: leg.alightTime,
+      };
+      return acc;
+    }
+    return [...acc, leg];
+  }, []);
+
   const routeStr = displayLegs.map((l) => (l.mode === 'WALK' ? 'Walk' : l.routeShortName)).join(' > ');
   const routeSignature = displayLegs
     .filter((l) => l.mode !== 'WALK' && l.routeShortName)
