@@ -20,6 +20,19 @@ function routeLabel(shortName: string, routeId: string): string {
   return (s.includes(' - ') ? s.split(' - ')[0] : s) || routeId;
 }
 
+// Returns just the route code for the badge, strips the long description.
+function badgeLabel(shortName: string, routeId: string): string {
+  const s = (shortName || '').trim();
+  if (!s) return routeId;
+  const parts = s.split(' - ');
+  if (parts.length <= 1) return s;
+  // Drop the last segment if it contains a space
+  const codeParts = parts[parts.length - 1].includes(' ')
+    ? parts.slice(0, -1)
+    : parts;
+  return codeParts.join('-') || routeId;
+}
+
 function routeDestination(destination: string, shortName: string, routeId: string): string {
   const dest = (destination || '').trim();
   const sn = (shortName || '').trim();
@@ -572,7 +585,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               padding: `${description ? "10px" : "12px"}`,
                             }}
                           >
-                            <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
                               <span
                                 className="block break-words leading-snug"
                                 style={{
@@ -582,31 +595,37 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                 {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
                               </span>
                             </div>
+                            <div
+                              className="rounded font-bold text-center flex-shrink-0"
+                              style={{
+                                padding: "0.2em 0.4em",
+                                fontSize: `${10 * contentSizeMultiplier}px`,
+                                color: `#${item.routeTextColor}`,
+                                backgroundColor: `#${item.routeColor}`,
+                                whiteSpace: "nowrap",
+                                minWidth: `${36 * contentSizeMultiplier}px`,
+                                margin: "0 6px",
+                              }}
+                            >
+                              {badgeLabel(item.routeShortName, item.routeId)}
+                            </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <div
-                                className="rounded font-bold text-center flex-shrink-0"
-                                style={{
-                                  padding: "0.2em 0.4em",
-                                  fontSize: `${10 * contentSizeMultiplier}px`,
-                                  color: `#${item.routeTextColor}`,
-                                  backgroundColor: `#${item.routeColor}`,
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {item.routeShortName || item.routeId}
-                              </div>
-                              <div
+                                className="text-right flex-shrink-0"
                                 style={{
                                   fontSize: `${12 * contentSizeMultiplier}px`,
                                   whiteSpace: "nowrap",
+                                  width: `${55 * contentSizeMultiplier}px`,
                                 }}
                               >
                                 {item.time}
                               </div>
                               <div
+                                className="text-right flex-shrink-0"
                                 style={{
                                   fontSize: `${11 * contentSizeMultiplier}px`,
                                   whiteSpace: "nowrap",
+                                  width: `${50 * contentSizeMultiplier}px`,
                                   opacity: 0.8,
                                 }}
                               >
@@ -650,7 +669,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               padding: `1cqh 1.5cqw`,
                             }}
                           >
-                            <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
                               <span
                                 className="font-medium block break-words leading-snug"
                                 style={{
@@ -663,41 +682,39 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               </span>
                             </div>
                             <div
+                              className="rounded font-bold text-center flex-shrink-0"
+                              style={{
+                                padding: "0.3em 0.6em",
+                                fontSize: `${2 * contentSizeMultiplier}cqh`,
+                                color: `#${item.routeTextColor}`,
+                                backgroundColor: `#${item.routeColor}`,
+                                whiteSpace: "nowrap",
+                                minWidth: "3em",
+                                margin: "0 1cqh",
+                              }}
+                            >
+                              {badgeLabel(item.routeShortName, item.routeId)}
+                            </div>
+                            <div
                               className="flex items-center flex-shrink-0"
                               style={{ gap: "1.5cqh" }}
                             >
                               <div
-                                className="rounded font-bold text-center flex-shrink-0"
+                                className="font-medium text-right flex-shrink-0"
                                 style={{
-                                  padding: "0.3em 0.6em",
-                                  fontSize: `${
-                                    2 * contentSizeMultiplier
-                                  }cqh`,
-                                  color: `#${item.routeTextColor}`,
-                                  backgroundColor: `#${item.routeColor}`,
+                                  fontSize: `${2.5 * contentSizeMultiplier}cqh`,
                                   whiteSpace: "nowrap",
-                                }}
-                              >
-                                {item.routeShortName || item.routeId}
-                              </div>
-                              <div
-                                className="font-medium flex-shrink-0"
-                                style={{
-                                  fontSize: `${
-                                    2.5 * contentSizeMultiplier
-                                  }cqh`,
-                                  whiteSpace: "nowrap",
+                                  width: "4.5em",
                                 }}
                               >
                                 {item.time}
                               </div>
                               <div
-                                className="flex-shrink-0"
+                                className="text-right flex-shrink-0"
                                 style={{
-                                  fontSize: `${
-                                    2 * contentSizeMultiplier
-                                  }cqh`,
+                                  fontSize: `${2 * contentSizeMultiplier}cqh`,
                                   whiteSpace: "nowrap",
+                                  width: "5em",
                                   opacity: 0.85,
                                 }}
                               >
@@ -744,7 +761,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           color: tableTextColor,
                         }}
                       >
-                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
                           <span
                             className="font-medium block break-words leading-snug"
                             style={{
@@ -754,20 +771,20 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
                           </span>
                         </div>
+                        <div
+                          className="rounded font-bold flex-shrink-0"
+                          style={{
+                            padding: "0.3em 0.6em",
+                            fontSize: `${12 * contentSizeMultiplier}px`,
+                            whiteSpace: "nowrap",
+                            color: `#${item.routeTextColor}`,
+                            backgroundColor: `#${item.routeColor}`,
+                            margin: "0 8px",
+                          }}
+                        >
+                          {badgeLabel(item.routeShortName, item.routeId)}
+                        </div>
                         <div className="flex items-center gap-4">
-                          <div
-                            className={`rounded font-bold text-center flex-shrink-0`}
-                            style={{
-                              padding: "0.3em 0.6em",
-                              fontSize: `${12 * contentSizeMultiplier}px`,
-                              minWidth: `${40 * contentSizeMultiplier}px`,
-                              whiteSpace: "nowrap",
-                              color: `#${item.routeTextColor}`,
-                              backgroundColor: `#${item.routeColor}`,
-                            }}
-                          >
-                            {item.routeShortName || item.routeId}
-                          </div>
                           <div
                             className="font-medium flex-shrink-0 overflow-hidden"
                             style={{
@@ -840,7 +857,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         }}
                       >
                         {/* Destination */}
-                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
                           <span
                             className="font-medium block break-words leading-snug"
                             style={{
@@ -852,6 +869,20 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
                           </span>
                         </div>
+
+                        <div
+                          className="rounded font-bold flex-shrink-0"
+                          style={{
+                            padding: "0.3em 0.4em",
+                            fontSize: `${2.5 * contentSizeMultiplier}cqh`,
+                            whiteSpace: "nowrap",
+                            color: `#${item.routeTextColor}`,
+                            backgroundColor: `#${item.routeColor}`,
+                            margin: "0 1cqh",
+                          }}
+                        >
+                          {badgeLabel(item.routeShortName, item.routeId)}
+                        </div>
                         {/* Right-side columns — em widths track font size so nothing ever clips */}
                         <div
                           className="flex items-center flex-shrink-0"
@@ -862,20 +893,6 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             gap: "1em",
                           }}
                         >
-                          <div
-                            className="rounded font-bold text-center flex-shrink-0"
-                            style={{
-                              padding: "0.3em 0.4em",
-                              fontSize: `${
-                                2.5 * contentSizeMultiplier
-                              }cqh`,
-                              whiteSpace: "nowrap",
-                              color: `#${item.routeTextColor}`,
-                              backgroundColor: `#${item.routeColor}`,
-                            }}
-                          >
-                            {item.routeShortName || item.routeId}
-                          </div>
                           <div
                             className="font-medium text-right flex-shrink-0"
                             style={{ width: "4.5em", whiteSpace: "nowrap" }}
