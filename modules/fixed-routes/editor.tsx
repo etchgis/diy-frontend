@@ -29,6 +29,7 @@ import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering
 import { matchesHeadsign } from "@/lib/stop-arrivals-filters";
 import { fetchRoutes } from "@/services/data-gathering/fetchRoutes";
 import { getNicknameSearchTerms } from "@/utils/routeNicknames";
+import { buildRouteLineNameMap, arrivalRouteLabel } from "@/utils/routeLineNames";
 import { fetchRoutePatterns } from "@/services/route-times/routeDataFetcher";
 import { calculateDistance, formatDistance } from "@/utils/distance";
 import type { ExpandedStop, ExpandedService, ExpandedRoute, ExpandedLinkedStop } from "@/types/nysdot-stops";
@@ -1219,23 +1220,17 @@ export default function StopArrivalsSlide({
         });
       }
 
-      const routeLineNameMap: Record<string, string> = {};
-      for (const sel of serviceSelections) {
-        for (const route of sel.routes || []) {
-          const routeId = route.id ?? (route as any).route_id;
-          const longName = route.longName ?? (route as any).route_long_name ?? '';
-          if (longName && routeId) {
-            const cleanName = longName
-              .replace(/\s+Branch$/i, '')
-              .replace(/\s+Line$/i, '')
-              .replace(/\s+Railroad$/i, '')
-              .trim();
-            // Key by serviceId:routeId to avoid collisions between agencies (e.g. LIRR and MNR
-            // both use short numeric route IDs that can be identical across feeds)
-            routeLineNameMap[`${sel.serviceId}:${routeId}`] = cleanName;
-          }
-        }
-      }
+      // Prefer the routes skids says serve this stop; fall back to the saved ones.
+      const routeLineNameMap = buildRouteLineNameMap([
+        ...Object.entries(servingByService).map(([serviceId, routeMap]) => ({
+          serviceId,
+          routes: Array.from(routeMap.values()),
+        })),
+        ...serviceSelections.map((sel: ServiceSelection) => ({
+          serviceId: sel.serviceId,
+          routes: (sel.routes || []) as any[],
+        })),
+      ]);
 
       // Canonical abbreviations for commuter rail agencies keyed by serviceId
       const commuterRailNameMap: Record<string, string> = {};
@@ -1254,16 +1249,8 @@ export default function StopArrivalsSlide({
       const cappedArrivals = storeCap === Infinity ? filteredArrivals : filteredArrivals.slice(0, storeCap);
 
       const displayArrivals = cappedArrivals.map(arr => {
-        const svcKey = arr._sourceService || '';
-        const lineName = routeLineNameMap[`${svcKey}:${arr.routeId}`] || routeLineNameMap[`${svcKey}:${arr.routeShortName}`];
-        if (lineName) {
-          return { ...arr, routeShortName: `${arr.routeShortName} - ${lineName}` };
-        }
-        const commuterSuffix = commuterRailNameMap[arr._sourceService];
-        if (commuterSuffix) {
-          return { ...arr, routeShortName: `${arr.routeShortName} ${commuterSuffix}` };
-        }
-        return arr;
+        const label = arrivalRouteLabel(arr, routeLineNameMap, commuterRailNameMap);
+        return label === arr.routeShortName ? arr : { ...arr, routeShortName: label };
       });
 
       // Badge list comes from skids' authoritative serving-routes (schedule-derived,

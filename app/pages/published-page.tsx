@@ -24,6 +24,7 @@ import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
 import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
+import { buildRouteLineNameMap, arrivalRouteLabel } from '@/utils/routeLineNames';
 import { useFixedRouteStore } from '@/modules/fixed-routes/store';
 import { useGeneralStore } from '@/stores/general';
 import { ResolutionFrame } from '@/components/resolution-frame';
@@ -483,21 +484,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         const cap = (columnMode && columnServiceSelections) ? Infinity : MAX_ARRIVALS_PER_SLIDE;
         const limitedArrivals = cap === Infinity ? filteredArrivals : filteredArrivals.slice(0, cap);
 
-        const routeLineNameMap: Record<string, string> = {};
-        for (const [serviceId, routes] of Object.entries(servingRoutesByService)) {
-          for (const route of routes) {
-            const routeId = route.id ?? route.route_id;
-            const longName = route.longName ?? route.route_long_name ?? '';
-            if (longName && routeId) {
-              const cleanName = longName
-                .replace(/\s+Branch$/i, '')
-                .replace(/\s+Line$/i, '')
-                .replace(/\s+Railroad$/i, '')
-                .trim();
-              routeLineNameMap[`${serviceId}:${routeId}`] = cleanName;
-            }
-          }
-        }
+        const routeLineNameMap = buildRouteLineNameMap(
+          Object.entries(servingRoutesByService).map(([serviceId, routes]) => ({ serviceId, routes }))
+        );
 
         const commuterRailNameMap: Record<string, string> = {};
         for (const sel of serviceSelections) {
@@ -511,16 +500,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         }
 
         const displayArrivals = limitedArrivals.map((arr: any) => {
-          const svcKey = arr._sourceService || '';
-          const lineName = routeLineNameMap[`${svcKey}:${arr.routeId}`] || routeLineNameMap[`${svcKey}:${arr.routeShortName}`];
-          if (lineName) {
-            return { ...arr, routeShortName: `${arr.routeShortName} - ${lineName}` };
-          }
-          const commuterSuffix = commuterRailNameMap[arr._sourceService];
-          if (commuterSuffix) {
-            return { ...arr, routeShortName: `${arr.routeShortName} ${commuterSuffix}` };
-          }
-          return arr;
+          const label = arrivalRouteLabel(arr, routeLineNameMap, commuterRailNameMap);
+          return label === arr.routeShortName ? arr : { ...arr, routeShortName: label };
         });
 
         setScheduleData(slide.id, displayArrivals);
