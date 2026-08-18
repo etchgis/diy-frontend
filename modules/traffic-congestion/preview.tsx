@@ -1,0 +1,168 @@
+import { proxyImageUrl } from "@/utils/proxyImageUrl";
+import { useTrafficCongestionStore } from "./store";
+import { useGeneralStore } from "@/stores/general";
+import { useResScale } from "@/hooks/useResScale";
+import { usePathname } from "next/navigation";
+import Footer from "@/components/shared-components/footer";
+import HtmlTextEditor from "@/components/shared-components/html-text-editor";
+
+const MOCK_LEGEND = [
+  { label: 'Free Flow', color: '#22c55e' },
+  { label: 'Moderate', color: '#f59e0b' },
+  { label: 'Heavy',    color: '#ef4444' },
+  { label: 'Stopped',  color: '#7f1d1d' },
+];
+
+export default function TrafficCongestionPreview({
+  slideId,
+  previewMode = false,
+  isEditor: isEditorProp,
+}: {
+  slideId: string;
+  previewMode?: boolean;
+  isEditor?: boolean;
+}) {
+  const pathname = usePathname();
+  const isEditor = isEditorProp ?? (pathname.includes("/editor") && !previewMode);
+
+  const title = useTrafficCongestionStore((state) => state.slides[slideId]?.title || "");
+  const setTitle = useTrafficCongestionStore((state) => state.setTitle);
+  const showTitle = useTrafficCongestionStore((state) => state.slides[slideId]?.showTitle !== false);
+  const backgroundColor = useTrafficCongestionStore((state) => state.slides[slideId]?.backgroundColor || "#192F51");
+  const bgImage = useTrafficCongestionStore((state) => state.slides[slideId]?.bgImage || "");
+  const logoImage = useTrafficCongestionStore((state) => state.slides[slideId]?.logoImage || "");
+  const titleColor = useTrafficCongestionStore((state) => state.slides[slideId]?.titleColor || "#ffffff");
+  const textColor = useTrafficCongestionStore((state) => state.slides[slideId]?.textColor || "#ffffff");
+  const mapImageUrl = useTrafficCongestionStore((state) => state.slides[slideId]?.mapImageUrl || "");
+  const titleTextSize = useTrafficCongestionStore((state) => state.slides[slideId]?.titleTextSize || 5);
+  const contentTextSize = useTrafficCongestionStore((state) => state.slides[slideId]?.contentTextSize || 5);
+
+  const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
+  const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
+  const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
+  const resolution = useGeneralStore((state) => state.resolution);
+  const resScale = useResScale(resolution);
+  const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
+
+  const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
+
+  const legendFontSize = isEditor
+    ? `${13 * contentSizeMultiplier}px`
+    : `${2.8 * contentSizeMultiplier}cqh`;
+
+  const dotSize = isEditor
+    ? `${14 * contentSizeMultiplier}px`
+    : `${2.5 * contentSizeMultiplier}cqh`;
+
+  return (
+    <div
+      className="w-full h-full flex flex-col overflow-hidden"
+      style={{
+        backgroundColor: !bgImage ? backgroundColor : undefined,
+        backgroundImage: bgImage ? `url(${proxyImageUrl(bgImage)})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        color: textColor,
+        fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
+      }}
+    >
+      {/* Title + Logo */}
+      {showTitle && (
+        <div className="px-4 py-3 border-b border-white/20 flex-shrink-0 flex items-center">
+          <div className={`flex-1 rounded px-3 ${isEditor ? 'border-2 border-[#11d1f7] py-1' : ''}`}>
+            {isEditor ? (
+              <HtmlTextEditor
+                content={title}
+                onChange={(html) => setTitle(slideId, html)}
+                textColor={titleColor}
+                fontSize={Math.round(36 * titleSizeMultiplier)}
+                minHeight="1.4em"
+              />
+            ) : (
+              <div
+                className="font-light rich-text-content"
+                style={{
+                  color: titleColor,
+                  fontSize: `${6 * titleSizeMultiplier}cqh`,
+                  lineHeight: '1.2',
+                }}
+                dangerouslySetInnerHTML={{ __html: title || "" }}
+              />
+            )}
+          </div>
+          {logoImage && (
+            <img
+              src={proxyImageUrl(logoImage)}
+              alt="Logo"
+              className="object-contain ml-4 flex-shrink-0"
+              style={{ height: logoHeight }}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Map Area */}
+      <div className="flex-1 min-h-0 overflow-hidden relative">
+        {mapImageUrl ? (
+          <img
+            src={proxyImageUrl(mapImageUrl)}
+            alt="Traffic Congestion Map"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          /* Mock placeholder until the API is wired up */
+          <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#1a1f2e]">
+            {/* Simulated road grid */}
+            <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+              {/* Horizontal corridors */}
+              <line x1="0" y1="120" x2="800" y2="130" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
+              <line x1="0" y1="200" x2="800" y2="215" stroke="#f59e0b" strokeWidth="5" strokeLinecap="round" />
+              <line x1="0" y1="280" x2="800" y2="275" stroke="#22c55e" strokeWidth="5" strokeLinecap="round" />
+              <line x1="0" y1="360" x2="800" y2="370" stroke="#22c55e" strokeWidth="4" strokeLinecap="round" />
+              {/* Vertical corridors */}
+              <line x1="150" y1="0" x2="160" y2="500" stroke="#f59e0b" strokeWidth="5" strokeLinecap="round" />
+              <line x1="320" y1="0" x2="330" y2="500" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
+              <line x1="500" y1="0" x2="495" y2="500" stroke="#22c55e" strokeWidth="5" strokeLinecap="round" />
+              <line x1="660" y1="0" x2="665" y2="500" stroke="#7f1d1d" strokeWidth="5" strokeLinecap="round" />
+              {/* Minor roads */}
+              <line x1="0" y1="450" x2="800" y2="445" stroke="#4b5563" strokeWidth="2" />
+              <line x1="0" y1="60" x2="800" y2="65" stroke="#4b5563" strokeWidth="2" />
+              <line x1="240" y1="0" x2="235" y2="500" stroke="#4b5563" strokeWidth="2" />
+              <line x1="420" y1="0" x2="418" y2="500" stroke="#4b5563" strokeWidth="2" />
+              <line x1="580" y1="0" x2="582" y2="500" stroke="#4b5563" strokeWidth="2" />
+            </svg>
+            <span
+              className="relative z-10 font-medium tracking-wide opacity-40"
+              style={{ fontSize: isEditor ? '13px' : '2.5cqh', color: textColor }}
+            >
+              Congestion Map — API Pending
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Legend */}
+      <div
+        className="flex-shrink-0 flex items-center justify-center border-t border-white/20"
+        style={{
+          padding: isEditor ? '8px 16px' : '1.2cqh 3cqw',
+          gap: isEditor ? '20px' : '4cqw',
+          backgroundColor: `${backgroundColor}cc`,
+        }}
+      >
+        {MOCK_LEGEND.map(({ label, color }) => (
+          <div key={label} className="flex items-center gap-2">
+            <div
+              className="rounded-full flex-shrink-0"
+              style={{ width: dotSize, height: dotSize, backgroundColor: color }}
+            />
+            <span style={{ fontSize: legendFontSize, color: textColor }}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {showFooter && <Footer previewMode={previewMode} />}
+    </div>
+  );
+}

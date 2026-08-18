@@ -32,6 +32,8 @@ import CitibikeSlide from "@/modules/citibike/editor"
 import CitibikePreview from "@/modules/citibike/preview"
 import TrafficCorridorSlide from "@/modules/traffic-corridor/editor"
 import TrafficCorridorPreview from "@/modules/traffic-corridor/preview"
+import TrafficCongestionSlide from "@/modules/traffic-congestion/editor"
+import TrafficCongestionPreview from "@/modules/traffic-congestion/preview"
 import EditFooter from "@/components/shared-components-editors/edit-footer"
 import { useGeneralStore } from "@/stores/general"
 import { useFooterStore } from "@/stores/footer"
@@ -74,6 +76,7 @@ import { useWeatherStore } from "@/modules/weather/store"
 import { useCitibikeStore } from "@/modules/citibike/store"
 import { useRouteTimesStore } from "@/modules/route-times/store"
 import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store"
+import { useTrafficCongestionStore } from "@/modules/traffic-congestion/store"
 import { useFixedRouteStore } from "@/modules/fixed-routes/store"
 import { useTransitRouteStore } from "@/modules/transit-routes/store"
 import { useWebEmbedStore } from "@/modules/web-embed/store"
@@ -485,6 +488,13 @@ export default function EditorPage() {
           { destination: '', corridors: [] },
         ]);
         break;
+      case 'traffic-congestion':
+        useTrafficCongestionStore.getState().setBackgroundColor(slideId, primaryBg);
+        useTrafficCongestionStore.getState().setTitleColor(slideId, titleText);
+        useTrafficCongestionStore.getState().setTextColor(slideId, bodyText);
+        useTrafficCongestionStore.getState().setTitleTextSize(slideId, titleSize);
+        useTrafficCongestionStore.getState().setContentTextSize(slideId, contentSize);
+        break;
       case 'route-times':
         useRouteTimesStore.getState().setBackgroundColor(slideId, primaryBg);
         useRouteTimesStore.getState().setTitleColor(slideId, titleText);
@@ -883,6 +893,7 @@ export default function EditorPage() {
       case 'weather': copyModuleData(useWeatherStore); break;
       case 'citibike': copyModuleData(useCitibikeStore); break;
       case 'traffic-corridor': copyModuleData(useTrafficCorridorStore); break;
+      case 'traffic-congestion': copyModuleData(useTrafficCongestionStore); break;
       case 'web-embed': copyModuleData(useWebEmbedStore); break;
     }
 
@@ -933,6 +944,8 @@ export default function EditorPage() {
         return <CitibikeSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "traffic-corridor":
         return <TrafficCorridorSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
+      case "traffic-congestion":
+        return <TrafficCongestionSlide slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       case "web-embed":
         return <WebEmbedEditor slideId={slideId} handleDelete={handleDelete} handlePreview={handlePreview} handlePublish={openPasswordModal} handleOpenSettings={openSettings} />;
       default:
@@ -974,6 +987,8 @@ export default function EditorPage() {
           return <CitibikePreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "traffic-corridor":
           return <TrafficCorridorPreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
+        case "traffic-congestion":
+          return <TrafficCongestionPreview slideId={slideId} previewMode={shouldUsePreviewMode} />;
         case "web-embed":
           return <WebEmbedPreview slideId={slideId} />;
         default:
@@ -1148,6 +1163,11 @@ export default function EditorPage() {
                 <SelectItem value="traffic-corridor">
                   <div className="flex items-center gap-2 text-xs">
                     Traffic Corridor Page
+                  </div>
+                </SelectItem>
+                <SelectItem value="traffic-congestion">
+                  <div className="flex items-center gap-2 text-xs">
+                    Traffic Congestion Map
                   </div>
                 </SelectItem>
                 <SelectItem value="web-embed">

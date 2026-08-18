@@ -19,6 +19,7 @@ import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from '@/services/data-gathering/fetchStopData';
 import { matchesHeadsign } from '@/lib/stop-arrivals-filters';
 import TrafficCorridorPreview from '@/modules/traffic-corridor/preview';
+import TrafficCongestionPreview from '@/modules/traffic-congestion/preview';
 import WebEmbedPreview from '@/modules/web-embed/preview';
 import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
 import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
@@ -825,6 +826,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         return <RouteTimesPreview slideId={slideId} />;
       case 'traffic-corridor':
         return <TrafficCorridorPreview slideId={slideId} />;
+      case 'traffic-congestion':
+        return <TrafficCongestionPreview slideId={slideId} />;
       case 'web-embed':
         return <WebEmbedPreview slideId={slideId} />;
       default:

@@ -11,6 +11,7 @@ import { useImageOnlyStore } from "@/modules/image-only/store";
 import { useWeatherStore } from "@/modules/weather/store";
 import { useCitibikeStore } from "@/modules/citibike/store";
 import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store";
+import { useTrafficCongestionStore } from "@/modules/traffic-congestion/store";
 import { useWebEmbedStore } from "@/modules/web-embed/store";
 import { useFooterStore } from "@/stores/footer";
 import { migrateHeadsignFilters } from "@/lib/stop-arrivals-filters";
@@ -680,6 +681,27 @@ async function importData(setup: any) {
       setShowSecondTable(slide.id, slide.data.showSecondTable || false);
       if (slide.data.tableLayout) setTableLayout(slide.id, slide.data.tableLayout);
       if (slide.data.origin) setOrigin(slide.id, slide.data.origin);
+      setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
+      setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+    }
+
+    if (slide.type === 'traffic-congestion') {
+      const {
+        setTitle, setShowTitle, setBackgroundColor, setBgImage, setLogoImage,
+        setTitleColor, setTextColor, setMapCenter, setMapZoom, setMapImageUrl,
+        setTitleTextSize, setContentTextSize,
+      } = useTrafficCongestionStore.getState();
+
+      setTitle(slide.id, slide.data.title || '');
+      setShowTitle(slide.id, slide.data.showTitle !== false);
+      setBackgroundColor(slide.id, slide.data.backgroundColor || '#192F51');
+      setBgImage(slide.id, slide.data.bgImage || '');
+      setLogoImage(slide.id, slide.data.logoImage || '');
+      setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
+      setTextColor(slide.id, slide.data.textColor || '#ffffff');
+      if (slide.data.mapCenter) setMapCenter(slide.id, slide.data.mapCenter);
+      if (slide.data.mapZoom) setMapZoom(slide.id, slide.data.mapZoom);
+      if (slide.data.mapImageUrl) setMapImageUrl(slide.id, slide.data.mapImageUrl);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
     }

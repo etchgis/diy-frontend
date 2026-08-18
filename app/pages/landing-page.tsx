@@ -332,6 +332,11 @@ export default function LandingPage() {
                               Traffic Corridor Page
                             </div>
                           </SelectItem>
+                          <SelectItem value="traffic-congestion">
+                            <div className="flex items-center gap-2 text-xs">
+                              Traffic Congestion Map
+                            </div>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <Button onClick={() => { handleCreate() }} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
