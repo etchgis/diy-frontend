@@ -776,7 +776,9 @@ async function importData(setup: any) {
     for (const slideId of fixedRouteSlideIds) {
       const slideState = useFixedRouteStore.getState().slides[slideId];
       for (const sel of slideState?.serviceSelections || []) {
-        const needsRoutes = !sel.routes?.length || sel.routes.every((r: any) => !r.longName);
+        // Only fetch when the slide has routes that are missing long names. A slide with
+        // no routes gets them from the stops API instead.
+        const needsRoutes = !!sel.routes?.length && sel.routes.every((r: any) => !r.longName);
         if (!needsRoutes) continue;
         const orgId = (sel as any).organizationId
           || slideState?.selectedStop?.services?.find((svc: any) => svc.id === sel.serviceId)?.organizationId;
@@ -806,28 +808,25 @@ async function importData(setup: any) {
             const routes: any[] = data.routes || [];
             console.log('[ROUTE RESTORE] Got', routes.length, 'routes for service', serviceId, '— sample longNames:', routes.slice(0, 3).map((r: any) => r.longName));
             if (!routes.length) continue;
-            const routeInfos = routes.map((r: any) => ({
-              id: r.id,
-              shortName: r.shortName || '',
-              longName: r.longName || '',
-              color: r.color || '',
-              textColor: r.textColor || '',
-              headsigns: [],
-            }));
+            // This is the whole agency's route list, so use it only to look up a missing
+            // long name. Copying it onto a slide would list every route in the line picker.
+            const longNameById = new Map<string, string>();
+            const longNameByShortName = new Map<string, string>();
+            for (const r of routes) {
+              if (r.id) longNameById.set(r.id, r.longName || '');
+              if (r.shortName) longNameByShortName.set(r.shortName, r.longName || '');
+            }
             for (const slideId of slideIds) {
               const state = useFixedRouteStore.getState().slides[slideId];
               if (!state?.serviceSelections) continue;
               const updated = state.serviceSelections.map((sel: any) => {
                 if (sel.serviceId !== serviceId) return sel;
-                if (!(!sel.routes?.length || sel.routes.every((r: any) => !r.longName))) return sel;
-                if (!sel.routes?.length) {
-                  return { ...sel, routes: routeInfos };
-                }
+                if (!sel.routes?.length) return sel;
+                if (!sel.routes.every((r: any) => !r.longName)) return sel;
                 const mergedRoutes = sel.routes.map((existing: any) => {
-                  const fresh = routeInfos.find((r: any) =>
-                    r.id === existing.id || (r.shortName && r.shortName === existing.shortName)
-                  );
-                  return fresh ? { ...existing, longName: fresh.longName } : existing;
+                  const longName = longNameById.get(existing.id)
+                    ?? (existing.shortName ? longNameByShortName.get(existing.shortName) : undefined);
+                  return longName ? { ...existing, longName } : existing;
                 });
                 return { ...sel, routes: mergedRoutes };
               });
