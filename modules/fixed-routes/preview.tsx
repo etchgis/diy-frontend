@@ -541,8 +541,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           color: columnHeaderTextColor,
                           fontSize: isEditor
                             ? `${(10 + columnHeaderTextSize * 0.8) * contentSizeMultiplier}px`
-                            : `${(1.5 + columnHeaderTextSize * 0.3) * contentSizeMultiplier}cqh`,
-                          padding: isEditor ? "6px 8px" : `${1.2 * contentSizeMultiplier}cqh 2cqw`,
+                            : `${(1.5 + columnHeaderTextSize * 0.3) * contentSizeMultiplier}cqmin`,
+                          padding: isEditor ? "6px 8px" : `${1.2 * contentSizeMultiplier}cqmin 2cqw`,
                         }}
                       >
                         {col.label}
@@ -642,8 +642,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             style={{
                               backgroundColor: backgroundColor,
                               color: titleColor,
-                              padding: `0.8cqh 1.5cqw`,
-                              fontSize: `${2.2 * contentSizeMultiplier}cqh`,
+                              padding: `0.8cqmin 1.5cqw`,
+                              fontSize: `${2.2 * contentSizeMultiplier}cqmin`,
                               fontWeight: 600,
                             }}
                           >
@@ -662,16 +662,16 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                 ? tableColor
                                 : "transparent",
                               color: tableTextColor,
-                              padding: `1cqh 1.5cqw`,
+                              padding: `1cqmin 1.5cqw`,
                             }}
                           >
                             <div className="flex-1 min-w-0">
                               <span
-                                className="font-medium block break-words leading-snug"
+                                className="font-medium block truncate leading-snug"
                                 style={{
                                   fontSize: `${
                                     2.5 * contentSizeMultiplier
-                                  }cqh`,
+                                  }cqmin`,
                                 }}
                               >
                                 {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
@@ -681,24 +681,24 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               className="rounded font-bold text-center flex-shrink-0"
                               style={{
                                 padding: "0.3em 0.6em",
-                                fontSize: `${2 * contentSizeMultiplier}cqh`,
+                                fontSize: `${2 * contentSizeMultiplier}cqmin`,
                                 color: `#${item.routeTextColor}`,
                                 backgroundColor: `#${item.routeColor}`,
                                 whiteSpace: "nowrap",
                                 minWidth: "3em",
-                                margin: "0 1cqh",
+                                margin: "0 1cqmin",
                               }}
                             >
                               {badgeLabel(item.routeShortName, item.routeId, item.routeLongName)}
                             </div>
                             <div
                               className="flex items-center flex-shrink-0"
-                              style={{ gap: "1.5cqh" }}
+                              style={{ gap: "1cqmin" }}
                             >
                               <div
                                 className="font-medium text-right flex-shrink-0"
                                 style={{
-                                  fontSize: `${2.5 * contentSizeMultiplier}cqh`,
+                                  fontSize: `${2.5 * contentSizeMultiplier}cqmin`,
                                   whiteSpace: "nowrap",
                                   width: "4.5em",
                                 }}
@@ -708,7 +708,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               <div
                                 className="text-right flex-shrink-0"
                                 style={{
-                                  fontSize: `${2 * contentSizeMultiplier}cqh`,
+                                  fontSize: `${2 * contentSizeMultiplier}cqmin`,
                                   whiteSpace: "nowrap",
                                   width: "5em",
                                   opacity: 0.85,
@@ -828,8 +828,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       style={{
                         backgroundColor: backgroundColor,
                         color: titleColor,
-                        padding: `0.8cqh 1.5cqw`,
-                        fontSize: `${2.2 * contentSizeMultiplier}cqh`,
+                        padding: `0.8cqmin 1.5cqw`,
+                        fontSize: `${2.2 * contentSizeMultiplier}cqmin`,
                         fontWeight: 600,
                       }}
                     >
@@ -849,17 +849,17 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             ? tableColor
                             : "transparent",
                           color: tableTextColor,
-                          padding: `1cqh 1.5cqw`,
+                          padding: `1cqmin 1.5cqw`,
                         }}
                       >
                         {/* Destination */}
                         <div className="flex-1 min-w-0">
                           <span
-                            className="font-medium block break-words leading-snug"
+                            className="font-medium block truncate leading-snug"
                             style={{
                               fontSize: `${
                                 3 * contentSizeMultiplier
-                              }cqh`,
+                              }cqmin`,
                             }}
                           >
                             {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
@@ -870,11 +870,11 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           className="rounded font-bold flex-shrink-0"
                           style={{
                             padding: "0.3em 0.4em",
-                            fontSize: `${2.5 * contentSizeMultiplier}cqh`,
+                            fontSize: `${2.5 * contentSizeMultiplier}cqmin`,
                             whiteSpace: "nowrap",
                             color: `#${item.routeTextColor}`,
                             backgroundColor: `#${item.routeColor}`,
-                            margin: "0 1cqh",
+                            margin: "0 1cqmin",
                           }}
                         >
                           {badgeLabel(item.routeShortName, item.routeId, item.routeLongName)}
@@ -885,7 +885,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           style={{
                             fontSize: `${
                               3 * contentSizeMultiplier
-                            }cqh`,
+                            }cqmin`,
                             gap: "1em",
                           }}
                         >
@@ -912,7 +912,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               padding: "0.3em 0.4em",
                               fontSize: `${
                                 2.5 * contentSizeMultiplier
-                              }cqh`,
+                              }cqmin`,
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",

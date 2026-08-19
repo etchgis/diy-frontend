@@ -57,6 +57,7 @@ export default function TransitRoutesPreview({
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const isMapLoadedRef = useRef<boolean>(false);
+  const drawnRouteKeyRef = useRef<string>('');
 
   const address = useGeneralStore((state) => state.address || "");
   const DEFAULT_COORDINATES = { lng: -73.7562, lat: 42.6526 };
@@ -167,38 +168,44 @@ export default function TransitRoutesPreview({
 
   // Function to clear existing route data
   const clearExistingRoutes = () => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !mapRef.current.isStyleLoaded()) return;
 
     // Clear markers
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
     // Clear existing sources and layers
-    const style = mapRef.current.getStyle();
-    if (style && style.layers) {
-      style.layers.forEach((layer: any) => {
-        if (layer.id.startsWith("route-layer-")) {
-          if (mapRef.current?.getLayer(layer.id)) {
-            mapRef.current.removeLayer(layer.id);
+    try {
+      const style = mapRef.current.getStyle();
+      if (style && style.layers) {
+        style.layers.forEach((layer: any) => {
+          if (layer.id.startsWith("route-layer-")) {
+            try {
+              if (mapRef.current?.getLayer(layer.id)) {
+                mapRef.current.removeLayer(layer.id);
+              }
+            } catch {}
           }
-        }
-      });
-    }
+        });
+      }
 
-    if (style && style.sources) {
-      Object.keys(style.sources).forEach((sourceId) => {
-        if (sourceId.startsWith("route-")) {
-          if (mapRef.current?.getSource(sourceId)) {
-            mapRef.current.removeSource(sourceId);
+      if (style && style.sources) {
+        Object.keys(style.sources).forEach((sourceId) => {
+          if (sourceId.startsWith("route-")) {
+            try {
+              if (mapRef.current?.getSource(sourceId)) {
+                mapRef.current.removeSource(sourceId);
+              }
+            } catch {}
           }
-        }
-      });
-    }
+        });
+      }
+    } catch {}
   };
 
   // Function to add routes to map
   const addRoutesToMap = () => {
-    if (!mapRef.current || !routes || routes.length === 0) return;
+    if (!mapRef.current || !mapRef.current.isStyleLoaded() || !routes || routes.length === 0) return;
 
     try {
       // Add origin marker first (always visible)
@@ -397,28 +404,36 @@ export default function TransitRoutesPreview({
       return;
     }
 
-    // Function to handle route updates
     const updateRoutes = () => {
-      // Clear existing routes first
-      clearExistingRoutes();
+      const hasGeometry = routes?.some((r: any) =>
+        r.legs?.some((l: any) => l.legGeometry?.points)
+      );
+      if (!hasGeometry) return;
 
-      // Add new routes if they exist
-      if (routes && routes.length > 0) {
-        addRoutesToMap();
-      }
+      const routeKey = routes
+        .map((r: any) => `${r.name}|${r.coordinates?.lat},${r.coordinates?.lng}`)
+        .join(';');
+      if (routeKey === drawnRouteKeyRef.current) return;
+
+      clearExistingRoutes();
+      requestAnimationFrame(() => {
+        if (mapRef.current?.isStyleLoaded()) {
+          addRoutesToMap();
+          drawnRouteKeyRef.current = routeKey;
+        }
+      });
     };
 
-    // Check if map is loaded and update routes
     if (isMapLoadedRef.current) {
       updateRoutes();
     } else {
-      // If map isn't loaded yet, wait for it
       const handleLoad = () => {
         updateRoutes();
+      };
+      mapRef.current.on("load", handleLoad);
+      return () => {
         mapRef.current?.off("load", handleLoad);
       };
-
-      mapRef.current?.on("load", handleLoad);
     }
   }, [routes, coordinates]); // Depend on both routes and coordinates
 

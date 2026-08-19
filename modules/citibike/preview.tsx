@@ -84,7 +84,10 @@ export default function CitibikePreview({
     (state) => state.slides[slideId]?.contentTextSize || 5
   );
 
-  const coordinates = useGeneralStore((state) => state.coordinates);
+  const coordinates = useGeneralStore(
+    (state) => state.coordinates,
+    (a, b) => a?.lat === b?.lat && a?.lng === b?.lng
+  );
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
@@ -112,11 +115,14 @@ export default function CitibikePreview({
     const container = mapContainerRef.current;
     let initObserver: ResizeObserver | null = null;
 
+    let destroyed = false;
+
     const handleWindowResize = () => {
       if (mapRef.current) setTimeout(() => mapRef.current?.resize(), 100);
     };
 
     const initMap = () => {
+      if (destroyed) return;
       if (mapRef.current) return;
       const { width, height } = container.getBoundingClientRect();
       if (width === 0 || height === 0) return;
@@ -149,6 +155,7 @@ export default function CitibikePreview({
       map.touchZoomRotate.disable();
 
       map.on("load", () => {
+        if (destroyed) { map.remove(); return; }
         isMapLoadedRef.current = true;
         addMarkersRef.current();
         addTransitStopMarkersRef.current();
@@ -173,6 +180,7 @@ export default function CitibikePreview({
     }
 
     return () => {
+      destroyed = true;
       initObserver?.disconnect();
       resizeObserverRef.current?.disconnect();
       window.removeEventListener("resize", handleWindowResize);

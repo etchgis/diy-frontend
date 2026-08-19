@@ -54,6 +54,10 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const mapIdRef = useRef<string>(`map-${Math.random().toString(36).substr(2, 9)}`);
+  const patternDataRef = useRef(patternData);
+  const selectedRouteRef = useRef(selectedRoute);
+  useEffect(() => { patternDataRef.current = patternData; }, [patternData]);
+  useEffect(() => { selectedRouteRef.current = selectedRoute; }, [selectedRoute]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -100,10 +104,13 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
       mapRef.current = null;
     }
 
-    // Calculate initial bounds from pattern data if available
-    const initialBounds = (patternData?.stops && patternData.stops.length > 0)
-      ? calculateRouteBounds(patternData.stops, patternData.coordinates)
+    // Calculate initial bounds from pattern data if available.
+    const pd = patternDataRef.current;
+    const initialBounds = (pd?.stops && pd.stops.length > 0)
+      ? calculateRouteBounds(pd.stops, pd.coordinates)
       : null;
+
+    let removed = false;
 
     try {
       // Create new map - use bounds if available, otherwise default center
@@ -134,30 +141,29 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
       // Force a resize and mark as loaded after map loads
       map.once('load', () => {
+        if (removed) return; 
         map.resize();
         setMapLoaded(true);
 
-        // Add route and stops data if available
-        if (patternData) {
+        const currentPd = patternDataRef.current;
+        const currentRoute = selectedRouteRef.current;
+        if (currentPd) {
           const newMarkers = renderRouteOnMap({
             map,
-            patternData,
-            selectedRoute,
+            patternData: currentPd,
+            selectedRoute: currentRoute,
             markers: markersRef.current,
           });
           markersRef.current = newMarkers;
 
-          // Fit bounds after route is rendered
-          if ((patternData.stops && patternData.stops.length > 0) || (patternData.coordinates && patternData.coordinates.length > 0)) {
-            const bounds = calculateRouteBounds(patternData.stops, patternData.coordinates);
+          if ((currentPd.stops && currentPd.stops.length > 0) || (currentPd.coordinates && currentPd.coordinates.length > 0)) {
+            const bounds = calculateRouteBounds(currentPd.stops, currentPd.coordinates);
             if (bounds) {
-              // Use requestAnimationFrame to ensure container is fully sized
               requestAnimationFrame(() => {
-                map.resize();
-                map.fitBounds(bounds, {
-                  padding: 80,
-                  maxZoom: 15,
-                });
+                if (!removed) {
+                  map.resize();
+                  map.fitBounds(bounds, { padding: 80, maxZoom: 15 });
+                }
               });
             }
           }
@@ -168,6 +174,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
     }
 
     return () => {
+      removed = true;
       setMapLoaded(false);
       if (mapRef.current) {
         try {
@@ -181,7 +188,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
         }
       }
     };
-  }, [viewMode, slideId, mapContainer, patternData, selectedRoute]);
+  }, [viewMode, slideId, mapContainer]);
 
   // Update map with pattern data changes
   useEffect(() => {

@@ -58,13 +58,16 @@ export async function getDestinationData(
     const chosen = data.allItineraries && dest.preferredItinerary?.length
       ? selectBestItinerary(data.allItineraries, dest.preferredItinerary)
       : null;
+    const newLegs = chosen?.legs ?? (Array.isArray(data.legs) ? data.legs : []);
+    const existingLegs = Array.isArray((dest as any).legs) ? (dest as any).legs : [];
+    const newHaveGeometry = newLegs.some((l: any) => l.legGeometry?.points);
     return {
       name: data.name ?? dest.name,
       route: chosen?.route ?? data.route ?? null,
       departure: chosen?.departure ?? data.departure ?? null,
       arrival: chosen?.arrival ?? data.arrival ?? null,
       travel: chosen?.travel ?? data.travel ?? null,
-      legs: chosen?.legs ?? (Array.isArray(data.legs) ? data.legs : []),
+      legs: newHaveGeometry ? newLegs : existingLegs,
       coordinates: dest.coordinates,
       dark: index % 2 === 0,
       originStop: data.originStop ?? null,
@@ -93,7 +96,8 @@ export async function getDestinationData(
           if (res.status === 'fulfilled' && res.value.length > 0) {
             return buildEnriched(res.value[0], dest, index);
           }
-          return { name: dest.name, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: dest.coordinates, dark: index % 2 === 0 };
+          const existingLegs = Array.isArray((dest as any).legs) ? (dest as any).legs : [];
+          return { name: dest.name, route: null, departure: null, arrival: null, travel: null, legs: existingLegs, coordinates: dest.coordinates, dark: index % 2 === 0 };
         });
       } else {
         const results = await fetchSkidsTransitData(

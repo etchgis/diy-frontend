@@ -33,17 +33,15 @@ export function renderRouteOnMap({
   selectedRoute,
   markers = [],
 }: RouteMapOptions): mapboxgl.Marker[] {
+  if (!map.isStyleLoaded()) return markers;
+
   // Clear existing markers
   markers.forEach(marker => marker.remove());
   const newMarkers: mapboxgl.Marker[] = [];
 
   // Remove existing route layer if it exists
-  if (map.getLayer('route-line')) {
-    map.removeLayer('route-line');
-  }
-  if (map.getSource('route')) {
-    map.removeSource('route');
-  }
+  try { if (map.getLayer('route-line')) map.removeLayer('route-line'); } catch {}
+  try { if (map.getSource('route')) map.removeSource('route'); } catch {}
 
   // Add route line if we have coordinates
   if (patternData.coordinates && patternData.coordinates.length > 0) {

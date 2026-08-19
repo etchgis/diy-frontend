@@ -846,21 +846,50 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   }
 
   // TV mode - slideshow with rotation
+  const transitRoutesSlides = slides.filter((s: any) => s.type === 'transit-routes');
+  const citibikeSlides = slides.filter((s: any) => s.type === 'citibike');
+  const routeTimesSlides = slides.filter((s: any) => s.type === 'route-times');
   const webEmbedSlides = slides.filter((s: any) => s.type === 'web-embed');
+  const persistentTypes = new Set(['transit-routes', 'citibike', 'route-times', 'web-embed']);
 
   const isResponsive = resolution === 'responsive';
 
   const innerContent = (
     <div className="w-full h-full bg-white relative overflow-hidden">
-      {/* Persistent TransitRoutesPreview */}
-      <div
-        className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${currentSlide?.type === 'transit-routes' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+      {transitRoutesSlides.map((slide: any) => (
+        <div
+          key={slide.id}
+          className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
+            currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
           }`}
-      >
-        {currentSlide && currentSlide.id ? (
-          <TransitRoutesPreview slideId={currentSlide.id} />
-        ) : null}
-      </div>
+        >
+          <TransitRoutesPreview slideId={slide.id} />
+        </div>
+      ))}
+
+      {/* Persistent CitibikePreview — avoids WebGL context churn from mount/unmount */}
+      {citibikeSlides.map((slide: any) => (
+        <div
+          key={slide.id}
+          className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
+            currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+          }`}
+        >
+          <CitibikePreview slideId={slide.id} />
+        </div>
+      ))}
+
+      {/* Persistent RouteTimesPreview — same rationale as Citibike */}
+      {routeTimesSlides.map((slide: any) => (
+        <div
+          key={slide.id}
+          className={`absolute top-0 left-0 w-full h-full transition-opacity duration-300 ${
+            currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+          }`}
+        >
+          <RouteTimesPreview slideId={slide.id} />
+        </div>
+      ))}
 
       {webEmbedSlides.map((slide: any) => (
         <div
@@ -873,8 +902,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         </div>
       ))}
 
-      {/* All other previews */}
-      {currentSlide && currentSlide.id && currentSlide.type !== 'transit-routes' && currentSlide.type !== 'web-embed' ? (
+      {currentSlide && currentSlide.id && !persistentTypes.has(currentSlide.type) ? (
         <div className="w-full h-full z-10 relative">
           {renderSlidePreview(currentSlide.type, currentSlide.id)}
         </div>
