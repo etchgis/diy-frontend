@@ -1155,6 +1155,7 @@ export default function StopArrivalsSlide({
             destination: item.destination,
             routeId: item.routeId,
             routeShortName: item.routeShortName,
+            routeLongName: item.routeLongName || '',
             routeType: item.routeType,
             routeColor: item.routeColor,
             routeTextColor: item.routeTextColor,

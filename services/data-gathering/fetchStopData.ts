@@ -114,6 +114,26 @@ function formatBusData(data: any) {
         const raw = train.shortName || train.routeId || train.id?.split(':')[0] || '';
         return raw.includes(' - ') ? raw.split(' - ')[0] : raw;
       })(),
+      routeLongName: (() => {
+        const id = train.routeId || train.id?.split(':')[0] || '';
+        const trainCode = (() => {
+          const raw = train.shortName || id;
+          return raw.includes(' - ') ? raw.split(' - ')[0] : raw;
+        })();
+        const matched =
+          servingRoutes.find((r: any) => r.id === id) ||
+          servingRoutes.find((r: any) => {
+            const rCode = r.shortName?.includes(' - ') ? r.shortName.split(' - ')[0] : r.shortName;
+            return rCode === trainCode;
+          });
+        if (!matched?.longName) return '';
+        // Strip all code-prefix segments: "52A - Central Islip..." → "Central Islip..."
+        return (matched.longName as string)
+          .split(' - ')
+          .filter((p: string) => p.trim() !== trainCode)
+          .join(' - ')
+          .trim();
+      })(),
       routeType: train.routeType,
       routeColor: train.color || DEFAULT_ROUTE_COLOR,
       routeTextColor: train.textColor || DEFAULT_ROUTE_TEXT_COLOR,

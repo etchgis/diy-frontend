@@ -20,17 +20,13 @@ function routeLabel(shortName: string, routeId: string): string {
   return (s.includes(' - ') ? s.split(' - ')[0] : s) || routeId;
 }
 
-// Returns just the route code for the badge, strips the long description.
-function badgeLabel(shortName: string, routeId: string): string {
-  const s = (shortName || '').trim();
-  if (!s) return routeId;
-  const parts = s.split(' - ');
-  if (parts.length <= 1) return s;
-  // Drop the last segment if it contains a space
-  const codeParts = parts[parts.length - 1].includes(' ')
-    ? parts.slice(0, -1)
-    : parts;
-  return codeParts.join('-') || routeId;
+// Returns "{code}-{longName}" badge label (e.g. "4-Ronkonkoma", "52A-Central Islip...").
+function badgeLabel(shortName: string, routeId: string, longName?: string): string {
+  const raw = (shortName || '').trim();
+  const code = (raw.includes(' - ') ? raw.split(' - ')[0] : raw) || routeId;
+  const long = (longName || '').trim();
+  if (!long || long === code) return code;
+  return `${code}-${long}`;
 }
 
 function routeDestination(destination: string, shortName: string, routeId: string): string {
@@ -607,7 +603,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                 margin: "0 6px",
                               }}
                             >
-                              {badgeLabel(item.routeShortName, item.routeId)}
+                              {badgeLabel(item.routeShortName, item.routeId, item.routeLongName)}
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <div
@@ -693,7 +689,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                 margin: "0 1cqh",
                               }}
                             >
-                              {badgeLabel(item.routeShortName, item.routeId)}
+                              {badgeLabel(item.routeShortName, item.routeId, item.routeLongName)}
                             </div>
                             <div
                               className="flex items-center flex-shrink-0"
@@ -782,7 +778,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             margin: "0 8px",
                           }}
                         >
-                          {badgeLabel(item.routeShortName, item.routeId)}
+                          {badgeLabel(item.routeShortName, item.routeId, item.routeLongName)}
                         </div>
                         <div className="flex items-center gap-4">
                           <div
@@ -881,7 +877,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             margin: "0 1cqh",
                           }}
                         >
-                          {badgeLabel(item.routeShortName, item.routeId)}
+                          {badgeLabel(item.routeShortName, item.routeId, item.routeLongName)}
                         </div>
                         {/* Right-side columns — em widths track font size so nothing ever clips */}
                         <div
