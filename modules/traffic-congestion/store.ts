@@ -9,6 +9,8 @@ interface TrafficCongestionSlideData {
   logoImage: string;
   titleColor: string;
   textColor: string;
+  orgId: string;
+  slug: string;
   mapCenter?: [number, number];
   mapZoom?: number;
   mapImageUrl?: string;
@@ -25,6 +27,8 @@ interface TrafficCongestionStore {
   setLogoImage: (slideId: string, url: string) => void;
   setTitleColor: (slideId: string, color: string) => void;
   setTextColor: (slideId: string, color: string) => void;
+  setOrgId: (slideId: string, orgId: string) => void;
+  setSlug: (slideId: string, slug: string) => void;
   setMapCenter: (slideId: string, center: [number, number] | undefined) => void;
   setMapZoom: (slideId: string, zoom: number) => void;
   setMapImageUrl: (slideId: string, url: string) => void;
@@ -50,6 +54,8 @@ export const useTrafficCongestionStore = create<TrafficCongestionStore>()(
       setLogoImage: (id, v) => set(setter('logoImage')(id, v)),
       setTitleColor: (id, v) => set(setter('titleColor')(id, v)),
       setTextColor: (id, v) => set(setter('textColor')(id, v)),
+      setOrgId: (id, v) => set(setter('orgId')(id, v)),
+      setSlug: (id, v) => set(setter('slug')(id, v)),
       setMapCenter: (id, v) => set(setter('mapCenter')(id, v)),
       setMapZoom: (id, v) => set(setter('mapZoom')(id, v)),
       setMapImageUrl: (id, v) => set(setter('mapImageUrl')(id, v)),

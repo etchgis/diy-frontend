@@ -13,6 +13,7 @@ import { useWeatherStore } from '@/modules/weather/store';
 import { useCitibikeStore } from '@/modules/citibike/store';
 import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
 import { useWebEmbedStore } from '@/modules/web-embed/store';
+import { useTrafficCongestionStore } from '@/modules/traffic-congestion/store';
 import { useFooterStore } from '@/stores/footer';
 import { migrateHeadsignFilters } from '@/lib/stop-arrivals-filters';
 
@@ -528,6 +529,34 @@ export function buildPublishPayload() {
         screenObj.data.skipOnError = slideData.skipOnError ?? false;
       } else {
         missingSlides.push(`route-times (${slide.id})`);
+      }
+    }
+
+    if (slide.type === 'traffic-congestion') {
+      screenObj.type = 'traffic-congestion';
+      screenObj.id = slide.id;
+      screenObj.data = {};
+
+      const { slides } = useTrafficCongestionStore.getState();
+      const slideData = slides[slide.id];
+
+      if (slideData) {
+        const { title, showTitle, backgroundColor, bgImage, logoImage, titleColor, textColor, orgId, slug, mapCenter, mapZoom, titleTextSize, contentTextSize } = slideData;
+        screenObj.data.title = title;
+        screenObj.data.showTitle = showTitle;
+        screenObj.data.backgroundColor = backgroundColor;
+        screenObj.data.bgImage = bgImage;
+        screenObj.data.logoImage = logoImage;
+        screenObj.data.titleColor = titleColor;
+        screenObj.data.textColor = textColor;
+        screenObj.data.orgId = orgId ?? '';
+        screenObj.data.slug = slug ?? '';
+        if (mapCenter) screenObj.data.mapCenter = mapCenter;
+        if (mapZoom) screenObj.data.mapZoom = mapZoom;
+        screenObj.data.titleTextSize = titleTextSize;
+        screenObj.data.contentTextSize = contentTextSize;
+      } else {
+        missingSlides.push(`traffic-congestion (${slide.id})`);
       }
     }
 

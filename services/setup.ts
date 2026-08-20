@@ -688,7 +688,7 @@ async function importData(setup: any) {
     if (slide.type === 'traffic-congestion') {
       const {
         setTitle, setShowTitle, setBackgroundColor, setBgImage, setLogoImage,
-        setTitleColor, setTextColor, setMapCenter, setMapZoom, setMapImageUrl,
+        setTitleColor, setTextColor, setOrgId, setSlug, setMapCenter, setMapZoom,
         setTitleTextSize, setContentTextSize,
       } = useTrafficCongestionStore.getState();
 
@@ -699,9 +699,10 @@ async function importData(setup: any) {
       setLogoImage(slide.id, slide.data.logoImage || '');
       setTitleColor(slide.id, slide.data.titleColor || '#ffffff');
       setTextColor(slide.id, slide.data.textColor || '#ffffff');
+      setOrgId(slide.id, slide.data.orgId || '');
+      setSlug(slide.id, slide.data.slug || '');
       if (slide.data.mapCenter) setMapCenter(slide.id, slide.data.mapCenter);
       if (slide.data.mapZoom) setMapZoom(slide.id, slide.data.mapZoom);
-      if (slide.data.mapImageUrl) setMapImageUrl(slide.id, slide.data.mapImageUrl);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
     }

@@ -5,6 +5,10 @@ import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/shared-components/footer";
 import HtmlTextEditor from "@/components/shared-components/html-text-editor";
+import { useState, useEffect } from "react";
+
+const CONGESTION_ORG_ID = '2b651377-306a-4b79-a57b-91caf8aee555';
+const CONGESTION_SLUG = 'congestion-nyc';
 
 const MOCK_LEGEND = [
   { label: 'Free Flow', color: '#22c55e' },
@@ -33,16 +37,31 @@ export default function TrafficCongestionPreview({
   const logoImage = useTrafficCongestionStore((state) => state.slides[slideId]?.logoImage || "");
   const titleColor = useTrafficCongestionStore((state) => state.slides[slideId]?.titleColor || "#ffffff");
   const textColor = useTrafficCongestionStore((state) => state.slides[slideId]?.textColor || "#ffffff");
-  const mapImageUrl = useTrafficCongestionStore((state) => state.slides[slideId]?.mapImageUrl || "");
+  const mapCenter = useTrafficCongestionStore((state) => state.slides[slideId]?.mapCenter);
+  const mapZoom = useTrafficCongestionStore((state) => state.slides[slideId]?.mapZoom ?? 12);
   const titleTextSize = useTrafficCongestionStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const contentTextSize = useTrafficCongestionStore((state) => state.slides[slideId]?.contentTextSize || 5);
 
+  const coordinates = useGeneralStore((state) => state.coordinates);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
   const resolution = useGeneralStore((state) => state.resolution);
   const resScale = useResScale(resolution);
   const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
+
+  const [timeBucket, setTimeBucket] = useState(() => Math.floor(Date.now() / 120000));
+
+  useEffect(() => {
+    const interval = setInterval(() => setTimeBucket(Math.floor(Date.now() / 120000)), 120000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const center = mapCenter ?? (coordinates ? [coordinates.lat, coordinates.lng] as [number, number] : null);
+  let etchMapUrl = `https://api.etch.app/astrostation/maps/${CONGESTION_ORG_ID}/${CONGESTION_SLUG}/static.png`;
+  if (center) {
+    etchMapUrl += `?lat=${center[0]}&lon=${center[1]}&zoom=${mapZoom}`;
+  }
 
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
@@ -104,9 +123,10 @@ export default function TrafficCongestionPreview({
 
       {/* Map Area */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
-        {mapImageUrl ? (
+        {etchMapUrl ? (
           <img
-            src={proxyImageUrl(mapImageUrl)}
+            key={timeBucket}
+            src={etchMapUrl}
             alt="Traffic Congestion Map"
             className="w-full h-full object-cover"
           />
@@ -132,12 +152,6 @@ export default function TrafficCongestionPreview({
               <line x1="420" y1="0" x2="418" y2="500" stroke="#4b5563" strokeWidth="2" />
               <line x1="580" y1="0" x2="582" y2="500" stroke="#4b5563" strokeWidth="2" />
             </svg>
-            <span
-              className="relative z-10 font-medium tracking-wide opacity-40"
-              style={{ fontSize: isEditor ? '13px' : '2.5cqh', color: textColor }}
-            >
-              Congestion Map — API Pending
-            </span>
           </div>
         )}
       </div>
