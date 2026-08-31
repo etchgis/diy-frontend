@@ -35,6 +35,8 @@ export default function TrafficCongestionSlide({
   const setLogoImage = useTrafficCongestionStore((state) => state.setLogoImage);
   const mapCenter = useTrafficCongestionStore((state) => state.slides[slideId]?.mapCenter);
   const setMapCenter = useTrafficCongestionStore((state) => state.setMapCenter);
+  const mapZoom = useTrafficCongestionStore((state) => state.slides[slideId]?.mapZoom ?? 12);
+  const setMapZoom = useTrafficCongestionStore((state) => state.setMapZoom);
   const titleTextSize = useTrafficCongestionStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const setTitleTextSize = useTrafficCongestionStore((state) => state.setTitleTextSize);
   const contentTextSize = useTrafficCongestionStore((state) => state.slides[slideId]?.contentTextSize || 5);
@@ -146,6 +148,26 @@ export default function TrafficCongestionSlide({
                   Reset to screen center
                 </button>
               )}
+            </div>
+          </div>
+
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[#4a5568] font-medium text-xs">Zoom Level</label>
+              <span className="text-xs text-gray-500">{mapZoom}</span>
+            </div>
+            <input
+              type="range"
+              min={6}
+              max={14}
+              step={1}
+              value={mapZoom}
+              onChange={(e) => setMapZoom(slideId, Number(e.target.value))}
+              className="w-full accent-[#face00]"
+            />
+            <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+              <span>Zoomed out</span>
+              <span>Zoomed in</span>
             </div>
           </div>
 

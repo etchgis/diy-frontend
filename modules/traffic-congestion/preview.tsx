@@ -58,10 +58,10 @@ export default function TrafficCongestionPreview({
   }, []);
 
   const center = mapCenter ?? (coordinates ? [coordinates.lat, coordinates.lng] as [number, number] : null);
-  let etchMapUrl = `https://api.etch.app/astrostation/maps/${CONGESTION_ORG_ID}/${CONGESTION_SLUG}/static.png`;
-  if (center) {
-    etchMapUrl += `?lat=${center[0]}&lon=${center[1]}&zoom=${mapZoom}`;
-  }
+  const baseParams = center
+    ? `w=2048&h=1152&lat=${center[0]}&lon=${center[1]}&zoom=${mapZoom}`
+    : `w=2048&h=1152`;
+  const etchMapUrl = `https://api.etch.app/astrostation/maps/${CONGESTION_ORG_ID}/${CONGESTION_SLUG}/static.png?${baseParams}`;
 
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
