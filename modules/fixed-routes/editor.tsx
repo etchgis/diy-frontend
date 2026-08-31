@@ -1190,23 +1190,16 @@ export default function StopArrivalsSlide({
         return (b.isRealtime ? 1 : 0) - (a.isRealtime ? 1 : 0);
       });
 
-      const DEDUP_WINDOW_MS = 2 * 60 * 1000;
-      const seenTripIds = new Set<string>();
+      const DEDUP_WINDOW_MS = 5 * 60 * 1000;
       const uniqueArrivals: any[] = [];
       for (const arr of allArrivals) {
-        if (arr.tripId) {
-          const key = `${arr.tripId}|${arr._queryStopId}`;
-          if (seenTripIds.has(key)) continue;
-          seenTripIds.add(key);
-        }
         const arrTs = arr.arrivalScheduledTimestamp ?? arr.timestamp ?? 0;
         const isDupe = uniqueArrivals.some((u) => {
           const uTs = u.arrivalScheduledTimestamp ?? u.timestamp ?? 0;
-          return (
-            u.routeShortName === arr.routeShortName &&
-            u.destination === arr.destination &&
-            Math.abs(uTs - arrTs) <= DEDUP_WINDOW_MS
-          );
+          if (u.routeShortName !== arr.routeShortName || u.destination !== arr.destination) return false;
+          const timeDiff = Math.abs(uTs - arrTs);
+          if (timeDiff === 0) return true;
+          return timeDiff <= DEDUP_WINDOW_MS && u.isRealtime !== arr.isRealtime;
         });
         if (!isDupe) uniqueArrivals.push(arr);
       }
