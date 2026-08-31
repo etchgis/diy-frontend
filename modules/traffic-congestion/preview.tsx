@@ -5,7 +5,7 @@ import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/shared-components/footer";
 import HtmlTextEditor from "@/components/shared-components/html-text-editor";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const CONGESTION_ORG_ID = '2b651377-306a-4b79-a57b-91caf8aee555';
 const CONGESTION_SLUG = 'congestion-nyc';
@@ -51,6 +51,11 @@ export default function TrafficCongestionPreview({
   const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
 
   const [timeBucket, setTimeBucket] = useState(() => Math.floor(Date.now() / 120000));
+  const [imageLoading, setImageLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryKey, setRetryKey] = useState(0);
+  const loadedUrlRef = useRef('');
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => setTimeBucket(Math.floor(Date.now() / 120000)), 120000);
@@ -62,6 +67,15 @@ export default function TrafficCongestionPreview({
     ? `w=2048&h=1152&lat=${center[0]}&lon=${center[1]}&zoom=${mapZoom}`
     : `w=2048&h=1152`;
   const etchMapUrl = `https://api.etch.app/astrostation/maps/${CONGESTION_ORG_ID}/${CONGESTION_SLUG}/static.png?${baseParams}`;
+
+  useEffect(() => {
+    if (etchMapUrl !== loadedUrlRef.current) {
+      setImageLoading(true);
+      setRetryCount(0);
+      setRetryKey((k) => k + 1);
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    }
+  }, [etchMapUrl]);
 
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
@@ -124,12 +138,32 @@ export default function TrafficCongestionPreview({
       {/* Map Area */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
         {etchMapUrl ? (
-          <img
-            key={timeBucket}
-            src={etchMapUrl}
-            alt="Traffic Congestion Map"
-            className="w-full h-full object-cover"
-          />
+          <>
+            <img
+              key={`${timeBucket}-${retryKey}`}
+              src={etchMapUrl}
+              alt="Traffic Congestion Map"
+              className="w-full h-full object-cover"
+              onLoad={() => { loadedUrlRef.current = etchMapUrl; setImageLoading(false); setRetryCount(0); }}
+              onError={() => {
+                setRetryCount((prev) => {
+                  const next = prev + 1;
+                  if (next <= 3) {
+                    retryTimerRef.current = setTimeout(() => setRetryKey((k) => k + 1), next * 1500);
+                  } else {
+                    setImageLoading(false);
+                  }
+                  return next;
+                });
+              }}
+            />
+            {imageLoading && (
+              <div className="absolute top-3 right-3 z-20 flex items-center gap-2 bg-black/50 rounded-full px-3 py-1.5 pointer-events-none">
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
+                <span className="text-white text-xs font-medium">{retryCount > 0 ? `Retrying... (${retryCount}/3)` : 'Loading map...'}</span>
+              </div>
+            )}
+          </>
         ) : (
           /* Mock placeholder until the API is wired up */
           <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#1a1f2e]">

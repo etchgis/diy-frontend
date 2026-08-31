@@ -442,12 +442,15 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           continue;
         }
 
-        // Sort by arrival timestamp
-        allArrivals.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        // Sort real-time entries before scheduled so the real-time version wins dedup
+        allArrivals.sort((a, b) => {
+          if ((a.timestamp || 0) !== (b.timestamp || 0)) return (a.timestamp || 0) - (b.timestamp || 0);
+          return (b.isRealtime ? 1 : 0) - (a.isRealtime ? 1 : 0);
+        });
 
         const seen = new Set<string>();
         const uniqueArrivals = allArrivals.filter(arr => {
-          const key = `${arr.routeId}|${arr.destination}|${arr.timestamp}|${arr._queryStopId}`;
+          const key = `${arr.routeId}|${arr.destination}|${arr.arrivalScheduledTimestamp ?? arr.timestamp}|${arr._queryStopId}`;
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
