@@ -1183,26 +1183,36 @@ export default function StopArrivalsSlide({
         return;
       }
 
-      allArrivals.sort((a, b) => {
+      const DEDUP_WINDOW_MS = 7 * 60 * 1000;
+      const rtArrivals = allArrivals.filter((a) => a.isRealtime);
+      const schedArrivals = allArrivals.filter((a) => !a.isRealtime);
+
+      const uniqueArrivals: any[] = [];
+      const seenRtKey = new Set<string>();
+      for (const arr of rtArrivals) {
+        const key = `${arr.routeShortName}|${arr.destination}|${arr.arrivalScheduledTimestamp ?? arr.timestamp}`;
+        if (seenRtKey.has(key)) continue;
+        seenRtKey.add(key);
+        uniqueArrivals.push(arr);
+      }
+      for (const arr of schedArrivals) {
+        const arrTs = arr.arrivalScheduledTimestamp ?? arr.timestamp ?? 0;
+        const hasRtCover = rtArrivals.some((rt) => {
+          const rtTs = rt.arrivalScheduledTimestamp ?? rt.timestamp ?? 0;
+          return (
+            rt.routeShortName === arr.routeShortName &&
+            rt.destination === arr.destination &&
+            Math.abs(rtTs - arrTs) <= DEDUP_WINDOW_MS
+          );
+        });
+        if (!hasRtCover) uniqueArrivals.push(arr);
+      }
+
+      uniqueArrivals.sort((a, b) => {
         const aTs = a.arrivalScheduledTimestamp ?? a.timestamp ?? 0;
         const bTs = b.arrivalScheduledTimestamp ?? b.timestamp ?? 0;
-        if (aTs !== bTs) return aTs - bTs;
-        return (b.isRealtime ? 1 : 0) - (a.isRealtime ? 1 : 0);
+        return aTs - bTs;
       });
-
-      const DEDUP_WINDOW_MS = 5 * 60 * 1000;
-      const uniqueArrivals: any[] = [];
-      for (const arr of allArrivals) {
-        const arrTs = arr.arrivalScheduledTimestamp ?? arr.timestamp ?? 0;
-        const isDupe = uniqueArrivals.some((u) => {
-          const uTs = u.arrivalScheduledTimestamp ?? u.timestamp ?? 0;
-          if (u.routeShortName !== arr.routeShortName || u.destination !== arr.destination) return false;
-          const timeDiff = Math.abs(uTs - arrTs);
-          if (timeDiff === 0) return true;
-          return timeDiff <= DEDUP_WINDOW_MS && u.isRealtime !== arr.isRealtime;
-        });
-        if (!isDupe) uniqueArrivals.push(arr);
-      }
 
       const offsetMs = minArrivalMinutes * 60 * 1000;
       const offsetArrivals = offsetMs > 0
