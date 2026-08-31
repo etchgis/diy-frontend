@@ -109,6 +109,7 @@ function formatBusData(data: any) {
         // Normal headsign (e.g. "Flushing", "Jamaica - Far Rockaway") — use as-is
         return headsign;
       })(),
+      tripId: train.id || '',
       routeId: train.routeId || train.id?.split(':')[0] || '',
       routeShortName: (() => {
         const raw = train.shortName || train.routeId || train.id?.split(':')[0] || '';

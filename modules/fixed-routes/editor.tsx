@@ -1162,6 +1162,9 @@ export default function StopArrivalsSlide({
             routeTextColor: item.routeTextColor,
             time: item.arrivalTime,
             timestamp: item.arrivalTimestamp,
+            arrivalScheduledTimestamp: item.arrivalScheduledTimestamp,
+            isRealtime: item.isRealtime,
+            tripId: item.tripId,
             duration: item.arrival,
             status: item.status,
             _sourceService: q.serviceId,
@@ -1180,17 +1183,33 @@ export default function StopArrivalsSlide({
         return;
       }
 
-      // Sort by arrival timestamp
-      allArrivals.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-      // Deduplicate arrivals (same train can appear from multiple platform queries)
-      const seen = new Set<string>();
-      const uniqueArrivals = allArrivals.filter(arr => {
-        const key = `${arr.routeId}|${arr.destination}|${arr.timestamp}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
+      allArrivals.sort((a, b) => {
+        const aTs = a.arrivalScheduledTimestamp ?? a.timestamp ?? 0;
+        const bTs = b.arrivalScheduledTimestamp ?? b.timestamp ?? 0;
+        if (aTs !== bTs) return aTs - bTs;
+        return (b.isRealtime ? 1 : 0) - (a.isRealtime ? 1 : 0);
       });
+
+      const DEDUP_WINDOW_MS = 2 * 60 * 1000;
+      const seenTripIds = new Set<string>();
+      const uniqueArrivals: any[] = [];
+      for (const arr of allArrivals) {
+        if (arr.tripId) {
+          const key = `${arr.tripId}|${arr._queryStopId}`;
+          if (seenTripIds.has(key)) continue;
+          seenTripIds.add(key);
+        }
+        const arrTs = arr.arrivalScheduledTimestamp ?? arr.timestamp ?? 0;
+        const isDupe = uniqueArrivals.some((u) => {
+          const uTs = u.arrivalScheduledTimestamp ?? u.timestamp ?? 0;
+          return (
+            u.routeShortName === arr.routeShortName &&
+            u.destination === arr.destination &&
+            Math.abs(uTs - arrTs) <= DEDUP_WINDOW_MS
+          );
+        });
+        if (!isDupe) uniqueArrivals.push(arr);
+      }
 
       const offsetMs = minArrivalMinutes * 60 * 1000;
       const offsetArrivals = offsetMs > 0

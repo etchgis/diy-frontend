@@ -349,7 +349,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const getFixedRouteData = async () => {
     const currentSlides = useGeneralStore.getState().slides;
     const fixedRouteSlides = currentSlides.filter((slide: any) => slide.type === 'fixed-routes');
-
     if (!fixedRouteSlides.length) return;
 
     for (const slide of fixedRouteSlides) {
@@ -415,6 +414,9 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
               routeTextColor: item.routeTextColor,
               time: item.arrivalTime,
               timestamp: item.arrivalTimestamp,
+              arrivalScheduledTimestamp: item.arrivalScheduledTimestamp,
+              isRealtime: item.isRealtime,
+              tripId: item.tripId,
               duration: item.arrival,
               status: item.status,
               _sourceService: q.serviceId,
@@ -442,19 +444,34 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           continue;
         }
 
-        // Sort real-time entries before scheduled so the real-time version wins dedup
+        // Sort by scheduled time, real-time entries first within the same window
         allArrivals.sort((a, b) => {
-          if ((a.timestamp || 0) !== (b.timestamp || 0)) return (a.timestamp || 0) - (b.timestamp || 0);
+          const aTs = a.arrivalScheduledTimestamp ?? a.timestamp ?? 0;
+          const bTs = b.arrivalScheduledTimestamp ?? b.timestamp ?? 0;
+          if (aTs !== bTs) return aTs - bTs;
           return (b.isRealtime ? 1 : 0) - (a.isRealtime ? 1 : 0);
         });
 
-        const seen = new Set<string>();
-        const uniqueArrivals = allArrivals.filter(arr => {
-          const key = `${arr.routeId}|${arr.destination}|${arr.arrivalScheduledTimestamp ?? arr.timestamp}|${arr._queryStopId}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
+        const DEDUP_WINDOW_MS = 2 * 60 * 1000;
+        const seenTripIds = new Set<string>();
+        const uniqueArrivals: any[] = [];
+        for (const arr of allArrivals) {
+          if (arr.tripId) {
+            const key = `${arr.tripId}|${arr._queryStopId}`;
+            if (seenTripIds.has(key)) continue;
+            seenTripIds.add(key);
+          }
+          const arrTs = arr.arrivalScheduledTimestamp ?? arr.timestamp ?? 0;
+          const isDupe = uniqueArrivals.some((u) => {
+            const uTs = u.arrivalScheduledTimestamp ?? u.timestamp ?? 0;
+            return (
+              u.routeShortName === arr.routeShortName &&
+              u.destination === arr.destination &&
+              Math.abs(uTs - arrTs) <= DEDUP_WINDOW_MS
+            );
+          });
+          if (!isDupe) uniqueArrivals.push(arr);
+        }
 
         // Apply minimum arrival offset
         const offsetMs = minArrivalMinutes * 60 * 1000;
