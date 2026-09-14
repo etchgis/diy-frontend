@@ -42,7 +42,8 @@ import { useGeneralStore } from "@/stores/general";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react";
 import { useResScale } from "@/hooks/useResScale";
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
+import { useFitText } from "@/hooks/useFitText";
 import Footer from "@/components/shared-components/footer";
 import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 
@@ -208,6 +209,10 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
   const hasContent = (html: string) => !!html && !!html.replace(/<[^>]*>/g, '').trim();
+
+  const stopNameText = hasContent(displayName) ? displayName : (stopName || selectedStop?.name || selectedStop?.stop_name || '');
+  const stopNameRef = useFitText(`${6 * titleSizeMultiplier}cqh`, [stopNameText, titleSizeMultiplier], 8);
+  const titleHtmlRef = useFitText(`${5 * titleSizeMultiplier}cqh`, [titleHtml, titleSizeMultiplier], 8);
 
   // Get rail icon based on organization/agency name
   const getRailIcon = (): string => {
@@ -382,11 +387,12 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                 <div className="flex-1 overflow-hidden">
                   {showTitleHtml && titleHtml && (
                     <div
-                      className="font-bold overflow-hidden rich-text-content"
+                      ref={titleHtmlRef as React.RefObject<HTMLDivElement>}
+                      className="font-bold rich-text-content"
                       style={{
-                        fontSize: `${5 * titleSizeMultiplier}cqh`,
                         color: titleColor,
                         marginBottom: "0.5cqw",
+                        overflow: 'hidden',
                       }}
                       dangerouslySetInnerHTML={{ __html: titleHtml }}
                     />
@@ -421,20 +427,20 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
 
                   {showDisplayName && (
                     <h2
-                      className="font-bold mb-1 sm:mb-2 flex items-center gap-2 overflow-hidden"
+                      ref={stopNameRef as React.RefObject<HTMLHeadingElement>}
+                      className="font-bold flex items-center gap-2 overflow-hidden"
                       style={{
-                        fontSize: `${6 * titleSizeMultiplier}cqh`,
                         marginBottom: "0.5cqw",
                         textTransform: 'uppercase',
                       }}
                     >
                       {hasContent(displayName) ? (
                         <span
-                          className="truncate rich-text-content"
+                          className="rich-text-content"
                           dangerouslySetInnerHTML={{ __html: displayName }}
                         />
                       ) : (
-                        <span className="truncate">{stopName || selectedStop?.name || selectedStop?.stop_name || 'UNKNOWN STOP'}</span>
+                        <span>{stopName || selectedStop?.name || selectedStop?.stop_name || 'UNKNOWN STOP'}</span>
                       )}
                       {selectedStop?.wheelchairBoarding === 1 && (
                         <span

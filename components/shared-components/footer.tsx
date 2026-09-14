@@ -2,8 +2,9 @@ import { usePathname } from "next/navigation";
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { useFooterStore } from "@/stores/footer";
 import { useGeneralStore } from "@/stores/general";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useResScale } from "@/hooks/useResScale";
+import { useFitText } from "@/hooks/useFitText";
 
 export default function Footer({ previewMode = false }: { previewMode?: boolean }) {
   const pathname = usePathname();
@@ -47,8 +48,13 @@ export default function Footer({ previewMode = false }: { previewMode?: boolean 
 
   const imgMaxHeight = footerHeight * 0.72;
   const fontSize = Math.max(10, footerHeight * 0.38);
+  const fontSizeStr = `${fontSize}px`;
 
-  const renderSection = (type: string, image: string, text: string, altText: string) => {
+  const leftTextRef = useFitText(fontSizeStr, [leftText, fontSize], 8, footerHeight);
+  const middleTextRef = useFitText(fontSizeStr, [middleText, fontSize], 8, footerHeight);
+  const rightTextRef = useFitText(fontSizeStr, [rightText, fontSize], 8, footerHeight);
+
+  const renderSection = (type: string, image: string, text: string, altText: string, textRef?: ReturnType<typeof useFitText>) => {
     if (type === "none") {
       return null;
     } else if (type === "time") {
@@ -60,7 +66,8 @@ export default function Footer({ previewMode = false }: { previewMode?: boolean 
     } else if (type === "text") {
       return (
         <div
-          style={{ color: timeTextColor, fontSize }}
+          ref={textRef as React.RefObject<HTMLDivElement>}
+          style={{ color: timeTextColor }}
           dangerouslySetInnerHTML={{ __html: text }}
         />
       );
@@ -88,14 +95,14 @@ export default function Footer({ previewMode = false }: { previewMode?: boolean 
         paddingRight: footerHeight * 0.24,
       }}
     >
-      <div className="flex-1 min-w-0 flex items-center">
-        {renderSection(leftType, leftImage, leftText, "Left Footer")}
+      <div className="flex-1 min-w-0 flex items-center overflow-hidden">
+        {renderSection(leftType, leftImage, leftText, "Left Footer", leftTextRef)}
       </div>
-      <div className="flex-1 min-w-0 flex items-center justify-center">
-        {renderSection(middleType, middleImage, middleText, "Middle Footer")}
+      <div className="flex-1 min-w-0 flex items-center justify-center overflow-hidden">
+        {renderSection(middleType, middleImage, middleText, "Middle Footer", middleTextRef)}
       </div>
-      <div className="flex-1 min-w-0 flex items-center justify-end">
-        {renderSection(rightType, rightImage, rightText, "Right Footer")}
+      <div className="flex-1 min-w-0 flex items-center justify-end overflow-hidden">
+        {renderSection(rightType, rightImage, rightText, "Right Footer", rightTextRef)}
       </div>
     </div>
   );
