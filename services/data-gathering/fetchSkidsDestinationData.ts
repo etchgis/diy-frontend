@@ -307,8 +307,11 @@ export function transformSkidsResponse(
 }
 
 export interface SkidsFetchOptions {
-  numItineraries?: number;  
+  numItineraries?: number;
   maxWalkMeters?: number;
+  // Request true road/rail-following leg geometry. Only map-view slides need it;
+  // badge-only slides leave it off so the response stays small.
+  includeGeometry?: boolean;
 }
 
 /**
@@ -328,6 +331,9 @@ export async function fetchSkidsTransitData(
   }
   if (options?.numItineraries && options.numItineraries > 1) {
     apiOptions.numItineraries = options.numItineraries;
+  }
+  if (options?.includeGeometry) {
+    apiOptions.includeGeometry = true;
   }
 
   if (!SKIDS_URL) throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');

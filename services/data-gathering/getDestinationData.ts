@@ -7,7 +7,10 @@ import { formatTime, formatDuration } from "@/utils/formats";
 const USE_SKIDS = process.env.NEXT_PUBLIC_USE_SKIDS !== 'false';
 
 export interface DestinationFetchOptions {
-  maxWalkDistance?: number; 
+  maxWalkDistance?: number;
+  // Ask the routing API for true road/rail-following leg geometry. Set only for
+  // map-view slides that draw the polyline; badge-only slides leave it off.
+  includeGeometry?: boolean;
 }
 
 function scoreItinerary(itinerary: { routeSignature: string[] }, preferred: string[]): number {
@@ -60,14 +63,17 @@ export async function getDestinationData(
       : null;
     const newLegs = chosen?.legs ?? (Array.isArray(data.legs) ? data.legs : []);
     const existingLegs = Array.isArray((dest as any).legs) ? (dest as any).legs : [];
-    const newHaveGeometry = newLegs.some((l: any) => l.legGeometry?.points);
+    // Leg display is independent of geometry: a badge-only slide (which does not
+    // request geometry) still shows fresh legs. Only fall back to the previous
+    // legs when this fetch returned none at all, so a transient empty result does
+    // not blank out an already-populated slide.
     return {
       name: data.name ?? dest.name,
       route: chosen?.route ?? data.route ?? null,
       departure: chosen?.departure ?? data.departure ?? null,
       arrival: chosen?.arrival ?? data.arrival ?? null,
       travel: chosen?.travel ?? data.travel ?? null,
-      legs: newHaveGeometry ? newLegs : existingLegs,
+      legs: newLegs.length > 0 ? newLegs : existingLegs,
       coordinates: dest.coordinates,
       dark: index % 2 === 0,
       originStop: data.originStop ?? null,
@@ -87,7 +93,7 @@ export async function getDestinationData(
             fetchSkidsTransitData(
               { lat: coordinates.lat, lng: coordinates.lng },
               [dest],
-              { numItineraries: 3, maxWalkMeters: dest.maxWalkDistance ?? options?.maxWalkDistance }
+              { numItineraries: 3, maxWalkMeters: dest.maxWalkDistance ?? options?.maxWalkDistance, includeGeometry: options?.includeGeometry }
             )
           )
         );
@@ -103,7 +109,7 @@ export async function getDestinationData(
         const results = await fetchSkidsTransitData(
           { lat: coordinates.lat, lng: coordinates.lng },
           destList,
-          { numItineraries: 3, maxWalkMeters: options?.maxWalkDistance }
+          { numItineraries: 3, maxWalkMeters: options?.maxWalkDistance, includeGeometry: options?.includeGeometry }
         );
         enrichedDestinations = results.map((data, index) => buildEnriched(data, destList[index], index));
       }
