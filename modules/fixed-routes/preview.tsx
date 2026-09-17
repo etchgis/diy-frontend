@@ -148,8 +148,13 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const applyAlias = (destination: string, routeShortName?: string) => {
     const key = (destination || '').toLowerCase().trim();
     if (routeShortName) {
-      const routeKey = `${routeShortName.toLowerCase().trim()}|${key}`;
+      const rsn = routeShortName.toLowerCase().trim();
+      const routeKey = `${rsn}|${key}`;
       if (headsignAliasMap[routeKey] !== undefined) return headsignAliasMap[routeKey];
+      if (key === rsn) {
+        const routeAliases = Object.entries(headsignAliasMap).filter(([k]) => k.startsWith(`${rsn}|`));
+        if (routeAliases.length === 1) return routeAliases[0][1];
+      }
     }
     return headsignAliasMap[key] ?? destination;
   };

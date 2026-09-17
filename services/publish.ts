@@ -636,13 +636,18 @@ export async function sendPublishPayload(json: any) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   if (!backendUrl) throw new Error('Missing backend URL');
 
+  const body = JSON.stringify(json);
+  console.log(`[PUBLISH] payload size: ${(body.length / 1024).toFixed(1)} KB`);
   const response = await fetch(`${backendUrl}/upload/${json.shortcode}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(json),
+    body,
   });
 
-  if (!response.ok) throw new Error(`Failed to publish: ${response.statusText}`);
+  if (!response.ok) {
+    const body = await response.text().catch(() => '(unreadable)');
+    throw new Error(`Failed to publish: ${response.status} ${response.statusText} — ${body}`);
+  }
   return response.json();
 }
 

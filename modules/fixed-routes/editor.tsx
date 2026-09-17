@@ -1183,6 +1183,41 @@ export default function StopArrivalsSlide({
         return;
       }
 
+      // For agencies whose GTFS-RT feed omits trip headsign, destination comes back null.
+      // Build a per-service, per-route fallback from direction options: if a route has exactly
+      // one headsign option at this stop we can safely infer the destination.
+      const destinationFallbackMap = new Map<string, string>();
+      for (const sel of serviceSelections as ServiceSelection[]) {
+        const byRoute = new Map<string, Set<string>>();
+        for (const route of (sel.routes || []) as RouteInfo[]) {
+          if (sel.enabledRouteIds?.length && !sel.enabledRouteIds.includes(route.id)) continue;
+          const rsn = (route.shortName || '').toLowerCase();
+          if (!rsn) continue;
+          if (!byRoute.has(rsn)) byRoute.set(rsn, new Set());
+          for (const h of (route.headsigns || [])) {
+            byRoute.get(rsn)!.add(h);
+          }
+        }
+        for (const o of (sel.directionOptions || []) as DirectionOption[]) {
+          if (o.isAllDirections || !o.headsignFilter || !o.routeShortName) continue;
+          const rsn = o.routeShortName.toLowerCase();
+          if (!byRoute.has(rsn)) byRoute.set(rsn, new Set());
+          byRoute.get(rsn)!.add(o.headsignFilter);
+        }
+        for (const [rsn, headsigns] of byRoute.entries()) {
+          if (headsigns.size === 1) {
+            destinationFallbackMap.set(`${sel.serviceId}|${rsn}`, [...headsigns][0]);
+          }
+        }
+      }
+      for (let i = 0; i < allArrivals.length; i++) {
+        const arr = allArrivals[i];
+        if (arr.destination) continue;
+        const rsnKey = (arr.routeShortName || '').toLowerCase();
+        const fallback = destinationFallbackMap.get(`${arr._sourceService}|${rsnKey}`);
+        if (fallback) allArrivals[i] = { ...arr, destination: fallback };
+      }
+
       const DEDUP_WINDOW_MS = 7 * 60 * 1000;
       const rtArrivals = allArrivals.filter((a) => a.isRealtime);
       const schedArrivals = allArrivals.filter((a) => !a.isRealtime);
