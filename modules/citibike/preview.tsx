@@ -1,5 +1,5 @@
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
-import { useCitibikeStore, KNOWN_PROVIDERS, type RentalStation } from "./store";
+import { useCitibikeStore, KNOWN_PROVIDERS, type GbfsProvider, type RentalStation } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData";
 import { fetchAllStops } from "@/services/data-gathering/fetchAllStops";
@@ -15,6 +15,14 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY as string;
 if (typeof window !== 'undefined') mapboxgl.prewarm();
 
 const EMPTY_STATIONS: RentalStation[] = [];
+const EMPTY_PROVIDER_DATA: Record<string, RentalStation[]> = {};
+
+function resolveProviders(slide: any): GbfsProvider[] {
+  if (slide?.selectedProviders?.length) return slide.selectedProviders;
+  const legacy = slide?.selectedProvider;
+  if (legacy) return [legacy];
+  return [KNOWN_PROVIDERS[0]];
+}
 
 export default function CitibikePreview({
   slideId,
@@ -38,51 +46,22 @@ export default function CitibikePreview({
 
   const title = useCitibikeStore((state) => state.slides[slideId]?.title || "");
   const setTitle = useCitibikeStore((state) => state.setTitle);
-  const backgroundColor = useCitibikeStore(
-    (state) => state.slides[slideId]?.backgroundColor || "#192F51"
-  );
-  const bgImage = useCitibikeStore(
-    (state) => state.slides[slideId]?.bgImage || ""
-  );
-  const titleColor = useCitibikeStore(
-    (state) => state.slides[slideId]?.titleColor || "#ffffff"
-  );
-  const textColor = useCitibikeStore(
-    (state) => state.slides[slideId]?.textColor || "#ffffff"
-  );
-  const logoImage = useCitibikeStore(
-    (state) => state.slides[slideId]?.logoImage || ""
-  );
-  const stationData = useCitibikeStore(
-    (state) => state.slides[slideId]?.stationData ?? EMPTY_STATIONS
-  );
-  const selectedProvider = useCitibikeStore(
-    (state) => state.slides[slideId]?.selectedProvider ?? KNOWN_PROVIDERS[0]
-  );
-  const dataError = useCitibikeStore(
-    (state) => state.slides[slideId]?.dataError || false
-  );
-  const dataLoaded = useCitibikeStore(
-    (state) => state.slides[slideId]?.dataLoaded ?? false
-  );
-  const vehicleMarkerColor = useCitibikeStore(
-    (state) => state.slides[slideId]?.vehicleMarkerColor || '#22C55E'
-  );
-  const mutedMap = useCitibikeStore(
-    (state) => state.slides[slideId]?.mutedMap !== false
-  );
-  const showTransitStops = useCitibikeStore(
-    (state) => state.slides[slideId]?.showTransitStops !== false
-  );
-  const showTitle = useCitibikeStore(
-    (state) => state.slides[slideId]?.showTitle !== false
-  );
-  const titleTextSize = useCitibikeStore(
-    (state) => state.slides[slideId]?.titleTextSize || 5
-  );
-  const contentTextSize = useCitibikeStore(
-    (state) => state.slides[slideId]?.contentTextSize || 5
-  );
+  const backgroundColor = useCitibikeStore((state) => state.slides[slideId]?.backgroundColor || "#192F51");
+  const bgImage = useCitibikeStore((state) => state.slides[slideId]?.bgImage || "");
+  const titleColor = useCitibikeStore((state) => state.slides[slideId]?.titleColor || "#ffffff");
+  const textColor = useCitibikeStore((state) => state.slides[slideId]?.textColor || "#ffffff");
+  const logoImage = useCitibikeStore((state) => state.slides[slideId]?.logoImage || "");
+  const stationData = useCitibikeStore((state) => state.slides[slideId]?.stationData ?? EMPTY_STATIONS);
+  const providerData = useCitibikeStore((state) => state.slides[slideId]?.providerData ?? EMPTY_PROVIDER_DATA);
+  const slideRaw = useCitibikeStore((state) => state.slides[slideId]);
+  const selectedProviders = resolveProviders(slideRaw);
+  const dataError = useCitibikeStore((state) => state.slides[slideId]?.dataError || false);
+  const dataLoaded = useCitibikeStore((state) => state.slides[slideId]?.dataLoaded ?? false);
+  const mutedMap = useCitibikeStore((state) => state.slides[slideId]?.mutedMap !== false);
+  const showTransitStops = useCitibikeStore((state) => state.slides[slideId]?.showTransitStops !== false);
+  const showTitle = useCitibikeStore((state) => state.slides[slideId]?.showTitle !== false);
+  const titleTextSize = useCitibikeStore((state) => state.slides[slideId]?.titleTextSize || 5);
+  const contentTextSize = useCitibikeStore((state) => state.slides[slideId]?.contentTextSize || 5);
 
   const coordinates = useGeneralStore(
     (state) => state.coordinates,
@@ -95,11 +74,9 @@ export default function CitibikePreview({
   const resScale = useResScale(resolution);
   const logoHeight = isEditor ? logoBaseHeight : logoBaseHeight * resScale;
 
-  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
-  // Fetch data on mount in editor mode
   useEffect(() => {
     if (isEditor && coordinates && !hasFetched.current) {
       hasFetched.current = true;
@@ -107,14 +84,12 @@ export default function CitibikePreview({
     }
   }, [isEditor, coordinates, slideId]);
 
-  // Initialize map — defer until the container has real pixel dimensions
   useEffect(() => {
     if (!mapContainerRef.current || !coordinates) return;
     if (mapRef.current) return;
 
     const container = mapContainerRef.current;
     let initObserver: ResizeObserver | null = null;
-
     let destroyed = false;
 
     const handleWindowResize = () => {
@@ -139,10 +114,7 @@ export default function CitibikePreview({
       });
 
       map.addControl(
-        new mapboxgl.AttributionControl({
-          compact: true,
-          customAttribution: "© Mapbox © OpenStreetMap",
-        }),
+        new mapboxgl.AttributionControl({ compact: true, customAttribution: "© Mapbox © OpenStreetMap" }),
         "top-right"
       );
 
@@ -194,12 +166,9 @@ export default function CitibikePreview({
     };
   }, [coordinates]);
 
-  // Update markers when station data or marker color changes
   useEffect(() => {
-    if (isMapLoadedRef.current) {
-      addMarkers();
-    }
-  }, [stationData, vehicleMarkerColor]);
+    if (isMapLoadedRef.current) addMarkers();
+  }, [stationData, providerData]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -212,8 +181,6 @@ export default function CitibikePreview({
     if (isMapLoadedRef.current) addTransitStopMarkers();
   }, [showTransitStops]);
 
-  // Force resize after mount — ensures the canvas fills the container correctly
-  // when the map initializes inside a CSS-transformed or initially-hidden parent
   useEffect(() => {
     const timer = setTimeout(() => {
       if (mapRef.current) mapRef.current.resize();
@@ -221,98 +188,96 @@ export default function CitibikePreview({
     return () => clearTimeout(timer);
   }, []);
 
-  function getMarkerColor(bikes: number): string {
+  function getBikeMarkerColor(bikes: number): string {
     if (bikes === 0) return "#DC2626";
     if (bikes <= 5) return "#D97706";
     return "#16a34a";
   }
 
+  function getProviderInitial(providerId: string): string {
+    if (providerId.startsWith('citibike')) return 'C';
+    if (providerId.startsWith('bird')) return 'B';
+    if (providerId.startsWith('lime')) return 'L';
+    if (providerId.startsWith('veo')) return 'V';
+    return '?';
+  }
+
   function addMarkers() {
     if (!mapRef.current || !coordinates) return;
 
-    // Clear existing markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    // Origin marker
     const originEl = document.createElement("div");
     originEl.style.cssText = `
-      width: 20px;
-      height: 20px;
+      width: 20px; height: 20px;
       background: #FF4444;
       border: 3px solid white;
       border-radius: 50%;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     `;
-    const originMarker = new mapboxgl.Marker({
-      element: originEl,
-      anchor: "center",
-    })
-      .setLngLat([coordinates.lng, coordinates.lat])
-      .addTo(mapRef.current);
-    markersRef.current.push(originMarker);
+    markersRef.current.push(
+      new mapboxgl.Marker({ element: originEl, anchor: "center" })
+        .setLngLat([coordinates.lng, coordinates.lat])
+        .addTo(mapRef.current)
+    );
 
-    // Station/vehicle markers
-    const isScooter = selectedProvider.vehicleType === 'scooter';
-    for (const station of stationData) {
-      const el = document.createElement("div");
-      if (isScooter) {
-        // const rangeMiles = station.currentRangeMeters != null
-        //   ? Math.round(station.currentRangeMeters / 1609.34)
-        //   : null;
-        el.style.cssText = `
-          width: 14px;
-          height: 14px;
-          background: ${vehicleMarkerColor};
-          border: 2px solid white;
-          border-radius: 50%;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-          cursor: default;
-        `;
-        // if (rangeMiles != null) {
-        //   el.textContent = `${rangeMiles}mi`;
-        // }
-      } else {
-        const totalBikes = station.bikesAvailable;
-        const color = getMarkerColor(totalBikes);
-        const scale = isEditor ? 1 : Math.max(resScale * 1.25, 1.1);
-        const size = Math.round(48 * scale);
-        const font = Math.round(15 * scale);
-        const border = Math.round(3 * scale);
-        el.style.cssText = `
-          width: ${size}px;
-          height: ${size}px;
-          background: ${color};
-          border: ${border}px solid white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: ${font}px;
-          color: white;
-          box-shadow: 0 3px 10px rgba(0,0,0,0.5);
-          cursor: default;
-        `;
-        el.textContent = String(totalBikes);
+    const scale = isEditor ? 1 : Math.max(resScale * 1.25, 1.1);
+
+    for (const provider of selectedProviders) {
+      const stations = providerData[provider.id] ?? [];
+      const initial = getProviderInitial(provider.id);
+
+      for (const station of stations) {
+        const el = document.createElement("div");
+
+        if (provider.vehicleType === 'scooter') {
+          const dotSize = Math.round(22 * scale);
+          const fontSize = Math.round(11 * scale);
+          el.style.cssText = `
+            width: ${dotSize}px; height: ${dotSize}px;
+            background: ${provider.brandColor};
+            border: ${Math.round(2 * scale)}px solid white;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+            cursor: default;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: ${fontSize}px; font-weight: 700;
+            font-family: sans-serif; line-height: 1;
+          `;
+          el.textContent = initial;
+        } else {
+          const totalBikes = station.bikesAvailable;
+          const color = getBikeMarkerColor(totalBikes);
+          const size = Math.round(48 * scale);
+          const font = Math.round(15 * scale);
+          const border = Math.round(3 * scale);
+          el.style.cssText = `
+            width: ${size}px; height: ${size}px;
+            background: ${color};
+            border: ${border}px solid white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: ${font}px;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+            cursor: default;
+          `;
+          el.textContent = String(totalBikes);
+        }
+
+        markersRef.current.push(
+          new mapboxgl.Marker({ element: el, anchor: "center" })
+            .setLngLat([station.lon, station.lat])
+            .addTo(mapRef.current!)
+        );
       }
-
-      const marker = new mapboxgl.Marker({
-        element: el,
-        anchor: "center",
-      })
-        .setLngLat([station.lon, station.lat])
-        .addTo(mapRef.current!);
-      markersRef.current.push(marker);
     }
 
-    // Fit bounds
     if (stationData.length > 0) {
       const bounds = new mapboxgl.LngLatBounds();
       bounds.extend([coordinates.lng, coordinates.lat]);
-      for (const s of stationData) {
-        bounds.extend([s.lon, s.lat]);
-      }
+      for (const s of stationData) bounds.extend([s.lon, s.lat]);
       mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 16 });
     }
   }
@@ -356,11 +321,7 @@ export default function CitibikePreview({
           if (isCommuterRail && commuterLabel) {
             if (!cluster.routes.find((r) => r.shortName === commuterLabel)) {
               const firstRouteColor = (service.routes || [])[0]?.color || commuterColor;
-              cluster.routes.push({
-                shortName: commuterLabel,
-                color: firstRouteColor,
-                textColor: 'FFFFFF',
-              });
+              cluster.routes.push({ shortName: commuterLabel, color: firstRouteColor, textColor: 'FFFFFF' });
             }
             continue;
           }
@@ -371,11 +332,7 @@ export default function CitibikePreview({
             const isSubwayLine = isMTATransit && /^([1-7]|[ACEJZNSRLMGBDFWQ])$/.test(sn);
             if (!isSubwayLine) continue;
             if (cluster.routes.find((r) => r.shortName === sn)) continue;
-            cluster.routes.push({
-              shortName: sn,
-              color: route.color,
-              textColor: route.textColor || 'FFFFFF',
-            });
+            cluster.routes.push({ shortName: sn, color: route.color, textColor: route.textColor || 'FFFFFF' });
           }
         }
       }
@@ -390,24 +347,16 @@ export default function CitibikePreview({
         if (cluster.routes.length === 0) continue;
 
         const el = document.createElement('div');
-        el.style.cssText = `
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          pointer-events: none;
-        `;
+        el.style.cssText = `display: flex; flex-direction: column; align-items: center; pointer-events: none;`;
 
         const bubble = document.createElement('div');
         bubble.style.cssText = `
           background: rgba(255,255,255,0.6);
           border-radius: ${Math.round(6 * scale)}px;
           padding: ${Math.round(4 * scale)}px ${Math.round(5 * scale)}px;
-          display: flex;
-          gap: ${gap}px;
-          align-items: center;
+          display: flex; gap: ${gap}px; align-items: center;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
           border: ${Math.round(1.5 * scale)}px solid rgba(0,0,0,0.08);
-
         `;
 
         for (const route of cluster.routes.slice(0, 4)) {
@@ -420,17 +369,12 @@ export default function CitibikePreview({
               : `height: ${bulletSize}px; padding: 0 ${Math.round(4 * scale)}px;`}
             background: #${route.color};
             color: #${route.textColor};
-            font-size: ${fontSize}px;
-            font-weight: 900;
+            font-size: ${fontSize}px; font-weight: 900;
             border-radius: ${isCircle ? '50%' : `${Math.round(bulletSize / 4)}px`};
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             border: ${Math.round(2 * scale)}px solid white;
-            line-height: 1;
-            font-family: sans-serif;
-            flex-shrink: 0;
-            white-space: nowrap;
+            line-height: 1; font-family: sans-serif;
+            flex-shrink: 0; white-space: nowrap;
           `;
           bullet.textContent = route.shortName;
           bubble.appendChild(bullet);
@@ -438,19 +382,14 @@ export default function CitibikePreview({
 
         if (cluster.routes.length > 4) {
           const more = document.createElement('div');
-          more.style.cssText = `
-            font-size: ${Math.round(9 * scale)}px; font-weight: 700;
-            color: #555; padding: 0 2px;
-          `;
+          more.style.cssText = `font-size: ${Math.round(9 * scale)}px; font-weight: 700; color: #555; padding: 0 2px;`;
           more.textContent = `+${cluster.routes.length - 4}`;
           bubble.appendChild(more);
         }
 
-        // Downward-pointing triangle
         const triangle = document.createElement('div');
         triangle.style.cssText = `
-          width: 0;
-          height: 0;
+          width: 0; height: 0;
           border-left: ${triSize}px solid transparent;
           border-right: ${triSize}px solid transparent;
           border-top: ${triSize}px solid rgba(255,255,255,0.75);
@@ -463,7 +402,6 @@ export default function CitibikePreview({
         const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
           .setLngLat([cluster.lon, cluster.lat])
           .addTo(mapRef.current);
-        // Lift the Mapbox wrapper above Citi Bike station circles
         const wrapper = el.parentElement;
         if (wrapper) wrapper.style.zIndex = '20';
         transitMarkersRef.current.push(marker);
@@ -473,8 +411,6 @@ export default function CitibikePreview({
     }
   }
 
-  // Keep refs in sync with the latest render's closures so async map callbacks
-  // (load, style.load) always read current stationData instead of a stale one.
   addMarkersRef.current = addMarkers;
   addTransitStopMarkersRef.current = addTransitStopMarkers;
 
@@ -490,14 +426,9 @@ export default function CitibikePreview({
         fontFamily: defaultFontFamily && defaultFontFamily !== 'System Default' ? defaultFontFamily : undefined,
       }}
     >
-      {/* Title + Logo */}
       {showTitle && (
         <div className="p-3 border-b border-white/20 flex-shrink-0 flex items-center">
-          <div
-            className={`flex-1 rounded px-4 ${
-              isEditor ? "border-2 border-[#11d1f7] py-2" : ""
-            }`}
-          >
+          <div className={`flex-1 rounded px-4 ${isEditor ? "border-2 border-[#11d1f7] py-2" : ""}`}>
             {isEditor ? (
               <HtmlTextEditor
                 content={title}
@@ -509,11 +440,7 @@ export default function CitibikePreview({
             ) : (
               <div
                 className="w-full bg-transparent font-light rich-text-content"
-                style={{
-                  color: titleColor,
-                  fontSize: `${6 * titleSizeMultiplier}cqh`,
-                  lineHeight: "1.2",
-                }}
+                style={{ color: titleColor, fontSize: `${6 * titleSizeMultiplier}cqh`, lineHeight: "1.2" }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
               />
             )}
@@ -529,37 +456,23 @@ export default function CitibikePreview({
         </div>
       )}
 
-      {/* Content: Map + Station List */}
       <div className="flex-1 min-h-0 flex">
         <div className="flex-1 relative" style={{ width: "75%" }}>
           {dataError ? (
             <div className="w-full h-full flex items-center justify-center">
-              <p
-                style={{
-                  color: textColor,
-                  opacity: 0.7,
-                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
-                }}
-              >
-                Unable to load {selectedProvider.name} data.
+              <p style={{
+                color: textColor, opacity: 0.7,
+                fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
+              }}>
+                Unable to load data for one or more providers.
               </p>
             </div>
           ) : (
-            <div
-              ref={mapContainerRef}
-              className="absolute inset-0"
-              style={{ width: "100%", height: "100%" }}
-            />
+            <div ref={mapContainerRef} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
           )}
         </div>
 
-        <div
-          className="overflow-y-auto"
-          style={{
-            width: "25%",
-            backgroundColor: "rgba(0,0,0,0.3)",
-          }}
-        >
+        <div className="overflow-y-auto" style={{ width: "25%", backgroundColor: "rgba(0,0,0,0.3)" }}>
           {stationData.length === 0 && !dataError ? (
             <div
               className="p-3 text-center"
@@ -568,126 +481,91 @@ export default function CitibikePreview({
                 fontSize: isEditor ? `${12.8 * contentSizeMultiplier}px` : `${1.8 * contentSizeMultiplier}cqh`,
               }}
             >
-              {!coordinates
-                ? "No location set"
-                : !dataLoaded
-                ? "Loading..."
-                : `No ${selectedProvider.vehicleType === 'scooter' ? 'scooters' : 'stations'} found nearby. Try increasing the search radius.`}
-            </div>
-          ) : selectedProvider.vehicleType === 'scooter' ? (
-            <div className="p-2">
-              <div
-                className="font-medium mb-2 pb-1"
-                style={{
-                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
-                  borderBottom: "1px solid rgba(255,255,255,0.2)",
-                }}
-              >
-                {selectedProvider.name}
-              </div>
-              <div
-                className="mt-3"
-                style={{ fontSize: isEditor ? `${40 * contentSizeMultiplier}px` : `${5 * contentSizeMultiplier}cqh`, fontWeight: 700 }}
-              >
-                {stationData.length}
-              </div>
-              <div
-                style={{
-                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}cqh`,
-                  opacity: 0.75,
-                  marginTop: "2px",
-                }}
-              >
-                scooters nearby
-              </div>
-              {stationData[0] && (
-                <div
-                  className="mt-3"
-                  style={{ fontSize: isEditor ? `${15 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}cqh` }}
-                >
-                  <div style={{ opacity: 0.7 }}>Nearest</div>
-                  <div style={{ fontWeight: 600 }}>{stationData[0].distance} mi</div>
-                </div>
-              )}
-              <div
-                className="mt-3 pt-2"
-                style={{
-                  borderTop: "1px solid rgba(255,255,255,0.2)",
-                  fontSize: isEditor ? `${14 * contentSizeMultiplier}px` : `${1.9 * contentSizeMultiplier}cqh`,
-                }}
-              >
-                {[
-                  { label: "Within 0.1 mi",         fn: (d: number) => d <= 0.1 },
-                  { label: "0.1 mi – 0.25 mi",       fn: (d: number) => d > 0.1 && d <= 0.25 },
-                  { label: "Further than 0.25 mi",   fn: (d: number) => d > 0.25 },
-                ].map(({ label, fn }) => {
-                  const count = stationData.filter((s) => fn(s.distance)).length;
-                  return (
-                    <div key={label} className="flex justify-between mb-1" style={{ opacity: 0.85 }}>
-                      <span>{label}</span>
-                      <span style={{ fontWeight: 600 }}>{count}</span>
-                    </div>
-                  );
-                })}
-              </div>
+              {!coordinates ? "No location set" : !dataLoaded ? "Loading..." : "No vehicles found nearby. Try increasing the search radius."}
             </div>
           ) : (
-            <div className="p-2">
-              <div
-                className="font-medium mb-2 pb-1"
-                style={{
-                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
-                  borderBottom: "1px solid rgba(255,255,255,0.2)",
-                }}
-              >
-                {selectedProvider.name}
-              </div>
-              {stationData.map((station) => {
-                const total = station.vehiclesAvailable ?? station.bikesAvailable;
-                const regularBikes = station.bikesAvailable - station.ebikesAvailable;
-                return (
-                  <div
-                    key={station.stationId}
-                    className="mb-2 pb-2"
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}
-                  >
-                    <div
-                      className="font-medium"
-                      style={{ fontSize: isEditor ? `${13.6 * contentSizeMultiplier}px` : `${2 * contentSizeMultiplier}cqh` }}
-                    >
-                      {station.name}
-                    </div>
-                    <div
-                      className="mt-1"
-                      style={{
-                        fontSize: isEditor ? `${11.2 * contentSizeMultiplier}px` : `${1.7 * contentSizeMultiplier}cqh`,
-                        opacity: 0.8,
-                      }}
-                    >
-                      <div className="flex justify-between">
-                        <span>Bikes: {regularBikes} | E-Bikes: {station.ebikesAvailable}</span>
-                        <span>{station.distance} mi</span>
-                      </div>
-                      <div
-                        style={{
-                          color: total === 0 ? "#DC2626" : total <= 5 ? "#D97706" : "#16a34a",
-                          fontWeight: 600,
-                          marginTop: "2px",
-                        }}
-                      >
-                        Total: {total}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <MergedStationList
+              selectedProviders={selectedProviders}
+              providerData={providerData}
+              isEditor={isEditor}
+              contentSizeMultiplier={contentSizeMultiplier}
+            />
           )}
         </div>
       </div>
 
-      {/* Footer */}
       {showFooter && <Footer previewMode={previewMode} />}
+    </div>
+  );
+}
+
+type TaggedStation = RentalStation & { provider: GbfsProvider };
+
+function MergedStationList({
+  selectedProviders,
+  providerData,
+  isEditor,
+  contentSizeMultiplier,
+}: {
+  selectedProviders: GbfsProvider[];
+  providerData: Record<string, RentalStation[]>;
+  isEditor: boolean;
+  contentSizeMultiplier: number;
+}) {
+  const nameSize = isEditor ? `${13 * contentSizeMultiplier}px` : `${1.9 * contentSizeMultiplier}cqh`;
+  const smallSize = isEditor ? `${11 * contentSizeMultiplier}px` : `${1.6 * contentSizeMultiplier}cqh`;
+
+  const merged: TaggedStation[] = [];
+  for (const provider of selectedProviders) {
+    for (const station of (providerData[provider.id] ?? [])) {
+      merged.push({ ...station, provider });
+    }
+  }
+  merged.sort((a, b) => a.distance - b.distance);
+
+  return (
+    <div className="p-2">
+      {merged.map((station, i) => {
+        const isBike = station.provider.vehicleType === 'bike';
+        const total = station.vehiclesAvailable ?? station.bikesAvailable;
+        const regularBikes = station.bikesAvailable - station.ebikesAvailable;
+        const availColor = total === 0 ? "#DC2626" : total <= 5 ? "#D97706" : "#16a34a";
+
+        return (
+          <div
+            key={`${station.provider.id}-${station.stationId}-${i}`}
+            className="pb-2 mb-2"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            <div className="flex items-start justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate" style={{ fontSize: nameSize }}>
+                  {isBike ? station.name : "Scooter"}
+                </div>
+                <div className="flex items-center gap-1 mt-0.5" style={{ fontSize: smallSize, opacity: 0.7 }}>
+                  <span
+                    style={{
+                      display: 'inline-block', width: '0.6em', height: '0.6em',
+                      borderRadius: '50%', background: station.provider.brandColor, flexShrink: 0,
+                    }}
+                  />
+                  {station.provider.name}
+                </div>
+              </div>
+              <div className="flex-shrink-0 text-right" style={{ fontSize: smallSize }}>
+                <div style={{ fontWeight: 600 }}>{station.distance} mi</div>
+              </div>
+            </div>
+
+            {isBike && (
+              <div className="mt-1" style={{ fontSize: smallSize }}>
+                <span style={{ color: availColor, fontWeight: 600 }}>{total} available</span>
+                <span style={{ opacity: 0.65 }}> · {regularBikes} bike{regularBikes !== 1 ? 's' : ''} · {station.ebikesAvailable} e-bike{station.ebikesAvailable !== 1 ? 's' : ''}</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

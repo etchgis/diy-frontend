@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input"
 import { ChevronRight } from "lucide-react"
 import CitibikePreview from "./preview"
 import { useEffect, useRef } from "react"
-import { useCitibikeStore, KNOWN_PROVIDERS } from "./store"
+import { useCitibikeStore, KNOWN_PROVIDERS, type GbfsProvider } from "./store"
 import { useGeneralStore } from "@/stores/general"
 import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData"
 import { useLocalSaveStatus } from "@/hooks/useLocalSaveStatus"
@@ -24,10 +24,13 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
   const setLogoImage = useCitibikeStore((state) => state.setLogoImage);
   const searchRadius = useCitibikeStore((state) => state.slides[slideId]?.searchRadius || 0.5);
   const setSearchRadius = useCitibikeStore((state) => state.setSearchRadius);
-  const selectedProvider = useCitibikeStore((state) => state.slides[slideId]?.selectedProvider ?? KNOWN_PROVIDERS[0]);
-  const setSelectedProvider = useCitibikeStore((state) => state.setSelectedProvider);
-  const vehicleMarkerColor = useCitibikeStore((state) => state.slides[slideId]?.vehicleMarkerColor || '#22C55E');
-  const setVehicleMarkerColor = useCitibikeStore((state) => state.setVehicleMarkerColor);
+  const slideRaw = useCitibikeStore((state) => state.slides[slideId]);
+  const selectedProviders: GbfsProvider[] = (slideRaw as any)?.selectedProviders?.length
+    ? (slideRaw as any).selectedProviders
+    : (slideRaw as any)?.selectedProvider
+      ? [(slideRaw as any).selectedProvider]
+      : [KNOWN_PROVIDERS[0]];
+  const setSelectedProviders = useCitibikeStore((state) => state.setSelectedProviders);
 
   const titleTextSize = useCitibikeStore((state) => state.slides[slideId]?.titleTextSize || 5);
   const setTitleTextSize = useCitibikeStore((state) => state.setTitleTextSize);
@@ -198,43 +201,45 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
           </div>
 
           <div>
-            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Provider</label>
-            <select
-              value={selectedProvider.id}
-              onChange={(e) => {
-                const provider = KNOWN_PROVIDERS.find((p) => p.id === e.target.value);
-                if (provider) {
-                  setSelectedProvider(slideId, provider);
-                  fetchCitibikeData(slideId);
-                }
-              }}
-              className="provider-select w-full text-xs border border-[#e2e8f0] rounded bg-white text-[#4a5568]"
-            >
-              {KNOWN_PROVIDERS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.vehicleType})
-                </option>
-              ))}
-            </select>
-           
-          </div>
-
-          {selectedProvider.vehicleType !== 'bike' && (
-            <div>
-              <label className="block text-[#4a5568] font-medium mb-1 text-xs">Vehicle Marker Color</label>
-              <div className="flex items-center gap-2">
-                <div className="colorContainer">
-                  <input
-                    type="color"
-                    value={vehicleMarkerColor}
-                    onChange={(e) => setVehicleMarkerColor(slideId, e.target.value)}
-                    className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
-                  />
+            <label className="block text-[#4a5568] font-medium mb-1 text-xs">Providers</label>
+            {(['bike', 'scooter'] as const).map((type) => {
+              const group = KNOWN_PROVIDERS.filter((p) => p.vehicleType === type);
+              return (
+                <div key={type} className="mb-2">
+                  <div className="text-[#718096] text-[10px] uppercase tracking-wide mb-1">
+                    {type === 'bike' ? 'Bike Share' : 'Scooter Share'}
+                  </div>
+                  {group.map((p) => {
+                    const checked = selectedProviders.some((sp) => sp.id === p.id);
+                    return (
+                      <label key={p.id} className="flex items-center gap-2 text-[#4a5568] text-xs cursor-pointer mb-1">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? selectedProviders.filter((sp) => sp.id !== p.id)
+                              : [...selectedProviders, p];
+                            if (next.length === 0) return;
+                            setSelectedProviders(slideId, next);
+                            fetchCitibikeData(slideId);
+                          }}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span
+                          style={{
+                            display: 'inline-block', width: '8px', height: '8px',
+                            borderRadius: '50%', background: p.brandColor, flexShrink: 0,
+                          }}
+                        />
+                        {p.name}
+                      </label>
+                    );
+                  })}
                 </div>
-                <Input value={vehicleMarkerColor} className="flex-1 text-xs" onChange={(e) => setVehicleMarkerColor(slideId, e.target.value)} />
-              </div>
-            </div>
-          )}
+              );
+            })}
+          </div>
 
           <div>
             <label className="block text-[#4a5568] font-medium mb-1 text-xs">Search Radius (miles)</label>

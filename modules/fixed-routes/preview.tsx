@@ -193,6 +193,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const titleTextSize = useFixedRouteStore(
     (state) => state.slides[slideId]?.titleTextSize || 5
   );
+  const subtitleTextSize = useFixedRouteStore(
+    (state) => state.slides[slideId]?.subtitleTextSize ?? state.slides[slideId]?.titleTextSize ?? 5
+  );
   const contentTextSize = useFixedRouteStore(
     (state) => state.slides[slideId]?.contentTextSize || 5
   );
@@ -208,9 +211,12 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const showTableColumnHeaders = useFixedRouteStore((state) => state.slides[slideId]?.showTableColumnHeaders || false);
   const tableHeaderLeft = useFixedRouteStore((state) => state.slides[slideId]?.tableHeaderLeft || "Transit Service Line");
   const tableHeaderRight = useFixedRouteStore((state) => state.slides[slideId]?.tableHeaderRight || "Est Arrival Time");
+  const columnDividerColor = useFixedRouteStore((state) => state.slides[slideId]?.columnDividerColor || 'rgba(128,128,128,0.4)');
+  const columnDividerWeight = useFixedRouteStore((state) => state.slides[slideId]?.columnDividerWeight ?? 1);
+  const columnGap = useFixedRouteStore((state) => state.slides[slideId]?.columnGap ?? 0);
 
-  // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const titleSizeMultiplier = 0.5 + titleTextSize * 0.1;
+  const subtitleSizeMultiplier = 0.5 + subtitleTextSize * 0.1;
   const contentSizeMultiplier = 0.5 + contentTextSize * 0.1;
 
   const hasContent = (html: string) => !!html && !!html.replace(/<[^>]*>/g, '').trim();
@@ -322,16 +328,17 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        fontSize: `${18 * titleSizeMultiplier}px`,
+                        fontSize: `${18 * subtitleSizeMultiplier}px`,
                       }}
                     >
                       <img
                         src={modeIcon}
                         style={{
-                          height: `${38 * titleSizeMultiplier}px`,
-                          width: `${38 * titleSizeMultiplier}px`,
+                          height: `${38 * subtitleSizeMultiplier}px`,
+                          width: `${38 * subtitleSizeMultiplier}px`,
                           marginRight: "8px",
                           objectFit: "contain",
+
                         }}
                         alt=""
                       />
@@ -407,7 +414,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                     <div
                       className="mb-1 sm:mb-2 overflow-hidden"
                       style={{
-                        fontSize: `${2.5 * titleSizeMultiplier}cqh`,
+                        fontSize: `${2.5 * subtitleSizeMultiplier}cqh`,
                         marginBottom: "0.5cqw",
                         display: "flex",
                         alignItems: "center",
@@ -416,10 +423,11 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       <img
                         src={modeIcon}
                         style={{
-                          height: `${5.5 * titleSizeMultiplier}cqh`,
-                          width: `${5.5 * titleSizeMultiplier}cqh`,
+                          height: `${5.5 * subtitleSizeMultiplier}cqh`,
+                          width: `${5.5 * subtitleSizeMultiplier}cqh`,
                           marginRight: "8px",
                           objectFit: "contain",
+
                         }}
                         alt=""
                       />
@@ -526,22 +534,29 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                 flex: "1 1 0",
                 minHeight: 0,
                 overflow: "hidden",
+                gap: isEditor ? `${columnGap}px` : `${columnGap * 0.15}cqw`,
               }}
             >
               {columnData.map(
                 (col: { label: string; arrivals: any[] }, colIdx: number) => (
+                  <React.Fragment key={colIdx}>
+                    {colIdx === 1 && (
+                      <div
+                        style={{
+                          width: `${columnDividerWeight}px`,
+                          flexShrink: 0,
+                          alignSelf: "stretch",
+                          backgroundColor: columnDividerColor,
+                        }}
+                      />
+                    )}
                   <div
-                    key={colIdx}
                     style={{
                       flex: "1 1 0",
                       minWidth: 0,
                       display: "flex",
                       flexDirection: "column",
                       overflow: "hidden",
-                      borderRight:
-                        colIdx === 0
-                          ? "1px solid rgba(128,128,128,0.3)"
-                          : undefined,
                     }}
                   >
                     {showColumnHeaders && (
@@ -566,12 +581,14 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       >
                         {showTableColumnHeaders && (
                           <div
-                            className="flex items-center justify-between border-b-2 flex-shrink-0 font-semibold"
+                            className="flex items-center justify-between border-b flex-shrink-0"
                             style={{
                               backgroundColor: backgroundColor,
                               color: titleColor,
-                              padding: `${description ? "8px 10px" : "10px 12px"}`,
-                              fontSize: `${12 * contentSizeMultiplier}px`,
+                              padding: "4px 10px",
+                              fontSize: `${11 * contentSizeMultiplier}px`,
+                              fontWeight: 500,
+                              opacity: 0.8,
                             }}
                           >
                             <span className="flex-1">{tableHeaderLeft}</span>
@@ -649,13 +666,14 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       >
                         {showTableColumnHeaders && (
                           <div
-                            className="flex items-center justify-between border-b-2 flex-shrink-0"
+                            className="flex items-center justify-between border-b flex-shrink-0"
                             style={{
                               backgroundColor: backgroundColor,
                               color: titleColor,
-                              padding: `0.8cqmin 1.5cqw`,
-                              fontSize: `${2.2 * contentSizeMultiplier}cqmin`,
-                              fontWeight: 600,
+                              padding: `0.4cqmin 1.5cqw`,
+                              fontSize: `${1.8 * contentSizeMultiplier}cqmin`,
+                              fontWeight: 500,
+                              opacity: 0.8,
                             }}
                           >
                             <span className="flex-1">{tableHeaderLeft}</span>
@@ -733,6 +751,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       </div>
                     )}
                   </div>
+                  </React.Fragment>
                 )
               )}
             </div>
@@ -742,12 +761,14 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                 <div className="text-black">
                   {showTableColumnHeaders && (
                     <div
-                      className="flex items-center justify-between border-b-2 border-[#e2e8f0] font-semibold"
+                      className="flex items-center justify-between border-b flex-shrink-0"
                       style={{
                         backgroundColor: backgroundColor,
                         color: titleColor,
-                        padding: `${description ? "8px 10px" : "10px 12px"}`,
-                        fontSize: `${12 * contentSizeMultiplier}px`,
+                        padding: "4px 12px",
+                        fontSize: `${11 * contentSizeMultiplier}px`,
+                        fontWeight: 500,
+                        opacity: 0.8,
                       }}
                     >
                       <span className="flex-1">{tableHeaderLeft}</span>
@@ -835,13 +856,14 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                 >
                   {showTableColumnHeaders && (
                     <div
-                      className="flex items-center justify-between border-b-2 flex-shrink-0"
+                      className="flex items-center justify-between border-b flex-shrink-0"
                       style={{
                         backgroundColor: backgroundColor,
                         color: titleColor,
-                        padding: `0.8cqmin 1.5cqw`,
-                        fontSize: `${2.2 * contentSizeMultiplier}cqmin`,
-                        fontWeight: 600,
+                        padding: `0.4cqmin 1.5cqw`,
+                        fontSize: `${1.8 * contentSizeMultiplier}cqmin`,
+                        fontWeight: 500,
+                        opacity: 0.8,
                       }}
                     >
                       <span className="flex-1">{tableHeaderLeft}</span>

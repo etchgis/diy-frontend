@@ -527,38 +527,6 @@ export default function TransitDestinationPreview({
                 );
               })}
 
-            {/* Add empty rows to fill remaining space (before legend) */}
-            {Array.from({
-              length: Math.max(0, totalRows - destinationData.length),
-            }).map((_, index) => (
-              <div
-                key={`empty-${index}`}
-                className={`flex-1 grid ${
-                  mobileMode
-                    ? "grid-cols-[1fr_1.5fr_1fr_1fr_1fr]"
-                    : "grid-cols-[1.5fr_2fr_1fr_1fr_1fr]"
-                } ${getGridGap()} ${getRowPadding()} ${getRowStyles().className} w-full min-w-0 items-center`}
-                style={{
-                  backgroundColor:
-                    (destinationData.length + index) % 2 === 0
-                      ? rowColor
-                      : alternateRowColor,
-                  color:
-                    index % 2 === 0 ? tableTextColor : alternateRowTextColor,
-                  fontSize: getRowStyles().fontSize,
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="">-</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className={`${getEmptyRowTextSize()}`}>-</div>
-                </div>
-                <div className="">-</div>
-                <div className="">-</div>
-                <div className="">-</div>
-              </div>
-            ))}
 
             {/* Legend Row */}
             <div

@@ -175,8 +175,12 @@ export function buildPublishPayload() {
         screenObj.data.columnHeaderBgColor = slideData.columnHeaderBgColor ?? '#ffffff';
         screenObj.data.columnHeaderTextColor = slideData.columnHeaderTextColor ?? '#78B1DD';
         screenObj.data.columnHeaderTextSize = slideData.columnHeaderTextSize ?? 5;
+        screenObj.data.columnDividerColor = slideData.columnDividerColor ?? 'rgba(128,128,128,0.4)';
+        screenObj.data.columnDividerWeight = slideData.columnDividerWeight ?? 1;
+        screenObj.data.columnGap = slideData.columnGap ?? 0;
         screenObj.data.minArrivalMinutes = slideData.minArrivalMinutes ?? 0;
         screenObj.data.titleTextSize = titleTextSize ?? 5;
+        screenObj.data.subtitleTextSize = slideData.subtitleTextSize ?? titleTextSize ?? 5;
         screenObj.data.contentTextSize = contentTextSize ?? 5;
         screenObj.data.showTitleHtml = slideData.showTitleHtml ?? false;
         screenObj.data.titleHtml = slideData.titleHtml ?? '';
@@ -441,7 +445,7 @@ export function buildPublishPayload() {
       const slideData = slides[slide.id];
 
       if (slideData) {
-        const { title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius, titleTextSize, contentTextSize } = slideData;
+        const { title, backgroundColor, bgImage, titleColor, textColor, logoImage, searchRadius, titleTextSize, contentTextSize, selectedProviders } = slideData;
 
         screenObj.data.title = title;
         screenObj.data.backgroundColor = backgroundColor;
@@ -452,6 +456,7 @@ export function buildPublishPayload() {
         screenObj.data.searchRadius = searchRadius;
         screenObj.data.titleTextSize = titleTextSize;
         screenObj.data.contentTextSize = contentTextSize;
+        screenObj.data.selectedProviders = selectedProviders ?? [];
       } else {
         missingSlides.push(`citibike (${slide.id})`);
       }

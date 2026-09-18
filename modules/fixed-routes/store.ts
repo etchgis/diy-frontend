@@ -66,6 +66,7 @@ interface FixedRouteSlideData {
   scheduleData?: any;
   isLoading: boolean;
   titleTextSize?: number;
+  subtitleTextSize?: number;
   contentTextSize?: number;
   columnMode?: boolean;
   columnLabels?: [string, string];
@@ -73,6 +74,9 @@ interface FixedRouteSlideData {
   columnHeaderBgColor?: string;
   columnHeaderTextColor?: string;
   columnHeaderTextSize?: number;
+  columnDividerColor?: string;
+  columnDividerWeight?: number;
+  columnGap?: number;
   columnScheduleData?: { label: string; arrivals: any[] }[];
   columnServiceSelections?: [ServiceSelection[], ServiceSelection[]];
   minArrivalMinutes?: number;
@@ -99,6 +103,7 @@ interface SlideStore {
   setOutageMessage: (slideId: string, message: string) => void;
   setSkipOnError: (slideId: string, skip: boolean) => void;
   setTitleTextSize: (slideId: string, size: number) => void;
+  setSubtitleTextSize: (slideId: string, size: number) => void;
   setContentTextSize: (slideId: string, size: number) => void;
   setColumnMode: (slideId: string, enabled: boolean) => void;
   setColumnLabels: (slideId: string, labels: [string, string]) => void;
@@ -106,6 +111,9 @@ interface SlideStore {
   setColumnHeaderBgColor: (slideId: string, color: string) => void;
   setColumnHeaderTextColor: (slideId: string, color: string) => void;
   setColumnHeaderTextSize: (slideId: string, size: number) => void;
+  setColumnDividerColor: (slideId: string, color: string) => void;
+  setColumnDividerWeight: (slideId: string, weight: number) => void;
+  setColumnGap: (slideId: string, gap: number) => void;
   setMinArrivalMinutes: (slideId: string, minutes: number) => void;
   setColumnScheduleData: (slideId: string, data: { label: string; arrivals: any[] }[]) => void;
   setColumnServiceSelections: (slideId: string, data: [ServiceSelection[], ServiceSelection[]] | undefined) => void;
@@ -288,6 +296,14 @@ export const useFixedRouteStore = create<SlideStore>()(
           },
         })),
 
+      setSubtitleTextSize: (slideId, size) =>
+        set((state) => ({
+          slides: {
+            ...state.slides,
+            [slideId]: { ...(state.slides[slideId] || {}), subtitleTextSize: size },
+          },
+        })),
+
       setContentTextSize: (slideId, size) =>
         set((state) => ({
           slides: {
@@ -330,6 +346,21 @@ export const useFixedRouteStore = create<SlideStore>()(
       setColumnHeaderTextSize: (slideId, size) =>
         set((state) => ({
           slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), columnHeaderTextSize: size } },
+        })),
+
+      setColumnDividerColor: (slideId, color) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), columnDividerColor: color } },
+        })),
+
+      setColumnDividerWeight: (slideId, weight) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), columnDividerWeight: weight } },
+        })),
+
+      setColumnGap: (slideId, gap) =>
+        set((state) => ({
+          slides: { ...state.slides, [slideId]: { ...(state.slides[slideId] || {}), columnGap: gap } },
         })),
 
       setMinArrivalMinutes: (slideId, minutes) =>

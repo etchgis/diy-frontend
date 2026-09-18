@@ -661,6 +661,11 @@ export default function StopArrivalsSlide({
   );
   const setTitleTextSize = useFixedRouteStore((state: { setTitleTextSize: any; }) => state.setTitleTextSize);
 
+  const subtitleTextSize = useFixedRouteStore(
+    (state: any) => state.slides[slideId]?.subtitleTextSize ?? state.slides[slideId]?.titleTextSize ?? 5
+  );
+  const setSubtitleTextSize = useFixedRouteStore((state: any) => state.setSubtitleTextSize);
+
   const contentTextSize = useFixedRouteStore(
     (state: { slides: { [x: string]: { contentTextSize: any; }; }; }) => state.slides[slideId]?.contentTextSize || 5
   );
@@ -683,6 +688,12 @@ export default function StopArrivalsSlide({
   const setColumnHeaderTextColor = useFixedRouteStore((state: any) => state.setColumnHeaderTextColor);
   const columnHeaderTextSize = useFixedRouteStore((state: any) => state.slides[slideId]?.columnHeaderTextSize || 5);
   const setColumnHeaderTextSize = useFixedRouteStore((state: any) => state.setColumnHeaderTextSize);
+  const columnDividerColor = useFixedRouteStore((state: any) => state.slides[slideId]?.columnDividerColor || 'rgba(128,128,128,0.4)');
+  const setColumnDividerColor = useFixedRouteStore((state: any) => state.setColumnDividerColor);
+  const columnDividerWeight = useFixedRouteStore((state: any) => state.slides[slideId]?.columnDividerWeight ?? 1);
+  const setColumnDividerWeight = useFixedRouteStore((state: any) => state.setColumnDividerWeight);
+  const columnGap = useFixedRouteStore((state: any) => state.slides[slideId]?.columnGap ?? 0);
+  const setColumnGap = useFixedRouteStore((state: any) => state.setColumnGap);
   const columnServiceSelections = useFixedRouteStore((state: any) => state.slides[slideId]?.columnServiceSelections as [ServiceSelection[], ServiceSelection[]] | undefined);
   const setColumnServiceSelections = useFixedRouteStore((state: any) => state.setColumnServiceSelections);
   const [columnActiveTab, setColumnActiveTab] = useState<0 | 1>(0);
@@ -2460,6 +2471,55 @@ export default function StopArrivalsSlide({
                     </div>
                   </>
                 )}
+
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                    Divider Padding ({columnGap}px)
+                  </label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={40}
+                    value={columnGap}
+                    onChange={(e) => setColumnGap(slideId, Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                    Divider Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="colorContainer">
+                      <input
+                        type="color"
+                        value={columnDividerColor.startsWith('rgba') ? '#808080' : columnDividerColor}
+                        onChange={(e) => setColumnDividerColor(slideId, e.target.value)}
+                        className="w-5 h-6 p-0 border-none rounded cursor-pointer appearance-none"
+                      />
+                    </div>
+                    <Input
+                      value={columnDividerColor}
+                      className="flex-1 text-xs"
+                      onChange={(e) => setColumnDividerColor(slideId, e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                    Divider Weight ({columnDividerWeight}px)
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={6}
+                    value={columnDividerWeight}
+                    onChange={(e) => setColumnDividerWeight(slideId, Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
               </>
             )}
 
@@ -2639,6 +2699,33 @@ export default function StopArrivalsSlide({
                   className="w-8 h-8 p-0 text-lg"
                   onClick={() => setTitleTextSize(slideId, Math.min(10, titleTextSize + 1))}
                   disabled={titleTextSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#4a5568] font-medium mb-1 text-xs">
+                Subheader Text Size
+              </label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setSubtitleTextSize(slideId, Math.max(1, subtitleTextSize - 1))}
+                  disabled={subtitleTextSize <= 1}
+                >
+                  −
+                </Button>
+                <span className="w-6 text-center text-sm font-medium">{subtitleTextSize}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-lg"
+                  onClick={() => setSubtitleTextSize(slideId, Math.min(10, subtitleTextSize + 1))}
+                  disabled={subtitleTextSize >= 10}
                 >
                   +
                 </Button>

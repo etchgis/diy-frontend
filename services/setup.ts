@@ -9,7 +9,7 @@ import { useTemplate3Store } from "@/modules/template-3/store";
 import { useRouteTimesStore } from "@/modules/route-times/store";
 import { useImageOnlyStore } from "@/modules/image-only/store";
 import { useWeatherStore } from "@/modules/weather/store";
-import { useCitibikeStore } from "@/modules/citibike/store";
+import { useCitibikeStore, KNOWN_PROVIDERS as CITIBIKE_KNOWN_PROVIDERS } from "@/modules/citibike/store";
 import { useTrafficCorridorStore } from "@/modules/traffic-corridor/store";
 import { useTrafficCongestionStore } from "@/modules/traffic-congestion/store";
 import { useWebEmbedStore } from "@/modules/web-embed/store";
@@ -381,6 +381,7 @@ async function importData(setup: any) {
         setSelectedStop,
         setServiceSelections,
         setTitleTextSize,
+        setSubtitleTextSize,
         setContentTextSize,
         setColumnMode,
         setColumnLabels,
@@ -388,6 +389,9 @@ async function importData(setup: any) {
         setColumnHeaderBgColor,
         setColumnHeaderTextColor,
         setColumnHeaderTextSize,
+        setColumnDividerColor,
+        setColumnDividerWeight,
+        setColumnGap,
         setMinArrivalMinutes,
         setColumnServiceSelections,
         setShowTitleHtml,
@@ -420,6 +424,7 @@ async function importData(setup: any) {
       setSelectedStop(slide.id, migratedStop || undefined);
       setServiceSelections(slide.id, migratedSelections);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
+      setSubtitleTextSize(slide.id, slide.data.subtitleTextSize ?? slide.data.titleTextSize ?? 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
       setColumnMode(slide.id, slide.data.columnMode || false);
       if (slide.data.columnLabels) {
@@ -429,6 +434,9 @@ async function importData(setup: any) {
       if (slide.data.columnHeaderBgColor) setColumnHeaderBgColor(slide.id, slide.data.columnHeaderBgColor);
       if (slide.data.columnHeaderTextColor) setColumnHeaderTextColor(slide.id, slide.data.columnHeaderTextColor);
       if (slide.data.columnHeaderTextSize) setColumnHeaderTextSize(slide.id, slide.data.columnHeaderTextSize);
+      if (slide.data.columnDividerColor) setColumnDividerColor(slide.id, slide.data.columnDividerColor);
+      if (slide.data.columnDividerWeight != null) setColumnDividerWeight(slide.id, slide.data.columnDividerWeight);
+      if (slide.data.columnGap != null) setColumnGap(slide.id, slide.data.columnGap);
       setMinArrivalMinutes(slide.id, slide.data.minArrivalMinutes ?? 0);
       if (slide.data.columnServiceSelections) {
         setColumnServiceSelections(slide.id, slide.data.columnServiceSelections);
@@ -633,7 +641,8 @@ async function importData(setup: any) {
         setLogoImage,
         setSearchRadius,
         setTitleTextSize,
-        setContentTextSize
+        setContentTextSize,
+        setSelectedProviders,
       } = useCitibikeStore.getState();
 
       setTitle(slide.id, slide.data.title || '');
@@ -645,6 +654,15 @@ async function importData(setup: any) {
       setSearchRadius(slide.id, slide.data.searchRadius || 0.5);
       setTitleTextSize(slide.id, slide.data.titleTextSize || 5);
       setContentTextSize(slide.id, slide.data.contentTextSize || 5);
+
+      if (slide.data.selectedProviders?.length) {
+        setSelectedProviders(slide.id, slide.data.selectedProviders);
+      } else if (slide.data.selectedProvider) {
+        const match = CITIBIKE_KNOWN_PROVIDERS.find((p) => p.id === slide.data.selectedProvider?.id);
+        setSelectedProviders(slide.id, [match ?? CITIBIKE_KNOWN_PROVIDERS[0]]);
+      } else {
+        setSelectedProviders(slide.id, [CITIBIKE_KNOWN_PROVIDERS[0]]);
+      }
     }
 
     if (slide.type === 'traffic-corridor') {
