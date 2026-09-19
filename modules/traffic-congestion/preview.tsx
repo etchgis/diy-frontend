@@ -7,7 +7,8 @@ import Footer from "@/components/shared-components/footer";
 import HtmlTextEditor from "@/components/shared-components/html-text-editor";
 import { useState, useEffect, useRef } from "react";
 
-const CONGESTION_ORG_ID = '2b651377-306a-4b79-a57b-91caf8aee555';
+// The organisation slug astrostation resolves (NYSDOT owns the template), not its id.
+const CONGESTION_ORG = 'nysdot';
 const CONGESTION_SLUG = 'congestion-nyc';
 
 const MOCK_LEGEND = [
@@ -66,7 +67,7 @@ export default function TrafficCongestionPreview({
   const baseParams = center
     ? `w=2048&h=1152&lat=${center[0]}&lon=${center[1]}&zoom=${mapZoom}`
     : `w=2048&h=1152`;
-  const etchMapUrl = `https://api.etch.app/astrostation/maps/${CONGESTION_ORG_ID}/${CONGESTION_SLUG}/static.png?${baseParams}`;
+  const etchMapUrl = `https://api.etch.app/astrostation/maps/${CONGESTION_ORG}/${CONGESTION_SLUG}/static.png?${baseParams}`;
 
   useEffect(() => {
     if (etchMapUrl !== loadedUrlRef.current) {
