@@ -59,7 +59,9 @@ export default function Footer({ previewMode = false }: { previewMode?: boolean 
       return null;
     } else if (type === "time") {
       return (
-        <div style={{ color: timeTextColor, fontSize, fontWeight: 500, lineHeight: 1 }}>
+        // Tabular digits: every numeral takes the same width, so the clock
+        // stays put as the seconds tick instead of nudging left and right.
+        <div style={{ color: timeTextColor, fontSize, fontWeight: 500, lineHeight: 1, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
           {currentTime}
         </div>
       );
