@@ -131,6 +131,20 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const fontFamilyStyle = defaultFontFamily && defaultFontFamily !== 'System Default'
     ? { fontFamily: defaultFontFamily }
     : {};
+
+  const [viewportSize, setViewportSize] = useState(() => {
+    if (typeof window === 'undefined') return { w: 0, h: 0 };
+    return { w: window.innerWidth, h: window.innerHeight };
+  });
+
+  useEffect(() => {
+    const update = () => setViewportSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const isMobilePortrait = viewportSize.w > 0 && viewportSize.w < 768 && viewportSize.h > viewportSize.w;
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [screens] = useState<any[]>([]);
@@ -875,9 +889,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const persistentTypes = new Set(['transit-routes', 'citibike', 'route-times', 'web-embed']);
 
   const isResponsive = resolution === 'responsive';
+  const effectiveLW = isResponsive && isMobilePortrait ? 1080 : logicalW;
+  const effectiveLH = isResponsive && isMobilePortrait ? 1920 : logicalH;
+  const effectiveIsResponsive = isResponsive && !isMobilePortrait;
 
   const innerContent = (
-    <div className="w-full h-full bg-white relative overflow-hidden">
+    <div className="w-full h-full bg-white relative overflow-hidden published-slide-container">
       {transitRoutesSlides.map((slide: any) => (
         <div
           key={slide.id}
@@ -940,11 +957,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   );
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-black">
-      {isResponsive ? (
+    <div className="w-screen h-screen overflow-hidden bg-black" style={{ height: '100dvh' }}>
+      {effectiveIsResponsive ? (
         <div className="w-full h-full" style={fontFamilyStyle}>{innerContent}</div>
       ) : (
-        <ResolutionFrame logicalW={logicalW} logicalH={logicalH} fontFamilyStyle={fontFamilyStyle}>
+        <ResolutionFrame logicalW={effectiveLW} logicalH={effectiveLH} fontFamilyStyle={fontFamilyStyle}>
           {innerContent}
         </ResolutionFrame>
       )}

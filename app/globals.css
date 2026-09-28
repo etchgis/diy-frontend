@@ -146,6 +146,17 @@
 /* Tiptap editor cursor */
 .ProseMirror { outline: none; width: 100%; height: 100%; }
 
+.published-slide-container {
+  container-type: size;
+  container-name: published-outer;
+}
+
+@container published-outer (max-width: 650px) {
+  .weather-main-flex {
+    flex-direction: column;
+  }
+}
+
 .provider-select {
   -webkit-appearance: none !important;
   appearance: none !important;
