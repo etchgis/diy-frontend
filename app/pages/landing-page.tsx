@@ -21,6 +21,9 @@ export default function LandingPage() {
   const [selectedFeature, setSelectedFeature] = useState<any | null>(null);
   const [locationError, setLocationError] = useState(false);
   const [existingEdit, setExistingEdit] = useState(false);
+  const [duplicateUrl, setDuplicateUrl] = useState('');
+  const [duplicateError, setDuplicateError] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const setLocation = useGeneralStore((state) => state.setLocation);
   const setAddress = useGeneralStore((state) => state.setAddress);
@@ -156,6 +159,39 @@ export default function LandingPage() {
 
   }
 
+  const handleDuplicate = async () => {
+    const shortcode = duplicateUrl.split('/').pop()?.split('?')[0];
+    if (!shortcode) {
+      setDuplicateError(true);
+      return;
+    }
+
+    setIsDuplicating(true);
+    try {
+      localStorage.clear();
+      localStorage.removeItem('general-store');
+      useGeneralStore.getState().setCurrentOrgId(undefined);
+
+      const orgCfg = getOrgConfig(shortcode);
+      const diyShortcode = orgCfg?.diyShortcode ?? shortcode;
+      await SetupSlides(diyShortcode);
+
+      const candidate = generateShortcode();
+      const check = await existsingCheck(candidate);
+      const newShortcode = check.exists ? generateShortcode() : candidate;
+
+      setShortcode(newShortcode);
+      setUrl('');
+      setPublishPassword('');
+
+      router.push('/editor');
+    } catch {
+      setDuplicateError(true);
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
+
   const handleContinue = () => {
     router.push('/editor');
   };
@@ -210,44 +246,41 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Action Cards */}
+          {/* Action Cards — 2×2 grid */}
           <div className="grid md:grid-cols-2 gap-8">
             {/* Create New Set Card */}
             <Card className="bg-[#0b5583] border-0">
               <CardContent className="p-8">
                 <h2 className="text-white text-2xl font-semibold mb-8">Create a new set of mobility screens</h2>
-
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-white mb-4">Set the location of the screens (i.e. worksite/company/property name)</p>
-                    <div className="flex gap-3">
-                      <div className="flex-1 relative">
-                        <Input
-                          placeholder="i.e Albany Airport"
-                          value={query}
-                          onChange={(e) => {
-                            setQuery(e.target.value);
-                            setSelectedFeature("");
-                            setLocationError(false);
-                          }}
-                          className={`bg-white text-[#1a202c] w-full ${locationError ? "border border-red-500" : ""}`}
-                        />
-                        {suggestions.length > 0 && (
-                          <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
-                            {suggestions.map((feature: any, idx) => (
-                              <li
-                                key={idx}
-                                onClick={() => handleSelect(feature)}
-                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
-                              >
-                                {feature.place_name || feature.properties.name + ', ' + feature.properties.full_address}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                      <Button onClick={() => { handleCreate() }} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
+                <div>
+                  <p className="text-white mb-4">Set the location of the screens (i.e. worksite/company/property name)</p>
+                  <div className="flex gap-3">
+                    <div className="flex-1 relative">
+                      <Input
+                        placeholder="i.e Albany Airport"
+                        value={query}
+                        onChange={(e) => {
+                          setQuery(e.target.value);
+                          setSelectedFeature("");
+                          setLocationError(false);
+                        }}
+                        className={`bg-white text-[#1a202c] w-full ${locationError ? "border border-red-500" : ""}`}
+                      />
+                      {suggestions.length > 0 && (
+                        <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-48 overflow-y-auto shadow-md">
+                          {suggestions.map((feature: any, idx) => (
+                            <li
+                              key={idx}
+                              onClick={() => handleSelect(feature)}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                            >
+                              {feature.place_name || feature.properties.name + ', ' + feature.properties.full_address}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
+                    <Button onClick={handleCreate} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
                   </div>
                 </div>
               </CardContent>
@@ -259,41 +292,61 @@ export default function LandingPage() {
                 <h2 className="text-[#1a202c] text-2xl font-semibold mb-8">
                   Edit an existing set of mobility screens or add a new screen
                 </h2>
-
-                <div className="space-y-6">
-                  <p className="text-[#2d3748] text-sm">
-                    Insert a published Mobility Screen URL to edit an existing mobility screen
-                  </p>
-
-                  <div className="flex gap-3">
-                    <Input className="bg-white text-[#1a202c] flex-1" value={url} onChange={(e) => setUrl(e.target.value)} />
-                    <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6" onClick={() => handleEdit()}>Edit</Button>
-                  </div>
+                <p className="text-[#2d3748] text-sm mb-6">
+                  Insert a published Mobility Screen URL to edit an existing mobility screen
+                </p>
+                <div className="flex gap-3">
+                  <Input className="bg-white text-[#1a202c] flex-1" value={url} onChange={(e) => setUrl(e.target.value)} />
+                  <Button className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6" onClick={handleEdit}>Edit</Button>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </main>
 
-        {existingEdit && (
-          <div className="mt-6 w-[800px] align-middle mx-auto">
-            <Card className="bg-[#0b5583] border-0 p-2 pt-6">
-              <CardContent>
-                <div className="flex items-center justify-between pt-2">
-                  <p className="font-medium text-[#ffffff]">
-                    You have an existing edit saved, you can continue editing where you left off or start a new set of screens.
+            {/* Duplicate Existing Set Card */}
+            <Card className="bg-[#2c5f7a] border-0">
+              <CardContent className="p-8">
+                <h2 className="text-white text-2xl font-semibold mb-8">Duplicate an existing set of mobility screens</h2>
+                <p className="text-white/80 text-sm mb-6">
+                  Creates a copy of an existing set under a new URL. All screens and settings are carried over — you can customize before publishing.
+                </p>
+                <div className="flex gap-3">
+                  <Input
+                    className={`bg-white text-[#1a202c] flex-1 ${duplicateError ? 'border border-red-500' : ''}`}
+                    placeholder="Paste published URL"
+                    value={duplicateUrl}
+                    onChange={(e) => { setDuplicateUrl(e.target.value); setDuplicateError(false); }}
+                  />
+                  <Button
+                    className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6 disabled:opacity-50"
+                    onClick={handleDuplicate}
+                    disabled={isDuplicating}
+                  >
+                    {isDuplicating ? 'Loading...' : 'Duplicate'}
+                  </Button>
+                </div>
+                {duplicateError && <p className="text-red-300 text-sm mt-2">Could not load that URL. Please check and try again.</p>}
+              </CardContent>
+            </Card>
+
+            {/* Continue Editing Card — bottom right, only when unsaved work exists */}
+            {existingEdit && (
+              <Card className="bg-[#0b5583] border-0 flex items-center">
+                <CardContent className="p-8 w-full">
+                  <h2 className="text-white text-2xl font-semibold mb-4">Continue where you left off</h2>
+                  <p className="text-white/80 text-sm mb-6">
+                    You have an existing edit saved. You can continue editing where you left off or start a new set of screens.
                   </p>
                   <Button
-                    className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6 ml-4"
+                    className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6"
                     onClick={handleContinue}
                   >
                     Continue
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
-        )}
+        </main>
       </div>
     </div>
   )
