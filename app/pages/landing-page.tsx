@@ -1,7 +1,6 @@
 'use client'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { HelpCircle, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -21,11 +20,7 @@ export default function LandingPage() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedFeature, setSelectedFeature] = useState<any | null>(null);
   const [locationError, setLocationError] = useState(false);
-  const [templateError, setTemplateError] = useState(false);
   const [existingEdit, setExistingEdit] = useState(false);
-
-  const template = useGeneralStore((state) => state.template || '');
-  const setTemplate = useGeneralStore((state) => state.setTemplate);
 
   const setLocation = useGeneralStore((state) => state.setLocation);
   const setAddress = useGeneralStore((state) => state.setAddress);
@@ -102,10 +97,9 @@ export default function LandingPage() {
 
   const handleCreate = () => {
     const hasLocation = !!selectedFeature;
-    const hasTemplate = !!template;
 
     setLocationError(!hasLocation);
-    setTemplateError(!hasTemplate);
+    if (!hasLocation) return;
 
     localStorage.clear();
     localStorage.removeItem('general-store');
@@ -152,14 +146,12 @@ export default function LandingPage() {
         setShortcode(shortcode);
       }
 
-      useGeneralStore.setState({ slides: [{ id: uuidv4(), type: template }] });
+      useGeneralStore.setState({ slides: [{ id: uuidv4(), type: 'transit-destinations' }] });
 
-      if (hasLocation && hasTemplate) {
-        setAddress(selectedFeature.place_name || selectedFeature.properties.name + ', ' + selectedFeature.properties.full_address);
-        const [lng, lat] = selectedFeature.geometry.coordinates;
-        setCoordinates({ lat, lng });
-        router.push('/editor');
-      }
+      setAddress(selectedFeature.place_name || selectedFeature.properties.name + ', ' + selectedFeature.properties.full_address);
+      const [lng, lat] = selectedFeature.geometry.coordinates;
+      setCoordinates({ lat, lng });
+      router.push('/editor');
     })
 
   }
@@ -227,7 +219,7 @@ export default function LandingPage() {
 
                 <div className="space-y-6">
                   <div>
-                    <p className="text-white mb-4">1. Set the location of the screens (i.e. worksite/company/property name)</p>
+                    <p className="text-white mb-4">Set the location of the screens (i.e. worksite/company/property name)</p>
                     <div className="flex gap-3">
                       <div className="flex-1 relative">
                         <Input
@@ -254,91 +246,6 @@ export default function LandingPage() {
                           </ul>
                         )}
                       </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-white mb-4">
-                      2. Select a template from the drop down list to get started with your first screen.
-                    </p>
-                    <div className="flex gap-3">
-                      <Select value={template} onValueChange={(value) => {
-                        setTemplate(value);
-                        setTemplateError(false);
-                      }}>
-                        <SelectTrigger className={`w-full text-xs ${templateError ? "border border-red-500" : ""}`}>
-                          <div className="flex items-left gap-2">
-                            <SelectValue placeholder="Select a Template" />
-                          </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="transit-routes">
-                            <div className="flex items-center gap-2 text-xs">
-                              Transit Route Destination Map Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="transit-destinations">
-                            <div className="flex items-center gap-2 text-xs">
-                              Transit Destination Table Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="fixed-routes">
-                            <div className="flex items-center gap-2 text-xs">
-                              Stop Arrivals Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="route-times">
-                            <div className="flex items-center gap-2 text-xs">
-                              Route Times Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="qr">
-                            <div className="flex items-center gap-2 text-xs">
-                              QR Code Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="image-only">
-                            <div className="flex items-center gap-2 text-xs">
-                              Image Only Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="template-3">
-                            <div className="flex items-center gap-2 text-xs">
-                              Image and Title Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="template-1">
-                            <div className="flex items-center gap-2 text-xs">
-                              Left Content/Right Image Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="template-2">
-                            <div className="flex items-center gap-2 text-xs">
-                              Right Content/Left Image Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="weather">
-                            <div className="flex items-center gap-2 text-xs">
-                              Weather Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="citibike">
-                            <div className="flex items-center gap-2 text-xs">
-                              Micromobility Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="traffic-corridor">
-                            <div className="flex items-center gap-2 text-xs">
-                              Traffic Corridor Page
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="traffic-congestion">
-                            <div className="flex items-center gap-2 text-xs">
-                              Traffic Congestion Map
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
                       <Button onClick={() => { handleCreate() }} className="bg-[#face00] hover:bg-[#face00]/90 text-black font-medium px-6">Create</Button>
                     </div>
                   </div>
