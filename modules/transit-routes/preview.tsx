@@ -479,7 +479,7 @@ export default function TransitRoutesPreview({
             <div 
               className={`bg-white rounded-lg shadow-lg ${isEditor ? 'p-3 max-w-[250px]' : 'p-4 max-w-[300px]'}`}
               style={{ 
-                maxHeight: 'calc(100cqh - 120px)',
+                maxHeight: 'calc(100cqmin - 120px)',
                 overflowY: 'auto'
               }}
             >

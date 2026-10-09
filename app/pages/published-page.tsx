@@ -134,6 +134,10 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [screens] = useState<any[]>([]);
+  const [viewportSize, setViewportSize] = useState(() => {
+    if (typeof window === 'undefined') return { w: 0, h: 0 };
+    return { w: window.innerWidth, h: window.innerHeight };
+  });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const versionPollRef = useRef<NodeJS.Timeout | null>(null);
   const deployedBuildId = useRef<string | null>(null);
@@ -217,6 +221,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       document.documentElement.style.overflow = '';
     };
   }, [isTvMode]);
+
+  useEffect(() => {
+    const update = () => setViewportSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   // Auto-rotation effect - only in TV mode
   useEffect(() => {
@@ -809,7 +819,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       case 'qr':
         return <QRSlidePreview slideId={slideId} />;
       case 'transit-destinations':
-        return <TransitDestinationPreview slideId={slideId} mobileMode={!isTvMode}/>;
+        return <TransitDestinationPreview slideId={slideId} />;
       case 'fixed-routes':
         return <FixedRoutePreview slideId={slideId} />;
       case 'template-1':
@@ -839,6 +849,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   };
 
+  const isMobilePortrait = viewportSize.w > 0 && viewportSize.w < 768 && viewportSize.h > viewportSize.w;
+  const isResponsive = resolution === 'responsive';
+  const effectiveLW = isResponsive && isMobilePortrait ? 1080 : logicalW;
+  const effectiveLH = isResponsive && isMobilePortrait ? 1920 : logicalH;
+  const effectiveIsResponsive = isResponsive && !isMobilePortrait;
+
   // Scrollable mode - show all slides vertically
   if (!isTvMode) {
     return (
@@ -856,7 +872,13 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
                     Slide {index + 1}: {slide.type}
                   </div>
                   <div className="w-full h-[90vh]">
-                    {renderSlidePreview(slide.type, slide.id)}
+                    {effectiveIsResponsive ? (
+                      <div className="w-full h-full" style={fontFamilyStyle}>{renderSlidePreview(slide.type, slide.id)}</div>
+                    ) : (
+                      <ResolutionFrame logicalW={effectiveLW} logicalH={effectiveLH} fontFamilyStyle={fontFamilyStyle}>
+                        {renderSlidePreview(slide.type, slide.id)}
+                      </ResolutionFrame>
+                    )}
                   </div>
                 </div>
               </div>
@@ -873,8 +895,6 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const routeTimesSlides = slides.filter((s: any) => s.type === 'route-times');
   const webEmbedSlides = slides.filter((s: any) => s.type === 'web-embed');
   const persistentTypes = new Set(['transit-routes', 'citibike', 'route-times', 'web-embed']);
-
-  const isResponsive = resolution === 'responsive';
 
   const innerContent = (
     <div className="w-full h-full bg-white relative overflow-hidden">
@@ -941,10 +961,10 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-black">
-      {isResponsive ? (
+      {effectiveIsResponsive ? (
         <div className="w-full h-full" style={fontFamilyStyle}>{innerContent}</div>
       ) : (
-        <ResolutionFrame logicalW={logicalW} logicalH={logicalH} fontFamilyStyle={fontFamilyStyle}>
+        <ResolutionFrame logicalW={effectiveLW} logicalH={effectiveLH} fontFamilyStyle={fontFamilyStyle}>
           {innerContent}
         </ResolutionFrame>
       )}

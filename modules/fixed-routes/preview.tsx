@@ -222,8 +222,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const hasContent = (html: string) => !!html && !!html.replace(/<[^>]*>/g, '').trim();
 
   const stopNameText = hasContent(displayName) ? displayName : (stopName || selectedStop?.name || selectedStop?.stop_name || '');
-  const stopNameRef = useFitText(`${6 * titleSizeMultiplier}cqh`, [stopNameText, titleSizeMultiplier], 8);
-  const titleHtmlRef = useFitText(`${5 * titleSizeMultiplier}cqh`, [titleHtml, titleSizeMultiplier], 8);
+  const stopNameRef = useFitText(`${6 * titleSizeMultiplier}cqmin`, [stopNameText, titleSizeMultiplier], 8);
+  const titleHtmlRef = useFitText(`${5 * titleSizeMultiplier}cqmin`, [titleHtml, titleSizeMultiplier], 8);
 
   // Get rail icon based on organization/agency name
   const getRailIcon = (): string => {
@@ -414,7 +414,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                     <div
                       className="mb-1 sm:mb-2 overflow-hidden"
                       style={{
-                        fontSize: `${2.5 * subtitleSizeMultiplier}cqh`,
+                        fontSize: `${2.5 * subtitleSizeMultiplier}cqmin`,
                         marginBottom: "0.5cqw",
                         display: "flex",
                         alignItems: "center",
@@ -423,8 +423,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       <img
                         src={modeIcon}
                         style={{
-                          height: `${5.5 * subtitleSizeMultiplier}cqh`,
-                          width: `${5.5 * subtitleSizeMultiplier}cqh`,
+                          height: `${5.5 * subtitleSizeMultiplier}cqmin`,
+                          width: `${5.5 * subtitleSizeMultiplier}cqmin`,
                           marginRight: "8px",
                           objectFit: "contain",
 
@@ -460,7 +460,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           title="Wheelchair accessible"
                           className="flex-shrink-0"
                           style={{
-                            fontSize: `${4 * titleSizeMultiplier}cqh`,
+                            fontSize: `${4 * titleSizeMultiplier}cqmin`,
                           }}
                         >
                           ♿
@@ -472,7 +472,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                   {hasContent(description) && (
                     <p
                       className="truncate rich-text-content"
-                      style={{ fontSize: `${2 * titleSizeMultiplier}cqh` }}
+                      style={{ fontSize: `${2 * titleSizeMultiplier}cqmin` }}
                       dangerouslySetInnerHTML={{ __html: description }}
                     />
                   )}

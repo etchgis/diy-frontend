@@ -90,18 +90,18 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
 
   const headerFontSize = isEditor
     ? `${20 * contentSizeMultiplier}px`
-    : `${5 * contentSizeMultiplier}cqh`;
+    : `${5 * contentSizeMultiplier}cqmin`;
 
   const rowFontSize = isEditor
     ? `${15 * contentSizeMultiplier}px`
-    : `${4 * contentSizeMultiplier}cqh`;
+    : `${4 * contentSizeMultiplier}cqmin`;
 
   const timeFontSize = isEditor
     ? `${15 * contentSizeMultiplier}px`
-    : `${4 * contentSizeMultiplier}cqh`;
+    : `${4 * contentSizeMultiplier}cqmin`;
 
-  const headerPadding = isEditor ? undefined : `${1.8 * contentSizeMultiplier}cqh 2cqw`;
-  const rowPadding = isEditor ? undefined : `${1.5 * contentSizeMultiplier}cqh 2cqw`;
+  const headerPadding = isEditor ? undefined : `${1.8 * contentSizeMultiplier}cqmin 2cqw`;
+  const rowPadding = isEditor ? undefined : `${1.5 * contentSizeMultiplier}cqmin 2cqw`;
 
   const renderTable = (tableData: DestinationTable, tableIndex: number) => (
     <div
@@ -192,9 +192,9 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
                 const iconSrc = leg.mode === 'SUBWAY' ? '/images/subway-icon.png'
                   : leg.mode === 'RAIL' || leg.mode === 'LIGHT RAIL' ? '/images/rail-icon.png'
                   : '/images/bus-icon.png';
-                const iconSize = isEditor ? `${20 * contentSizeMultiplier}px` : `${3.2 * contentSizeMultiplier}cqh`;
-                const badgeFontSize = isEditor ? `${12 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}cqh`;
-                const badgePadding = isEditor ? `${1 * contentSizeMultiplier}px ${3 * contentSizeMultiplier}px` : '0.2cqh 0.4cqw';
+                const iconSize = isEditor ? `${20 * contentSizeMultiplier}px` : `${3.2 * contentSizeMultiplier}cqmin`;
+                const badgeFontSize = isEditor ? `${12 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}cqmin`;
+                const badgePadding = isEditor ? `${1 * contentSizeMultiplier}px ${3 * contentSizeMultiplier}px` : '0.2cqmin 0.4cqw';
                 return (
                   <div key={i} className="flex items-center gap-0.5 flex-shrink-0">
                     <img src={iconSrc} alt={leg.mode} style={{ height: iconSize, width: 'auto', objectFit: 'contain' }} />
@@ -269,7 +269,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
                 className="font-light rich-text-content"
                 style={{
                   color: titleColor,
-                  fontSize: `${6 * titleSizeMultiplier}cqh`,
+                  fontSize: `${6 * titleSizeMultiplier}cqmin`,
                   lineHeight: '1.2',
                 }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
@@ -292,8 +292,8 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
         <div
           className="flex-1 min-h-0 overflow-hidden flex flex-col"
           style={{
-            padding: isEditor ? '0.4rem' : '1.2cqh 3cqw',
-            gap: isEditor ? '0.4rem' : '1cqh',
+            padding: isEditor ? '0.4rem' : '1.2cqmin 3cqw',
+            gap: isEditor ? '0.4rem' : '1cqmin',
           }}
         >
           <div className="flex min-h-0 overflow-hidden" style={{ gap: isEditor ? '0.4rem' : '1cqw', flex: 1 }}>
@@ -310,10 +310,10 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           style={{
             padding: isEditor
               ? (isQuad ? '0.3rem' : showSecondTable ? '0.5rem' : '1rem')
-              : (isQuad ? '1cqh 2cqw' : showSecondTable ? '1.5cqh 4cqw' : '3cqh 4cqw'),
+              : (isQuad ? '1cqmin 2cqw' : showSecondTable ? '1.5cqmin 4cqw' : '3cqmin 4cqw'),
             gap: isEditor
               ? (isQuad ? '0.3rem' : showSecondTable ? '0.4rem' : '0.75rem')
-              : (isQuad ? '0.8cqh' : showSecondTable ? '1.2cqh' : '2.5cqh'),
+              : (isQuad ? '0.8cqmin' : showSecondTable ? '1.2cqmin' : '2.5cqmin'),
           }}
         >
           <div className="w-full min-h-0 overflow-hidden">

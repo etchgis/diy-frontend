@@ -193,7 +193,7 @@ export default function Template2Preview({
                 className="w-full bg-transparent font-light rich-text-content"
                 style={{
                   color: titleColor,
-                  fontSize: `${8 * titleSizeMultiplier}cqh`,
+                  fontSize: `${8 * titleSizeMultiplier}cqmin`,
                   lineHeight: "1.2"
                 }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}

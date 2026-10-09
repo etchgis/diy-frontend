@@ -440,7 +440,7 @@ export default function CitibikePreview({
             ) : (
               <div
                 className="w-full bg-transparent font-light rich-text-content"
-                style={{ color: titleColor, fontSize: `${6 * titleSizeMultiplier}cqh`, lineHeight: "1.2" }}
+                style={{ color: titleColor, fontSize: `${6 * titleSizeMultiplier}cqmin`, lineHeight: "1.2" }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
               />
             )}
@@ -462,7 +462,7 @@ export default function CitibikePreview({
             <div className="w-full h-full flex items-center justify-center">
               <p style={{
                 color: textColor, opacity: 0.7,
-                fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqh`,
+                fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqmin`,
               }}>
                 Unable to load data for one or more providers.
               </p>
@@ -478,7 +478,7 @@ export default function CitibikePreview({
               className="p-3 text-center"
               style={{
                 opacity: 0.7,
-                fontSize: isEditor ? `${12.8 * contentSizeMultiplier}px` : `${1.8 * contentSizeMultiplier}cqh`,
+                fontSize: isEditor ? `${12.8 * contentSizeMultiplier}px` : `${1.8 * contentSizeMultiplier}cqmin`,
               }}
             >
               {!coordinates ? "No location set" : !dataLoaded ? "Loading..." : "No vehicles found nearby. Try increasing the search radius."}
@@ -512,8 +512,8 @@ function MergedStationList({
   isEditor: boolean;
   contentSizeMultiplier: number;
 }) {
-  const nameSize = isEditor ? `${13 * contentSizeMultiplier}px` : `${1.9 * contentSizeMultiplier}cqh`;
-  const smallSize = isEditor ? `${11 * contentSizeMultiplier}px` : `${1.6 * contentSizeMultiplier}cqh`;
+  const nameSize = isEditor ? `${13 * contentSizeMultiplier}px` : `${1.9 * contentSizeMultiplier}cqmin`;
+  const smallSize = isEditor ? `${11 * contentSizeMultiplier}px` : `${1.6 * contentSizeMultiplier}cqmin`;
 
   const merged: TaggedStation[] = [];
   for (const provider of selectedProviders) {
