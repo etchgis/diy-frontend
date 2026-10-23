@@ -784,7 +784,7 @@ export default function TransitDestinationSlide({ slideId, handleDelete, handleP
               </div>
             </div>
 
-            <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
+            <div className="h-[min(550px,50vh)] rounded-lg border border-[#e2e8f0] overflow-hidden">
               <TransitDestinationPreview slideId={slideId} />
             </div>
 

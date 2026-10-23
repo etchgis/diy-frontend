@@ -326,7 +326,7 @@ export default function TransitRoutesSlide({
           {/* Map Preview - Responsive container */}
 
           <div className="w-full">
-            <div className=" h-[550px]  border border-[#e2e8f0] rounded-lg overflow-hidden">
+            <div className=" h-[min(550px,50vh)]  border border-[#e2e8f0] rounded-lg overflow-hidden">
               <TransitRoutesPreview slideId={slideId} />
             </div>
           </div>

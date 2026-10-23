@@ -57,7 +57,7 @@ export default function WeatherSlide({ slideId, handleDelete, handlePreview, han
           </p>
 
           {/* Preview Area */}
-          <div className="h-[550px] rounded-lg border border-[#e2e8f0] overflow-hidden">
+          <div className="h-[min(550px,50vh)] rounded-lg border border-[#e2e8f0] overflow-hidden">
             <WeatherPreview slideId={slideId} />
           </div>
 

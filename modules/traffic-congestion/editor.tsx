@@ -171,7 +171,7 @@ export default function TrafficCongestionSlide({
             </div>
           </div>
 
-          <div className="h-[500px] rounded-lg border border-[#e2e8f0] overflow-hidden">
+          <div className="h-[min(500px,50vh)] rounded-lg border border-[#e2e8f0] overflow-hidden">
             <TrafficCongestionPreview slideId={slideId} />
           </div>
 

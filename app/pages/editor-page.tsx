@@ -503,6 +503,7 @@ export default function EditorPage() {
         useRouteTimesStore.getState().setTitleTextSize(slideId, titleSize);
         useRouteTimesStore.getState().setContentTextSize(slideId, contentSize);
         break;
+      case 'fixed-routes':
       case 'stop-arrivals':
         useFixedRouteStore.getState().setBackgroundColor(slideId, primaryBg);
         useFixedRouteStore.getState().setTitleColor(slideId, titleText);
