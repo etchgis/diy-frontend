@@ -1900,8 +1900,10 @@ export default function StopArrivalsSlide({
                                 _seenHsToggle.add(k);
                                 headsignOpts.push(o);
                               }
+                              const _hasLiveHeadsigns = _liveHeadsigns.length > 0;
                               for (const o of allOpts) {
                                 if (!o.headsignFilter) continue;
+                                if (_hasLiveHeadsigns && !_seenHsToggle.has(o.headsignFilter)) continue;
                                 const k = o.headsignFilter;
                                 if (_seenHsToggle.has(k)) continue;
                                 _seenHsToggle.add(k);
@@ -1913,6 +1915,7 @@ export default function StopArrivalsSlide({
                                 const k = o.routeShortName ? `${o.routeShortName}|${o.headsignFilter!}` : o.headsignFilter!;
                                 if (_seenHsRename.has(k)) continue;
                                 _seenHsRename.add(k);
+                                if (o.headsignFilter) _seenHsRename.add(o.headsignFilter);
                                 headsignRenameOpts.push(o);
                               }
                               for (const o of allOpts) {
@@ -1928,6 +1931,76 @@ export default function StopArrivalsSlide({
                               const topOpts = allOpts.filter((o: DirectionOption) => o.isAllDirections || (!o.headsignFilter && !o.groupHeadsigns));
                               // Show top-level options + group shortcuts on first row; individual headsigns on second row
                               const firstRowOpts = [...topOpts, ...groupOpts];
+
+                              // Determine active directional selection so we can filter headsign toggles
+                              const _nIds = (s: string) => (s || '').split(',').map((x: string) => x.trim()).filter(Boolean).sort().join(',');
+                              const activeGroupOpt = groupOpts.find((o: DirectionOption) => _nIds(o.stopId) === _nIds(selection.selectedStopId));
+                              const activeTopOpt = !activeGroupOpt
+                                ? topOpts.find((o: DirectionOption) => !o.isAllDirections && _nIds(o.stopId) === _nIds(selection.selectedStopId))
+                                : undefined;
+
+                              const _filterByDir = (o: DirectionOption): boolean => {
+                                if (activeGroupOpt) {
+                                  if (o.directionGroup) return o.directionGroup === activeGroupOpt.label;
+                                  if (activeGroupOpt.groupHeadsigns) {
+                                    return activeGroupOpt.groupHeadsigns.some(
+                                      (h: string) => h.toLowerCase().trim() === (o.headsignFilter || '').toLowerCase().trim()
+                                    );
+                                  }
+                                  return true;
+                                }
+                                return !o.routeShortName || o.routeShortName === activeTopOpt!.label;
+                              };
+
+                              const visibleHeadsignOpts = (activeGroupOpt || activeTopOpt)
+                                ? headsignOpts.filter(_filterByDir)
+                                : headsignOpts;
+
+                              // For route-based directions with no headsign data, synthesize rename entries
+                              // from the direction labels so the pencil icon appears and saves work.
+                              const routeDirOpts = topOpts.filter((o: DirectionOption) => !o.isAllDirections);
+                              if (headsignRenameOpts.length === 0 && routeDirOpts.length > 0) {
+                                routeDirOpts.forEach((o: DirectionOption) => {
+                                  const k = o.label.toLowerCase();
+                                  if (!headsignRenameOpts.some((r: DirectionOption) => r.headsignFilter === k)) {
+                                    headsignRenameOpts.push({ ...o, headsignFilter: k });
+                                  }
+                                });
+                              }
+
+                              // For routes whose live arrivals carry no destination, the preview falls back
+                              // to the route short name. Add a synthetic rename entry so users can override
+                              // that fallback text (stored as alias key routeShortName|routeShortName).
+                              const _noDestSeen = new Set<string>();
+                              for (const arr of liveArrivals) {
+                                if (arr._sourceService !== selection.serviceId) continue;
+                                if (selection.enabledRouteIds && arr.routeId && !selection.enabledRouteIds.includes(arr.routeId)) continue;
+                                if (arr.destination) continue;
+                                const rsn = arr.routeShortName || '';
+                                if (!rsn || _noDestSeen.has(rsn)) continue;
+                                _noDestSeen.add(rsn);
+                                if (!headsignRenameOpts.some((r: DirectionOption) => r.routeShortName === rsn && r.headsignFilter === rsn.toLowerCase())) {
+                                  const route = (selection.routes || []).find((r: RouteInfo) => (r.shortName || '') === rsn);
+                                  const label = route?.longName || rsn;
+                                  headsignRenameOpts.push({ stopId: '', label, isAllDirections: false, headsignFilter: rsn.toLowerCase(), routeShortName: rsn });
+                                }
+                              }
+
+                              const visibleRenameOpts = (activeGroupOpt || activeTopOpt)
+                                ? headsignRenameOpts.filter(_filterByDir)
+                                : headsignRenameOpts;
+
+                              const headsignToRoutes = new Map<string, Array<{shortName: string, color: string, textColor: string}>>();
+                              for (const o of _liveHeadsigns) {
+                                if (!o.headsignFilter || !o.routeShortName) continue;
+                                const list = headsignToRoutes.get(o.headsignFilter) || [];
+                                if (!list.some(r => r.shortName === o.routeShortName)) {
+                                  const ri = (selection.routes || []).find((r: RouteInfo) => r.shortName === o.routeShortName);
+                                  list.push({ shortName: o.routeShortName, color: ri?.color || '6b7280', textColor: ri?.textColor || 'ffffff' });
+                                }
+                                headsignToRoutes.set(o.headsignFilter, list);
+                              }
+
                               const isEditing = editingHeadsignsFor === selection.serviceId;
                               return (
                                 <>
@@ -1979,7 +2052,7 @@ export default function StopArrivalsSlide({
                                       );
                                     })}
                                     {/* Individual headsign buttons (second row when grouped, or inline for plain headsigns) */}
-                                    {headsignOpts.map((opt: DirectionOption, hsIdx: number) => {
+                                    {visibleHeadsignOpts.map((opt: DirectionOption, hsIdx: number) => {
                                       const currentFilters = selection.selectedHeadsignFilters || [];
                                       const isSelected = opt.headsignFilter ? currentFilters.includes(opt.headsignFilter) : false;
                                       const savedAlias = opt.headsignFilter
@@ -1994,6 +2067,7 @@ export default function StopArrivalsSlide({
                                         })()
                                         : undefined;
                                       const displayLabel = savedAlias || opt.label || opt.headsignFilter;
+                                      const routePills = opt.headsignFilter ? (headsignToRoutes.get(opt.headsignFilter) || []) : [];
                                       return (
                                         <button
                                           key={`hs-${index}-${hsIdx}`}
@@ -2014,19 +2088,28 @@ export default function StopArrivalsSlide({
                                             setActiveSels(updated);
                                             setIsLoading(slideId, true);
                                           }}
-                                          className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                                          className={`flex items-center gap-1 px-2 py-1 text-xs rounded-full border transition-colors ${
                                             isSelected
                                               ? 'bg-blue-500 text-white border-blue-500'
                                               : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                                           }`}
                                         >
+                                          {routePills.map(rp => (
+                                            <span
+                                              key={rp.shortName}
+                                              style={{ backgroundColor: `#${rp.color}`, color: `#${rp.textColor}` }}
+                                              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-sm text-[8px] font-bold leading-none shrink-0"
+                                            >
+                                              {rp.shortName}
+                                            </span>
+                                          ))}
                                           {displayLabel}
                                         </button>
                                       );
                                     })}
                                   </div>}
                                   {/* Rename + reset buttons — always show when there are headsigns to alias */}
-                                  {headsignRenameOpts.length > 0 && (
+                                  {visibleRenameOpts.length > 0 && (
                                     <div className="flex items-center ml-6 mt-1.5 gap-1">
                                       <button
                                         onClick={() => {
@@ -2066,9 +2149,9 @@ export default function StopArrivalsSlide({
                                     </div>
                                   )}
                                   {/* Inline headsign rename form */}
-                                  {isEditing && headsignRenameOpts.length > 0 && (
+                                  {isEditing && visibleRenameOpts.length > 0 && (
                                     <div className="ml-6 mt-2 space-y-1">
-                                      {headsignRenameOpts.map((opt: DirectionOption) => {
+                                      {visibleRenameOpts.map((opt: DirectionOption) => {
                                         const k = getAliasKey(opt);
                                         const cardLabel = opt.routeShortName
                                           ? `${opt.routeShortName}: ${opt.label || opt.headsignFilter}`
