@@ -34,11 +34,21 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { SlideErrorBoundary } from '@/components/slide-error-boundary';
+import { withMapSupport } from '@/components/map-slide-gate';
 
-// Map slides load on demand so older browsers that cannot run mapbox-gl still show other slides.
-const TransitRoutesPreview = dynamic(() => import('@/modules/transit-routes/preview'), { ssr: false });
-const CitibikePreview = dynamic(() => import('@/modules/citibike/preview'), { ssr: false });
-const RouteTimesPreview = dynamic(() => import('@/modules/route-times/preview'), { ssr: false });
+// Map slides load on demand, and only on displays that can draw maps; others show a notice instead.
+const TransitRoutesPreview = withMapSupport(
+  dynamic(() => import('@/modules/transit-routes/preview'), { ssr: false }),
+  'Transit Route Destination Map Page',
+);
+const CitibikePreview = withMapSupport(
+  dynamic(() => import('@/modules/citibike/preview'), { ssr: false }),
+  'Micromobility Page',
+);
+const RouteTimesPreview = withMapSupport(
+  dynamic(() => import('@/modules/route-times/preview'), { ssr: false }),
+  'Route Times Page',
+);
 
 
 function isSlideVisible(slide: any, now: Date): boolean {
