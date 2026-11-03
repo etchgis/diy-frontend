@@ -1,4 +1,6 @@
 const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
+// Optional base URL for the trip-planning call only. Feeds, stops and bikeshare stay on SKIDS_URL.
+const ROUTING_URL = process.env.NEXT_PUBLIC_ROUTING_URL || SKIDS_URL;
 const SKIDS_REGION = process.env.NEXT_PUBLIC_SKIDS_REGION;
 
 interface SkidsResponse {
@@ -336,9 +338,9 @@ export async function fetchSkidsTransitData(
     apiOptions.includeGeometry = true;
   }
 
-  if (!SKIDS_URL) throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
+  if (!ROUTING_URL) throw new Error('NEXT_PUBLIC_SKIDS_URL environment variable is not configured');
 
-  const response = await fetch(`${SKIDS_URL}/api/transit/route/coordinates`, {
+  const response = await fetch(`${ROUTING_URL}/api/transit/route/coordinates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
