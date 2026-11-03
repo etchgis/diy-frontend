@@ -68,53 +68,53 @@ export default function TransitDestinationPreview({
   const getHeaderStyles = () => {
     if (mobileMode) return { className: "p-2", fontSize: `${14 * titleSizeMultiplier}px` };
     if (isEditor) return { className: "p-4", fontSize: `${18 * titleSizeMultiplier}px` };
-    return { className: "p-[2.5cqmin]", fontSize: `${3.0 * titleSizeMultiplier}cqmin` };
+    return { className: "p-[calc(2.5*var(--cqmin))]", fontSize: `calc(${3.0 * titleSizeMultiplier}*var(--cqmin))` };
   };
 
   const getRowStyles = () => {
     if (mobileMode) return { className: "", fontSize: `${14 * contentSizeMultiplier}px` };
     if (isEditor) return { className: "", fontSize: `${16 * contentSizeMultiplier}px` };
-    return { className: "", fontSize: `${2.8 * contentSizeMultiplier}cqmin` };
+    return { className: "", fontSize: `calc(${2.8 * contentSizeMultiplier}*var(--cqmin))` };
   };
 
   const getGridGap = () => {
     if (mobileMode) return "gap-2";
-    return isEditor ? "gap-4" : "gap-[1cqmin]";
+    return isEditor ? "gap-4" : "gap-[calc(1*var(--cqmin))]";
   };
 
   const getRowPadding = () => {
     if (mobileMode) return "px-2";
-    return isEditor ? "px-4" : "px-[1.5cqmin]";
+    return isEditor ? "px-4" : "px-[calc(1.5*var(--cqmin))]";
   };
 
   const getIconSize = () => {
     if (mobileMode) return { width: "20px", height: "20px" };
     if (isEditor) return { width: "35px", height: "35px" };
-    return { width: "3cqmin", height: "3cqmin" };
+    return { width: "calc(3*var(--cqmin))", height: "calc(3*var(--cqmin))" };
   };
 
   const getIconSizeForManyLegs = (hasMany: boolean, mode?: string) => {
     if (mode === "RAIL") {
       if (mobileMode || hasMany) return { width: "42px", height: "42px" };
       if (isEditor) return { width: "48px", height: "48px" };
-      return { width: "6cqmin", height: "6cqmin" };
+      return { width: "calc(6*var(--cqmin))", height: "calc(6*var(--cqmin))" };
     }
 
     if (mobileMode || hasMany) return { width: "30px", height: "30px" };
     if (isEditor) return { width: "35px", height: "35px" };
-    return { width: "4.2cqmin", height: "4.2cqmin" };
+    return { width: "calc(4.2*var(--cqmin))", height: "calc(4.2*var(--cqmin))" };
   };
 
   const getBusPadding = (hasMany: boolean) => {
     if (mobileMode || hasMany) return "px-1 py-0.5";
     if (isEditor) return "px-2 py-1";
-    return "px-[0.8cqmin] py-[0.4cqmin]";
+    return "px-[calc(0.8*var(--cqmin))] py-[calc(0.4*var(--cqmin))]";
   };
 
   const getBusTextSize = (hasMany: boolean) => {
     if (mobileMode || hasMany) return "text-xs";
     if (isEditor) return "text-sm";
-    return "text-[1.8cqmin]";
+    return "text-[calc(1.8*var(--cqmin))]";
   };
 
   const formatRouteName = (leg: any): string => {
@@ -140,7 +140,7 @@ export default function TransitDestinationPreview({
   const getDurationTextSize = (hasMany: boolean) => {
     if (mobileMode || hasMany) return "text-sm";
     if (isEditor) return "text-sm";
-    return "text-[2.4cqmin]";
+    return "text-[calc(2.4*var(--cqmin))]";
   };
 
   /**
@@ -175,42 +175,42 @@ export default function TransitDestinationPreview({
   const getArrowSize = (hasMany: boolean) => {
     if (mobileMode || hasMany) return { width: "18px", height: "18px" };
     if (isEditor) return { width: "25px", height: "25px" };
-    return { width: "2.5cqmin", height: "2.5cqmin" };
+    return { width: "calc(2.5*var(--cqmin))", height: "calc(2.5*var(--cqmin))" };
   };
 
   const getArrowMargin = (hasMany: boolean) => {
     if (mobileMode || hasMany) return "2px";
     if (isEditor) return "8px";
-    return "0.6cqmin";
+    return "calc(0.6*var(--cqmin))";
   };
 
   const getFooterPadding = () => {
     if (mobileMode) return "p-2";
-    return isEditor ? "p-3" : "p-[1.2cqmin]";
+    return isEditor ? "p-3" : "p-[calc(1.2*var(--cqmin))]";
   };
 
   const getFooterImageSize = () => {
     if (mobileMode) return { logo: "h-[20px] w-[180px]", nysdot: "h-6" };
     if (isEditor) return { logo: "h-[25px] w-[246px]", nysdot: "h-8" };
-    return { logo: "h-[2.5cqmin] w-[20cqmin]", nysdot: "h-[3cqmin]" };
+    return { logo: "h-[calc(2.5*var(--cqmin))] w-[calc(20*var(--cqmin))]", nysdot: "h-[calc(3*var(--cqmin))]" };
   };
 
   const getEmptyRowTextSize = () => {
     if (mobileMode) return "text-lg";
     if (isEditor) return "text-2xl";
-    return "text-[2.5cqmin]";
+    return "text-[calc(2.5*var(--cqmin))]";
   };
 
   const getLegendIconSize = () => {
     if (mobileMode) return { width: "24px", height: "24px" };
     if (isEditor) return { width: "35px", height: "35px" };
-    return { width: "5cqmin", height: "5cqmin" };
+    return { width: "calc(5*var(--cqmin))", height: "calc(5*var(--cqmin))" };
   };
 
   const getLegendTextSize = () => {
     if (mobileMode) return "text-xs";
     if (isEditor) return "text-sm";
-    return "text-[3cqmin]";
+    return "text-[calc(3*var(--cqmin))]";
   };
 
   return (
@@ -530,13 +530,13 @@ export default function TransitDestinationPreview({
 
             {/* Legend Row */}
             <div
-              className={`flex-shrink-0 flex items-center justify-center ${getRowPadding()} ${mobileMode ? "py-2" : isEditor ? "py-3" : "py-[1.5cqmin]"} w-full`}
+              className={`flex-shrink-0 flex items-center justify-center ${getRowPadding()} ${mobileMode ? "py-2" : isEditor ? "py-3" : "py-[calc(1.5*var(--cqmin))]"} w-full`}
               style={{
                 backgroundColor: backgroundColor,
                 color: tableHeaderTextColor,
               }}
             >
-              <div className={`flex items-center ${mobileMode ? "gap-3" : isEditor ? "gap-6" : "gap-[4cqmin]"} flex-wrap justify-center`}>
+              <div className={`flex items-center ${mobileMode ? "gap-3" : isEditor ? "gap-6" : "gap-[calc(4*var(--cqmin))]"} flex-wrap justify-center`}>
 
                 {/* Walk */}
                 <div className="flex items-center gap-1">

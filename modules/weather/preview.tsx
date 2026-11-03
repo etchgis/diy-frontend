@@ -110,7 +110,7 @@ export default function WeatherPreview({
                 className="w-full bg-transparent font-light rich-text-content"
                 style={{
                   color: titleColor,
-                  fontSize: `${6 * titleSizeMultiplier}cqmin`,
+                  fontSize: `calc(${6 * titleSizeMultiplier}*var(--cqmin))`,
                   lineHeight: "1.2",
                 }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
@@ -129,16 +129,16 @@ export default function WeatherPreview({
       )}
 
       {/* Weather Content */}
-      <div className="flex-1 min-h-0 p-6 flex" style={{ gap: isEditor ? "8px" : "1cqmin" }}>
+      <div className="flex-1 min-h-0 p-6 flex" style={{ gap: isEditor ? "8px" : "calc(1*var(--cqmin))" }}>
         {dataError ? (
           <div className="w-full flex items-center justify-center">
-            <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqmin` }}>
+            <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `calc(${3 * contentSizeMultiplier}*var(--cqmin))` }}>
               Unable to load weather data.
             </p>
           </div>
         ) : !weatherData ? (
           <div className="w-full flex items-center justify-center">
-            <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqmin` }}>
+            <p style={{ color: textColor, opacity: 0.7, fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `calc(${3 * contentSizeMultiplier}*var(--cqmin))` }}>
               Loading weather data...
             </p>
           </div>
@@ -150,29 +150,29 @@ export default function WeatherPreview({
               style={{
                 backgroundColor: contentBackgroundColor || undefined,
                 borderRadius: contentBackgroundColor ? "8px" : undefined,
-                padding: contentBackgroundColor ? (isEditor ? "16px" : "2cqmin") : undefined,
+                padding: contentBackgroundColor ? (isEditor ? "16px" : "calc(2*var(--cqmin))") : undefined,
               }}
             >
               <div
                 style={{
-                  fontSize: isEditor ? `${17.6 * contentSizeMultiplier}px` : `${3.5 * contentSizeMultiplier}cqmin`,
+                  fontSize: isEditor ? `${17.6 * contentSizeMultiplier}px` : `calc(${3.5 * contentSizeMultiplier}*var(--cqmin))`,
                   opacity: 0.8,
-                  marginBottom: isEditor ? "8px" : "1cqmin",
+                  marginBottom: isEditor ? "8px" : "calc(1*var(--cqmin))",
                 }}
               >
                 {weatherData.current.date}
               </div>
 
               <div style={{ lineHeight: 1 }}>
-                <WeatherIcon code={weatherData.current.code} size={isEditor ? `${80 * contentSizeMultiplier}px` : `${18 * contentSizeMultiplier}cqmin`} />
+                <WeatherIcon code={weatherData.current.code} size={isEditor ? `${80 * contentSizeMultiplier}px` : `calc(${18 * contentSizeMultiplier}*var(--cqmin))`} />
               </div>
 
               <div
                 style={{
-                  fontSize: isEditor ? `${72 * contentSizeMultiplier}px` : `${15 * contentSizeMultiplier}cqmin`,
+                  fontSize: isEditor ? `${72 * contentSizeMultiplier}px` : `calc(${15 * contentSizeMultiplier}*var(--cqmin))`,
                   fontWeight: 200,
                   lineHeight: 1,
-                  marginTop: isEditor ? "8px" : "1cqmin",
+                  marginTop: isEditor ? "8px" : "calc(1*var(--cqmin))",
                 }}
               >
                 {weatherData.current.temp}°F
@@ -180,9 +180,9 @@ export default function WeatherPreview({
 
               <div
                 style={{
-                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `${5 * contentSizeMultiplier}cqmin`,
+                  fontSize: isEditor ? `${24 * contentSizeMultiplier}px` : `calc(${5 * contentSizeMultiplier}*var(--cqmin))`,
                   fontWeight: 300,
-                  marginTop: isEditor ? "4px" : "0.5cqmin",
+                  marginTop: isEditor ? "4px" : "calc(0.5*var(--cqmin))",
                 }}
               >
                 {weatherData.current.condition}
@@ -191,7 +191,7 @@ export default function WeatherPreview({
               <div
                 className="flex gap-4 mt-2"
                 style={{
-                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `${3 * contentSizeMultiplier}cqmin`,
+                  fontSize: isEditor ? `${16 * contentSizeMultiplier}px` : `calc(${3 * contentSizeMultiplier}*var(--cqmin))`,
                   opacity: 0.7,
                 }}
               >
@@ -206,15 +206,15 @@ export default function WeatherPreview({
               style={{
                 backgroundColor: contentBackgroundColor || undefined,
                 borderRadius: contentBackgroundColor ? "8px" : undefined,
-                padding: contentBackgroundColor ? (isEditor ? "16px" : "2cqmin") : undefined,
+                padding: contentBackgroundColor ? (isEditor ? "16px" : "calc(2*var(--cqmin))") : undefined,
               }}
             >
               <div
                 className="font-medium mb-2"
                 style={{
-                  fontSize: isEditor ? `${20.8 * contentSizeMultiplier}px` : `${4 * contentSizeMultiplier}cqmin`,
+                  fontSize: isEditor ? `${20.8 * contentSizeMultiplier}px` : `calc(${4 * contentSizeMultiplier}*var(--cqmin))`,
                   borderBottom: "1px solid rgba(255,255,255,0.2)",
-                  paddingBottom: isEditor ? "4px" : "0.5cqmin",
+                  paddingBottom: isEditor ? "4px" : "calc(0.5*var(--cqmin))",
                 }}
               >
                 7-Day Forecast
@@ -226,13 +226,13 @@ export default function WeatherPreview({
                     key={day.date}
                     className="flex items-center"
                     style={{
-                      padding: isEditor ? "5px 0" : "1cqmin 0",
+                      padding: isEditor ? "5px 0" : "calc(1*var(--cqmin)) 0",
                       borderBottom:
                         i < weatherData.daily.length - 1
                           ? "1px solid rgba(255,255,255,0.1)"
                           : "none",
-                      fontSize: isEditor ? `${17.6 * contentSizeMultiplier}px` : `${3.8 * contentSizeMultiplier}cqmin`,
-                      gap: isEditor ? "8px" : "1cqmin",
+                      fontSize: isEditor ? `${17.6 * contentSizeMultiplier}px` : `calc(${3.8 * contentSizeMultiplier}*var(--cqmin))`,
+                      gap: isEditor ? "8px" : "calc(1*var(--cqmin))",
                       minWidth: 0,
                     }}
                   >
@@ -242,8 +242,8 @@ export default function WeatherPreview({
                     <span className="flex-shrink-0" style={{ width: "25%" }}>
                       {day.high}°/{day.low}°
                     </span>
-                    <span className="flex items-center overflow-hidden" style={{ flex: 1, gap: isEditor ? "6px" : "0.8cqmin", minWidth: 0 }}>
-                      <WeatherIcon code={day.code} size={isEditor ? `${24 * contentSizeMultiplier}px` : `${4.5 * contentSizeMultiplier}cqmin`} />
+                    <span className="flex items-center overflow-hidden" style={{ flex: 1, gap: isEditor ? "6px" : "calc(0.8*var(--cqmin))", minWidth: 0 }}>
+                      <WeatherIcon code={day.code} size={isEditor ? `${24 * contentSizeMultiplier}px` : `calc(${4.5 * contentSizeMultiplier}*var(--cqmin))`} />
                       <span className="truncate" style={{ opacity: 0.8 }}>{day.condition}</span>
                     </span>
                   </div>

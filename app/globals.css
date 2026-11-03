@@ -8,6 +8,24 @@
   }
 }
 
+/* Slide sizing units. ResolutionFrame overrides these with its own pixel size. */
+:root {
+  --cqw: 1vw;
+  --cqh: 1vh;
+  --cqmin: 1vmin;
+  --cqmax: 1vmax;
+}
+
+/* Match how real container units fall back outside a container on browsers that have small-viewport units. */
+@supports (height: 1svh) {
+  :root {
+    --cqw: 1svw;
+    --cqh: 1svh;
+    --cqmin: 1svmin;
+    --cqmax: 1svmax;
+  }
+}
+
 .select-padded {
   padding: 10px 12px !important;
 }
