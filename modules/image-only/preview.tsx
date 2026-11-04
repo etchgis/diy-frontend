@@ -2,7 +2,6 @@ import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import { useImageOnlyStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { uploadImage } from "@/services/uploadImage";
-import { deleteImage } from "@/services/deleteImage";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import ResizableImage from "@/components/shared-components/resizable-image";
@@ -55,11 +54,6 @@ export default function ImageOnlyPreview({
     setIsUploading(true);
     uploadImage(shortcode, file)
       .then((data) => {
-        if (image) {
-          deleteImage(image).catch((err) => {
-            console.error("Failed to delete previous image:", err);
-          });
-        }
         setImage(slideId, data.url);
       })
       .catch((err) => {

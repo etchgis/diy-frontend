@@ -585,8 +585,8 @@ export default function TrafficCorridorSlide({
   };
 
   const saveStatus = useLocalSaveStatus(useTrafficCorridorStore, slideId);
-  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
-  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
+  const bg = useImageUploadField(shortcode, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, (url) => setLogoImage(slideId, url));
 
   const handleRefreshRoutes = () => {
     delete routeAltCache[slideId];

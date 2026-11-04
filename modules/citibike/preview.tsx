@@ -1,4 +1,5 @@
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
+import { useAvailableImage } from "@/lib/uploadedImages";
 import { useCitibikeStore, KNOWN_PROVIDERS, type GbfsProvider, type RentalStation } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { fetchCitibikeData } from "@/services/data-gathering/fetchCitibikeData";
@@ -47,7 +48,7 @@ export default function CitibikePreview({
   const title = useCitibikeStore((state) => state.slides[slideId]?.title || "");
   const setTitle = useCitibikeStore((state) => state.setTitle);
   const backgroundColor = useCitibikeStore((state) => state.slides[slideId]?.backgroundColor || "#192F51");
-  const bgImage = useCitibikeStore((state) => state.slides[slideId]?.bgImage || "");
+  const bgImage = useAvailableImage(useCitibikeStore((state) => state.slides[slideId]?.bgImage || ""));
   const titleColor = useCitibikeStore((state) => state.slides[slideId]?.titleColor || "#ffffff");
   const textColor = useCitibikeStore((state) => state.slides[slideId]?.textColor || "#ffffff");
   const logoImage = useCitibikeStore((state) => state.slides[slideId]?.logoImage || "");

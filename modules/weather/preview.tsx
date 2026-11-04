@@ -1,4 +1,5 @@
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
+import { useAvailableImage } from "@/lib/uploadedImages";
 import { useWeatherStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { fetchWeatherData } from "@/services/data-gathering/fetchWeatherData";
@@ -27,9 +28,9 @@ export default function WeatherPreview({
   const backgroundColor = useWeatherStore(
     (state) => state.slides[slideId]?.backgroundColor || "#192F51"
   );
-  const bgImage = useWeatherStore(
+  const bgImage = useAvailableImage(useWeatherStore(
     (state) => state.slides[slideId]?.bgImage || ""
-  );
+  ));
   const titleColor = useWeatherStore(
     (state) => state.slides[slideId]?.titleColor || "#ffffff"
   );

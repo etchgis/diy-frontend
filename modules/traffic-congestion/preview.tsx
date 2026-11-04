@@ -1,4 +1,5 @@
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
+import { useAvailableImage } from "@/lib/uploadedImages";
 import { useTrafficCongestionStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import { useResScale } from "@/hooks/useResScale";
@@ -34,7 +35,7 @@ export default function TrafficCongestionPreview({
   const setTitle = useTrafficCongestionStore((state) => state.setTitle);
   const showTitle = useTrafficCongestionStore((state) => state.slides[slideId]?.showTitle !== false);
   const backgroundColor = useTrafficCongestionStore((state) => state.slides[slideId]?.backgroundColor || "#192F51");
-  const bgImage = useTrafficCongestionStore((state) => state.slides[slideId]?.bgImage || "");
+  const bgImage = useAvailableImage(useTrafficCongestionStore((state) => state.slides[slideId]?.bgImage || ""));
   const logoImage = useTrafficCongestionStore((state) => state.slides[slideId]?.logoImage || "");
   const titleColor = useTrafficCongestionStore((state) => state.slides[slideId]?.titleColor || "#ffffff");
   const textColor = useTrafficCongestionStore((state) => state.slides[slideId]?.textColor || "#ffffff");

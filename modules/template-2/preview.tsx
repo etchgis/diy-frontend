@@ -1,5 +1,5 @@
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
-import { deleteImage } from "@/services/deleteImage";
+import { useAvailableImage } from "@/lib/uploadedImages";
 import { uploadImage } from "@/services/uploadImage";
 import { useGeneralStore } from "@/stores/general";
 import { useTemplate2Store } from "./store";
@@ -39,9 +39,9 @@ export default function Template2Preview({
   );
   const setImage = useTemplate2Store((state) => state.setImage);
 
-  const bgImage = useTemplate2Store(
+  const bgImage = useAvailableImage(useTemplate2Store(
     (state) => state.slides[slideId]?.bgImage || ""
-  );
+  ));
   const backgroundColor = useTemplate2Store(
     (state) => state.slides[slideId]?.backgroundColor || "#305fff"
   );
@@ -107,13 +107,6 @@ export default function Template2Preview({
     setIsUploading(true);
     uploadImage(shortcode, file)
       .then((data) => {
-        if (image) {
-          deleteImage(image)
-            .then(() => {})
-            .catch((err) => {
-              console.error("Failed to delete previous image:", err);
-            });
-        }
         setImage(slideId, data.url);
       })
       .catch((err) => {
@@ -137,13 +130,6 @@ export default function Template2Preview({
     setIsUploading(true);
     uploadImage(shortcode, file)
       .then((data) => {
-        if (image) {
-          deleteImage(image)
-            .then(() => {})
-            .catch((err) => {
-              console.error("Failed to delete previous image:", err);
-            });
-        }
         setImage(slideId, data.url);
       })
       .catch((err) => {

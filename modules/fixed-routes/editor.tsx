@@ -1443,8 +1443,8 @@ export default function StopArrivalsSlide({
 
 
   const saveStatus = useLocalSaveStatus(useFixedRouteStore, slideId);
-  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
-  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
+  const bg = useImageUploadField(shortcode, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, (url) => setLogoImage(slideId, url));
 
   const selectedRouteIds = new Set(
     serviceSelections.flatMap((s: { routes: any; }) => (s.routes || []).map((r: RouteInfo) => r.id ?? (r as any).route_id))

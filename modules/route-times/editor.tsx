@@ -204,8 +204,8 @@ export default function RouteTimesSlide({
   }, [selectedRoute]);
 
   const saveStatus = useLocalSaveStatus(useRouteTimesStore, slideId);
-  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
-  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
+  const bg = useImageUploadField(shortcode, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, (url) => setLogoImage(slideId, url));
 
   return (
     <>

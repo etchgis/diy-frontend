@@ -6,7 +6,6 @@ import { useFooterStore } from "@/stores/footer";
 import { useRef, useState, useEffect } from "react";
 import { useGeneralStore } from "@/stores/general";
 import { uploadImage } from "@/services/uploadImage";
-import { deleteImage } from "@/services/deleteImage";
 
 export default function EditFooter({
   handleCancel,
@@ -153,21 +152,12 @@ export default function EditFooter({
       rightInputRef.current.value = "";
     }
 
-    const currentImage = target === "left" ? leftImage : target === "middle" ? middleImage : rightImage;
     const localSetImageFn = target === "left" ? setLeftImage : target === "middle" ? setMiddleImage : setRightImage;
     const setLoadingFn = target === "left" ? setIsLeftUploading : target === "middle" ? setIsMiddleUploading : setIsRightUploading;
 
     setLoadingFn(true);
     uploadImage(shortcode, file)
       .then((data) => {
-        // Only delete if it's not a default image path
-        if (currentImage && !currentImage.startsWith("/images/")) {
-          deleteImage(currentImage)
-            .then(() => {})
-            .catch((err) => {
-              console.error("Failed to delete previous image:", err);
-            });
-        }
         localSetImageFn(data.url);
       })
       .catch((err) => {
@@ -178,8 +168,9 @@ export default function EditFooter({
       });
   };
 
+  // Replacing or removing an image only changes this draft. The old file stays, because other
+  // screen sets and published versions may still use it.
   const handleResetImage = (target: "left" | "middle" | "right") => {
-    const currentImage = target === "left" ? leftImage : target === "middle" ? middleImage : rightImage;
     const localSetImageFn = target === "left" ? setLeftImage : target === "middle" ? setMiddleImage : setRightImage;
     const inputRef = target === "left" ? leftInputRef : target === "middle" ? middleInputRef : rightInputRef;
     const defaultImage =
@@ -189,50 +180,19 @@ export default function EditFooter({
         ? ""
         : "/images/nysdot-footer-logo.png";
 
-    // Only delete if it's not a default image path
-    if (currentImage && !currentImage.startsWith("/images/")) {
-      deleteImage(currentImage)
-        .then(() => {
-          localSetImageFn(defaultImage);
-          if (inputRef.current) {
-            inputRef.current.value = "";
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to delete image:", err);
-        });
-    } else {
-      // Just reset to default
-      localSetImageFn(defaultImage);
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
+    localSetImageFn(defaultImage);
+    if (inputRef.current) {
+      inputRef.current.value = "";
     }
   };
 
   const handleRemoveImage = (target: "left" | "middle" | "right") => {
-    const currentImage = target === "left" ? leftImage : target === "middle" ? middleImage : rightImage;
     const localSetImageFn = target === "left" ? setLeftImage : target === "middle" ? setMiddleImage : setRightImage;
     const inputRef = target === "left" ? leftInputRef : target === "middle" ? middleInputRef : rightInputRef;
 
-    // Only delete if it's not a default image path
-    if (currentImage && !currentImage.startsWith("/images/")) {
-      deleteImage(currentImage)
-        .then(() => {
-          localSetImageFn("");
-          if (inputRef.current) {
-            inputRef.current.value = "";
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to delete image:", err);
-        });
-    } else {
-      // Just clear the image
-      localSetImageFn("");
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
+    localSetImageFn("");
+    if (inputRef.current) {
+      inputRef.current.value = "";
     }
   };
 

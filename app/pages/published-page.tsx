@@ -22,6 +22,7 @@ import { fetchTrafficData } from '@/services/data-gathering/fetchTrafficData';
 import { useTrafficCorridorStore } from '@/modules/traffic-corridor/store';
 import { getDestinationData } from '@/services/data-gathering/getDestinationData';
 import { SetupSlides } from '@/services/setup';
+import { hideBrokenImages, reportMissingImages } from '@/lib/uploadedImages';
 import { buildRouteLineNameMap, arrivalRouteLabel } from '@/utils/routeLineNames';
 import { useFixedRouteStore } from '@/modules/fixed-routes/store';
 import { useGeneralStore } from '@/stores/general';
@@ -257,7 +258,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
       const effectiveShortcode = orgConfig?.diyShortcode ?? (orgConfig ? null : shortcode);
       try {
         if (effectiveShortcode) {
-          await SetupSlides(effectiveShortcode);
+          const config = await SetupSlides(effectiveShortcode);
+          reportMissingImages(shortcode, config);
         }
       } catch (err) {
         console.error('[SETUP] SetupSlides failed:', err);
@@ -277,6 +279,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     };
     loadSlides();
   }, [shortcode]);
+
+  useEffect(() => hideBrokenImages(), []);
 
   // Log page visit for metrics
   useEffect(() => {

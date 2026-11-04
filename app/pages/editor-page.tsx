@@ -1,5 +1,6 @@
 'use client'
 import { Button } from "@/components/ui/button"
+import { MissingImagesNotice } from "@/components/missing-images-notice";
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ChevronRight, Upload, Settings, Edit } from "lucide-react"
@@ -1237,6 +1238,7 @@ export default function EditorPage() {
           </div>
         </header>
 
+        <MissingImagesNotice />
 
         {(() => {
           const activeOrgSlide = orgCustomSlides.find((s) => s.id === activeSlideId);
