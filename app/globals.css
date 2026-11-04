@@ -26,6 +26,10 @@
   }
 }
 
+/* Space between flex children for browsers without flex gap. Set the size with flexGap(). */
+.hgap > * + * { margin-left: var(--gap); }
+.vgap > * + * { margin-top: var(--gap); }
+
 .select-padded {
   padding: 10px 12px !important;
 }

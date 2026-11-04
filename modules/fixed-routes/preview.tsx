@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { cqUnitsToVars } from "@/lib/cqUnitsToVars";
 import { Input } from "@/components/ui/input";
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import {
@@ -343,7 +344,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         alt=""
                       />
                       {hasContent(subtitleText)
-                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: subtitleText }} />
+                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: cqUnitsToVars(subtitleText) }} />
                         : <span>{`Stop #${selectedStop?.id} arrival times`}</span>
                       }
                     </div>
@@ -357,7 +358,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       {hasContent(displayName) ? (
                         <span
                           className="rich-text-content"
-                          dangerouslySetInnerHTML={{ __html: displayName }}
+                          dangerouslySetInnerHTML={{ __html: cqUnitsToVars(displayName) }}
                         />
                       ) : (
                         <span>{selectedStop?.name || selectedStop?.stop_name || 'UNKNOWN STOP'}</span>
@@ -375,7 +376,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
 
                   {hasContent(description) && (
                     <p className="rich-text-content" style={{ fontSize: `${16 * titleSizeMultiplier}px` }}
-                      dangerouslySetInnerHTML={{ __html: description }}
+                      dangerouslySetInnerHTML={{ __html: cqUnitsToVars(description) }}
                     />
                   )}
                 </div>
@@ -406,7 +407,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         marginBottom: "calc(0.5*var(--cqw))",
                         overflow: 'hidden',
                       }}
-                      dangerouslySetInnerHTML={{ __html: titleHtml }}
+                      dangerouslySetInnerHTML={{ __html: cqUnitsToVars(titleHtml) }}
                     />
                   )}
 
@@ -432,7 +433,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         alt=""
                       />
                       {hasContent(subtitleText)
-                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: subtitleText }} />
+                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: cqUnitsToVars(subtitleText) }} />
                         : <span className="truncate">{`Stop #${selectedStop?.id} arrival times`}</span>
                       }
                     </div>
@@ -450,7 +451,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       {hasContent(displayName) ? (
                         <span
                           className="rich-text-content"
-                          dangerouslySetInnerHTML={{ __html: displayName }}
+                          dangerouslySetInnerHTML={{ __html: cqUnitsToVars(displayName) }}
                         />
                       ) : (
                         <span>{stopName || selectedStop?.name || selectedStop?.stop_name || 'UNKNOWN STOP'}</span>
@@ -473,7 +474,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                     <p
                       className="truncate rich-text-content"
                       style={{ fontSize: `calc(${2 * titleSizeMultiplier}*var(--cqmin))` }}
-                      dangerouslySetInnerHTML={{ __html: description }}
+                      dangerouslySetInnerHTML={{ __html: cqUnitsToVars(description) }}
                     />
                   )}
                 </div>

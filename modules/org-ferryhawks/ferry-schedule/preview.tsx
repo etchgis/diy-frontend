@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { flexGap } from '@/lib/flexGap';
 import { OrgCustomSlide } from '@/config/orgs/ferryhawks';
 import Footer from '@/components/shared-components/footer';
 
@@ -41,10 +42,11 @@ function DepartureRow({
 
   return (
     <div
+      className="hgap"
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 8 : 'calc(1.2*var(--cqh))',
+        ...flexGap(isEditor ? '8px' : 'calc(1.2*var(--cqh))'),
         padding: isEditor ? '8px 14px' : 'calc(1.2*var(--cqh)) calc(2*var(--cqh))',
         borderTop: isFirst ? 'none' : '1px solid rgba(255,255,255,0.08)',
         backgroundColor: isFirst ? 'rgba(255,255,255,0.04)' : 'transparent',
@@ -67,7 +69,6 @@ function DepartureRow({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 4 : 'calc(0.5*var(--cqh))',
         minWidth: isEditor ? 78 : 'calc(10*var(--cqh))',
         flexShrink: 0,
       }}>
@@ -76,6 +77,7 @@ function DepartureRow({
             width: isEditor ? 7 : 'calc(0.9*var(--cqh))',
             height: isEditor ? 7 : 'calc(0.9*var(--cqh))',
             minWidth: isEditor ? 7 : 'calc(0.9*var(--cqh))',
+            marginRight: isEditor ? 4 : 'calc(0.5*var(--cqh))',
             borderRadius: '50%',
             backgroundColor: '#4ade80',
             display: 'inline-block',
@@ -156,10 +158,10 @@ function ServicePanel({
       overflow: 'hidden',
     }}>
       {/* Header */}
-      <div style={{
+      <div className="hgap" style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 8 : 'calc(1*var(--cqh))',
+        ...flexGap(isEditor ? '8px' : 'calc(1*var(--cqh))'),
         padding: isEditor ? '9px 14px' : 'calc(1.3*var(--cqh)) calc(2*var(--cqh))',
         backgroundColor: `${accentColor}22`,
         borderBottom: `2px solid ${accentColor}`,
@@ -262,7 +264,7 @@ export default function FerrySchedulePreview({ config, isEditor = false, showFoo
         borderBottom: '1px solid rgba(255,255,255,0.12)',
         flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 8 : 'calc(1*var(--cqh))' }}>
+        <div className="hgap" style={{ display: 'flex', alignItems: 'center', ...flexGap(isEditor ? '8px' : 'calc(1*var(--cqh))') }}>
           <img
             className="leg-icon"
             src="/images/ferry-icon.png"
@@ -292,12 +294,12 @@ export default function FerrySchedulePreview({ config, isEditor = false, showFoo
       </div>
 
       {/* Panels */}
-      <div style={{
+      <div className={panels.length === 1 ? 'vgap' : 'hgap'} style={{
         flex: 1,
         minHeight: 0,
         display: 'flex',
         flexDirection: panels.length === 1 ? 'column' : 'row',
-        gap: isEditor ? '10px' : 'calc(1.5*var(--cqh))',
+        ...flexGap(isEditor ? '10px' : 'calc(1.5*var(--cqh))'),
         padding: isEditor ? '10px' : 'calc(1.5*var(--cqh))',
         overflow: 'hidden',
       }}>

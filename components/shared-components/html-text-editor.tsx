@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ClipboardEvent } from 'react';
 import { Pencil, Code2 } from 'lucide-react';
 
 interface HtmlTextEditorProps {
@@ -38,6 +38,13 @@ export default function HtmlTextEditor({ content, onChange, textColor, fontSize,
     onChange(html);
   };
 
+  // Paste as plain text. Content copied from a slide preview carries its sizing styles, which
+  // break the slide on some displays. Formatting can still be set in the HTML source view.
+  const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+  };
+
   return (
     <div className="relative w-full h-full" style={minHeight ? { minHeight } : undefined}>
       {/* Editable preview */}
@@ -46,6 +53,7 @@ export default function HtmlTextEditor({ content, onChange, textColor, fontSize,
         contentEditable={mode === 'edit'}
         suppressContentEditableWarning
         onInput={handleInput}
+        onPaste={handlePaste}
         className={`w-full h-full p-2 overflow-y-auto outline-none rich-text-content font-light ${mode === 'html' ? 'hidden' : ''}`}
         style={{ color: textColor, fontSize: `${fontSize}px`, lineHeight: 1.4 }}
       />

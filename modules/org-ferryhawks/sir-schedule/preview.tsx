@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { flexGap } from "@/lib/flexGap";
 import { OrgCustomSlide } from "@/config/orgs/ferryhawks";
 import type { SIRDeparture } from "@/app/api/sir/departures/route";
 import Footer from "@/components/shared-components/footer";
@@ -58,10 +59,11 @@ function DepartureRow({
 
   return (
     <div
+      className="hgap"
       style={{
         display: "flex",
         alignItems: "center",
-        gap: isEditor ? 14 : "calc(2.5*var(--cqh))",
+        ...flexGap(isEditor ? '14px' : "calc(2.5*var(--cqh))"),
         padding: isEditor ? "8px 14px" : "calc(1.2*var(--cqh)) calc(2*var(--cqh))",
         borderTop: isFirst ? "none" : "1px solid rgba(255,255,255,0.08)",
         backgroundColor: isFirst ? "rgba(255,255,255,0.04)" : "transparent",
@@ -210,10 +212,11 @@ export default function SIRSchedulePreview({
         }}
       >
         <div
+          className="hgap"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: isEditor ? 8 : "calc(1*var(--cqh))",
+            ...flexGap(isEditor ? '8px' : "calc(1*var(--cqh))"),
           }}
         >
           <img
@@ -233,7 +236,7 @@ export default function SIRSchedulePreview({
             {title}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: isEditor ? 10 : "calc(1.5*var(--cqh))" }}>
+        <div className="hgap" style={{ display: "flex", alignItems: "center", ...flexGap(isEditor ? '10px' : "calc(1.5*var(--cqh))") }}>
           <span
             style={{
               fontSize: isEditor ? `${18 * contentMult}px` : `calc(${4 * contentMult}*var(--cqh))`,
@@ -258,10 +261,11 @@ export default function SIRSchedulePreview({
 
       {/* Column headers */}
       <div
+        className="hgap"
         style={{
           display: "flex",
           alignItems: "center",
-          gap: isEditor ? 14 : "calc(2.5*var(--cqh))",
+          ...flexGap(isEditor ? '14px' : "calc(2.5*var(--cqh))"),
           padding: isEditor ? "5px 14px" : "calc(0.7*var(--cqh)) calc(2*var(--cqh))",
           borderBottom: `2px solid ${accentColor}`,
           backgroundColor: `${accentColor}22`,
