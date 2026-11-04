@@ -9,6 +9,17 @@ interface ResolutionFrameProps {
   background?: string;
 }
 
+// Slides size themselves with var(--cqw) etc. instead of CSS container units,
+// which older signage browsers (Chrome < 105) do not support.
+function frameUnits(w: number, h: number): CSSProperties {
+  return {
+    '--cqw': `${w / 100}px`,
+    '--cqh': `${h / 100}px`,
+    '--cqmin': `${Math.min(w, h) / 100}px`,
+    '--cqmax': `${Math.max(w, h) / 100}px`,
+  } as CSSProperties;
+}
+
 export function ResolutionFrame({ logicalW, logicalH, fontFamilyStyle = {}, children, background = '#111' }: ResolutionFrameProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number | null>(null);
@@ -44,7 +55,7 @@ export function ResolutionFrame({ logicalW, logicalH, fontFamilyStyle = {}, chil
     >
       {scale != null && (
         <div style={{ width: scaledW, height: scaledH, overflow: 'hidden', position: 'relative', flexShrink: 0, ...fontFamilyStyle }}>
-          <div style={{ width: logicalW, height: logicalH, transform: `scale(${scale})`, transformOrigin: 'top left', position: 'absolute', containerType: 'size' }}>
+          <div style={{ width: logicalW, height: logicalH, transform: `scale(${scale})`, transformOrigin: 'top left', position: 'absolute', ...frameUnits(logicalW, logicalH) }}>
             {children}
           </div>
         </div>

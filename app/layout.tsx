@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 import { SetupSlides } from '@/services/setup'
 import { useEffect } from 'react'
+import { legacyPolyfills } from '@/lib/legacyPolyfills'
 
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: legacyPolyfills }} />
         <style>{`
 html {
   font-family: ${GeistSans.style.fontFamily};

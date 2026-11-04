@@ -90,18 +90,18 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
 
   const headerFontSize = isEditor
     ? `${20 * contentSizeMultiplier}px`
-    : `${5 * contentSizeMultiplier}cqmin`;
+    : `calc(${5 * contentSizeMultiplier}*var(--cqmin))`;
 
   const rowFontSize = isEditor
     ? `${15 * contentSizeMultiplier}px`
-    : `${4 * contentSizeMultiplier}cqmin`;
+    : `calc(${4 * contentSizeMultiplier}*var(--cqmin))`;
 
   const timeFontSize = isEditor
     ? `${15 * contentSizeMultiplier}px`
-    : `${4 * contentSizeMultiplier}cqmin`;
+    : `calc(${4 * contentSizeMultiplier}*var(--cqmin))`;
 
-  const headerPadding = isEditor ? undefined : `${1.8 * contentSizeMultiplier}cqmin 2cqw`;
-  const rowPadding = isEditor ? undefined : `${1.5 * contentSizeMultiplier}cqmin 2cqw`;
+  const headerPadding = isEditor ? undefined : `calc(${1.8 * contentSizeMultiplier}*var(--cqmin)) calc(2*var(--cqw))`;
+  const rowPadding = isEditor ? undefined : `calc(${1.5 * contentSizeMultiplier}*var(--cqmin)) calc(2*var(--cqw))`;
 
   const renderTable = (tableData: DestinationTable, tableIndex: number) => (
     <div
@@ -175,7 +175,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
       {/* Transit Alternative Row */}
       {tableData.showTransitAlternative && (
         <div
-          className={isEditor ? 'flex items-center gap-2 px-3 py-2' : 'flex items-center gap-[0.6cqw]'}
+          className={isEditor ? 'flex items-center gap-2 px-3 py-2' : 'flex items-center gap-[calc(0.6*var(--cqw))]'}
           style={{
             backgroundColor: rowColor,
             borderTop: `1px solid ${tableHeaderColor}40`,
@@ -192,9 +192,9 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
                 const iconSrc = leg.mode === 'SUBWAY' ? '/images/subway-icon.png'
                   : leg.mode === 'RAIL' || leg.mode === 'LIGHT RAIL' ? '/images/rail-icon.png'
                   : '/images/bus-icon.png';
-                const iconSize = isEditor ? `${20 * contentSizeMultiplier}px` : `${3.2 * contentSizeMultiplier}cqmin`;
-                const badgeFontSize = isEditor ? `${12 * contentSizeMultiplier}px` : `${2.2 * contentSizeMultiplier}cqmin`;
-                const badgePadding = isEditor ? `${1 * contentSizeMultiplier}px ${3 * contentSizeMultiplier}px` : '0.2cqmin 0.4cqw';
+                const iconSize = isEditor ? `${20 * contentSizeMultiplier}px` : `calc(${3.2 * contentSizeMultiplier}*var(--cqmin))`;
+                const badgeFontSize = isEditor ? `${12 * contentSizeMultiplier}px` : `calc(${2.2 * contentSizeMultiplier}*var(--cqmin))`;
+                const badgePadding = isEditor ? `${1 * contentSizeMultiplier}px ${3 * contentSizeMultiplier}px` : 'calc(0.2*var(--cqmin)) calc(0.4*var(--cqw))';
                 return (
                   <div key={i} className="flex items-center gap-0.5 flex-shrink-0">
                     <img src={iconSrc} alt={leg.mode} style={{ height: iconSize, width: 'auto', objectFit: 'contain' }} />
@@ -269,7 +269,7 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
                 className="font-light rich-text-content"
                 style={{
                   color: titleColor,
-                  fontSize: `${6 * titleSizeMultiplier}cqmin`,
+                  fontSize: `calc(${6 * titleSizeMultiplier}*var(--cqmin))`,
                   lineHeight: '1.2',
                 }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
@@ -292,11 +292,11 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
         <div
           className="flex-1 min-h-0 overflow-hidden flex flex-col"
           style={{
-            padding: isEditor ? '0.4rem' : '1.2cqmin 3cqw',
-            gap: isEditor ? '0.4rem' : '1cqmin',
+            padding: isEditor ? '0.4rem' : 'calc(1.2*var(--cqmin)) calc(3*var(--cqw))',
+            gap: isEditor ? '0.4rem' : 'calc(1*var(--cqmin))',
           }}
         >
-          <div className="flex min-h-0 overflow-hidden" style={{ gap: isEditor ? '0.4rem' : '1cqw', flex: 1 }}>
+          <div className="flex min-h-0 overflow-hidden" style={{ gap: isEditor ? '0.4rem' : 'calc(1*var(--cqw))', flex: 1 }}>
             <div className="flex-1 min-w-0 overflow-hidden">{renderTable(table0, 0)}</div>
             <div className="flex-1 min-w-0 overflow-hidden">{renderTable(table1, 1)}</div>
           </div>
@@ -310,10 +310,10 @@ const updateCorridor = (tableIndex: number, corridorIndex: number, field: 'name'
           style={{
             padding: isEditor
               ? (isQuad ? '0.3rem' : showSecondTable ? '0.5rem' : '1rem')
-              : (isQuad ? '1cqmin 2cqw' : showSecondTable ? '1.5cqmin 4cqw' : '3cqmin 4cqw'),
+              : (isQuad ? 'calc(1*var(--cqmin)) calc(2*var(--cqw))' : showSecondTable ? 'calc(1.5*var(--cqmin)) calc(4*var(--cqw))' : 'calc(3*var(--cqmin)) calc(4*var(--cqw))'),
             gap: isEditor
               ? (isQuad ? '0.3rem' : showSecondTable ? '0.4rem' : '0.75rem')
-              : (isQuad ? '0.8cqmin' : showSecondTable ? '1.2cqmin' : '2.5cqmin'),
+              : (isQuad ? 'calc(0.8*var(--cqmin))' : showSecondTable ? 'calc(1.2*var(--cqmin))' : 'calc(2.5*var(--cqmin))'),
           }}
         >
           <div className="w-full min-h-0 overflow-hidden">

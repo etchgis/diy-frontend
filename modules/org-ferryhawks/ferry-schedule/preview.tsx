@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { flexGap } from '@/lib/flexGap';
 import { OrgCustomSlide } from '@/config/orgs/ferryhawks';
 import Footer from '@/components/shared-components/footer';
 
@@ -41,11 +42,12 @@ function DepartureRow({
 
   return (
     <div
+      className="hgap"
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 8 : '1.2cqh',
-        padding: isEditor ? '8px 14px' : '1.2cqh 2cqh',
+        ...flexGap(isEditor ? '8px' : 'calc(1.2*var(--cqh))'),
+        padding: isEditor ? '8px 14px' : 'calc(1.2*var(--cqh)) calc(2*var(--cqh))',
         borderTop: isFirst ? 'none' : '1px solid rgba(255,255,255,0.08)',
         backgroundColor: isFirst ? 'rgba(255,255,255,0.04)' : 'transparent',
       }}
@@ -53,9 +55,9 @@ function DepartureRow({
       {/* Time */}
       <div style={{
         fontWeight: 700,
-        fontSize: isEditor ? `${26 * contentMult}px` : `${4.2 * contentMult}cqh`,
+        fontSize: isEditor ? `${26 * contentMult}px` : `calc(${4.2 * contentMult}*var(--cqh))`,
         color: textColor,
-        minWidth: isEditor ? 85 : '12cqh',
+        minWidth: isEditor ? 85 : 'calc(12*var(--cqh))',
         flexShrink: 0,
         letterSpacing: '-0.01em',
         fontVariantNumeric: 'tabular-nums',
@@ -67,15 +69,15 @@ function DepartureRow({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 4 : '0.5cqh',
-        minWidth: isEditor ? 78 : '10cqh',
+        minWidth: isEditor ? 78 : 'calc(10*var(--cqh))',
         flexShrink: 0,
       }}>
         {dep.isRealTime && (
           <span style={{
-            width: isEditor ? 7 : '0.9cqh',
-            height: isEditor ? 7 : '0.9cqh',
-            minWidth: isEditor ? 7 : '0.9cqh',
+            width: isEditor ? 7 : 'calc(0.9*var(--cqh))',
+            height: isEditor ? 7 : 'calc(0.9*var(--cqh))',
+            minWidth: isEditor ? 7 : 'calc(0.9*var(--cqh))',
+            marginRight: isEditor ? 4 : 'calc(0.5*var(--cqh))',
             borderRadius: '50%',
             backgroundColor: '#4ade80',
             display: 'inline-block',
@@ -84,7 +86,7 @@ function DepartureRow({
         )}
         <span style={{
           fontWeight: 600,
-          fontSize: isEditor ? `${19 * contentMult}px` : `${3 * contentMult}cqh`,
+          fontSize: isEditor ? `${19 * contentMult}px` : `calc(${3 * contentMult}*var(--cqh))`,
           color: countdownColor,
           fontVariantNumeric: 'tabular-nums',
         }}>
@@ -95,7 +97,7 @@ function DepartureRow({
       {/* Destination */}
       <div style={{
         flex: 1,
-        fontSize: isEditor ? `${15 * contentMult}px` : `${2.6 * contentMult}cqh`,
+        fontSize: isEditor ? `${15 * contentMult}px` : `calc(${2.6 * contentMult}*var(--cqh))`,
         color: textColor,
         opacity: 0.8,
         whiteSpace: 'nowrap',
@@ -107,15 +109,15 @@ function DepartureRow({
 
       {/* Badge */}
       <div style={{
-        fontSize: isEditor ? `${9 * contentMult}px` : `${1.4 * contentMult}cqh`,
+        fontSize: isEditor ? `${9 * contentMult}px` : `calc(${1.4 * contentMult}*var(--cqh))`,
         fontWeight: 600,
         letterSpacing: '0.05em',
         textTransform: 'uppercase' as const,
         color: dep.isRealTime ? '#4ade80' : textColor,
         opacity: dep.isRealTime ? 1 : 0.4,
         border: `1px solid ${dep.isRealTime ? '#4ade8055' : 'rgba(255,255,255,0.15)'}`,
-        borderRadius: isEditor ? 3 : '0.4cqh',
-        padding: isEditor ? '2px 5px' : '0.25cqh 0.7cqh',
+        borderRadius: isEditor ? 3 : 'calc(0.4*var(--cqh))',
+        padding: isEditor ? '2px 5px' : 'calc(0.25*var(--cqh)) calc(0.7*var(--cqh))',
         flexShrink: 0,
       }}>
         {dep.isRealTime ? 'Live' : 'Sched'}
@@ -152,24 +154,24 @@ function ServicePanel({
       display: 'flex',
       flexDirection: 'column' as const,
       border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: isEditor ? 8 : '1cqh',
+      borderRadius: isEditor ? 8 : 'calc(1*var(--cqh))',
       overflow: 'hidden',
     }}>
       {/* Header */}
-      <div style={{
+      <div className="hgap" style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isEditor ? 8 : '1cqh',
-        padding: isEditor ? '9px 14px' : '1.3cqh 2cqh',
+        ...flexGap(isEditor ? '8px' : 'calc(1*var(--cqh))'),
+        padding: isEditor ? '9px 14px' : 'calc(1.3*var(--cqh)) calc(2*var(--cqh))',
         backgroundColor: `${accentColor}22`,
         borderBottom: `2px solid ${accentColor}`,
         color: accentColor,
         flexShrink: 0,
       }}>
-        <ServiceIcon type={icon} size={isEditor ? 22 : '3.2cqh'} color={accentColor} />
+        <ServiceIcon type={icon} size={isEditor ? 22 : 'calc(3.2*var(--cqh))'} color={accentColor} />
         <span style={{
           fontWeight: 800,
-          fontSize: isEditor ? `${16 * contentMult}px` : `${2.8 * contentMult}cqh`,
+          fontSize: isEditor ? `${16 * contentMult}px` : `calc(${2.8 * contentMult}*var(--cqh))`,
           letterSpacing: '0.06em',
           textTransform: 'uppercase' as const,
         }}>
@@ -184,8 +186,8 @@ function ServicePanel({
             textAlign: 'center',
             color: textColor,
             opacity: 0.35,
-            fontSize: isEditor ? `${13 * contentMult}px` : `${2 * contentMult}cqh`,
-            padding: isEditor ? '16px' : '2cqh',
+            fontSize: isEditor ? `${13 * contentMult}px` : `calc(${2 * contentMult}*var(--cqh))`,
+            padding: isEditor ? '16px' : 'calc(2*var(--cqh))',
           }}>
             No departures available
           </div>
@@ -258,11 +260,11 @@ export default function FerrySchedulePreview({ config, isEditor = false, showFoo
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: isEditor ? '10px 14px' : '1.6cqh 2.5cqh',
+        padding: isEditor ? '10px 14px' : 'calc(1.6*var(--cqh)) calc(2.5*var(--cqh))',
         borderBottom: '1px solid rgba(255,255,255,0.12)',
         flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isEditor ? 8 : '1cqh' }}>
+        <div className="hgap" style={{ display: 'flex', alignItems: 'center', ...flexGap(isEditor ? '8px' : 'calc(1*var(--cqh))') }}>
           <img
             className="leg-icon"
             src="/images/ferry-icon.png"
@@ -271,7 +273,7 @@ export default function FerrySchedulePreview({ config, isEditor = false, showFoo
           />
           <span style={{
             fontWeight: 800,
-            fontSize: isEditor ? `${22 * titleMult}px` : `${6 * titleMult}cqh`,
+            fontSize: isEditor ? `${22 * titleMult}px` : `calc(${6 * titleMult}*var(--cqh))`,
             letterSpacing: '0.04em',
             textTransform: 'uppercase' as const,
             color: textColor,
@@ -283,7 +285,7 @@ export default function FerrySchedulePreview({ config, isEditor = false, showFoo
           src="/ferryhawks/Bobby-Dark.png"
           alt="FerryHawks"
           style={{
-            height: isEditor ? 72 : '14cqh',
+            height: isEditor ? 72 : 'calc(14*var(--cqh))',
             width: 'auto',
             objectFit: 'contain',
             flexShrink: 0,
@@ -292,13 +294,13 @@ export default function FerrySchedulePreview({ config, isEditor = false, showFoo
       </div>
 
       {/* Panels */}
-      <div style={{
+      <div className={panels.length === 1 ? 'vgap' : 'hgap'} style={{
         flex: 1,
         minHeight: 0,
         display: 'flex',
         flexDirection: panels.length === 1 ? 'column' : 'row',
-        gap: isEditor ? '10px' : '1.5cqh',
-        padding: isEditor ? '10px' : '1.5cqh',
+        ...flexGap(isEditor ? '10px' : 'calc(1.5*var(--cqh))'),
+        padding: isEditor ? '10px' : 'calc(1.5*var(--cqh))',
         overflow: 'hidden',
       }}>
         {panels.map(panel => (

@@ -9,12 +9,9 @@ import Template1Preview from '@/modules/template-1/preview';
 import Template2Preview from '@/modules/template-2/preview';
 import Template3Preview from '@/modules/template-3/preview';
 import TransitDestinationPreview from '@/modules/transit-destinations/preview';
-import TransitRoutesPreview from '@/modules/transit-routes/preview';
-import RouteTimesPreview from '@/modules/route-times/preview';
 import ImageOnlyPreview from '@/modules/image-only/preview';
 import WeatherPreview from '@/modules/weather/preview';
 import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
-import CitibikePreview from '@/modules/citibike/preview';
 import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from '@/services/data-gathering/fetchStopData';
 import { matchesHeadsign } from '@/lib/stop-arrivals-filters';
@@ -35,6 +32,23 @@ import { useRouteTimesStore } from '@/modules/route-times/store';
 import { fetchCompleteRouteData } from '@/services/route-times/routeDataFetcher';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { SlideErrorBoundary } from '@/components/slide-error-boundary';
+import { withMapSupport } from '@/components/map-slide-gate';
+
+// Map slides load on demand, and only on displays that can draw maps; others show a notice instead.
+const TransitRoutesPreview = withMapSupport(
+  dynamic(() => import('@/modules/transit-routes/preview'), { ssr: false }),
+  'Transit Route Destination Map Page',
+);
+const CitibikePreview = withMapSupport(
+  dynamic(() => import('@/modules/citibike/preview'), { ssr: false }),
+  'Micromobility Page',
+);
+const RouteTimesPreview = withMapSupport(
+  dynamic(() => import('@/modules/route-times/preview'), { ssr: false }),
+  'Route Times Page',
+);
 
 
 function isSlideVisible(slide: any, now: Date): boolean {
@@ -802,7 +816,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
     }
   }, [handleKeyDown, isTvMode]);
 
-  const renderSlidePreview = (type: string, slideId: string) => {
+  const renderSlidePreview = (type: string, slideId: string) => (
+    <SlideErrorBoundary resetKey={slideId}>{renderSlideContent(type, slideId)}</SlideErrorBoundary>
+  );
+
+  const renderSlideContent = (type: string, slideId: string) => {
     switch (type) {
       case 'ferryhawks-watch-party-countdown': {
         const slideConfig = orgSlideMap[slideId];
@@ -905,7 +923,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
             currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
           }`}
         >
-          <TransitRoutesPreview slideId={slide.id} />
+          <SlideErrorBoundary resetKey={currentSlide?.id === slide.id}><TransitRoutesPreview slideId={slide.id} /></SlideErrorBoundary>
         </div>
       ))}
 
@@ -917,7 +935,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
             currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
           }`}
         >
-          <CitibikePreview slideId={slide.id} />
+          <SlideErrorBoundary resetKey={currentSlide?.id === slide.id}><CitibikePreview slideId={slide.id} /></SlideErrorBoundary>
         </div>
       ))}
 
@@ -929,7 +947,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
             currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
           }`}
         >
-          <RouteTimesPreview slideId={slide.id} />
+          <SlideErrorBoundary resetKey={currentSlide?.id === slide.id}><RouteTimesPreview slideId={slide.id} /></SlideErrorBoundary>
         </div>
       ))}
 
@@ -940,7 +958,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
             currentSlide?.id === slide.id ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
           }`}
         >
-          <WebEmbedPreview slideId={slide.id} />
+          <SlideErrorBoundary resetKey={currentSlide?.id === slide.id}><WebEmbedPreview slideId={slide.id} /></SlideErrorBoundary>
         </div>
       ))}
 

@@ -83,11 +83,11 @@ export default function TrafficCongestionPreview({
 
   const legendFontSize = isEditor
     ? `${13 * contentSizeMultiplier}px`
-    : `${2.8 * contentSizeMultiplier}cqmin`;
+    : `calc(${2.8 * contentSizeMultiplier}*var(--cqmin))`;
 
   const dotSize = isEditor
     ? `${14 * contentSizeMultiplier}px`
-    : `${2.5 * contentSizeMultiplier}cqmin`;
+    : `calc(${2.5 * contentSizeMultiplier}*var(--cqmin))`;
 
   return (
     <div
@@ -118,7 +118,7 @@ export default function TrafficCongestionPreview({
                 className="font-light rich-text-content"
                 style={{
                   color: titleColor,
-                  fontSize: `${6 * titleSizeMultiplier}cqmin`,
+                  fontSize: `calc(${6 * titleSizeMultiplier}*var(--cqmin))`,
                   lineHeight: '1.2',
                 }}
                 dangerouslySetInnerHTML={{ __html: title || "" }}
@@ -195,8 +195,8 @@ export default function TrafficCongestionPreview({
       <div
         className="flex-shrink-0 flex items-center justify-center border-t border-white/20"
         style={{
-          padding: isEditor ? '8px 16px' : '1.2cqmin 3cqw',
-          gap: isEditor ? '20px' : '4cqw',
+          padding: isEditor ? '8px 16px' : 'calc(1.2*var(--cqmin)) calc(3*var(--cqw))',
+          gap: isEditor ? '20px' : 'calc(4*var(--cqw))',
           backgroundColor: `${backgroundColor}cc`,
         }}
       >

@@ -45,14 +45,14 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '2cqh 3cqh',
+        padding: 'calc(2*var(--cqh)) calc(3*var(--cqh))',
         flexShrink: 0,
         borderBottom: `1px solid rgba(255,255,255,0.08)`,
       }}>
         <img
           src="/ferryhawks/Bobby-Dark.png"
           alt="FerryHawks"
-          style={{ height: '9cqh', width: 'auto', objectFit: 'contain' }}
+          style={{ height: 'calc(9*var(--cqh))', width: 'auto', objectFit: 'contain' }}
         />
       </div>
 
@@ -63,36 +63,36 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
         flexDirection: 'column' as const,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '2cqh 4cqh',
-        gap: '1.8cqh',
+        padding: 'calc(2*var(--cqh)) calc(4*var(--cqh))',
+        gap: 'calc(1.8*var(--cqh))',
       }}>
 
         {/* Headline */}
         <div style={{ textAlign: 'center' }}>
           <div style={{
-            fontSize: '3.2cqh',
+            fontSize: 'calc(3.2*var(--cqh))',
             fontWeight: 700,
             letterSpacing: '0.18em',
             textTransform: 'uppercase' as const,
             color: text,
             opacity: 0.7,
-            marginBottom: '0.4cqh',
+            marginBottom: 'calc(0.4*var(--cqh))',
           }}>
             Staten Island
           </div>
           <div style={{
-            fontSize: '5cqh',
+            fontSize: 'calc(5*var(--cqh))',
             fontWeight: 800,
             letterSpacing: '0.14em',
             textTransform: 'uppercase' as const,
             color: '#94b6e5',
             lineHeight: 1,
-            marginBottom: '0.3cqh',
+            marginBottom: 'calc(0.3*var(--cqh))',
           }}>
             World Cup
           </div>
           <div style={{
-            fontSize: '9cqh',
+            fontSize: 'calc(9*var(--cqh))',
             fontWeight: 900,
             letterSpacing: '0.04em',
             textTransform: 'uppercase' as const,
@@ -105,7 +105,7 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
 
         {/* Venue */}
         <div style={{
-          fontSize: '2.4cqh',
+          fontSize: 'calc(2.4*var(--cqh))',
           fontWeight: 500,
           letterSpacing: '0.06em',
           color: text,
@@ -120,12 +120,12 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
           backgroundColor: accent,
           color: '#000000',
           fontWeight: 800,
-          fontSize: '3cqh',
+          fontSize: 'calc(3*var(--cqh))',
           letterSpacing: '0.1em',
           textTransform: 'uppercase' as const,
-          padding: '0.8cqh 3cqh',
-          borderRadius: '0.6cqh',
-          marginTop: '0.5cqh',
+          padding: 'calc(0.8*var(--cqh)) calc(3*var(--cqh))',
+          borderRadius: 'calc(0.6*var(--cqh))',
+          marginTop: 'calc(0.5*var(--cqh))',
         }}>
           June 29 – July 2, 2026
         </div>
@@ -134,39 +134,39 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
         {!countdown.started ? (
           <div style={{
             display: 'flex',
-            gap: '3cqh',
-            marginTop: '1cqh',
+            gap: 'calc(3*var(--cqh))',
+            marginTop: 'calc(1*var(--cqh))',
           }}>
             {units.map(({ value, label }) => (
               <div key={label} style={{
                 display: 'flex',
                 flexDirection: 'column' as const,
                 alignItems: 'center',
-                minWidth: '10cqh',
+                minWidth: 'calc(10*var(--cqh))',
               }}>
                 <div style={{
                   backgroundColor: 'rgba(255,255,255,0.08)',
                   border: `1px solid rgba(255,255,255,0.14)`,
-                  borderRadius: '1cqh',
-                  padding: '1.2cqh 2cqh',
-                  fontSize: '6.5cqh',
+                  borderRadius: 'calc(1*var(--cqh))',
+                  padding: 'calc(1.2*var(--cqh)) calc(2*var(--cqh))',
+                  fontSize: 'calc(6.5*var(--cqh))',
                   fontWeight: 800,
                   color: text,
                   fontVariantNumeric: 'tabular-nums',
                   lineHeight: 1,
-                  minWidth: '7cqh',
+                  minWidth: 'calc(7*var(--cqh))',
                   textAlign: 'center',
                 }}>
                   {String(value).padStart(2, '0')}
                 </div>
                 <div style={{
-                  fontSize: '1.3cqh',
+                  fontSize: 'calc(1.3*var(--cqh))',
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase' as const,
                   color: text,
                   opacity: 0.45,
-                  marginTop: '0.7cqh',
+                  marginTop: 'calc(0.7*var(--cqh))',
                 }}>
                   {label}
                 </div>
@@ -175,7 +175,7 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
           </div>
         ) : (
           <div style={{
-            fontSize: '5cqh',
+            fontSize: 'calc(5*var(--cqh))',
             fontWeight: 800,
             color: accent,
             letterSpacing: '0.05em',
@@ -189,11 +189,11 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
           display: 'flex',
           flexDirection: 'column' as const,
           alignItems: 'center',
-          gap: '0.5cqh',
-          marginTop: '0.5cqh',
+          gap: 'calc(0.5*var(--cqh))',
+          marginTop: 'calc(0.5*var(--cqh))',
         }}>
           <div style={{
-            fontSize: '2cqh',
+            fontSize: 'calc(2*var(--cqh))',
             fontWeight: 600,
             letterSpacing: '0.08em',
             textTransform: 'uppercase' as const,
@@ -203,7 +203,7 @@ export default function WatchPartyCountdownPreview({ config, showFooter = true }
             Weekday Evening Match Viewing
           </div>
           <div style={{
-            fontSize: '1.7cqh',
+            fontSize: 'calc(1.7*var(--cqh))',
             color: text,
             opacity: 0.4,
             letterSpacing: '0.04em',

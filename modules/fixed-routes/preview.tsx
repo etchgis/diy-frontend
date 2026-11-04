@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { cqUnitsToVars } from "@/lib/cqUnitsToVars";
 import { Input } from "@/components/ui/input";
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
 import {
@@ -222,8 +223,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const hasContent = (html: string) => !!html && !!html.replace(/<[^>]*>/g, '').trim();
 
   const stopNameText = hasContent(displayName) ? displayName : (stopName || selectedStop?.name || selectedStop?.stop_name || '');
-  const stopNameRef = useFitText(`${6 * titleSizeMultiplier}cqmin`, [stopNameText, titleSizeMultiplier], 8);
-  const titleHtmlRef = useFitText(`${5 * titleSizeMultiplier}cqmin`, [titleHtml, titleSizeMultiplier], 8);
+  const stopNameRef = useFitText(`calc(${6 * titleSizeMultiplier}*var(--cqmin))`, [stopNameText, titleSizeMultiplier], 8);
+  const titleHtmlRef = useFitText(`calc(${5 * titleSizeMultiplier}*var(--cqmin))`, [titleHtml, titleSizeMultiplier], 8);
 
   // Get rail icon based on organization/agency name
   const getRailIcon = (): string => {
@@ -343,7 +344,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         alt=""
                       />
                       {hasContent(subtitleText)
-                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: subtitleText }} />
+                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: cqUnitsToVars(subtitleText) }} />
                         : <span>{`Stop #${selectedStop?.id} arrival times`}</span>
                       }
                     </div>
@@ -357,7 +358,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       {hasContent(displayName) ? (
                         <span
                           className="rich-text-content"
-                          dangerouslySetInnerHTML={{ __html: displayName }}
+                          dangerouslySetInnerHTML={{ __html: cqUnitsToVars(displayName) }}
                         />
                       ) : (
                         <span>{selectedStop?.name || selectedStop?.stop_name || 'UNKNOWN STOP'}</span>
@@ -375,7 +376,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
 
                   {hasContent(description) && (
                     <p className="rich-text-content" style={{ fontSize: `${16 * titleSizeMultiplier}px` }}
-                      dangerouslySetInnerHTML={{ __html: description }}
+                      dangerouslySetInnerHTML={{ __html: cqUnitsToVars(description) }}
                     />
                   )}
                 </div>
@@ -392,7 +393,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
               <div
                 className="p-2 sm:p-4 lg:p-6 xl:p-8 flex items-center flex-shrink-0 overflow-hidden"
                 style={{
-                  padding: "2cqw",
+                  padding: "calc(2*var(--cqw))",
                   maxHeight: "25%",
                 }}
               >
@@ -403,10 +404,10 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       className="font-bold rich-text-content"
                       style={{
                         color: titleColor,
-                        marginBottom: "0.5cqw",
+                        marginBottom: "calc(0.5*var(--cqw))",
                         overflow: 'hidden',
                       }}
-                      dangerouslySetInnerHTML={{ __html: titleHtml }}
+                      dangerouslySetInnerHTML={{ __html: cqUnitsToVars(titleHtml) }}
                     />
                   )}
 
@@ -414,8 +415,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                     <div
                       className="mb-1 sm:mb-2 overflow-hidden"
                       style={{
-                        fontSize: `${2.5 * subtitleSizeMultiplier}cqmin`,
-                        marginBottom: "0.5cqw",
+                        fontSize: `calc(${2.5 * subtitleSizeMultiplier}*var(--cqmin))`,
+                        marginBottom: "calc(0.5*var(--cqw))",
                         display: "flex",
                         alignItems: "center",
                       }}
@@ -423,8 +424,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       <img
                         src={modeIcon}
                         style={{
-                          height: `${5.5 * subtitleSizeMultiplier}cqmin`,
-                          width: `${5.5 * subtitleSizeMultiplier}cqmin`,
+                          height: `calc(${5.5 * subtitleSizeMultiplier}*var(--cqmin))`,
+                          width: `calc(${5.5 * subtitleSizeMultiplier}*var(--cqmin))`,
                           marginRight: "8px",
                           objectFit: "contain",
 
@@ -432,7 +433,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         alt=""
                       />
                       {hasContent(subtitleText)
-                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: subtitleText }} />
+                        ? <span className="rich-text-content" dangerouslySetInnerHTML={{ __html: cqUnitsToVars(subtitleText) }} />
                         : <span className="truncate">{`Stop #${selectedStop?.id} arrival times`}</span>
                       }
                     </div>
@@ -443,14 +444,14 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       ref={stopNameRef as React.RefObject<HTMLHeadingElement>}
                       className="font-bold flex items-center gap-2 overflow-hidden"
                       style={{
-                        marginBottom: "0.5cqw",
+                        marginBottom: "calc(0.5*var(--cqw))",
                         textTransform: 'uppercase',
                       }}
                     >
                       {hasContent(displayName) ? (
                         <span
                           className="rich-text-content"
-                          dangerouslySetInnerHTML={{ __html: displayName }}
+                          dangerouslySetInnerHTML={{ __html: cqUnitsToVars(displayName) }}
                         />
                       ) : (
                         <span>{stopName || selectedStop?.name || selectedStop?.stop_name || 'UNKNOWN STOP'}</span>
@@ -460,7 +461,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           title="Wheelchair accessible"
                           className="flex-shrink-0"
                           style={{
-                            fontSize: `${4 * titleSizeMultiplier}cqmin`,
+                            fontSize: `calc(${4 * titleSizeMultiplier}*var(--cqmin))`,
                           }}
                         >
                           ♿
@@ -472,8 +473,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                   {hasContent(description) && (
                     <p
                       className="truncate rich-text-content"
-                      style={{ fontSize: `${2 * titleSizeMultiplier}cqmin` }}
-                      dangerouslySetInnerHTML={{ __html: description }}
+                      style={{ fontSize: `calc(${2 * titleSizeMultiplier}*var(--cqmin))` }}
+                      dangerouslySetInnerHTML={{ __html: cqUnitsToVars(description) }}
                     />
                   )}
                 </div>
@@ -534,7 +535,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                 flex: "1 1 0",
                 minHeight: 0,
                 overflow: "hidden",
-                gap: isEditor ? `${columnGap}px` : `${columnGap * 0.15}cqw`,
+                gap: isEditor ? `${columnGap}px` : `calc(${columnGap * 0.15}*var(--cqw))`,
               }}
             >
               {columnData.map(
@@ -567,8 +568,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           color: columnHeaderTextColor,
                           fontSize: isEditor
                             ? `${(10 + columnHeaderTextSize * 0.8) * contentSizeMultiplier}px`
-                            : `${(1.5 + columnHeaderTextSize * 0.3) * contentSizeMultiplier}cqmin`,
-                          padding: isEditor ? "6px 8px" : `${1.2 * contentSizeMultiplier}cqmin 2cqw`,
+                            : `calc(${(1.5 + columnHeaderTextSize * 0.3) * contentSizeMultiplier}*var(--cqmin))`,
+                          padding: isEditor ? "6px 8px" : `calc(${1.2 * contentSizeMultiplier}*var(--cqmin)) calc(2*var(--cqw))`,
                         }}
                       >
                         {col.label}
@@ -670,8 +671,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             style={{
                               backgroundColor: backgroundColor,
                               color: titleColor,
-                              padding: `0.4cqmin 1.5cqw`,
-                              fontSize: `${1.8 * contentSizeMultiplier}cqmin`,
+                              padding: `calc(0.4*var(--cqmin)) calc(1.5*var(--cqw))`,
+                              fontSize: `calc(${1.8 * contentSizeMultiplier}*var(--cqmin))`,
                               fontWeight: 500,
                               opacity: 0.8,
                             }}
@@ -691,16 +692,16 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                                 ? tableColor
                                 : "transparent",
                               color: tableTextColor,
-                              padding: `1cqmin 1.5cqw`,
+                              padding: `calc(1*var(--cqmin)) calc(1.5*var(--cqw))`,
                             }}
                           >
                             <div className="flex-1 min-w-0">
                               <span
                                 className="font-medium block truncate leading-snug"
                                 style={{
-                                  fontSize: `${
+                                  fontSize: `calc(${
                                     2.5 * contentSizeMultiplier
-                                  }cqmin`,
+                                  }*var(--cqmin))`,
                                 }}
                               >
                                 {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
@@ -710,24 +711,24 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               className="rounded font-bold text-center flex-shrink-0"
                               style={{
                                 padding: "0.3em 0.6em",
-                                fontSize: `${2 * contentSizeMultiplier}cqmin`,
+                                fontSize: `calc(${2 * contentSizeMultiplier}*var(--cqmin))`,
                                 color: `#${item.routeTextColor}`,
                                 backgroundColor: `#${item.routeColor}`,
                                 whiteSpace: "nowrap",
                                 minWidth: "3em",
-                                margin: "0 1cqmin",
+                                margin: "0 calc(1*var(--cqmin))",
                               }}
                             >
                               {badgeLabel(item.routeShortName, item.routeId, item.routeLongName)}
                             </div>
                             <div
                               className="flex items-center flex-shrink-0"
-                              style={{ gap: "1cqmin" }}
+                              style={{ gap: "calc(1*var(--cqmin))" }}
                             >
                               <div
                                 className="font-medium text-right flex-shrink-0"
                                 style={{
-                                  fontSize: `${2.5 * contentSizeMultiplier}cqmin`,
+                                  fontSize: `calc(${2.5 * contentSizeMultiplier}*var(--cqmin))`,
                                   whiteSpace: "nowrap",
                                   width: "4.5em",
                                 }}
@@ -737,7 +738,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                               <div
                                 className="text-right flex-shrink-0"
                                 style={{
-                                  fontSize: `${2 * contentSizeMultiplier}cqmin`,
+                                  fontSize: `calc(${2 * contentSizeMultiplier}*var(--cqmin))`,
                                   whiteSpace: "nowrap",
                                   width: "5em",
                                   opacity: 0.85,
@@ -860,8 +861,8 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                       style={{
                         backgroundColor: backgroundColor,
                         color: titleColor,
-                        padding: `0.4cqmin 1.5cqw`,
-                        fontSize: `${1.8 * contentSizeMultiplier}cqmin`,
+                        padding: `calc(0.4*var(--cqmin)) calc(1.5*var(--cqw))`,
+                        fontSize: `calc(${1.8 * contentSizeMultiplier}*var(--cqmin))`,
                         fontWeight: 500,
                         opacity: 0.8,
                       }}
@@ -882,7 +883,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             ? tableColor
                             : "transparent",
                           color: tableTextColor,
-                          padding: `1cqmin 1.5cqw`,
+                          padding: `calc(1*var(--cqmin)) calc(1.5*var(--cqw))`,
                         }}
                       >
                         {/* Destination */}
@@ -890,9 +891,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           <span
                             className="font-medium block truncate leading-snug"
                             style={{
-                              fontSize: `${
+                              fontSize: `calc(${
                                 3 * contentSizeMultiplier
-                              }cqmin`,
+                              }*var(--cqmin))`,
                             }}
                           >
                             {applyAlias(routeDestination(item.destination, item.routeShortName, item.routeId), routeLabel(item.routeShortName, item.routeId))}
@@ -903,11 +904,11 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                           className="rounded font-bold flex-shrink-0"
                           style={{
                             padding: "0.3em 0.4em",
-                            fontSize: `${2.5 * contentSizeMultiplier}cqmin`,
+                            fontSize: `calc(${2.5 * contentSizeMultiplier}*var(--cqmin))`,
                             whiteSpace: "nowrap",
                             color: `#${item.routeTextColor}`,
                             backgroundColor: `#${item.routeColor}`,
-                            margin: "0 1cqmin",
+                            margin: "0 calc(1*var(--cqmin))",
                           }}
                         >
                           {badgeLabel(item.routeShortName, item.routeId, item.routeLongName)}
@@ -916,9 +917,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                         <div
                           className="flex items-center flex-shrink-0"
                           style={{
-                            fontSize: `${
+                            fontSize: `calc(${
                               3 * contentSizeMultiplier
-                            }cqmin`,
+                            }*var(--cqmin))`,
                             gap: "1em",
                           }}
                         >
@@ -943,9 +944,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
                             style={{
                               width: "9em",
                               padding: "0.3em 0.4em",
-                              fontSize: `${
+                              fontSize: `calc(${
                                 2.5 * contentSizeMultiplier
-                              }cqmin`,
+                              }*var(--cqmin))`,
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",

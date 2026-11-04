@@ -38,7 +38,7 @@ export default function QRSlidePreview({ slideId, previewMode = false }: { slide
   // Convert 1-10 scale to multiplier (5 = 1.0x, 1 = 0.6x, 10 = 1.5x)
   const textSizeMultiplier = 0.5 + textSize * 0.1;
 
-  const containerSize = isEditor ? `${2 * qrSize}rem` : `${qrSize * 8}cqh`;
+  const containerSize = isEditor ? `${2 * qrSize}rem` : `calc(${qrSize * 8}*var(--cqh))`;
   const qrPixelSize = 32 * qrSize;
 
   return (
@@ -64,8 +64,8 @@ export default function QRSlidePreview({ slideId, previewMode = false }: { slide
       )}
 
       {/* QR Code and Text */}
-      <div className="flex flex-col items-center justify-center flex-1" style={{ padding: isEditor ? '1rem 1rem' : '6cqh 8cqw' }}>
-        <div className="bg-white mb-4" style={{ padding: isEditor ? "1rem" : "2cqh" }}>
+      <div className="flex flex-col items-center justify-center flex-1" style={{ padding: isEditor ? '1rem 1rem' : 'calc(6*var(--cqh)) calc(8*var(--cqw))' }}>
+        <div className="bg-white mb-4" style={{ padding: isEditor ? "1rem" : "calc(2*var(--cqh))" }}>
           <div
             className="flex items-center justify-center"
             style={{
@@ -76,7 +76,7 @@ export default function QRSlidePreview({ slideId, previewMode = false }: { slide
             {url ? (
               <QRCode value={url} size={qrPixelSize} style={{ width: "100%", height: "100%" }} />
             ) : (
-              <div className="text-gray-400" style={{ fontSize: isEditor ? "0.875rem" : "3cqh" }}>No QR Code Data</div>
+              <div className="text-gray-400" style={{ fontSize: isEditor ? "0.875rem" : "calc(3*var(--cqh))" }}>No QR Code Data</div>
             )}
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function QRSlidePreview({ slideId, previewMode = false }: { slide
           className={`font-medium text-center w-full ${isEditor ? "border-2 border-[#11d1f7] rounded px-2 py-1" : ""}`}
           style={{
             color: textColor,
-            fontSize: isEditor ? `${18 * textSizeMultiplier}px` : `${4 * textSizeMultiplier}cqh`,
+            fontSize: isEditor ? `${18 * textSizeMultiplier}px` : `calc(${4 * textSizeMultiplier}*var(--cqh))`,
           }}
         >
           {isEditor ? (
