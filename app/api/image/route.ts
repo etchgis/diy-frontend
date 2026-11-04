@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
   }
 
-  if (parsed.hostname !== ALLOWED_HOSTNAME) {
+  // Only uploaded images, never configs or anything else in the bucket.
+  if (parsed.protocol !== 'https:' || parsed.hostname !== ALLOWED_HOSTNAME || !parsed.pathname.startsWith('/images/')) {
     return NextResponse.json({ error: 'URL not allowed' }, { status: 403 });
   }
 
@@ -27,13 +28,20 @@ export async function GET(req: NextRequest) {
       return new NextResponse(null, { status: upstream.status });
     }
 
-    const contentType = upstream.headers.get('content-type') ?? 'application/octet-stream';
+    // This route serves files from our own domain, so anything that is not an image is refused,
+    // and the headers stop an uploaded file from running scripts if opened directly.
+    const contentType = (upstream.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+    if (!contentType.startsWith('image/')) {
+      return NextResponse.json({ error: 'Not an image' }, { status: 415 });
+    }
     const body = await upstream.arrayBuffer();
 
     return new NextResponse(body, {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
       },
     });
   } catch {

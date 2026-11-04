@@ -52,8 +52,8 @@ export default function CitibikeSlide({ slideId, handleDelete, handlePreview, ha
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const saveStatus = useLocalSaveStatus(useCitibikeStore, slideId);
-  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
-  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
+  const bg = useImageUploadField(shortcode, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, (url) => setLogoImage(slideId, url));
 
   // Re-fetch when search radius changes
   const radiusChangeRef = useRef(false);

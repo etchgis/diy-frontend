@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useAvailableImage } from "@/lib/uploadedImages";
 import { cqUnitsToVars } from "@/lib/cqUnitsToVars";
 import { Input } from "@/components/ui/input";
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
@@ -74,9 +75,9 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
   const tableTextColor = useFixedRouteStore(
     (state) => state.slides[slideId]?.tableTextColor || "#FFFFFF"
   );
-  const bgImage = useFixedRouteStore(
+  const bgImage = useAvailableImage(useFixedRouteStore(
     (state) => state.slides[slideId]?.bgImage || ""
-  );
+  ));
   const logoImage = useFixedRouteStore(
     (state) => state.slides[slideId]?.logoImage || ""
   );

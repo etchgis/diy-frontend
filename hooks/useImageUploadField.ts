@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
-import { uploadImage } from '@/services/uploadImage';
-import { deleteImage } from '@/services/deleteImage';
+import { uploadImage, UploadRejectedError } from '@/services/uploadImage';
 
 /**
- *  upload/delete logic for a single image field with inline error feedback.
+ * Upload logic for a single image field with inline error feedback. Replacing or removing an
+ * image only changes the draft; the old file stays, because other screen sets and published
+ * versions may still use it.
  */
 export function useImageUploadField(
   shortcode: string,
-  currentUrl: string,
   setUrl: (url: string) => void
 ) {
   const [isUploading, setIsUploading] = useState(false);
@@ -28,24 +28,17 @@ export function useImageUploadField(
     setIsUploading(true);
     try {
       const data = await uploadImage(shortcode, file);
-      if (currentUrl) deleteImage(currentUrl).catch(() => {});
       setUrl(data.url);
-    } catch {
-      showError('Upload failed — please try again.');
+    } catch (err) {
+      showError(err instanceof UploadRejectedError ? err.message : 'Upload failed. Please try again.');
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleRemove = async () => {
-    if (!currentUrl) return;
-    try {
-      await deleteImage(currentUrl);
-      setUrl('');
-      if (inputRef.current) inputRef.current.value = '';
-    } catch {
-      showError('Failed to remove image — please try again.');
-    }
+  const handleRemove = () => {
+    setUrl('');
+    if (inputRef.current) inputRef.current.value = '';
   };
 
   return { isUploading, uploadError, inputRef, handleUpload, handleRemove };

@@ -1,4 +1,5 @@
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
+import { useAvailableImage } from "@/lib/uploadedImages";
 import { useRouteTimesStore } from './store';
 import { useGeneralStore } from '@/stores/general';
 import { useEffect, useState, useRef } from 'react';
@@ -19,7 +20,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const titleColor = slideData?.titleColor || '#FFFFFF';
   const tableColor = slideData?.tableColor || '#FFFFFF';
   const tableTextColor = slideData?.tableTextColor || '#000000';
-  const bgImage = slideData?.bgImage || '';
+  const bgImage = useAvailableImage(slideData?.bgImage || '');
   const logoImage = slideData?.logoImage || '';
   const routeName = slideData?.routeName || '';
   const displayName = slideData?.displayName || '';

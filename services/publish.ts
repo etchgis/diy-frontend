@@ -17,6 +17,14 @@ import { useTrafficCongestionStore } from '@/modules/traffic-congestion/store';
 import { useFooterStore } from '@/stores/footer';
 import { migrateHeadsignFilters } from '@/lib/stop-arrivals-filters';
 
+// Every store that feeds the publish payload, so callers can react when any of it changes.
+export const publishStores = [
+  useGeneralStore, useFooterStore, useFixedRouteStore, useTransitDestinationsStore, useQRStore,
+  useTransitRouteStore, useTemplate1Store, useTemplate2Store, useTemplate3Store, useRouteTimesStore,
+  useImageOnlyStore, useWeatherStore, useCitibikeStore, useTrafficCorridorStore, useWebEmbedStore,
+  useTrafficCongestionStore,
+];
+
 export class PublishDataMissingError extends Error {
   missingSlides: string[];
   constructor(missingSlides: string[]) {

@@ -42,8 +42,8 @@ export default function QRSlide({ slideId, handleDelete, handlePreview, handlePu
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const saveStatus = useLocalSaveStatus(useQRStore, slideId);
-  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
-  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
+  const bg = useImageUploadField(shortcode, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, (url) => setLogoImage(slideId, url));
 
   const [tempQR, setTempQR] = useState(url);
 

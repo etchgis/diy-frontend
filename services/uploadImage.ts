@@ -1,3 +1,7 @@
+// The server refused the file (wrong type, too large, too many uploads). The message is
+// written for the person uploading.
+export class UploadRejectedError extends Error {}
+
 export async function uploadImage(shortcode: string, file: File): Promise<any> {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -16,6 +20,13 @@ export async function uploadImage(shortcode: string, file: File): Promise<any> {
       body: formData,
     });
 
+    if (response.status === 413) {
+      throw new UploadRejectedError("Images must be 10 MB or smaller.");
+    }
+    if (response.status === 400 || response.status === 429) {
+      const body = await response.json().catch(() => null);
+      throw new UploadRejectedError(body?.error || "This image could not be uploaded.");
+    }
     if (!response.ok) {
       throw new Error(`Failed to upload image: ${response.statusText}`);
     }

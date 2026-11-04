@@ -51,8 +51,8 @@ export default function Template2Slide({ slideId, handleDelete, handlePreview, h
 
   const shortcode = useGeneralStore((state) => state.shortcode || '');
   const saveStatus = useLocalSaveStatus(useTemplate2Store, slideId);
-  const bg = useImageUploadField(shortcode, bgImage, (url) => setBgImage(slideId, url));
-  const logo = useImageUploadField(shortcode, logoImage, (url) => setLogoImage(slideId, url));
+  const bg = useImageUploadField(shortcode, (url) => setBgImage(slideId, url));
+  const logo = useImageUploadField(shortcode, (url) => setLogoImage(slideId, url));
 
   return (
 

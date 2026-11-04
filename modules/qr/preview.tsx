@@ -1,4 +1,5 @@
 import { proxyImageUrl } from "@/utils/proxyImageUrl";
+import { useAvailableImage } from "@/lib/uploadedImages";
 import { useQRStore } from "./store";
 import { useGeneralStore } from "@/stores/general";
 import QRCode from "react-qr-code";
@@ -18,7 +19,7 @@ export default function QRSlidePreview({ slideId, previewMode = false }: { slide
     (state) => state.slides[slideId]?.textColor || "#ffffff"
   );
   const qrSize = useQRStore((state) => state.slides[slideId]?.qrSize || 5);
-  const bgImage = useQRStore((state) => state.slides[slideId]?.bgImage || "");
+  const bgImage = useAvailableImage(useQRStore((state) => state.slides[slideId]?.bgImage || ""));
   const logoImage = useQRStore(
     (state) => state.slides[slideId]?.logoImage || ""
   );
