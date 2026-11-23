@@ -13,7 +13,7 @@ const CHECK_EVERY_MS = 2 * 1000;
 export function useStaleKeys(slideId: string, keys: string[]): boolean[] {
   const enabled = !(usePathname() || '').includes('/editor');
   const visibleId = useArrivalsFreshnessStore((s) => s.visibleSlideId);
-  const active = enabled && (visibleId === null || visibleId === slideId);
+  const active = enabled && (visibleId === 'all' || visibleId === slideId);
   const lastFresh = useArrivalsFreshnessStore((s) => s.lastFreshAt);
   const [now, setNow] = useState(() => Date.now());
   const keyList = keys.join('|');

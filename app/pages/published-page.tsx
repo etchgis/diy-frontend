@@ -161,10 +161,11 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   const currentSlide = slides?.[activeIndex] || null;
 
   // Tell the freshness clock which slide is on screen, so hidden slides run no timer.
+  // The scrolling view shows every slide at once.
   const currentSlideId = currentSlide?.id ?? null;
   useEffect(() => {
-    useArrivalsFreshnessStore.getState().setVisibleSlideId(currentSlideId);
-  }, [currentSlideId]);
+    useArrivalsFreshnessStore.getState().setVisibleSlideId(isTvMode ? currentSlideId : 'all');
+  }, [currentSlideId, isTvMode]);
 
   const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
   const setDataError = useTransitDestinationsStore((state) => state.setDataError);

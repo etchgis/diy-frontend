@@ -26,11 +26,13 @@ export function isTimetableBody(body: unknown): boolean {
 }
 
 // An OTP trip answer is good when it has a plan with an itineraries list (possibly empty)
-// or says plainly that no trip was found.
+// or the specific "no trip found" error. Any other error object is a failure.
 export function isOtpPlanBody(body: unknown): boolean {
   if (!body || typeof body !== 'object') return false;
   const b = body as any;
-  return Array.isArray(b.plan?.itineraries) || (!!b.error && typeof b.error === 'object');
+  if (Array.isArray(b.plan?.itineraries)) return true;
+  const err = b.error;
+  return !!err && typeof err === 'object' && (err.id === 404 || /no trip/i.test(String(err.msg ?? '')));
 }
 
 // A stop feed body is good when it carries an arrivals list. An empty list is good: it

@@ -75,6 +75,8 @@ test('a trip plan body needs an itineraries list or a plain no-trip error', () =
   assert.equal(isOtpPlanBody({ plan: { itineraries: [] } }), true);
   assert.equal(isOtpPlanBody({ plan: { itineraries: [{ duration: 5 }] } }), true);
   assert.equal(isOtpPlanBody({ plan: {}, error: { id: 404, msg: 'No trip found' } }), true);
+  assert.equal(isOtpPlanBody({ error: { id: 500, msg: 'Server error' } }), false);
+  assert.equal(isOtpPlanBody({ error: 'boom' }), false);
   assert.equal(isOtpPlanBody({}), false);
   assert.equal(isOtpPlanBody({ plan: {} }), false);
   assert.equal(isOtpPlanBody(null), false);

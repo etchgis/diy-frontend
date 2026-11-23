@@ -4,12 +4,13 @@ import { create } from 'zustand';
 // only, so a reloaded screen starts its three minutes from the load, not from an old session.
 interface ArrivalsFreshnessStore {
   lastFreshAt: Record<string, number>;
-  // The slide on screen now, or null when not known. Only that slide runs a timer.
-  visibleSlideId: string | null;
+  // The slide on screen now, 'all' when every slide shows at once, or null when not known.
+  // Only visible slides run a timer.
+  visibleSlideId: string | 'all' | null;
   // Start the clock for a key the first time it is shown. Does nothing if already started.
   startTracking: (key: string) => void;
   markFresh: (key: string) => void;
-  setVisibleSlideId: (slideId: string | null) => void;
+  setVisibleSlideId: (slideId: string | 'all' | null) => void;
 }
 
 export const useArrivalsFreshnessStore = create<ArrivalsFreshnessStore>((set) => ({

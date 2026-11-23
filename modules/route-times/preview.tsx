@@ -661,11 +661,17 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
       {/* Content Area */}
       <div className="flex-1 relative z-10 overflow-hidden">
-        {arrivalsUnavailable ? (
-          <div className="h-full flex items-center justify-center">
+        {/* The content below stays mounted when the line shows, so the map is not rebuilt. */}
+        {arrivalsUnavailable && (
+          <div
+            className="absolute inset-0 z-30 flex items-center justify-center"
+            style={{ backgroundColor }}
+          >
             <p style={{ color: titleColor }}>{ARRIVALS_UNAVAILABLE_TEXT}</p>
           </div>
-        ) : isLoading ? (
+        )}
+        <div className="h-full" style={{ visibility: arrivalsUnavailable ? 'hidden' : 'visible' }}>
+        {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid mx-auto mb-4" />
@@ -679,6 +685,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
             <p className="text-gray-500">Please select a route to display</p>
           </div>
         )}
+        </div>
 
       {dataError && (
         <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/80 text-white text-center px-4 py-3 text-base font-medium">

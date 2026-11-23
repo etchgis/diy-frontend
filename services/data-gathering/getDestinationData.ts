@@ -100,7 +100,7 @@ export async function getDestinationData(
             )
           )
         );
-        results.forEach((res, index) => { if (res.status === 'fulfilled') options?.onFresh?.(index); });
+        results.forEach((res, index) => { if (res.status === 'fulfilled' && res.value.length > 0) options?.onFresh?.(index); });
         enrichedDestinations = results.map((res, index) => {
           const dest = destList[index];
           if (res.status === 'fulfilled' && res.value.length > 0) {
@@ -115,8 +115,16 @@ export async function getDestinationData(
           destList,
           { numItineraries: 3, maxWalkMeters: options?.maxWalkDistance, includeGeometry: options?.includeGeometry }
         );
-        destList.forEach((_, index) => options?.onFresh?.(index));
-        enrichedDestinations = results.map((data, index) => buildEnriched(data, destList[index], index));
+        // A row is fresh only when the answer holds a result for it. A destination the
+        // answer left out keeps its own clock and shows an empty row.
+        enrichedDestinations = destList.map((dest, index) => {
+          const data = results[index];
+          if (!data) {
+            return { name: dest.name, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: dest.coordinates, dark: index % 2 === 0 };
+          }
+          options?.onFresh?.(index);
+          return buildEnriched(data, dest, index);
+        });
       }
 
       const anySuccess = enrichedDestinations.some(
@@ -162,7 +170,7 @@ async function fetchOtpDestinations(
     destList.map(async (dest) => {
       const origin = `${coordinates.lat},${coordinates.lng}`;
       const destination = `${dest.coordinates.lat},${dest.coordinates.lng}`;
-      return fetchTransitData(origin, destination, dest.allowedModes, options?.maxWalkDistance, { allowNoTrip: true });
+      return fetchTransitData(origin, destination, dest.allowedModes, options?.maxWalkDistance, { allowNoTrip: !!options?.onFresh });
     })
   );
 
@@ -212,6 +220,8 @@ async function fetchOtpDestinations(
 
   // Only a destination whose own request worked counts; rows that kept old data do not.
   results.forEach((res, index) => { if (res.status === 'fulfilled' && res.value) options?.onFresh?.(index); });
-  setDataError(slideId, !anySuccess);
+  // When every request worked but none found a trip, rows show no trip; that is not an outage.
+  const anyRequestWorked = results.some((res) => res.status === 'fulfilled' && res.value);
+  setDataError(slideId, !anySuccess && !anyRequestWorked);
   setDestinationData(slideId, enrichedDestinations);
 }

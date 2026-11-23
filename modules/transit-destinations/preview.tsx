@@ -250,7 +250,7 @@ export default function TransitDestinationPreview({
 
       {/* Row Container - Flexible height */}
       <div className="flex-1 flex flex-col min-h-0">
-        {dataError ? (
+        {dataError && !(staleRows.length > 0 && staleRows.every(Boolean)) ? (
           // Show warning message in the first row if dataError is true
           <div
             className={`flex-1 grid ${
