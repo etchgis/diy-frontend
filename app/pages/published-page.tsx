@@ -166,6 +166,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
   useEffect(() => {
     useArrivalsFreshnessStore.getState().setVisibleSlideId(isTvMode ? currentSlideId : 'all');
   }, [currentSlideId, isTvMode]);
+  useEffect(() => () => useArrivalsFreshnessStore.getState().setVisibleSlideId(null), []);
 
   const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
   const setDataError = useTransitDestinationsStore((state) => state.setDataError);

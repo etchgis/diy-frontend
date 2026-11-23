@@ -96,14 +96,14 @@ export async function getDestinationData(
             fetchSkidsTransitData(
               { lat: coordinates.lat, lng: coordinates.lng },
               [dest],
-              { numItineraries: 3, maxWalkMeters: dest.maxWalkDistance ?? options?.maxWalkDistance, includeGeometry: options?.includeGeometry }
+              { numItineraries: 3, maxWalkMeters: dest.maxWalkDistance ?? options?.maxWalkDistance, includeGeometry: options?.includeGeometry, matchByName: !!options?.onFresh }
             )
           )
         );
-        results.forEach((res, index) => { if (res.status === 'fulfilled' && res.value.length > 0) options?.onFresh?.(index); });
+        results.forEach((res, index) => { if (res.status === 'fulfilled' && res.value.length > 0 && !res.value[0].missing) options?.onFresh?.(index); });
         enrichedDestinations = results.map((res, index) => {
           const dest = destList[index];
-          if (res.status === 'fulfilled' && res.value.length > 0) {
+          if (res.status === 'fulfilled' && res.value.length > 0 && !res.value[0].missing) {
             return buildEnriched(res.value[0], dest, index);
           }
           const existingLegs = Array.isArray((dest as any).legs) ? (dest as any).legs : [];
@@ -113,13 +113,13 @@ export async function getDestinationData(
         const results = await fetchSkidsTransitData(
           { lat: coordinates.lat, lng: coordinates.lng },
           destList,
-          { numItineraries: 3, maxWalkMeters: options?.maxWalkDistance, includeGeometry: options?.includeGeometry }
+          { numItineraries: 3, maxWalkMeters: options?.maxWalkDistance, includeGeometry: options?.includeGeometry, matchByName: !!options?.onFresh }
         );
-        // A row is fresh only when the answer holds a result for it. A destination the
-        // answer left out keeps its own clock and shows an empty row.
+        // A row is fresh only when the answer holds a result for it, matched by name. A
+        // destination the answer left out keeps its own clock and shows an empty row.
         enrichedDestinations = destList.map((dest, index) => {
           const data = results[index];
-          if (!data) {
+          if (!data || data.missing) {
             return { name: dest.name, route: null, departure: null, arrival: null, travel: null, legs: [], coordinates: dest.coordinates, dark: index % 2 === 0 };
           }
           options?.onFresh?.(index);

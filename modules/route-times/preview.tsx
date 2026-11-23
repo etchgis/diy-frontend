@@ -671,14 +671,15 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
           </div>
         )}
         <div className="h-full" style={{ visibility: arrivalsUnavailable ? 'hidden' : 'visible' }}>
-        {isLoading ? (
-          <div className="h-full flex items-center justify-center">
+        {isLoading && !arrivalsUnavailable && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ backgroundColor }}>
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid mx-auto mb-4" />
               <p style={{ color: titleColor }}>Loading route data...</p>
             </div>
           </div>
-        ) : selectedRoute ? (
+        )}
+        {selectedRoute ? (
           viewMode === 'map' ? renderMapView() : renderTimetableView()
         ) : (
           <div className="h-full flex items-center justify-center">

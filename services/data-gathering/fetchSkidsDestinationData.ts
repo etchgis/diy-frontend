@@ -147,6 +147,7 @@ export interface TransformedDestination {
   originCandidateStops?: { id: string; name: string; distanceMeters: number; routeCount: number }[];
   allItineraries?: TransformedItinerary[];
   reason?: string;
+  missing?: boolean;
 }
 
 /**
@@ -312,6 +313,9 @@ export interface SkidsFetchOptions {
   // Request true road/rail-following leg geometry. Only map-view slides need it;
   // badge-only slides leave it off so the response stays small.
   includeGeometry?: boolean;
+  // Pair each result with its destination by destinationName instead of by position. A
+  // destination with no result comes back as an empty row with missing set to true.
+  matchByName?: boolean;
 }
 
 /**
@@ -360,6 +364,23 @@ export async function fetchSkidsTransitData(
   }
 
   const data: SkidsResponse = await response.json();
-  const transformed = transformSkidsResponse(data, destinations);
-  return transformed;
+  if (!options?.matchByName) {
+    return transformSkidsResponse(data, destinations);
+  }
+
+  if (!data || !Array.isArray(data.results)) {
+    throw new Error('Skids response has no results list');
+  }
+  const unused = [...data.results];
+  const missing: boolean[] = [];
+  const aligned = destinations.map((d, i) => {
+    const at = unused.findIndex((r) => r?.destinationName === d.name);
+    if (at === -1) {
+      missing[i] = true;
+      return { destinationName: d.name, destinationCoordinate: { lat: d.coordinates.lat, lon: d.coordinates.lng }, reachable: false } as SkidsResult;
+    }
+    return unused.splice(at, 1)[0];
+  });
+  const transformed = transformSkidsResponse({ ...data, results: aligned }, destinations);
+  return transformed.map((row, i) => (missing[i] ? { ...row, missing: true } : row));
 }

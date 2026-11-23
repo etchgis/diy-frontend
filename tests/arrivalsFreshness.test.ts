@@ -74,7 +74,9 @@ test('a timetable body needs a stops list; empty is good', () => {
 test('a trip plan body needs an itineraries list or a plain no-trip error', () => {
   assert.equal(isOtpPlanBody({ plan: { itineraries: [] } }), true);
   assert.equal(isOtpPlanBody({ plan: { itineraries: [{ duration: 5 }] } }), true);
-  assert.equal(isOtpPlanBody({ plan: {}, error: { id: 404, msg: 'No trip found' } }), true);
+  assert.equal(isOtpPlanBody({ plan: {}, error: { id: 404, msg: 'No trip found', message: 'PATH_NOT_FOUND', noPath: true } }), true);
+  assert.equal(isOtpPlanBody({ error: { id: 404, msg: 'Not found' } }), false);
+  assert.equal(isOtpPlanBody({ error: { id: 404, msg: 'No trip found' } }), false);
   assert.equal(isOtpPlanBody({ error: { id: 500, msg: 'Server error' } }), false);
   assert.equal(isOtpPlanBody({ error: 'boom' }), false);
   assert.equal(isOtpPlanBody({}), false);
