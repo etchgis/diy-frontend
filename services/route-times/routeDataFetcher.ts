@@ -4,6 +4,7 @@
 
 import { fetchRouteData, fetchRouteTimetable, fetchPatternDetails } from '../data-gathering/fetchRouteData';
 import { processRoutePatterns, formatTimetableData } from '../data-gathering/processRoutePatterns';
+import { isTimetableBody } from '@/lib/arrivalsFreshness';
 import { calculateTimeWindow } from './timeWindowCalculator';
 
 export interface RouteInfo {
@@ -110,10 +111,18 @@ export async function fetchRouteTimetableWithFallback(
     timeWindow.endTime
   );
 
-  // If no data and we haven't tried next period yet, try it
-  if (!fetchNextPeriod && (!timetableData || formatTimetableData(timetableData).length === 0)) {
-    // Recursively fetch next period
-    return fetchRouteTimetableWithFallback(route, true);
+  if (!isTimetableBody(timetableData)) {
+    throw new Error('Timetable response has no stops list');
+  }
+
+  // If no data and we haven't tried next period yet, try it. The first answer was good,
+  // so if the next period fails, the empty first answer still stands.
+  if (!fetchNextPeriod && formatTimetableData(timetableData).length === 0) {
+    try {
+      return await fetchRouteTimetableWithFallback(route, true);
+    } catch (error) {
+      console.warn('Next-period timetable fetch failed:', error);
+    }
   }
 
   return {

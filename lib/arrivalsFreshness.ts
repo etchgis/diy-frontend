@@ -13,8 +13,33 @@ export function arrivalsAreStale(
   return now - lastFreshAt >= staleAfterMs;
 }
 
+// One arrival the screen can draw: it needs the arrival and scheduled times as numbers.
+export function isArrivalEntry(entry: unknown): boolean {
+  if (!entry || typeof entry !== 'object') return false;
+  const e = entry as any;
+  return Number.isFinite(e.arrive) && Number.isFinite(e.arriveScheduled);
+}
+
+// A timetable body is good when it has a stops list. An empty list is good.
+export function isTimetableBody(body: unknown): boolean {
+  return !!body && typeof body === 'object' && Array.isArray((body as any).stops);
+}
+
+// An OTP trip answer is good when it has a plan with an itineraries list (possibly empty)
+// or says plainly that no trip was found.
+export function isOtpPlanBody(body: unknown): boolean {
+  if (!body || typeof body !== 'object') return false;
+  const b = body as any;
+  return Array.isArray(b.plan?.itineraries) || (!!b.error && typeof b.error === 'object');
+}
+
 // A stop feed body is good when it carries an arrivals list. An empty list is good: it
 // means no service right now, which is different from the feed being down.
 export function isArrivalsBody(body: unknown): body is { arrivals: unknown[] } {
   return !!body && typeof body === 'object' && Array.isArray((body as any).arrivals);
+}
+
+// The strict check for the published screen: an arrivals list whose entries can all be drawn.
+export function isDrawableArrivalsBody(body: unknown): boolean {
+  return isArrivalsBody(body) && body.arrivals.every(isArrivalEntry);
 }

@@ -160,6 +160,12 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
   const currentSlide = slides?.[activeIndex] || null;
 
+  // Tell the freshness clock which slide is on screen, so hidden slides run no timer.
+  const currentSlideId = currentSlide?.id ?? null;
+  useEffect(() => {
+    useArrivalsFreshnessStore.getState().setVisibleSlideId(currentSlideId);
+  }, [currentSlideId]);
+
   const setDestinationData = useTransitDestinationsStore((state) => state.setDestinationData);
   const setDataError = useTransitDestinationsStore((state) => state.setDataError);
 
@@ -366,7 +372,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           currentDestinationData,
           {
             ...(maxWalkDistance != null ? { maxWalkDistance } : {}),
-            onFresh: () => useArrivalsFreshnessStore.getState().markFresh(slide.id),
+            onFresh: (index: number) => useArrivalsFreshnessStore.getState().markFresh(`${slide.id}:${index}`),
           }
         );
         const updatedState = useTransitDestinationsStore.getState().slides;
@@ -436,7 +442,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         for (const q of queries) {
           try {
             // Any non-2xx answer throws here, so a 404 or 503 counts as a failed fetch.
-            const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId, { failOnClientError: true });
+            const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId, { strict: true });
             if (!data) console.warn('[STOP ARRIVALS] No data returned for stop', q.stopId, '(likely 4xx from API)');
             const tagged = (data?.trains || []).map((item: any) => ({
               destination: item.destination,

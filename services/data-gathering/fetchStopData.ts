@@ -1,5 +1,5 @@
 import { formatTime } from '@/utils/formats';
-import { isArrivalsBody } from '@/lib/arrivalsFreshness';
+import { isDrawableArrivalsBody } from '@/lib/arrivalsFreshness';
 
 const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
 
@@ -168,13 +168,13 @@ async function fetchStopById(stopId: string, serviceId: string, organizationId: 
   });
 }
 
-// With failOnClientError, a 4xx answer throws instead of returning undefined, so the
+// With strict, a 4xx answer or a body whose arrivals cannot be drawn throws, so the
 // published screen counts it as a failed fetch and not as an empty stop.
 export async function fetchStopData(
   stopId: string,
   serviceId: string,
   organizationId: string,
-  options?: { failOnClientError?: boolean }
+  options?: { strict?: boolean }
 ) {
   let response: Response;
   try {
@@ -197,15 +197,20 @@ export async function fetchStopData(
   }
 
   if (!response.ok) {
-    if (response.status >= 400 && response.status < 500 && !options?.failOnClientError) {
+    if (response.status >= 400 && response.status < 500 && !options?.strict) {
       return undefined;
     }
     throw new Error(`Failed to fetch stop data: ${response.status} ${response.statusText}`);
   }
 
-  const result = await response.json().catch(() => null);
-  if (!isArrivalsBody(result)) {
-    throw new Error('Stop data response has no arrivals list');
+  if (options?.strict) {
+    const body = await response.json().catch(() => null);
+    if (!isDrawableArrivalsBody(body)) {
+      throw new Error('Stop data response has no usable arrivals list');
+    }
+    return formatBusData(body);
   }
+
+  const result = await response.json();
   return formatBusData(result);
 }

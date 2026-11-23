@@ -661,7 +661,11 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
 
       {/* Content Area */}
       <div className="flex-1 relative z-10 overflow-hidden">
-        {isLoading ? (
+        {arrivalsUnavailable ? (
+          <div className="h-full flex items-center justify-center">
+            <p style={{ color: titleColor }}>{ARRIVALS_UNAVAILABLE_TEXT}</p>
+          </div>
+        ) : isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid mx-auto mb-4" />
@@ -669,11 +673,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
             </div>
           </div>
         ) : selectedRoute ? (
-          viewMode === 'map' ? renderMapView() : arrivalsUnavailable ? (
-            <div className="h-full flex items-center justify-center">
-              <p style={{ color: titleColor }}>{ARRIVALS_UNAVAILABLE_TEXT}</p>
-            </div>
-          ) : renderTimetableView()
+          viewMode === 'map' ? renderMapView() : renderTimetableView()
         ) : (
           <div className="h-full flex items-center justify-center">
             <p className="text-gray-500">Please select a route to display</p>

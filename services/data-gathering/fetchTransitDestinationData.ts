@@ -1,4 +1,7 @@
 import { formatTripData } from "@/utils/formatTripData";
+import { isOtpPlanBody } from "@/lib/arrivalsFreshness";
+
+const MAX_TRIP_SECONDS = 3 * 60 * 60;
 
 const OTP_URL = process.env.NEXT_PUBLIC_OTP_URL;
 if (!OTP_URL) {
@@ -21,7 +24,9 @@ export async function fetchTransitData(
   fromPlace: string,
   toPlace: string,
   allowedModes?: string[],
-  maxWalkDistance?: number
+  maxWalkDistance?: number,
+  // The published screen asks for a plain no-trip result instead of an error.
+  options?: { allowNoTrip?: boolean }
 ): Promise<any> {
   try {
     const baseUrl = `${OTP_URL}?`;
@@ -52,10 +57,11 @@ export async function fetchTransitData(
 
     const data = await response.json();
 
-    const allData: any = [];
-    data.plan.itineraries.forEach((result: any) => {
-      allData.push(result);
-    });
+    if (!isOtpPlanBody(data)) {
+      throw new Error('Trip response has no itineraries list');
+    }
+
+    const allData: any = [...(data.plan?.itineraries ?? [])];
 
     // Fetch WALK-only itinerary and add if under 20 minutes (only when walk is allowed)
     let walkItinerary = null;
@@ -76,10 +82,11 @@ export async function fetchTransitData(
       }
     }
 
-    if ((!data || !data.plan) && !walkItinerary ) {
-      throw new Error("There is currently no good trip for this destination.");
+    // A good answer with no trip is not a failure; the row just has no times.
+    if (!allData.some((it: any) => it.duration <= MAX_TRIP_SECONDS)) {
+      if (options?.allowNoTrip) return { noTrip: true };
+      throw new Error('There is currently no good trip for this destination.');
     }
-
 
     const formattedData = formatTripData(allData);
 

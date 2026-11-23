@@ -1,22 +1,27 @@
 import { create } from 'zustand';
 
-// When each slide last got a good response from the feed. Kept in memory only, so a
-// reloaded screen starts its three minutes from the load, not from an old session.
+// When each slide (or slide row) last got a good response from the feed. Kept in memory
+// only, so a reloaded screen starts its three minutes from the load, not from an old session.
 interface ArrivalsFreshnessStore {
   lastFreshAt: Record<string, number>;
-  // Start the clock for a slide the first time it is shown. Does nothing if already started.
-  startTracking: (slideId: string) => void;
-  markFresh: (slideId: string) => void;
+  // The slide on screen now, or null when not known. Only that slide runs a timer.
+  visibleSlideId: string | null;
+  // Start the clock for a key the first time it is shown. Does nothing if already started.
+  startTracking: (key: string) => void;
+  markFresh: (key: string) => void;
+  setVisibleSlideId: (slideId: string | null) => void;
 }
 
 export const useArrivalsFreshnessStore = create<ArrivalsFreshnessStore>((set) => ({
   lastFreshAt: {},
-  startTracking: (slideId) =>
+  visibleSlideId: null,
+  startTracking: (key) =>
     set((s) =>
-      s.lastFreshAt[slideId] === undefined
-        ? { lastFreshAt: { ...s.lastFreshAt, [slideId]: Date.now() } }
+      s.lastFreshAt[key] === undefined
+        ? { lastFreshAt: { ...s.lastFreshAt, [key]: Date.now() } }
         : s
     ),
-  markFresh: (slideId) =>
-    set((s) => ({ lastFreshAt: { ...s.lastFreshAt, [slideId]: Date.now() } })),
+  markFresh: (key) =>
+    set((s) => ({ lastFreshAt: { ...s.lastFreshAt, [key]: Date.now() } })),
+  setVisibleSlideId: (slideId) => set({ visibleSlideId: slideId }),
 }));

@@ -11,8 +11,9 @@ export interface DestinationFetchOptions {
   // Ask the routing API for true road/rail-following leg geometry. Set only for
   // map-view slides that draw the polyline; badge-only slides leave it off.
   includeGeometry?: boolean;
-  // Called when a fetch got a good answer, so the screen knows its times are fresh.
-  onFresh?: () => void;
+  // Called with a destination's position when that destination got a good answer, so the
+  // screen knows that row's times are fresh. A row that fell back to old data is not reported.
+  onFresh?: (destinationIndex: number) => void;
 }
 
 function scoreItinerary(itinerary: { routeSignature: string[] }, preferred: string[]): number {
@@ -99,7 +100,7 @@ export async function getDestinationData(
             )
           )
         );
-        if (results.some((res) => res.status === 'fulfilled')) options?.onFresh?.();
+        results.forEach((res, index) => { if (res.status === 'fulfilled') options?.onFresh?.(index); });
         enrichedDestinations = results.map((res, index) => {
           const dest = destList[index];
           if (res.status === 'fulfilled' && res.value.length > 0) {
@@ -114,7 +115,7 @@ export async function getDestinationData(
           destList,
           { numItineraries: 3, maxWalkMeters: options?.maxWalkDistance, includeGeometry: options?.includeGeometry }
         );
-        options?.onFresh?.();
+        destList.forEach((_, index) => options?.onFresh?.(index));
         enrichedDestinations = results.map((data, index) => buildEnriched(data, destList[index], index));
       }
 
@@ -161,7 +162,7 @@ async function fetchOtpDestinations(
     destList.map(async (dest) => {
       const origin = `${coordinates.lat},${coordinates.lng}`;
       const destination = `${dest.coordinates.lat},${dest.coordinates.lng}`;
-      return fetchTransitData(origin, destination, dest.allowedModes, options?.maxWalkDistance);
+      return fetchTransitData(origin, destination, dest.allowedModes, options?.maxWalkDistance, { allowNoTrip: true });
     })
   );
 
@@ -171,7 +172,7 @@ async function fetchOtpDestinations(
       const data = res.value;
       return {
         name: destList[index].name,
-        route: data.route || "N/A",
+        route: data.route || (data.noTrip ? null : "N/A"),
         departure: data.startTime ? formatTime(data.startTime) : null,
         arrival: data.endTime ? formatTime(data.endTime) : null,
         travel: typeof data.duration !== "undefined" && data.duration !== null ? formatDuration(data.duration) : null,
@@ -209,8 +210,8 @@ async function fetchOtpDestinations(
     (d) => d.departure || d.arrival || d.travel || (Array.isArray(d.legs) && d.legs.length > 0)
   );
 
-  // The OTP answers only count when at least one destination came back with a trip.
-  if (results.some((res) => res.status === 'fulfilled' && res.value) && anySuccess) options?.onFresh?.();
+  // Only a destination whose own request worked counts; rows that kept old data do not.
+  results.forEach((res, index) => { if (res.status === 'fulfilled' && res.value) options?.onFresh?.(index); });
   setDataError(slideId, !anySuccess);
   setDestinationData(slideId, enrichedDestinations);
 }
