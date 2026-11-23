@@ -4,6 +4,8 @@ import { formatDuration, formatTime } from "@/utils/formats";
 import { usePathname } from "next/navigation";
 import { use, useEffect } from "react";
 import Footer from "@/components/shared-components/footer";
+import { ARRIVALS_UNAVAILABLE_TEXT } from "@/lib/arrivalsFreshness";
+import { useArrivalsUnavailable } from "@/hooks/useArrivalsUnavailable";
 
 export default function TransitDestinationPreview({
   slideId,
@@ -43,6 +45,7 @@ export default function TransitDestinationPreview({
   const dataError = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.dataError || false
   );
+  const arrivalsUnavailable = useArrivalsUnavailable(slideId);
   const outageMessage = useTransitDestinationsStore(
     (state) => state.slides[slideId]?.outageMessage || ''
   );
@@ -242,7 +245,18 @@ export default function TransitDestinationPreview({
 
       {/* Row Container - Flexible height */}
       <div className="flex-1 flex flex-col min-h-0">
-        {dataError ? (
+        {arrivalsUnavailable ? (
+          <div
+            className="flex-1 flex items-center justify-center w-full min-w-0"
+            style={{
+              backgroundColor: rowColor,
+              color: tableTextColor,
+              fontSize: getRowStyles().fontSize,
+            }}
+          >
+            <p>{ARRIVALS_UNAVAILABLE_TEXT}</p>
+          </div>
+        ) : dataError ? (
           // Show warning message in the first row if dataError is true
           <div
             className={`flex-1 grid ${

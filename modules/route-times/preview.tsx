@@ -10,6 +10,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { renderRouteOnMap, calculateRouteBounds } from '@/services/map/renderRouteOnMap';
 import type { RouteDataItem, TripData, StopInfo, Departure, StopWithDepartures, PatternStop } from '@/types/route-times';
 import { useResScale } from "@/hooks/useResScale";
+import { ARRIVALS_UNAVAILABLE_TEXT } from '@/lib/arrivalsFreshness';
+import { useArrivalsUnavailable } from '@/hooks/useArrivalsUnavailable';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
@@ -32,6 +34,7 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
   const patternData = slideData?.patternData;
   const isLoading = slideData?.isLoading || false;
   const dataError = slideData?.dataError || false;
+  const arrivalsUnavailable = useArrivalsUnavailable(slideId);
   const outageMessage = slideData?.outageMessage || '';
   const isShowingNextDay = slideData?.isShowingNextDay || false;
   const isShowingLaterToday = slideData?.isShowingLaterToday || false;
@@ -666,7 +669,11 @@ export default function RouteTimesPreview({ slideId }: { slideId: string }) {
             </div>
           </div>
         ) : selectedRoute ? (
-          viewMode === 'map' ? renderMapView() : renderTimetableView()
+          viewMode === 'map' ? renderMapView() : arrivalsUnavailable ? (
+            <div className="h-full flex items-center justify-center">
+              <p style={{ color: titleColor }}>{ARRIVALS_UNAVAILABLE_TEXT}</p>
+            </div>
+          ) : renderTimetableView()
         ) : (
           <div className="h-full flex items-center justify-center">
             <p className="text-gray-500">Please select a route to display</p>

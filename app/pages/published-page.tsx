@@ -13,6 +13,7 @@ import ImageOnlyPreview from '@/modules/image-only/preview';
 import WeatherPreview from '@/modules/weather/preview';
 import { fetchWeatherData } from '@/services/data-gathering/fetchWeatherData';
 import { fetchCitibikeData } from '@/services/data-gathering/fetchCitibikeData';
+import { useArrivalsFreshnessStore } from '@/stores/arrivalsFreshness';
 import { fetchStopData, MAX_ARRIVALS_PER_SLIDE } from '@/services/data-gathering/fetchStopData';
 import { matchesHeadsign } from '@/lib/stop-arrivals-filters';
 import TrafficCorridorPreview from '@/modules/traffic-corridor/preview';
@@ -363,7 +364,10 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
           setDestinationData,
           setDataError,
           currentDestinationData,
-          maxWalkDistance != null ? { maxWalkDistance } : undefined
+          {
+            ...(maxWalkDistance != null ? { maxWalkDistance } : {}),
+            onFresh: () => useArrivalsFreshnessStore.getState().markFresh(slide.id),
+          }
         );
         const updatedState = useTransitDestinationsStore.getState().slides;
         const updatedData = updatedState[slide.id]?.destinationData || [];
@@ -420,6 +424,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         setScheduleData(slide.id, []);
         setFixedRouteDataError(slide.id, false);
         setFixedRouteIsLoading(slide.id, false);
+        useArrivalsFreshnessStore.getState().markFresh(slide.id);
         continue;
       }
 
@@ -430,7 +435,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         let serverErrorCount = 0;
         for (const q of queries) {
           try {
-            const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId);
+            // Any non-2xx answer throws here, so a 404 or 503 counts as a failed fetch.
+            const data = await fetchStopData(q.stopId, q.serviceId, q.organizationId, { failOnClientError: true });
             if (!data) console.warn('[STOP ARRIVALS] No data returned for stop', q.stopId, '(likely 4xx from API)');
             const tagged = (data?.trains || []).map((item: any) => ({
               destination: item.destination,
@@ -558,6 +564,8 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
 
         setScheduleData(slide.id, displayArrivals);
         setFixedRouteDataError(slide.id, false);
+        // At least one stop answered with a good body, so the times on screen are fresh.
+        useArrivalsFreshnessStore.getState().markFresh(slide.id);
         setFixedRouteIsLoading(slide.id, false);
         console.log(`[DATA UPDATE] Fixed route data updated for slide ${slide.id}:`, limitedArrivals);
       } catch (error) {
@@ -621,6 +629,7 @@ export default function PublishedPage({ shortcode }: { shortcode: string }) {
         setRouteTimesRouteData(slide.id, result.timetableData, result.isNextDay, result.isLaterToday);
         setRouteTimesDataError(slide.id, false);
         setRouteTimesIsLoading(slide.id, false);
+        useArrivalsFreshnessStore.getState().markFresh(slide.id);
 
         console.log(`[DATA UPDATE] Route times updated for slide ${slide.id}:`, {
           patternData: result.patternData,

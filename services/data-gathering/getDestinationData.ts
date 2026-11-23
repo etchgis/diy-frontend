@@ -11,6 +11,8 @@ export interface DestinationFetchOptions {
   // Ask the routing API for true road/rail-following leg geometry. Set only for
   // map-view slides that draw the polyline; badge-only slides leave it off.
   includeGeometry?: boolean;
+  // Called when a fetch got a good answer, so the screen knows its times are fresh.
+  onFresh?: () => void;
 }
 
 function scoreItinerary(itinerary: { routeSignature: string[] }, preferred: string[]): number {
@@ -97,6 +99,7 @@ export async function getDestinationData(
             )
           )
         );
+        if (results.some((res) => res.status === 'fulfilled')) options?.onFresh?.();
         enrichedDestinations = results.map((res, index) => {
           const dest = destList[index];
           if (res.status === 'fulfilled' && res.value.length > 0) {
@@ -111,6 +114,7 @@ export async function getDestinationData(
           destList,
           { numItineraries: 3, maxWalkMeters: options?.maxWalkDistance, includeGeometry: options?.includeGeometry }
         );
+        options?.onFresh?.();
         enrichedDestinations = results.map((data, index) => buildEnriched(data, destList[index], index));
       }
 
@@ -205,6 +209,8 @@ async function fetchOtpDestinations(
     (d) => d.departure || d.arrival || d.travel || (Array.isArray(d.legs) && d.legs.length > 0)
   );
 
+  // The OTP answers only count when at least one destination came back with a trip.
+  if (results.some((res) => res.status === 'fulfilled' && res.value) && anySuccess) options?.onFresh?.();
   setDataError(slideId, !anySuccess);
   setDestinationData(slideId, enrichedDestinations);
 }

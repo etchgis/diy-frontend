@@ -40,6 +40,8 @@ function routeDestination(destination: string, shortName: string, routeId: strin
   return dest;
 }
 import { MAX_ARRIVALS_PER_SLIDE } from "@/services/data-gathering/fetchStopData";
+import { ARRIVALS_UNAVAILABLE_TEXT } from "@/lib/arrivalsFreshness";
+import { useArrivalsUnavailable } from "@/hooks/useArrivalsUnavailable";
 import { useGeneralStore } from "@/stores/general";
 import { HelpCircle, ChevronRight, Plus } from "lucide-react";
 import { useResScale } from "@/hooks/useResScale";
@@ -99,6 +101,7 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
 
   const pathname = usePathname();
   const isEditor = pathname.includes("/editor") && !previewMode;
+  const arrivalsUnavailable = useArrivalsUnavailable(slideId);
   const defaultFontFamily = useGeneralStore((state) => state.defaultFontFamily);
   const showFooter = useGeneralStore((state) => state.slides.find((s) => s.id === slideId)?.showFooter ?? true);
   const logoBaseHeight = useGeneralStore((state) => state.logoBaseHeight);
@@ -491,7 +494,21 @@ export default function FixedRoutePreview({ slideId, previewMode = false }: { sl
             ))}
 
           {/* Schedule Table or Loading Spinner */}
-          {isLoading ? (
+          {arrivalsUnavailable ? (
+            <div className="flex items-center justify-center h-full">
+              <div
+                className="p-6 rounded-lg shadow-md"
+                style={{
+                  backgroundColor: tableColor,
+                  color: tableTextColor,
+                  maxWidth: "400px",
+                  textAlign: "center",
+                }}
+              >
+                <p className="text-sm">{ARRIVALS_UNAVAILABLE_TEXT}</p>
+              </div>
+            </div>
+          ) : isLoading ? (
             <LoadingSpinner />
           ) : dataError ? (
             // Show warning message if dataError is true
