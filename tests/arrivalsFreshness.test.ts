@@ -10,6 +10,7 @@ import {
   isDrawableArrivalsBody,
   isTimetableBody,
   isOtpPlanBody,
+  matchResultsToDestinations,
 } from '../lib/arrivalsFreshness.ts';
 
 test('shows the plain unavailable line', () => {
@@ -77,9 +78,34 @@ test('a trip plan body needs an itineraries list or a plain no-trip error', () =
   assert.equal(isOtpPlanBody({ plan: {}, error: { id: 404, msg: 'No trip found', message: 'PATH_NOT_FOUND', noPath: true } }), true);
   assert.equal(isOtpPlanBody({ error: { id: 404, msg: 'Not found' } }), false);
   assert.equal(isOtpPlanBody({ error: { id: 404, msg: 'No trip found' } }), false);
+  assert.equal(isOtpPlanBody({ error: { id: 404, message: 'PATH_NOT_FOUND' } }), false);
+  assert.equal(isOtpPlanBody({ error: { id: 404, noPath: true } }), false);
   assert.equal(isOtpPlanBody({ error: { id: 500, msg: 'Server error' } }), false);
   assert.equal(isOtpPlanBody({ error: 'boom' }), false);
   assert.equal(isOtpPlanBody({}), false);
   assert.equal(isOtpPlanBody({ plan: {} }), false);
   assert.equal(isOtpPlanBody(null), false);
+});
+
+test('duplicate destination names match by coordinates; an omitted result stays unmatched', () => {
+  const dests = [
+    { name: 'Station', coordinates: { lat: 42.0, lng: -78.0 } },
+    { name: 'Station', coordinates: { lat: 43.0, lng: -77.0 } },
+  ];
+  // Only the second destination has a result.
+  const results = [{ destinationName: 'Station', destinationCoordinate: { lat: 43.00001, lon: -77.00001 } }];
+  assert.deepEqual(matchResultsToDestinations(results, dests), [-1, 0]);
+});
+
+test('each result is used once and a far coordinate does not match', () => {
+  const dests = [
+    { name: 'A', coordinates: { lat: 1, lng: 1 } },
+    { name: 'A', coordinates: { lat: 1, lng: 1 } },
+  ];
+  const results = [{ destinationName: 'A', destinationCoordinate: { lat: 1, lon: 1 } }];
+  assert.deepEqual(matchResultsToDestinations(results, dests), [0, -1]);
+  assert.deepEqual(
+    matchResultsToDestinations([{ destinationName: 'A', destinationCoordinate: { lat: 2, lon: 1 } }], dests),
+    [-1, -1]
+  );
 });

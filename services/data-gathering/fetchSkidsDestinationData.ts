@@ -1,3 +1,4 @@
+import { matchResultsToDestinations } from "@/lib/arrivalsFreshness";
 const SKIDS_URL = process.env.NEXT_PUBLIC_SKIDS_URL;
 const SKIDS_REGION = process.env.NEXT_PUBLIC_SKIDS_REGION;
 
@@ -371,15 +372,14 @@ export async function fetchSkidsTransitData(
   if (!data || !Array.isArray(data.results)) {
     throw new Error('Skids response has no results list');
   }
-  const unused = [...data.results];
+  const positions = matchResultsToDestinations(data.results, destinations);
   const missing: boolean[] = [];
   const aligned = destinations.map((d, i) => {
-    const at = unused.findIndex((r) => r?.destinationName === d.name);
-    if (at === -1) {
+    if (positions[i] === -1) {
       missing[i] = true;
       return { destinationName: d.name, destinationCoordinate: { lat: d.coordinates.lat, lon: d.coordinates.lng }, reachable: false } as SkidsResult;
     }
-    return unused.splice(at, 1)[0];
+    return data.results[positions[i]];
   });
   const transformed = transformSkidsResponse({ ...data, results: aligned }, destinations);
   return transformed.map((row, i) => (missing[i] ? { ...row, missing: true } : row));

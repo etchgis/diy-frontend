@@ -26,14 +26,14 @@ export function isTimetableBody(body: unknown): boolean {
 }
 
 // An OTP trip answer is good when it has a plan with an itineraries list (possibly empty)
-// or OTP's no-path error (id 404, message PATH_NOT_FOUND, noPath true). Any other error
+// or OTP's no-path error (id 404, message PATH_NOT_FOUND and noPath true). Any other error
 // object is a failure.
 export function isOtpPlanBody(body: unknown): boolean {
   if (!body || typeof body !== 'object') return false;
   const b = body as any;
   if (Array.isArray(b.plan?.itineraries)) return true;
   const err = b.error;
-  return !!err && typeof err === 'object' && err.id === 404 && (err.message === 'PATH_NOT_FOUND' || err.noPath === true);
+  return !!err && typeof err === 'object' && err.id === 404 && err.message === 'PATH_NOT_FOUND' && err.noPath === true;
 }
 
 // A stop feed body is good when it carries an arrivals list. An empty list is good: it
@@ -45,4 +45,28 @@ export function isArrivalsBody(body: unknown): body is { arrivals: unknown[] } {
 // The strict check for the published screen: an arrivals list whose entries can all be drawn.
 export function isDrawableArrivalsBody(body: unknown): boolean {
   return isArrivalsBody(body) && body.arrivals.every(isArrivalEntry);
+}
+
+const COORDINATE_TOLERANCE_DEGREES = 0.0001;
+
+// For each requested destination, the position of its result, or -1 when the answer has
+// none. A result matches on name and on coordinates (within a small tolerance), and each
+// result is used once, so two destinations with the same name cannot share a result.
+export function matchResultsToDestinations(
+  results: { destinationName?: string; destinationCoordinate?: { lat: number; lon: number } }[],
+  destinations: { name: string; coordinates: { lat: number; lng: number } }[],
+  tolerance: number = COORDINATE_TOLERANCE_DEGREES
+): number[] {
+  const used = new Set<number>();
+  return destinations.map((d) => {
+    const at = results.findIndex(
+      (r, i) =>
+        !used.has(i) &&
+        r?.destinationName === d.name &&
+        Math.abs((r.destinationCoordinate?.lat ?? NaN) - d.coordinates.lat) <= tolerance &&
+        Math.abs((r.destinationCoordinate?.lon ?? NaN) - d.coordinates.lng) <= tolerance
+    );
+    if (at !== -1) used.add(at);
+    return at;
+  });
 }
